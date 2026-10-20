@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Match the target, not the build host: installers are cross-built on Linux.
+         Keep an explicit Linux RID a console executable even on a Windows host. -->
+    <OutputType Condition="$(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows')))">WinExe</OutputType>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hc2000.App.Tests" />
+    <InternalsVisibleTo Include="Hc2000.ImageAdmissionProbe" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hc2000.Machine\Hc2000.Machine.csproj" />
+    <ProjectReference Include="..\Hc2000.Disasm\Hc2000.Disasm.csproj" />
+    <EmbeddedResource Include="..\..\software\demos\z80-visual.bin" LogicalName="Hc2000.App.Demos.z80-visual.bin" />
+    <EmbeddedResource Include="..\..\software\demos\z80-visual-negative.bin" LogicalName="Hc2000.App.Demos.z80-visual-negative.bin" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../HostShared/NativeImageAdmission.cs" Link="HostShared/NativeImageAdmission.cs" />
+    <Compile Include="../HostShared/LinuxImageAdmissionNative.cs" Link="HostShared/LinuxImageAdmissionNative.cs" />
+    <Compile Include="../HostShared/ImageAdmissionRecord.cs" Link="HostShared/ImageAdmissionRecord.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:runtime="using:Hc2000.App.Runtime"
+        xmlns:local="using:Hc2000.App"
+        xmlns:media="using:Hc2000.App.Media"
+        xmlns:snapshots="using:Hc2000.App.Snapshots"
+        x:Class="Hc2000.App.MainWindow"
+        Title="HC2000">
+  <Window.Styles>
+    <!-- Machine text keys must stay unhandled for native TextInput. Toolbar buttons
+         are pointer actions, not keyboard targets: Space must not click the last one. -->
+    <Style Selector="Button">
+      <Setter Property="Focusable" Value="False"/>
+    </Style>
+  </Window.Styles>
+  <ScrollViewer>
+  <StackPanel Margin="16">
+    <TextBlock Text="HC2000" FontSize="24"/>
+    <ContentControl Name="PrestartConfiguration" Margin="0,8,0,8"/>
+    <TextBlock Name="RuntimeStatus" Text="Disconnected: no CPU/machine factory attached" Margin="0,8,0,0"/>
+    <Button Name="MachineReset" Content="Reset" IsEnabled="False" Margin="0,8,0,0"/>
+    <StackPanel Name="Z80DemoControls" IsVisible="False" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+      <Button Name="Z80DemoRerun" AutomationProperties.Name="Reset / Run again" Content="Reset / Run again"/>
+    </StackPanel>
+    <Grid HorizontalAlignment="Stretch">
+      <runtime:AspectRatioViewport Name="ScreenViewport" FitToWindow="False">
+        <runtime:AspectRatioViewport.Surface>
+          <runtime:VideoSurface Name="Screen" AutomationProperties.Name="HC2000 screen" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        </runtime:AspectRatioViewport.Surface>
+      </runtime:AspectRatioViewport>
+      <local:CellBoundaryOverlay Name="CellBoundaries" IsVisible="False" IsHitTestVisible="False"/>
+    </Grid>
+    <CheckBox Name="CellOverlayToggle" Content="Show 8×8 cell boundaries (inspection overlay)" Margin="0,8,0,0"/>
+    <media:MediaPanel Name="MediaControls" Margin="0,12,0,0"/>
+    <media:ProfileRomPanel Name="ProfileRomControls" IsVisible="False" IsEnabled="False" Margin="0,12,0,0"/>
+    <snapshots:HcsPanel Name="SnapshotControls" Margin="0,12,0,0"/>
+    <Button Content="Settings…" Click="OpenSettings" Margin="0,16,0,0"/>
+    <Button Content="Debugger…" Click="OpenDebugger" Margin="0,8,0,0"/>
+    <TextBlock Text="Keyboard mapping" Margin="0,16,0,0"/>
+    <ComboBox x:Name="InputModeBox" AutomationProperties.Name="Keyboard mapping">
+      <ComboBoxItem Content="Symbolic (host text)"/>
+      <ComboBoxItem Content="Positional (physical keys)"/>
+    </ComboBox>
+    <TextBox x:Name="PasteTextBox" AutomationProperties.Name="Text to paste into the machine" PlaceholderText="Text to paste into the machine" AcceptsReturn="True" Height="80" Margin="0,8,0,0"/>
+    <Button x:Name="PasteButton" Content="Queue paste" Click="PasteInput" Margin="0,8,0,0"/>
+    <TextBlock x:Name="InputNotice" Text="Input queued only; a connected runtime consumes it. F2: Edit, F3: Graph, Alt: Symbol Shift (positional)." TextWrapping="Wrap" Margin="0,8,0,0"/>
+  </StackPanel>
+  </ScrollViewer>
+</Window>

@@ -1,0 +1,12466 @@
+ 0000 D7         RST  0010,PRINT_A_1
+ 0001 1800       JR   0003
+ 0003 C9         RET
+ 0004 FF         RST  0038,MASK_INT
+ 0005 FF         RST  0038,MASK_INT
+ 0006 FF         RST  0038,MASK_INT
+ 0007 FF         RST  0038,MASK_INT
+ 0008 2A5D5C     LD   HL,(CHADD)
+ 000B E1         POP  HL
+ 000C E5         PUSH HL
+ 000D C38100     JP   0081
+ 0010 22BA5C     LD   (5CBA),HL
+ 0013 E1         POP  HL
+ 0014 D5         PUSH DE
+ 0015 1851       JR   0068
+ 0017 FF         RST  0038,MASK_INT
+ 0018 FDCB017E   BIT  7,(FLAGS)
+ 001C C9         RET
+ 001D FF         RST  0038,MASK_INT
+ 001E FF         RST  0038,MASK_INT
+ 001F FF         RST  0038,MASK_INT
+ 0020 DF         RST  0018,GET_CHAR
+ 0021 282A       JR   Z,004D
+ 0023 C3FC01     JP   01FC
+ 0026 FF         RST  0038,MASK_INT
+ 0027 FF         RST  0038,MASK_INT
+ 0028 1816       JR   0040
+ 002A FF         RST  0038,MASK_INT
+ 002B FF         RST  0038,MASK_INT
+ 002C FF         RST  0038,MASK_INT
+ 002D FF         RST  0038,MASK_INT
+ 002E FF         RST  0038,MASK_INT
+ 002F FF         RST  0038,MASK_INT
+ 0030 D7         RST  0010,PRINT_A_1
+ 0031 2000       JR   NZ,0033
+ 0033 C9         RET
+ 0034 FF         RST  0038,MASK_INT
+ 0035 FF         RST  0038,MASK_INT
+ 0036 FF         RST  0038,MASK_INT
+ 0037 FF         RST  0038,MASK_INT
+ 0038 FB         EI
+ 0039 C9         RET
+ 003A 2ACB5C     LD   HL,(5CCB)
+ 003D 225D5C     LD   (CHADD),HL
+ 0040 FDCB029E   RES  3,(TVFLAG)
+ 0044 DF         RST  0018,GET_CHAR
+ 0045 2806       JR   Z,004D
+ 0047 CD2507     CALL 0725
+ 004A CD9510     CALL 1095
+ 004D 2A5D5C     LD   HL,(CHADD)
+ 0050 225F5C     LD   (XPTR),HL
+ 0053 ED7B3D5C   LD   SP,(ERRSP)
+ 0057 21C516     LD   HL,+16C5
+ 005A C3FB06     JP   06FB
+ 005D E1         POP  HL
+ 005E 7E         LD   A,(HL)
+ 005F FD7700     LD   (ERRNR),A
+ 0062 18DC       JR   0040
+ 0064 FF         RST  0038,MASK_INT
+ 0065 FF         RST  0038,MASK_INT
+ 0066 ED45       RETN
+ 0068 5E         LD   E,(HL)
+ 0069 23         INC  HL
+ 006A 56         LD   D,(HL)
+ 006B ED53BD5C   LD   (5CBD),DE
+ 006F 23         INC  HL
+ 0070 E3         EX   (SP),HL
+ 0071 EB         EX   HL,DE
+ 0072 210000     LD   HL,+0000
+ 0075 E5         PUSH HL
+ 0076 210800     LD   HL,+0008
+ 0079 E5         PUSH HL
+ 007A 21B95C     LD   HL,+5CB9
+ 007D E5         PUSH HL
+ 007E C30007     JP   0700
+ 0081 F5         PUSH AF
+ 0082 7C         LD   A,H
+ 0083 B5         OR   L
+ 0084 2006       JR   NZ,008C
+ 0086 F1         POP  AF
+ 0087 E1         POP  HL
+ 0088 2ABA5C     LD   HL,(5CBA)
+ 008B C9         RET
+ 008C D5         PUSH DE
+ 008D 11FE15     LD   DE,+15FE
+ 0090 ED52       SBC  HL,DE
+ 0092 D1         POP  DE
+ 0093 200E       JR   NZ,00A3
+ 0095 F1         POP  AF
+ 0096 210007     LD   HL,+0700
+ 0099 E5         PUSH HL
+ 009A 210400     LD   HL,+0004
+ 009D 19         ADD  HL,DE
+ 009E 5E         LD   E,(HL)
+ 009F 23         INC  HL
+ 00A0 56         LD   D,(HL)
+ 00A1 EB         EX   HL,DE
+ 00A2 E9         JP   (HL)
+ 00A3 CD9701     CALL 0197
+ 00A6 3E01       LD   A,+01
+ 00A8 D3F7       OUT  (+F7),A
+ 00AA 3EEE       LD   A,+EE
+ 00AC D3EF       OUT  (+EF),A
+ 00AE F1         POP  AF
+ 00AF E1         POP  HL
+ 00B0 F5         PUSH AF
+ 00B1 D7         RST  0010,PRINT_A_1
+ 00B2 7B         LD   A,E
+ 00B3 00         NOP
+ 00B4 323A5C     LD   (ERRNR),A
+ 00B7 FEFF       CP   +FF
+ 00B9 2017       JR   NZ,00D2
+ 00BB FDCB7C4E   BIT  1,(IY+7C)
+ 00BF 280F       JR   Z,00D0
+ 00C1 FDCB0C7E   BIT  7,(PPC+1)
+ 00C5 2809       JR   Z,00D0
+ 00C7 2A595C     LD   HL,(ELINE)
+ 00CA 7E         LD   A,(HL)
+ 00CB FEF7       CP   +F7
+ 00CD CA2C0A     JP   Z,0A2C
+ 00D0 E7         RST  0020,NEXT_CHAR
+ 00D1 FF         RST  0038,MASK_INT
+ 00D2 D61B       SUB  +1B
+ 00D4 D2A00D     JP   NC,0DA0,CL_CHAN_A
+ 00D7 FEF0       CP   +F0
+ 00D9 2809       JR   Z,00E4
+ 00DB FEF3       CP   +F3
+ 00DD 2805       JR   Z,00E4
+ 00DF FEFC       CP   +FC
+ 00E1 C24000     JP   NZ,0040
+ 00E4 2A5D5C     LD   HL,(CHADD)
+ 00E7 22CB5C     LD   (5CCB),HL
+ 00EA F1         POP  AF
+ 00EB FDCB376E   BIT  5,(FLAGX)
+ 00EF C24000     JP   NZ,0040
+ 00F2 FDCB7C46   BIT  0,(IY+7C)
+ 00F6 C24000     JP   NZ,0040
+ 00F9 FDCB7CC6   SET  0,(IY+7C)
+ 00FD DF         RST  0018,GET_CHAR
+ 00FE 2004       JR   NZ,0104
+ 0100 FD360CFF   LD   (PPC+1),+FF
+ 0104 FDCB0C7E   BIT  7,(PPC+1)
+ 0108 200D       JR   NZ,0117
+ 010A 2A455C     LD   HL,(PPC)
+ 010D D7         RST  0010,PRINT_A_1
+ 010E 6E         LD   L,(HL)
+ 010F 19         ADD  HL,DE
+ 0110 23         INC  HL
+ 0111 23         INC  HL
+ 0112 23         INC  HL
+ 0113 2807       JR   Z,011C
+ 0115 E7         RST  0020,NEXT_CHAR
+ 0116 00         NOP
+ 0117 D7         RST  0010,PRINT_A_1
+ 0118 FB         EI
+ 0119 19         ADD  HL,DE
+ 011A C7         RST  0000,START
+ 011B 2B         DEC  HL
+ 011C FD560D     LD   D,(SUBPPC)
+ 011F AF         XOR  A
+ 0120 5F         LD   E,A
+ 0121 D7         RST  0010,PRINT_A_1
+ 0122 8B         ADC  A,E
+ 0123 19         ADD  HL,DE
+ 0124 38EF       JR   C,0115
+ 0126 DF         RST  0018,GET_CHAR
+ 0127 2024       JR   NZ,014D
+ 0129 23         INC  HL
+ 012A 7E         LD   A,(HL)
+ 012B FE0E       CP   +0E
+ 012D 2019       JR   NZ,0148
+ 012F 010600     LD   BC,+0006
+ 0132 D7         RST  0010,PRINT_A_1
+ 0133 E8         RET  PE
+ 0134 19         ADD  HL,DE
+ 0135 E5         PUSH HL
+ 0136 ED5BCB5C   LD   DE,(5CCB)
+ 013A A7         AND  A
+ 013B ED52       SBC  HL,DE
+ 013D 3008       JR   NC,0147
+ 013F EB         EX   HL,DE
+ 0140 01FAFF     LD   BC,+FFFA
+ 0143 09         ADD  HL,BC
+ 0144 22CB5C     LD   (5CCB),HL
+ 0147 E1         POP  HL
+ 0148 7E         LD   A,(HL)
+ 0149 FE0D       CP   +0D
+ 014B 20DC       JR   NZ,0129
+ 014D D7         RST  0010,PRINT_A_1
+ 014E BF         CP   A
+ 014F 1621       LD   D,+21
+ 0151 CD5C01     CALL 015C
+ 0154 22003E     LD   (3E00),HL
+ 0157 FF         RST  0038,MASK_INT
+ 0158 CDF101     CALL 01F1
+ 015B F7         RST  0030,BC_SPACES
+ 015C FECF       CP   +CF
+ 015E CA1704     JP   Z,0417
+ 0161 FED0       CP   +D0
+ 0163 CA5504     JP   Z,0455
+ 0166 FEFB       CP   +FB
+ 0168 CA8704     JP   Z,0487
+ 016B FED3       CP   +D3
+ 016D CAA904     JP   Z,04A9
+ 0170 FED2       CP   +D2
+ 0172 CAEE04     JP   Z,04EE
+ 0175 FED1       CP   +D1
+ 0177 CAFC04     JP   Z,04FC
+ 017A FEF8       CP   +F8
+ 017C CA4808     JP   Z,0848
+ 017F FEEF       CP   +EF
+ 0181 CAB608     JP   Z,08B6,ME_CONTRL
+ 0184 FED5       CP   +D5
+ 0186 CAC208     JP   Z,08C2
+ 0189 FED6       CP   +D6
+ 018B CABC08     JP   Z,08BC
+ 018E FEFD       CP   +FD
+ 0190 CA1605     JP   Z,0516
+ 0193 2AB75C     LD   HL,(5CB7)
+ 0196 E9         JP   (HL)
+ 0197 2A4F5C     LD   HL,(CHANS)
+ 019A 1149A3     LD   DE,+A349
+ 019D 19         ADD  HL,DE
+ 019E 3838       JR   C,01D8
+ 01A0 21C401     LD   HL,+01C4
+ 01A3 E5         PUSH HL
+ 01A4 2A635C     LD   HL,(STKBOT)
+ 01A7 22655C     LD   (STKEND),HL
+ 01AA 21925C     LD   HL,MEMBOT
+ 01AD 22685C     LD   (MEM),HL
+ 01B0 21B55C     LD   HL,PRAMT+1
+ 01B3 013A00     LD   BC,+003A
+ 01B6 110000     LD   DE,+0000
+ 01B9 D5         PUSH DE
+ 01BA 1E08       LD   E,+08
+ 01BC D5         PUSH DE
+ 01BD 115516     LD   DE,+1655
+ 01C0 D5         PUSH DE
+ 01C1 C30007     JP   0700
+ 01C4 21DD01     LD   HL,+01DD
+ 01C7 011300     LD   BC,+0013
+ 01CA 11B65C     LD   DE,+5CB6
+ 01CD EDB0       LDIR
+ 01CF 3E01       LD   A,+01
+ 01D1 32EF5C     LD   (5CEF),A
+ 01D4 CD1015     CALL 1510
+ 01D7 C9         RET
+ 01D8 FDCB7C8E   RES  1,(IY+7C)
+ 01DC C9         RET
+ 01DD 02         LD   (BC),A
+ 01DE 3A0021     LD   A,(2100)
+ 01E1 00         NOP
+ 01E2 00         NOP
+ 01E3 CD0000     CALL 0000,START
+ 01E6 22BA5C     LD   (5CBA),HL
+ 01E9 C9         RET
+ 01EA 0C         INC  C
+ 01EB 00         NOP
+ 01EC 010000     LD   BC,+0000
+ 01EF 00         NOP
+ 01F0 AF         XOR  A
+ 01F1 77         LD   (HL),A
+ 01F2 0B         DEC  BC
+ 01F3 79         LD   A,C
+ 01F4 B0         OR   B
+ 01F5 C8         RET  Z
+ 01F6 5D         LD   E,L
+ 01F7 54         LD   D,H
+ 01F8 13         INC  DE
+ 01F9 EDB0       LDIR
+ 01FB C9         RET
+ 01FC E1         POP  HL
+ 01FD 7E         LD   A,(HL)
+ 01FE FD7700     LD   (ERRNR),A
+ 0201 F5         PUSH AF
+ 0202 CD2507     CALL 0725
+ 0205 FD367C00   LD   (IY+7C),+00
+ 0209 FB         EI
+ 020A 76         HALT
+ 020B CD9510     CALL 1095
+ 020E FDCB01AE   RES  5,(FLAGS)
+ 0212 FDCB304E   BIT  1,(FLAGS2)
+ 0216 2803       JR   Z,021B
+ 0218 D7         RST  0010,PRINT_A_1
+ 0219 CD0E21     CALL 210E
+ 021C 00         NOP
+ 021D 00         NOP
+ 021E FD7437     LD   (FLAGX),H
+ 0221 FD7426     LD   (XPTR+1),H
+ 0224 220B5C     LD   (DEFADD),HL
+ 0227 2C         INC  L
+ 0228 22165C     LD   (STRMS+6),HL
+ 022B D7         RST  0010,PRINT_A_1
+ 022C B0         OR   B
+ 022D 16FD       LD   D,+FD
+ 022F CB37       SLL  A
+ 0231 AE         XOR  (HL)
+ 0232 D7         RST  0010,PRINT_A_1
+ 0233 6E         LD   L,(HL)
+ 0234 0D         DEC  C
+ 0235 FDCB02EE   SET  5,(TVFLAG)
+ 0239 FDCB029E   RES  3,(TVFLAG)
+ 023D 215F02     LD   HL,+025F
+ 0240 C1         POP  BC
+ 0241 04         INC  B
+ 0242 04         INC  B
+ 0243 7E         LD   A,(HL)
+ 0244 23         INC  HL
+ 0245 17         RLA
+ 0246 30FB       JR   NC,0243
+ 0248 10F9       DJNZ 0243
+ 024A 7E         LD   A,(HL)
+ 024B CD530E     CALL 0E53
+ 024E 7E         LD   A,(HL)
+ 024F 23         INC  HL
+ 0250 17         RLA
+ 0251 30F7       JR   NC,024A
+ 0253 ED7B3D5C   LD   SP,(ERRSP)
+ 0257 33         INC  SP
+ 0258 33         INC  SP
+ 0259 214913     LD   HL,+1349
+ 025C C3FB06     JP   06FB
+ 025F 80         ADD  A,B
+ 0260 50         LD   D,B
+ 0261 72         LD   (HL),D
+ 0262 6F         LD   L,A
+ 0263 67         LD   H,A
+ 0264 72         LD   (HL),D
+ 0265 61         LD   H,C
+ 0266 6D         LD   L,L
+ 0267 2066       JR   NZ,02CF
+ 0269 69         LD   L,C
+ 026A 6E         LD   L,(HL)
+ 026B 69         LD   L,C
+ 026C 73         LD   (HL),E
+ 026D 68         LD   L,B
+ 026E 65         LD   H,L
+ 026F E44E6F     CALL PO,6F4E
+ 0272 6E         LD   L,(HL)
+ 0273 73         LD   (HL),E
+ 0274 65         LD   H,L
+ 0275 6E         LD   L,(HL)
+ 0276 73         LD   (HL),E
+ 0277 65         LD   H,L
+ 0278 2069       JR   NZ,02E3
+ 027A 6E         LD   L,(HL)
+ 027B 2042       JR   NZ,02BF,KEYBOARD
+ 027D 41         LD   B,C
+ 027E 53         LD   D,E
+ 027F 49         LD   C,C
+ 0280 C3496E     JP   6E49
+ 0283 76         HALT
+ 0284 61         LD   H,C
+ 0285 6C         LD   L,H
+ 0286 69         LD   L,C
+ 0287 64         LD   H,H
+ 0288 2073       JR   NZ,02FD
+ 028A 74         LD   (HL),H
+ 028B 72         LD   (HL),D
+ 028C 65         LD   H,L
+ 028D 61         LD   H,C
+ 028E 6D         LD   L,L
+ 028F 206E       JR   NZ,02FF
+ 0291 75         LD   (HL),L
+ 0292 6D         LD   L,L
+ 0293 62         LD   H,D
+ 0294 65         LD   H,L
+ 0295 F2496E     JP   P,6E49
+ 0298 76         HALT
+ 0299 61         LD   H,C
+ 029A 6C         LD   L,H
+ 029B 69         LD   L,C
+ 029C 64         LD   H,H
+ 029D 2064       JR   NZ,0303
+ 029F 65         LD   H,L
+ 02A0 76         HALT
+ 02A1 69         LD   L,C
+ 02A2 63         LD   H,E
+ 02A3 65         LD   H,L
+ 02A4 2065       JR   NZ,030B
+ 02A6 78         LD   A,B
+ 02A7 70         LD   (HL),B
+ 02A8 72         LD   (HL),D
+ 02A9 65         LD   H,L
+ 02AA 73         LD   (HL),E
+ 02AB 73         LD   (HL),E
+ 02AC 69         LD   L,C
+ 02AD 6F         LD   L,A
+ 02AE EE49       XOR  +49
+ 02B0 6E         LD   L,(HL)
+ 02B1 76         HALT
+ 02B2 61         LD   H,C
+ 02B3 6C         LD   L,H
+ 02B4 69         LD   L,C
+ 02B5 64         LD   H,H
+ 02B6 206E       JR   NZ,0326
+ 02B8 61         LD   H,C
+ 02B9 6D         LD   L,L
+ 02BA E5         PUSH HL
+ 02BB 49         LD   C,C
+ 02BC 6E         LD   L,(HL)
+ 02BD 76         HALT
+ 02BE 61         LD   H,C
+ 02BF 6C         LD   L,H
+ 02C0 69         LD   L,C
+ 02C1 64         LD   H,H
+ 02C2 2064       JR   NZ,0328
+ 02C4 72         LD   (HL),D
+ 02C5 69         LD   L,C
+ 02C6 76         HALT
+ 02C7 65         LD   H,L
+ 02C8 206E       JR   NZ,0338
+ 02CA 75         LD   (HL),L
+ 02CB 6D         LD   L,L
+ 02CC 62         LD   H,D
+ 02CD 65         LD   H,L
+ 02CE F2496E     JP   P,6E49
+ 02D1 76         HALT
+ 02D2 61         LD   H,C
+ 02D3 6C         LD   L,H
+ 02D4 69         LD   L,C
+ 02D5 64         LD   H,H
+ 02D6 2073       JR   NZ,034B
+ 02D8 74         LD   (HL),H
+ 02D9 61         LD   H,C
+ 02DA 74         LD   (HL),H
+ 02DB 69         LD   L,C
+ 02DC 6F         LD   L,A
+ 02DD 6E         LD   L,(HL)
+ 02DE 206E       JR   NZ,034E
+ 02E0 75         LD   (HL),L
+ 02E1 6D         LD   L,L
+ 02E2 62         LD   H,D
+ 02E3 65         LD   H,L
+ 02E4 F24D69     JP   P,694D
+ 02E7 73         LD   (HL),E
+ 02E8 73         LD   (HL),E
+ 02E9 69         LD   L,C
+ 02EA 6E         LD   L,(HL)
+ 02EB 67         LD   H,A
+ 02EC 206E       JR   NZ,035C
+ 02EE 61         LD   H,C
+ 02EF 6D         LD   L,L
+ 02F0 E5         PUSH HL
+ 02F1 4D         LD   C,L
+ 02F2 69         LD   L,C
+ 02F3 73         LD   (HL),E
+ 02F4 73         LD   (HL),E
+ 02F5 69         LD   L,C
+ 02F6 6E         LD   L,(HL)
+ 02F7 67         LD   H,A
+ 02F8 2073       JR   NZ,036D
+ 02FA 74         LD   (HL),H
+ 02FB 61         LD   H,C
+ 02FC 74         LD   (HL),H
+ 02FD 69         LD   L,C
+ 02FE 6F         LD   L,A
+ 02FF 6E         LD   L,(HL)
+ 0300 206E       JR   NZ,0370
+ 0302 75         LD   (HL),L
+ 0303 6D         LD   L,L
+ 0304 62         LD   H,D
+ 0305 65         LD   H,L
+ 0306 F24D69     JP   P,694D
+ 0309 73         LD   (HL),E
+ 030A 73         LD   (HL),E
+ 030B 69         LD   L,C
+ 030C 6E         LD   L,(HL)
+ 030D 67         LD   H,A
+ 030E 2064       JR   NZ,0374
+ 0310 72         LD   (HL),D
+ 0311 69         LD   L,C
+ 0312 76         HALT
+ 0313 65         LD   H,L
+ 0314 206E       JR   NZ,0384
+ 0316 75         LD   (HL),L
+ 0317 6D         LD   L,L
+ 0318 62         LD   H,D
+ 0319 65         LD   H,L
+ 031A F24D69     JP   P,694D
+ 031D 73         LD   (HL),E
+ 031E 73         LD   (HL),E
+ 031F 69         LD   L,C
+ 0320 6E         LD   L,(HL)
+ 0321 67         LD   H,A
+ 0322 2062       JR   NZ,0386
+ 0324 61         LD   H,C
+ 0325 75         LD   (HL),L
+ 0326 64         LD   H,H
+ 0327 2072       JR   NZ,039B
+ 0329 61         LD   H,C
+ 032A 74         LD   (HL),H
+ 032B E5         PUSH HL
+ 032C 48         LD   C,B
+ 032D 65         LD   H,L
+ 032E 61         LD   H,C
+ 032F 64         LD   H,H
+ 0330 65         LD   H,L
+ 0331 72         LD   (HL),D
+ 0332 206D       JR   NZ,03A1
+ 0334 69         LD   L,C
+ 0335 73         LD   (HL),E
+ 0336 6D         LD   L,L
+ 0337 61         LD   H,C
+ 0338 74         LD   (HL),H
+ 0339 63         LD   H,E
+ 033A 68         LD   L,B
+ 033B 2065       JR   NZ,03A2
+ 033D 72         LD   (HL),D
+ 033E 72         LD   (HL),D
+ 033F 6F         LD   L,A
+ 0340 F25374     JP   P,7453
+ 0343 72         LD   (HL),D
+ 0344 65         LD   H,L
+ 0345 61         LD   H,C
+ 0346 6D         LD   L,L
+ 0347 2061       JR   NZ,03AA
+ 0349 6C         LD   L,H
+ 034A 72         LD   (HL),D
+ 034B 65         LD   H,L
+ 034C 61         LD   H,C
+ 034D 64         LD   H,H
+ 034E 79         LD   A,C
+ 034F 206F       JR   NZ,03C0
+ 0351 70         LD   (HL),B
+ 0352 65         LD   H,L
+ 0353 EE57       XOR  +57
+ 0355 72         LD   (HL),D
+ 0356 69         LD   L,C
+ 0357 74         LD   (HL),H
+ 0358 69         LD   L,C
+ 0359 6E         LD   L,(HL)
+ 035A 67         LD   H,A
+ 035B 2074       JR   NZ,03D1,BE_IX+3
+ 035D 6F         LD   L,A
+ 035E 2061       JR   NZ,03C1
+ 0360 2027       JR   NZ,0389,K_GRA_DGT
+ 0362 72         LD   (HL),D
+ 0363 65         LD   H,L
+ 0364 61         LD   H,C
+ 0365 64         LD   H,H
+ 0366 27         DAA
+ 0367 2066       JR   NZ,03CF
+ 0369 69         LD   L,C
+ 036A 6C         LD   L,H
+ 036B E5         PUSH HL
+ 036C 52         LD   D,D
+ 036D 65         LD   H,L
+ 036E 61         LD   H,C
+ 036F 64         LD   H,H
+ 0370 69         LD   L,C
+ 0371 6E         LD   L,(HL)
+ 0372 67         LD   H,A
+ 0373 2061       JR   NZ,03D6,BE_H&L_LP
+ 0375 2027       JR   NZ,039E
+ 0377 77         LD   (HL),A
+ 0378 72         LD   (HL),D
+ 0379 69         LD   L,C
+ 037A 74         LD   (HL),H
+ 037B 65         LD   H,L
+ 037C 27         DAA
+ 037D 2066       JR   NZ,03E5
+ 037F 69         LD   L,C
+ 0380 6C         LD   L,H
+ 0381 E5         PUSH HL
+ 0382 44         LD   B,H
+ 0383 69         LD   L,C
+ 0384 73         LD   (HL),E
+ 0385 6B         LD   L,E
+ 0386 2027       JR   NZ,03AF
+ 0388 77         LD   (HL),A
+ 0389 72         LD   (HL),D
+ 038A 69         LD   L,C
+ 038B 74         LD   (HL),H
+ 038C 65         LD   H,L
+ 038D 27         DAA
+ 038E 2070       JR   NZ,0400
+ 0390 72         LD   (HL),D
+ 0391 6F         LD   L,A
+ 0392 74         LD   (HL),H
+ 0393 65         LD   H,L
+ 0394 63         LD   H,E
+ 0395 74         LD   (HL),H
+ 0396 65         LD   H,L
+ 0397 E44469     CALL PO,6944
+ 039A 73         LD   (HL),E
+ 039B 6B         LD   L,E
+ 039C 2066       JR   NZ,0404
+ 039E 75         LD   (HL),L
+ 039F 6C         LD   L,H
+ 03A0 EC4469     CALL PE,6944
+ 03A3 73         LD   (HL),E
+ 03A4 6B         LD   L,E
+ 03A5 2065       JR   NZ,040C
+ 03A7 72         LD   (HL),D
+ 03A8 72         LD   (HL),D
+ 03A9 6F         LD   L,A
+ 03AA F24669     JP   P,6946
+ 03AD 6C         LD   L,H
+ 03AE 65         LD   H,L
+ 03AF 206E       JR   NZ,041F
+ 03B1 6F         LD   L,A
+ 03B2 74         LD   (HL),H
+ 03B3 2066       JR   NZ,041B
+ 03B5 6F         LD   L,A
+ 03B6 75         LD   (HL),L
+ 03B7 6E         LD   L,(HL)
+ 03B8 E4486F     CALL PO,6F48
+ 03BB 6F         LD   L,A
+ 03BC 6B         LD   L,E
+ 03BD 2063       JR   NZ,0422
+ 03BF 6F         LD   L,A
+ 03C0 64         LD   H,H
+ 03C1 65         LD   H,L
+ 03C2 2065       JR   NZ,0429
+ 03C4 72         LD   (HL),D
+ 03C5 72         LD   (HL),D
+ 03C6 6F         LD   L,A
+ 03C7 F2434F     JP   P,4F43
+ 03CA 44         LD   B,H
+ 03CB 45         LD   B,L
+ 03CC 2065       JR   NZ,0433
+ 03CE 72         LD   (HL),D
+ 03CF 72         LD   (HL),D
+ 03D0 6F         LD   L,A
+ 03D1 F24D45     JP   P,454D
+ 03D4 52         LD   D,D
+ 03D5 47         LD   B,A
+ 03D6 45         LD   B,L
+ 03D7 2065       JR   NZ,043E
+ 03D9 72         LD   (HL),D
+ 03DA 72         LD   (HL),D
+ 03DB 6F         LD   L,A
+ 03DC F25665     JP   P,6556
+ 03DF 72         LD   (HL),D
+ 03E0 69         LD   L,C
+ 03E1 66         LD   H,(HL)
+ 03E2 69         LD   L,C
+ 03E3 63         LD   H,E
+ 03E4 61         LD   H,C
+ 03E5 74         LD   (HL),H
+ 03E6 69         LD   L,C
+ 03E7 6F         LD   L,A
+ 03E8 6E         LD   L,(HL)
+ 03E9 2068       JR   NZ,0453
+ 03EB 61         LD   H,C
+ 03EC 73         LD   (HL),E
+ 03ED 2066       JR   NZ,0455
+ 03EF 61         LD   H,C
+ 03F0 69         LD   L,C
+ 03F1 6C         LD   L,H
+ 03F2 65         LD   H,L
+ 03F3 E45772     CALL PO,7257
+ 03F6 6F         LD   L,A
+ 03F7 6E         LD   L,(HL)
+ 03F8 67         LD   H,A
+ 03F9 2066       JR   NZ,0461
+ 03FB 69         LD   L,C
+ 03FC 6C         LD   L,H
+ 03FD 65         LD   H,L
+ 03FE 2074       JR   NZ,0474
+ 0400 79         LD   A,C
+ 0401 70         LD   (HL),B
+ 0402 E5         PUSH HL
+ 0403 44         LD   B,H
+ 0404 69         LD   L,C
+ 0405 73         LD   (HL),E
+ 0406 6B         LD   L,E
+ 0407 2027       JR   NZ,0430
+ 0409 52         LD   D,D
+ 040A 2F         CPL
+ 040B 4F         LD   C,A
+ 040C A7         AND  A
+ 040D 46         LD   B,(HL)
+ 040E 69         LD   L,C
+ 040F 6C         LD   L,H
+ 0410 65         LD   H,L
+ 0411 2027       JR   NZ,043A
+ 0413 52         LD   D,D
+ 0414 2F         CPL
+ 0415 4F         LD   C,A
+ 0416 A7         AND  A
+ 0417 21D85C     LD   HL,+5CD8
+ 041A 3602       LD   (HL),+02
+ 041C F7         RST  0030,BC_SPACES
+ 041D FE0D       CP   +0D
+ 041F 2802       JR   Z,0423
+ 0421 FE3A       CP   +3A
+ 0423 CAFD05     JP   Z,05FD
+ 0426 FE23       CP   +23
+ 0428 2009       JR   NZ,0433
+ 042A CDD005     CALL 05D0
+ 042D CD4905     CALL 0549
+ 0430 2021       JR   NZ,0453
+ 0432 F7         RST  0030,BC_SPACES
+ 0433 CDA305     CALL 05A3
+ 0436 21CC10     LD   HL,+10CC
+ 0439 22DC5C     LD   (5CDC),HL
+ 043C 210B00     LD   HL,+000B
+ 043F 22DA5C     LD   (5CDA),HL
+ 0442 CD4905     CALL 0549
+ 0445 CCB405     CALL Z,05B4
+ 0448 CD4F05     CALL 054F
+ 044B CDED05     CALL 05ED,LD_SAMPLE
+ 044E CDD710     CALL 10D7
+ 0451 1853       JR   04A6
+ 0453 E7         RST  0020,NEXT_CHAR
+ 0454 00         NOP
+ 0455 CD7B05     CALL 057B
+ 0458 CD4F05     CALL 054F
+ 045B 3AD95C     LD   A,(5CD9)
+ 045E FE54       CP   +54
+ 0460 2804       JR   Z,0466
+ 0462 FE42       CP   +42
+ 0464 2006       JR   NZ,046C,REPORT_B
+ 0466 CD2806     CALL 0628
+ 0469 C35D0A     JP   0A5D
+ 046C FE4E       CP   +4E
+ 046E 200F       JR   NZ,047F
+ 0470 CD0906     CALL 0609
+ 0473 3AD65C     LD   A,(5CD6)
+ 0476 A7         AND  A
+ 0477 CA1706     JP   Z,0617
+ 047A 32C55C     LD   (5CC5),A
+ 047D 1827       JR   04A6
+ 047F CDE505     CALL 05E5
+ 0482 CD6D11     CALL 116D
+ 0485 181F       JR   04A6
+ 0487 F7         RST  0030,BC_SPACES
+ 0488 FE23       CP   +23
+ 048A 20C7       JR   NZ,0453
+ 048C F7         RST  0030,BC_SPACES
+ 048D CD4F05     CALL 054F
+ 0490 213800     LD   HL,+0038
+ 0493 228D5C     LD   (ATTRP),HL
+ 0496 228F5C     LD   (ATTRT),HL
+ 0499 FD750E     LD   (BORDCR),L
+ 049C FD7457     LD   (PFLAG),H
+ 049F 3E07       LD   A,+07
+ 04A1 D3FE       OUT  (+FE),A
+ 04A3 D7         RST  0010,PRINT_A_1
+ 04A4 6B         LD   L,E
+ 04A5 0D         DEC  C
+ 04A6 C35905     JP   0559
+ 04A9 CDD005     CALL 05D0
+ 04AC CD4905     CALL 0549
+ 04AF 20A2       JR   NZ,0453
+ 04B1 CD7B05     CALL 057B
+ 04B4 CD4905     CALL 0549
+ 04B7 CCB405     CALL Z,05B4
+ 04BA CD4F05     CALL 054F
+ 04BD 3AD85C     LD   A,(5CD8)
+ 04C0 D7         RST  0010,PRINT_A_1
+ 04C1 27         DAA
+ 04C2 17         RLA
+ 04C3 215905     LD   HL,+0559
+ 04C6 E5         PUSH HL
+ 04C7 211100     LD   HL,+0011
+ 04CA A7         AND  A
+ 04CB ED42       SBC  HL,BC
+ 04CD 381D       JR   C,04EC
+ 04CF 3AD95C     LD   A,(5CD9)
+ 04D2 FE54       CP   +54
+ 04D4 CAD00A     JP   Z,0AD0,PO_SPACE
+ 04D7 FE42       CP   +42
+ 04D9 CAD00A     JP   Z,0AD0,PO_SPACE
+ 04DC FE4E       CP   +4E
+ 04DE 2006       JR   NZ,04E6
+ 04E0 CD0906     CALL 0609
+ 04E3 C38B21     JP   218B
+ 04E6 CDFF05     CALL 05FF
+ 04E9 C3B80E     JP   0EB8
+ 04EC E7         RST  0020,NEXT_CHAR
+ 04ED 0B         DEC  BC
+ 04EE CD1B06     CALL 061B
+ 04F1 CD4F05     CALL 054F
+ 04F4 CDFF05     CALL 05FF
+ 04F7 CD6211     CALL 1162
+ 04FA 18AA       JR   04A6
+ 04FC CD3106     CALL 0631
+ 04FF CD3705     CALL 0537
+ 0502 C7         RST  0000,START
+ 0503 FECC       CP   +CC
+ 0505 2012       JR   NZ,0519
+ 0507 CD3106     CALL 0631
+ 050A CD3705     CALL 0537
+ 050D C7         RST  0000,START
+ 050E CD4F05     CALL 054F
+ 0511 CD550C     CALL 0C55,PO_SCR
+ 0514 1890       JR   04A6
+ 0516 F7         RST  0030,BC_SPACES
+ 0517 FE23       CP   +23
+ 0519 C25304     JP   NZ,0453
+ 051C F7         RST  0030,BC_SPACES
+ 051D CD4F05     CALL 054F
+ 0520 AF         XOR  A
+ 0521 F5         PUSH AF
+ 0522 FDCB7CCE   SET  1,(IY+7C)
+ 0526 CD330D     CALL 0D33
+ 0529 F1         POP  AF
+ 052A 3C         INC  A
+ 052B FE10       CP   +10
+ 052D 38F2       JR   C,0521
+ 052F 0E00       LD   C,+00
+ 0531 CD1A17     CALL 171A
+ 0534 C35905     JP   0559
+ 0537 21D65C     LD   HL,+5CD6
+ 053A 11DE5C     LD   DE,+5CDE
+ 053D 0608       LD   B,+08
+ 053F 1A         LD   A,(DE)
+ 0540 4E         LD   C,(HL)
+ 0541 77         LD   (HL),A
+ 0542 79         LD   A,C
+ 0543 12         LD   (DE),A
+ 0544 23         INC  HL
+ 0545 13         INC  DE
+ 0546 10F7       DJNZ 053F,SA_LD_RET
+ 0548 C9         RET
+ 0549 FE2C       CP   +2C
+ 054B C8         RET  Z
+ 054C FE3B       CP   +3B
+ 054E C9         RET
+ 054F FE0D       CP   +0D
+ 0551 2804       JR   Z,0557
+ 0553 FE3A       CP   +3A
+ 0555 20C2       JR   NZ,0519
+ 0557 DF         RST  0018,GET_CHAR
+ 0558 C0         RET  NZ
+ 0559 ED7B3D5C   LD   SP,(ERRSP)
+ 055D FD3600FF   LD   (ERRNR),+FF
+ 0561 21F41B     LD   HL,+1BF4
+ 0564 DF         RST  0018,GET_CHAR
+ 0565 2806       JR   Z,056D
+ 0567 CD8E0D     CALL 0D8E,CLS_3
+ 056A 217D1B     LD   HL,+1B7D
+ 056D C3FB06     JP   06FB
+ 0570 D7         RST  0010,PRINT_A_1
+ 0571 8C         ADC  A,H
+ 0572 1C         INC  E
+ 0573 DF         RST  0018,GET_CHAR
+ 0574 C8         RET  Z
+ 0575 F5         PUSH AF
+ 0576 D7         RST  0010,PRINT_A_1
+ 0577 F1         POP  AF
+ 0578 2B         DEC  HL
+ 0579 F1         POP  AF
+ 057A C9         RET
+ 057B F7         RST  0030,BC_SPACES
+ 057C CD7005     CALL 0570
+ 057F 2812       JR   Z,0593
+ 0581 F5         PUSH AF
+ 0582 79         LD   A,C
+ 0583 3D         DEC  A
+ 0584 B0         OR   B
+ 0585 202B       JR   NZ,05B2
+ 0587 1A         LD   A,(DE)
+ 0588 D7         RST  0010,PRINT_A_1
+ 0589 8D         ADC  A,L
+ 058A 2C         INC  L
+ 058B 3025       JR   NC,05B2
+ 058D E6DF       AND  +DF
+ 058F 32D95C     LD   (5CD9),A
+ 0592 F1         POP  AF
+ 0593 FE0D       CP   +0D
+ 0595 C8         RET  Z
+ 0596 FE3A       CP   +3A
+ 0598 C8         RET  Z
+ 0599 FEA5       CP   +A5
+ 059B D0         RET  NC
+ 059C CD4905     CALL 0549
+ 059F C25304     JP   NZ,0453
+ 05A2 F7         RST  0030,BC_SPACES
+ 05A3 D7         RST  0010,PRINT_A_1
+ 05A4 82         ADD  A,D
+ 05A5 1C         INC  E
+ 05A6 DF         RST  0018,GET_CHAR
+ 05A7 C8         RET  Z
+ 05A8 F5         PUSH AF
+ 05A9 D7         RST  0010,PRINT_A_1
+ 05AA 99         SBC  A,C
+ 05AB 1EED       LD   E,+ED
+ 05AD 43         LD   B,E
+ 05AE D65C       SUB  +5C
+ 05B0 F1         POP  AF
+ 05B1 C9         RET
+ 05B2 E7         RST  0020,NEXT_CHAR
+ 05B3 02         LD   (BC),A
+ 05B4 F7         RST  0030,BC_SPACES
+ 05B5 CD7005     CALL 0570
+ 05B8 C8         RET  Z
+ 05B9 F5         PUSH AF
+ 05BA 79         LD   A,C
+ 05BB B0         OR   B
+ 05BC 2810       JR   Z,05CE
+ 05BE 21F4FF     LD   HL,+FFF4
+ 05C1 09         ADD  HL,BC
+ 05C2 380A       JR   C,05CE
+ 05C4 ED43DA5C   LD   (5CDA),BC
+ 05C8 ED53DC5C   LD   (5CDC),DE
+ 05CC F1         POP  AF
+ 05CD C9         RET
+ 05CE E7         RST  0020,NEXT_CHAR
+ 05CF 03         INC  BC
+ 05D0 F7         RST  0030,BC_SPACES
+ 05D1 D7         RST  0010,PRINT_A_1
+ 05D2 82         ADD  A,D
+ 05D3 1C         INC  E
+ 05D4 DF         RST  0018,GET_CHAR
+ 05D5 C8         RET  Z
+ 05D6 F5         PUSH AF
+ 05D7 D7         RST  0010,PRINT_A_1
+ 05D8 94         SUB  H
+ 05D9 1EFE       LD   E,+FE
+ 05DB 1030       DJNZ 060D
+ 05DD 05         DEC  B
+ 05DE 32D85C     LD   (5CD8),A
+ 05E1 F1         POP  AF
+ 05E2 C9         RET
+ 05E3 E7         RST  0020,NEXT_CHAR
+ 05E4 013AD9     LD   BC,+D93A
+ 05E7 5C         LD   E,H
+ 05E8 FE44       CP   +44
+ 05EA C2B205     JP   NZ,05B2
+ 05ED ED5BD65C   LD   DE,(5CD6)
+ 05F1 13         INC  DE
+ 05F2 7B         LD   A,E
+ 05F3 B2         OR   D
+ 05F4 2807       JR   Z,05FD
+ 05F6 21FCFF     LD   HL,+FFFC
+ 05F9 19         ADD  HL,DE
+ 05FA D0         RET  NC
+ 05FB E7         RST  0020,NEXT_CHAR
+ 05FC 04         INC  B
+ 05FD E7         RST  0020,NEXT_CHAR
+ 05FE 08         EX   AF,AF'
+ 05FF CDE505     CALL 05E5
+ 0602 3ADB5C     LD   A,(5CDB)
+ 0605 A7         AND  A
+ 0606 C8         RET  Z
+ 0607 E7         RST  0020,NEXT_CHAR
+ 0608 06ED       LD   B,+ED
+ 060A 5B         LD   E,E
+ 060B D65C       SUB  +5C
+ 060D 13         INC  DE
+ 060E 7B         LD   A,E
+ 060F B2         OR   D
+ 0610 2807       JR   Z,0619
+ 0612 21BEFF     LD   HL,+FFBE
+ 0615 19         ADD  HL,DE
+ 0616 D0         RET  NC
+ 0617 E7         RST  0020,NEXT_CHAR
+ 0618 05         DEC  B
+ 0619 E7         RST  0020,NEXT_CHAR
+ 061A 07         RLCA
+ 061B CD7B05     CALL 057B
+ 061E CD4905     CALL 0549
+ 0621 C25304     JP   NZ,0453
+ 0624 CDB405     CALL 05B4
+ 0627 C9         RET
+ 0628 2AD65C     LD   HL,(5CD6)
+ 062B 23         INC  HL
+ 062C 7D         LD   A,L
+ 062D B4         OR   H
+ 062E C0         RET  NZ
+ 062F E7         RST  0020,NEXT_CHAR
+ 0630 09         ADD  HL,BC
+ 0631 F7         RST  0030,BC_SPACES
+ 0632 FE23       CP   +23
+ 0634 289A       JR   Z,05D0
+ 0636 CD7C05     CALL 057C
+ 0639 CD4905     CALL 0549
+ 063C CCB405     CALL Z,05B4
+ 063F DF         RST  0018,GET_CHAR
+ 0640 C8         RET  Z
+ 0641 3AD95C     LD   A,(5CD9)
+ 0644 FE54       CP   +54
+ 0646 C8         RET  Z
+ 0647 FE42       CP   +42
+ 0649 C8         RET  Z
+ 064A FE4E       CP   +4E
+ 064C 28BB       JR   Z,0609
+ 064E 18AF       JR   05FF
+ 0650 FF         RST  0038,MASK_INT
+ 0651 FF         RST  0038,MASK_INT
+ 0652 FF         RST  0038,MASK_INT
+ 0653 FF         RST  0038,MASK_INT
+ 0654 FF         RST  0038,MASK_INT
+ 0655 FF         RST  0038,MASK_INT
+ 0656 FF         RST  0038,MASK_INT
+ 0657 FF         RST  0038,MASK_INT
+ 0658 FF         RST  0038,MASK_INT
+ 0659 FF         RST  0038,MASK_INT
+ 065A FF         RST  0038,MASK_INT
+ 065B FF         RST  0038,MASK_INT
+ 065C FF         RST  0038,MASK_INT
+ 065D FF         RST  0038,MASK_INT
+ 065E FF         RST  0038,MASK_INT
+ 065F FF         RST  0038,MASK_INT
+ 0660 FF         RST  0038,MASK_INT
+ 0661 FF         RST  0038,MASK_INT
+ 0662 FF         RST  0038,MASK_INT
+ 0663 FF         RST  0038,MASK_INT
+ 0664 FF         RST  0038,MASK_INT
+ 0665 FF         RST  0038,MASK_INT
+ 0666 FF         RST  0038,MASK_INT
+ 0667 FF         RST  0038,MASK_INT
+ 0668 FF         RST  0038,MASK_INT
+ 0669 FF         RST  0038,MASK_INT
+ 066A FF         RST  0038,MASK_INT
+ 066B FF         RST  0038,MASK_INT
+ 066C FF         RST  0038,MASK_INT
+ 066D FF         RST  0038,MASK_INT
+ 066E FF         RST  0038,MASK_INT
+ 066F FF         RST  0038,MASK_INT
+ 0670 FF         RST  0038,MASK_INT
+ 0671 FF         RST  0038,MASK_INT
+ 0672 FF         RST  0038,MASK_INT
+ 0673 FF         RST  0038,MASK_INT
+ 0674 FF         RST  0038,MASK_INT
+ 0675 FF         RST  0038,MASK_INT
+ 0676 FF         RST  0038,MASK_INT
+ 0677 FF         RST  0038,MASK_INT
+ 0678 FF         RST  0038,MASK_INT
+ 0679 FF         RST  0038,MASK_INT
+ 067A FF         RST  0038,MASK_INT
+ 067B FF         RST  0038,MASK_INT
+ 067C FF         RST  0038,MASK_INT
+ 067D FF         RST  0038,MASK_INT
+ 067E FF         RST  0038,MASK_INT
+ 067F FF         RST  0038,MASK_INT
+ 0680 FF         RST  0038,MASK_INT
+ 0681 FF         RST  0038,MASK_INT
+ 0682 FF         RST  0038,MASK_INT
+ 0683 FF         RST  0038,MASK_INT
+ 0684 FF         RST  0038,MASK_INT
+ 0685 FF         RST  0038,MASK_INT
+ 0686 FF         RST  0038,MASK_INT
+ 0687 FF         RST  0038,MASK_INT
+ 0688 FF         RST  0038,MASK_INT
+ 0689 FF         RST  0038,MASK_INT
+ 068A FF         RST  0038,MASK_INT
+ 068B FF         RST  0038,MASK_INT
+ 068C FF         RST  0038,MASK_INT
+ 068D FF         RST  0038,MASK_INT
+ 068E FF         RST  0038,MASK_INT
+ 068F FF         RST  0038,MASK_INT
+ 0690 FF         RST  0038,MASK_INT
+ 0691 FF         RST  0038,MASK_INT
+ 0692 FF         RST  0038,MASK_INT
+ 0693 FF         RST  0038,MASK_INT
+ 0694 FF         RST  0038,MASK_INT
+ 0695 FF         RST  0038,MASK_INT
+ 0696 FF         RST  0038,MASK_INT
+ 0697 FF         RST  0038,MASK_INT
+ 0698 FF         RST  0038,MASK_INT
+ 0699 FF         RST  0038,MASK_INT
+ 069A FF         RST  0038,MASK_INT
+ 069B FF         RST  0038,MASK_INT
+ 069C FF         RST  0038,MASK_INT
+ 069D FF         RST  0038,MASK_INT
+ 069E FF         RST  0038,MASK_INT
+ 069F FF         RST  0038,MASK_INT
+ 06A0 FF         RST  0038,MASK_INT
+ 06A1 FF         RST  0038,MASK_INT
+ 06A2 FF         RST  0038,MASK_INT
+ 06A3 FF         RST  0038,MASK_INT
+ 06A4 FF         RST  0038,MASK_INT
+ 06A5 FF         RST  0038,MASK_INT
+ 06A6 FF         RST  0038,MASK_INT
+ 06A7 FF         RST  0038,MASK_INT
+ 06A8 FF         RST  0038,MASK_INT
+ 06A9 FF         RST  0038,MASK_INT
+ 06AA FF         RST  0038,MASK_INT
+ 06AB FF         RST  0038,MASK_INT
+ 06AC FF         RST  0038,MASK_INT
+ 06AD FF         RST  0038,MASK_INT
+ 06AE FF         RST  0038,MASK_INT
+ 06AF FF         RST  0038,MASK_INT
+ 06B0 FF         RST  0038,MASK_INT
+ 06B1 FF         RST  0038,MASK_INT
+ 06B2 FF         RST  0038,MASK_INT
+ 06B3 FF         RST  0038,MASK_INT
+ 06B4 FF         RST  0038,MASK_INT
+ 06B5 FF         RST  0038,MASK_INT
+ 06B6 FF         RST  0038,MASK_INT
+ 06B7 FF         RST  0038,MASK_INT
+ 06B8 FF         RST  0038,MASK_INT
+ 06B9 FF         RST  0038,MASK_INT
+ 06BA FF         RST  0038,MASK_INT
+ 06BB FF         RST  0038,MASK_INT
+ 06BC FF         RST  0038,MASK_INT
+ 06BD FF         RST  0038,MASK_INT
+ 06BE FF         RST  0038,MASK_INT
+ 06BF FF         RST  0038,MASK_INT
+ 06C0 FF         RST  0038,MASK_INT
+ 06C1 FF         RST  0038,MASK_INT
+ 06C2 FF         RST  0038,MASK_INT
+ 06C3 FF         RST  0038,MASK_INT
+ 06C4 FF         RST  0038,MASK_INT
+ 06C5 FF         RST  0038,MASK_INT
+ 06C6 FF         RST  0038,MASK_INT
+ 06C7 FF         RST  0038,MASK_INT
+ 06C8 FF         RST  0038,MASK_INT
+ 06C9 FF         RST  0038,MASK_INT
+ 06CA FF         RST  0038,MASK_INT
+ 06CB FF         RST  0038,MASK_INT
+ 06CC FF         RST  0038,MASK_INT
+ 06CD FF         RST  0038,MASK_INT
+ 06CE FF         RST  0038,MASK_INT
+ 06CF FF         RST  0038,MASK_INT
+ 06D0 FF         RST  0038,MASK_INT
+ 06D1 FF         RST  0038,MASK_INT
+ 06D2 FF         RST  0038,MASK_INT
+ 06D3 FF         RST  0038,MASK_INT
+ 06D4 FF         RST  0038,MASK_INT
+ 06D5 FF         RST  0038,MASK_INT
+ 06D6 FF         RST  0038,MASK_INT
+ 06D7 FF         RST  0038,MASK_INT
+ 06D8 FF         RST  0038,MASK_INT
+ 06D9 FF         RST  0038,MASK_INT
+ 06DA FF         RST  0038,MASK_INT
+ 06DB FF         RST  0038,MASK_INT
+ 06DC FF         RST  0038,MASK_INT
+ 06DD FF         RST  0038,MASK_INT
+ 06DE FF         RST  0038,MASK_INT
+ 06DF FF         RST  0038,MASK_INT
+ 06E0 FF         RST  0038,MASK_INT
+ 06E1 FF         RST  0038,MASK_INT
+ 06E2 FF         RST  0038,MASK_INT
+ 06E3 FF         RST  0038,MASK_INT
+ 06E4 FF         RST  0038,MASK_INT
+ 06E5 FF         RST  0038,MASK_INT
+ 06E6 FF         RST  0038,MASK_INT
+ 06E7 FF         RST  0038,MASK_INT
+ 06E8 FF         RST  0038,MASK_INT
+ 06E9 FF         RST  0038,MASK_INT
+ 06EA FF         RST  0038,MASK_INT
+ 06EB FF         RST  0038,MASK_INT
+ 06EC FF         RST  0038,MASK_INT
+ 06ED FF         RST  0038,MASK_INT
+ 06EE FF         RST  0038,MASK_INT
+ 06EF FF         RST  0038,MASK_INT
+ 06F0 FF         RST  0038,MASK_INT
+ 06F1 FF         RST  0038,MASK_INT
+ 06F2 FF         RST  0038,MASK_INT
+ 06F3 FF         RST  0038,MASK_INT
+ 06F4 FF         RST  0038,MASK_INT
+ 06F5 FF         RST  0038,MASK_INT
+ 06F6 FF         RST  0038,MASK_INT
+ 06F7 FF         RST  0038,MASK_INT
+ 06F8 FF         RST  0038,MASK_INT
+ 06F9 FF         RST  0038,MASK_INT
+ 06FA FF         RST  0038,MASK_INT
+ 06FB E5         PUSH HL
+ 06FC FD367C00   LD   (IY+7C),+00
+ 0700 C9         RET
+ 0701 320082     LD   (8200),A
+ 0704 0A         LD   A,(BC)
+ 0705 6E         LD   L,(HL)
+ 0706 00         NOP
+ 0707 C5         PUSH BC
+ 0708 04         INC  B
+ 0709 2C         INC  L
+ 070A 01BE01     LD   BC,+01BE
+ 070D 58         LD   E,B
+ 070E 02         LD   (BC),A
+ 070F DE00       SBC  A,+00
+ 0711 B0         OR   B
+ 0712 04         INC  B
+ 0713 6E         LD   L,(HL)
+ 0714 00         NOP
+ 0715 60         LD   H,B
+ 0716 09         ADD  HL,BC
+ 0717 3600       LD   (HL),+00
+ 0719 C0         RET  NZ
+ 071A 12         LD   (DE),A
+ 071B 1A         LD   A,(DE)
+ 071C 00         NOP
+ 071D 80         ADD  A,B
+ 071E 25         DEC  H
+ 071F 0C         INC  C
+ 0720 00         NOP
+ 0721 00         NOP
+ 0722 4B         LD   C,E
+ 0723 05         DEC  B
+ 0724 00         NOP
+ 0725 FDCB7C56   BIT  2,(IY+7C)
+ 0729 C8         RET  Z
+ 072A ED7B3D5C   LD   SP,(ERRSP)
+ 072E 18CC       JR   06FC
+ 0730 F7         RST  0030,BC_SPACES
+ 0731 FE2A       CP   +2A
+ 0733 2031       JR   NZ,0766
+ 0735 CD7B05     CALL 057B
+ 0738 CD4905     CALL 0549
+ 073B 2003       JR   NZ,0740
+ 073D CDB405     CALL 05B4
+ 0740 F5         PUSH AF
+ 0741 3AD95C     LD   A,(5CD9)
+ 0744 FE4E       CP   +4E
+ 0746 2004       JR   NZ,074C
+ 0748 FDCB7CDE   SET  3,(IY+7C)
+ 074C F1         POP  AF
+ 074D FE0D       CP   +0D
+ 074F 2827       JR   Z,0778
+ 0751 FE3A       CP   +3A
+ 0753 2823       JR   Z,0778
+ 0755 FEAA       CP   +AA
+ 0757 2840       JR   Z,0799
+ 0759 FEAF       CP   +AF
+ 075B 2852       JR   Z,07AF
+ 075D FECA       CP   +CA
+ 075F 2807       JR   Z,0768
+ 0761 FEE4       CP   +E4
+ 0763 CAF207     JP   Z,07F2
+ 0766 E7         RST  0020,NEXT_CHAR
+ 0767 00         NOP
+ 0768 F7         RST  0030,BC_SPACES
+ 0769 D7         RST  0010,PRINT_A_1
+ 076A 82         ADD  A,D
+ 076B 1C         INC  E
+ 076C CD4F05     CALL 054F
+ 076F D7         RST  0010,PRINT_A_1
+ 0770 99         SBC  A,C
+ 0771 1EED       LD   E,+ED
+ 0773 43         LD   B,E
+ 0774 ED5C       NEG
+ 0776 1803       JR   077B
+ 0778 CD4F05     CALL 054F
+ 077B AF         XOR  A
+ 077C 32E65C     LD   (5CE6),A
+ 077F 2A595C     LD   HL,(ELINE)
+ 0782 ED5B535C   LD   DE,(PROG)
+ 0786 ED53E95C   LD   (5CE9),DE
+ 078A 37         SCF
+ 078B ED52       SBC  HL,DE
+ 078D 22E75C     LD   (5CE7),HL
+ 0790 2A4B5C     LD   HL,(VARS)
+ 0793 ED52       SBC  HL,DE
+ 0795 22EB5C     LD   (5CEB),HL
+ 0798 C9         RET
+ 0799 F7         RST  0030,BC_SPACES
+ 079A CD4F05     CALL 054F
+ 079D 21001B     LD   HL,+1B00
+ 07A0 22E75C     LD   (5CE7),HL
+ 07A3 210040     LD   HL,+4000
+ 07A6 22E95C     LD   (5CE9),HL
+ 07A9 3E03       LD   A,+03
+ 07AB 32E65C     LD   (5CE6),A
+ 07AE C9         RET
+ 07AF F7         RST  0030,BC_SPACES
+ 07B0 FE0D       CP   +0D
+ 07B2 280A       JR   Z,07BE
+ 07B4 FE3A       CP   +3A
+ 07B6 200B       JR   NZ,07C3
+ 07B8 FDCB7C6E   BIT  5,(IY+7C)
+ 07BC 20A8       JR   NZ,0766
+ 07BE D7         RST  0010,PRINT_A_1
+ 07BF E61C       AND  +1C
+ 07C1 1808       JR   07CB,VR_CONTRL
+ 07C3 D7         RST  0010,PRINT_A_1
+ 07C4 82         ADD  A,D
+ 07C5 1C         INC  E
+ 07C6 CD4905     CALL 0549
+ 07C9 280B       JR   Z,07D6
+ 07CB FDCB7C6E   BIT  5,(IY+7C)
+ 07CF 2095       JR   NZ,0766
+ 07D1 D7         RST  0010,PRINT_A_1
+ 07D2 E61C       AND  +1C
+ 07D4 1804       JR   07DA
+ 07D6 F7         RST  0030,BC_SPACES
+ 07D7 D7         RST  0010,PRINT_A_1
+ 07D8 82         ADD  A,D
+ 07D9 1C         INC  E
+ 07DA C7         RST  0000,START
+ 07DB CD4F05     CALL 054F
+ 07DE D7         RST  0010,PRINT_A_1
+ 07DF 99         SBC  A,C
+ 07E0 1EED       LD   E,+ED
+ 07E2 43         LD   B,E
+ 07E3 E7         RST  0020,NEXT_CHAR
+ 07E4 5C         LD   E,H
+ 07E5 D7         RST  0010,PRINT_A_1
+ 07E6 99         SBC  A,C
+ 07E7 1EED       LD   E,+ED
+ 07E9 43         LD   B,E
+ 07EA E9         JP   (HL)
+ 07EB 5C         LD   E,H
+ 07EC 3E03       LD   A,+03
+ 07EE 32E65C     LD   (5CE6),A
+ 07F1 C9         RET
+ 07F2 FDCB7C76   BIT  6,(IY+7C)
+ 07F6 2802       JR   Z,07FA
+ 07F8 E7         RST  0020,NEXT_CHAR
+ 07F9 14         INC  D
+ 07FA F7         RST  0030,BC_SPACES
+ 07FB D7         RST  0010,PRINT_A_1
+ 07FC B2         OR   D
+ 07FD 28CB       JR   Z,07CA
+ 07FF F9         LD   SP,HL
+ 0800 300D       JR   NC,080F
+ 0802 210000     LD   HL,+0000
+ 0805 FDCB7C66   BIT  4,(IY+7C)
+ 0809 2020       JR   NZ,082B
+ 080B CD5D00     CALL 005D
+ 080E 012802     LD   BC,+0228
+ 0811 E7         RST  0020,NEXT_CHAR
+ 0812 00         NOP
+ 0813 DF         RST  0018,GET_CHAR
+ 0814 2823       JR   Z,0839
+ 0816 FDCB7C6E   BIT  5,(IY+7C)
+ 081A 2804       JR   Z,0820
+ 081C CB7E       BIT  7,(HL)
+ 081E 28F1       JR   Z,0811
+ 0820 23         INC  HL
+ 0821 7E         LD   A,(HL)
+ 0822 32E75C     LD   (5CE7),A
+ 0825 23         INC  HL
+ 0826 7E         LD   A,(HL)
+ 0827 32E85C     LD   (5CE8),A
+ 082A 23         INC  HL
+ 082B 79         LD   A,C
+ 082C 32EB5C     LD   (5CEB),A
+ 082F 3E01       LD   A,+01
+ 0831 CB71       BIT  6,C
+ 0833 2801       JR   Z,0836
+ 0835 3C         INC  A
+ 0836 32E65C     LD   (5CE6),A
+ 0839 EB         EX   HL,DE
+ 083A F7         RST  0030,BC_SPACES
+ 083B FE29       CP   +29
+ 083D 20D2       JR   NZ,0811
+ 083F F7         RST  0030,BC_SPACES
+ 0840 CD4F05     CALL 054F
+ 0843 ED53E95C   LD   (5CE9),DE
+ 0847 C9         RET
+ 0848 FDCB7CEE   SET  5,(IY+7C)
+ 084C CD3007     CALL 0730
+ 084F 3AD95C     LD   A,(5CD9)
+ 0852 FE42       CP   +42
+ 0854 2815       JR   Z,086B
+ 0856 FE4E       CP   +4E
+ 0858 2008       JR   NZ,0862
+ 085A CD0906     CALL 0609
+ 085D CD9921     CALL 2199
+ 0860 1809       JR   086B
+ 0862 CDFF05     CALL 05FF
+ 0865 CD4E0F     CALL 0F4E
+ 0868 C36509     JP   0965
+ 086B 0609       LD   B,+09
+ 086D 21E65C     LD   HL,+5CE6
+ 0870 CD8908     CALL 0889
+ 0873 23         INC  HL
+ 0874 10FA       DJNZ 0870
+ 0876 2AE95C     LD   HL,(5CE9)
+ 0879 ED4BE75C   LD   BC,(5CE7)
+ 087D 79         LD   A,C
+ 087E B0         OR   B
+ 087F CA6509     JP   Z,0965
+ 0882 CD8908     CALL 0889
+ 0885 0B         DEC  BC
+ 0886 23         INC  HL
+ 0887 18F4       JR   087D
+ 0889 E5         PUSH HL
+ 088A C5         PUSH BC
+ 088B FDCB7C5E   BIT  3,(IY+7C)
+ 088F 7E         LD   A,(HL)
+ 0890 2005       JR   NZ,0897
+ 0892 CD970B     CALL 0B97
+ 0895 1803       JR   089A
+ 0897 CD5720     CALL 2057
+ 089A C1         POP  BC
+ 089B E1         POP  HL
+ 089C C9         RET
+ 089D E5         PUSH HL
+ 089E D5         PUSH DE
+ 089F C5         PUSH BC
+ 08A0 FDCB7C5E   BIT  3,(IY+7C)
+ 08A4 2807       JR   Z,08AD,LD_PROG_1
+ 08A6 CD0020     CALL 2000
+ 08A9 30FB       JR   NC,08A6
+ 08AB 1805       JR   08B2
+ 08AD CD350B     CALL 0B35
+ 08B0 30FB       JR   NC,08AD,LD_PROG_1
+ 08B2 C1         POP  BC
+ 08B3 D1         POP  DE
+ 08B4 E1         POP  HL
+ 08B5 C9         RET
+ 08B6 FDCB7CE6   SET  4,(IY+7C)
+ 08BA 180A       JR   08C6
+ 08BC FDCB7CFE   SET  7,(IY+7C)
+ 08C0 1804       JR   08C6
+ 08C2 FDCB7CF6   SET  6,(IY+7C)
+ 08C6 CD3007     CALL 0730
+ 08C9 21E65C     LD   HL,+5CE6
+ 08CC 11DE5C     LD   DE,+5CDE
+ 08CF 010700     LD   BC,+0007
+ 08D2 EDB0       LDIR
+ 08D4 3AD95C     LD   A,(5CD9)
+ 08D7 FE4E       CP   +4E
+ 08D9 280C       JR   Z,08E7
+ 08DB FE42       CP   +42
+ 08DD 280E       JR   Z,08ED
+ 08DF CDFF05     CALL 05FF
+ 08E2 CDA30F     CALL 0FA3
+ 08E5 1812       JR   08F9,ME_OLD_VP
+ 08E7 CD0906     CALL 0609
+ 08EA CD9921     CALL 2199
+ 08ED 21E65C     LD   HL,+5CE6
+ 08F0 0609       LD   B,+09
+ 08F2 CD9D08     CALL 089D
+ 08F5 77         LD   (HL),A
+ 08F6 23         INC  HL
+ 08F7 10F9       DJNZ 08F2
+ 08F9 2ADE5C     LD   HL,(5CDE)
+ 08FC 3AE65C     LD   A,(5CE6)
+ 08FF BD         CP   L
+ 0900 2006       JR   NZ,0908
+ 0902 FE03       CP   +03
+ 0904 2811       JR   Z,0917
+ 0906 3802       JR   C,090A
+ 0908 E7         RST  0020,NEXT_CHAR
+ 0909 16FD       LD   D,+FD
+ 090B CB7C       BIT  7,H
+ 090D 76         HALT
+ 090E 2040       JR   NZ,0950
+ 0910 FDCB7C7E   BIT  7,(IY+7C)
+ 0914 CA6F09     JP   Z,096F
+ 0917 FDCB7C76   BIT  6,(IY+7C)
+ 091B 2802       JR   Z,091F
+ 091D E7         RST  0020,NEXT_CHAR
+ 091E 14         INC  D
+ 091F 2ADF5C     LD   HL,(5CDF)
+ 0922 ED5BE75C   LD   DE,(5CE7)
+ 0926 7C         LD   A,H
+ 0927 B5         OR   L
+ 0928 280E       JR   Z,0938
+ 092A ED52       SBC  HL,DE
+ 092C 300A       JR   NC,0938
+ 092E FDCB7C66   BIT  4,(IY+7C)
+ 0932 2802       JR   Z,0936
+ 0934 E7         RST  0020,NEXT_CHAR
+ 0935 13         INC  DE
+ 0936 E7         RST  0020,NEXT_CHAR
+ 0937 15         DEC  D
+ 0938 2AE15C     LD   HL,(5CE1)
+ 093B 7C         LD   A,H
+ 093C B5         OR   L
+ 093D 2003       JR   NZ,0942
+ 093F 2AE95C     LD   HL,(5CE9)
+ 0942 3AE65C     LD   A,(5CE6)
+ 0945 A7         AND  A
+ 0946 2003       JR   NZ,094B
+ 0948 2A535C     LD   HL,(PROG)
+ 094B CD090A     CALL 0A09
+ 094E 1815       JR   0965
+ 0950 ED4BE75C   LD   BC,(5CE7)
+ 0954 C5         PUSH BC
+ 0955 03         INC  BC
+ 0956 D7         RST  0010,PRINT_A_1
+ 0957 3000       JR   NC,0959
+ 0959 3680       LD   (HL),+80
+ 095B EB         EX   HL,DE
+ 095C D1         POP  DE
+ 095D E5         PUSH HL
+ 095E CD090A     CALL 0A09
+ 0961 E1         POP  HL
+ 0962 D7         RST  0010,PRINT_A_1
+ 0963 CE08       ADC  A,+08
+ 0965 FDCB7C5E   BIT  3,(IY+7C)
+ 0969 C4CC21     CALL NZ,21CC
+ 096C C35905     JP   0559
+ 096F ED5BE75C   LD   DE,(5CE7)
+ 0973 2AE15C     LD   HL,(5CE1)
+ 0976 E5         PUSH HL
+ 0977 7C         LD   A,H
+ 0978 B5         OR   L
+ 0979 2006       JR   NZ,0981
+ 097B 13         INC  DE
+ 097C 13         INC  DE
+ 097D 13         INC  DE
+ 097E EB         EX   HL,DE
+ 097F 1809       JR   098A
+ 0981 2ADF5C     LD   HL,(5CDF)
+ 0984 EB         EX   HL,DE
+ 0985 37         SCF
+ 0986 ED52       SBC  HL,DE
+ 0988 3809       JR   C,0993
+ 098A 110500     LD   DE,+0005
+ 098D 19         ADD  HL,DE
+ 098E 44         LD   B,H
+ 098F 4D         LD   C,L
+ 0990 D7         RST  0010,PRINT_A_1
+ 0991 05         DEC  B
+ 0992 1F         RRA
+ 0993 E1         POP  HL
+ 0994 3AE65C     LD   A,(5CE6)
+ 0997 A7         AND  A
+ 0998 282E       JR   Z,09C8
+ 099A 7C         LD   A,H
+ 099B B5         OR   L
+ 099C 280B       JR   Z,09A9
+ 099E 2B         DEC  HL
+ 099F 46         LD   B,(HL)
+ 09A0 2B         DEC  HL
+ 09A1 4E         LD   C,(HL)
+ 09A2 2B         DEC  HL
+ 09A3 03         INC  BC
+ 09A4 03         INC  BC
+ 09A5 03         INC  BC
+ 09A6 D7         RST  0010,PRINT_A_1
+ 09A7 E8         RET  PE
+ 09A8 19         ADD  HL,DE
+ 09A9 2A595C     LD   HL,(ELINE)
+ 09AC 2B         DEC  HL
+ 09AD ED4BE75C   LD   BC,(5CE7)
+ 09B1 C5         PUSH BC
+ 09B2 03         INC  BC
+ 09B3 03         INC  BC
+ 09B4 03         INC  BC
+ 09B5 D7         RST  0010,PRINT_A_1
+ 09B6 55         LD   D,L
+ 09B7 1623       LD   D,+23
+ 09B9 3AE35C     LD   A,(5CE3)
+ 09BC 77         LD   (HL),A
+ 09BD D1         POP  DE
+ 09BE 23         INC  HL
+ 09BF 73         LD   (HL),E
+ 09C0 23         INC  HL
+ 09C1 72         LD   (HL),D
+ 09C2 23         INC  HL
+ 09C3 CD090A     CALL 0A09
+ 09C6 189D       JR   0965
+ 09C8 FDCB7C8E   RES  1,(IY+7C)
+ 09CC ED5B535C   LD   DE,(PROG)
+ 09D0 2A595C     LD   HL,(ELINE)
+ 09D3 2B         DEC  HL
+ 09D4 D7         RST  0010,PRINT_A_1
+ 09D5 E5         PUSH HL
+ 09D6 19         ADD  HL,DE
+ 09D7 ED4BE75C   LD   BC,(5CE7)
+ 09DB 2A535C     LD   HL,(PROG)
+ 09DE D7         RST  0010,PRINT_A_1
+ 09DF 55         LD   D,L
+ 09E0 1622       LD   D,+22
+ 09E2 57         LD   D,A
+ 09E3 5C         LD   E,H
+ 09E4 23         INC  HL
+ 09E5 ED4BEB5C   LD   BC,(5CEB)
+ 09E9 09         ADD  HL,BC
+ 09EA 224B5C     LD   (VARS),HL
+ 09ED 2AED5C     LD   HL,(5CED)
+ 09F0 7C         LD   A,H
+ 09F1 E6C0       AND  +C0
+ 09F3 200B       JR   NZ,0A00
+ 09F5 FDCB7CCE   SET  1,(IY+7C)
+ 09F9 22425C     LD   (NEWPPC),HL
+ 09FC FD360A00   LD   (NSPPC),+00
+ 0A00 2A535C     LD   HL,(PROG)
+ 0A03 ED5BE75C   LD   DE,(5CE7)
+ 0A07 18BA       JR   09C3
+ 0A09 7A         LD   A,D
+ 0A0A B3         OR   E
+ 0A0B C8         RET  Z
+ 0A0C DD7E04     LD   A,(IX+04)
+ 0A0F FEC4       CP   +C4
+ 0A11 CACD0F     JP   Z,0FCD
+ 0A14 CD9D08     CALL 089D
+ 0A17 1B         DEC  DE
+ 0A18 FDCB7C7E   BIT  7,(IY+7C)
+ 0A1C 2003       JR   NZ,0A21
+ 0A1E 77         LD   (HL),A
+ 0A1F 1805       JR   0A26
+ 0A21 BE         CP   (HL)
+ 0A22 2802       JR   Z,0A26
+ 0A24 E7         RST  0020,NEXT_CHAR
+ 0A25 15         DEC  D
+ 0A26 23         INC  HL
+ 0A27 7B         LD   A,E
+ 0A28 B2         OR   D
+ 0A29 20E9       JR   NZ,0A14
+ 0A2B C9         RET
+ 0A2C 010100     LD   BC,+0001
+ 0A2F ED43D65C   LD   (5CD6),BC
+ 0A33 010300     LD   BC,+0003
+ 0A36 ED43DA5C   LD   (5CDA),BC
+ 0A3A 015A0A     LD   BC,+0A5A
+ 0A3D ED43DC5C   LD   (5CDC),BC
+ 0A41 FDCB7CE6   SET  4,(IY+7C)
+ 0A45 CD7B07     CALL 077B
+ 0A48 21E65C     LD   HL,+5CE6
+ 0A4B 11DE5C     LD   DE,+5CDE
+ 0A4E 010900     LD   BC,+0009
+ 0A51 EDB0       LDIR
+ 0A53 FDCB0AFE   SET  7,(NSPPC)
+ 0A57 C3E208     JP   08E2
+ 0A5A 72         LD   (HL),D
+ 0A5B 75         LD   (HL),L
+ 0A5C 6E         LD   L,(HL)
+ 0A5D ED4BD65C   LD   BC,(5CD6)
+ 0A61 210107     LD   HL,+0701
+ 0A64 5E         LD   E,(HL)
+ 0A65 23         INC  HL
+ 0A66 56         LD   D,(HL)
+ 0A67 23         INC  HL
+ 0A68 EB         EX   HL,DE
+ 0A69 7C         LD   A,H
+ 0A6A FE4B       CP   +4B
+ 0A6C 300A       JR   NC,0A78
+ 0A6E A7         AND  A
+ 0A6F ED42       SBC  HL,BC
+ 0A71 3005       JR   NC,0A78
+ 0A73 EB         EX   HL,DE
+ 0A74 23         INC  HL
+ 0A75 23         INC  HL
+ 0A76 18EC       JR   0A64
+ 0A78 EB         EX   HL,DE
+ 0A79 5E         LD   E,(HL)
+ 0A7A 23         INC  HL
+ 0A7B 56         LD   D,(HL)
+ 0A7C ED53C35C   LD   (5CC3),DE
+ 0A80 C35905     JP   0559
+ 0A83 C5         PUSH BC
+ 0A84 2A535C     LD   HL,(PROG)
+ 0A87 2B         DEC  HL
+ 0A88 D7         RST  0010,PRINT_A_1
+ 0A89 55         LD   D,L
+ 0A8A 16C1       LD   D,+C1
+ 0A8C CD0A0D     CALL 0D0A
+ 0A8F EB         EX   HL,DE
+ 0A90 13         INC  DE
+ 0A91 C9         RET
+ 0A92 D5         PUSH DE
+ 0A93 C5         PUSH BC
+ 0A94 010B00     LD   BC,+000B
+ 0A97 C5         PUSH BC
+ 0A98 EDB0       LDIR
+ 0A9A C1         POP  BC
+ 0A9B E1         POP  HL
+ 0A9C B7         OR   A
+ 0A9D ED42       SBC  HL,BC
+ 0A9F 4D         LD   C,L
+ 0AA0 44         LD   B,H
+ 0AA1 EB         EX   HL,DE
+ 0AA2 C4F001     CALL NZ,01F0
+ 0AA5 D1         POP  DE
+ 0AA6 C9         RET
+ 0AA7 010B00     LD   BC,+000B
+ 0AAA CD830A     CALL 0A83
+ 0AAD 21EB0A     LD   HL,+0AEB
+ 0AB0 010B00     LD   BC,+000B
+ 0AB3 CD920A     CALL 0A92
+ 0AB6 3AD95C     LD   A,(5CD9)
+ 0AB9 FE42       CP   +42
+ 0ABB C0         RET  NZ
+ 0ABC D5         PUSH DE
+ 0ABD CD2015     CALL 1520
+ 0AC0 19         ADD  HL,DE
+ 0AC1 11970B     LD   DE,+0B97
+ 0AC4 73         LD   (HL),E
+ 0AC5 23         INC  HL
+ 0AC6 72         LD   (HL),D
+ 0AC7 23         INC  HL
+ 0AC8 11F00B     LD   DE,+0BF0
+ 0ACB 73         LD   (HL),E
+ 0ACC 23         INC  HL
+ 0ACD 72         LD   (HL),D
+ 0ACE D1         POP  DE
+ 0ACF C9         RET
+ 0AD0 CDA70A     CALL 0AA7
+ 0AD3 2A4F5C     LD   HL,(CHANS)
+ 0AD6 2B         DEC  HL
+ 0AD7 EB         EX   HL,DE
+ 0AD8 A7         AND  A
+ 0AD9 ED52       SBC  HL,DE
+ 0ADB EB         EX   HL,DE
+ 0ADC 21165C     LD   HL,STRMS+6
+ 0ADF 3AD85C     LD   A,(5CD8)
+ 0AE2 07         RLCA
+ 0AE3 4F         LD   C,A
+ 0AE4 0600       LD   B,+00
+ 0AE6 09         ADD  HL,BC
+ 0AE7 73         LD   (HL),E
+ 0AE8 23         INC  HL
+ 0AE9 72         LD   (HL),D
+ 0AEA C9         RET
+ 0AEB 08         EX   AF,AF'
+ 0AEC 00         NOP
+ 0AED 08         EX   AF,AF'
+ 0AEE 00         NOP
+ 0AEF 54         LD   D,H
+ 0AF0 79         LD   A,C
+ 0AF1 0B         DEC  BC
+ 0AF2 EB         EX   HL,DE
+ 0AF3 0B         DEC  BC
+ 0AF4 0B         DEC  BC
+ 0AF5 00         NOP
+ 0AF6 CD350B     CALL 0B35
+ 0AF9 CBBF       RES  7,A
+ 0AFB C9         RET
+ 0AFC DBF7       IN   A,(+F7)
+ 0AFE 07         RLCA
+ 0AFF 300F       JR   NC,0B10
+ 0B01 DBF7       IN   A,(+F7)
+ 0B03 07         RLCA
+ 0B04 300A       JR   NC,0B10
+ 0B06 DBF7       IN   A,(+F7)
+ 0B08 07         RLCA
+ 0B09 3005       JR   NC,0B10
+ 0B0B DBF7       IN   A,(+F7)
+ 0B0D 07         RLCA
+ 0B0E 3806       JR   C,0B16
+ 0B10 2B         DEC  HL
+ 0B11 7C         LD   A,H
+ 0B12 B5         OR   L
+ 0B13 20E7       JR   NZ,0AFC,PO_ST_PR
+ 0B15 C9         RET
+ 0B16 62         LD   H,D
+ 0B17 6B         LD   L,E
+ 0B18 CB3C       SRL  H
+ 0B1A CB1D       RR   L
+ 0B1C 0680       LD   B,+80
+ 0B1E 2B         DEC  HL
+ 0B1F 2B         DEC  HL
+ 0B20 2B         DEC  HL
+ 0B21 19         ADD  HL,DE
+ 0B22 00         NOP
+ 0B23 2B         DEC  HL
+ 0B24 7C         LD   A,H
+ 0B25 B5         OR   L
+ 0B26 20FB       JR   NZ,0B23
+ 0B28 C600       ADD  A,+00
+ 0B2A DBF7       IN   A,(+F7)
+ 0B2C 07         RLCA
+ 0B2D CB18       RR   B
+ 0B2F 30F0       JR   NC,0B21
+ 0B31 78         LD   A,B
+ 0B32 2F         CPL
+ 0B33 37         SCF
+ 0B34 C9         RET
+ 0B35 21C75C     LD   HL,+5CC7
+ 0B38 7E         LD   A,(HL)
+ 0B39 A7         AND  A
+ 0B3A 2806       JR   Z,0B42
+ 0B3C 3600       LD   (HL),+00
+ 0B3E 23         INC  HL
+ 0B3F 7E         LD   A,(HL)
+ 0B40 37         SCF
+ 0B41 C9         RET
+ 0B42 CD8E0D     CALL 0D8E,CLS_3
+ 0B45 F3         DI
+ 0B46 3AC65C     LD   A,(5CC6)
+ 0B49 D3FE       OUT  (+FE),A
+ 0B4B 3EFE       LD   A,+FE
+ 0B4D D3EF       OUT  (+EF),A
+ 0B4F ED5BC35C   LD   DE,(5CC3)
+ 0B53 212003     LD   HL,+0320
+ 0B56 CDFC0A     CALL 0AFC,PO_ST_PR
+ 0B59 F5         PUSH AF
+ 0B5A 3EEE       LD   A,+EE
+ 0B5C D3EF       OUT  (+EF),A
+ 0B5E 19         ADD  HL,DE
+ 0B5F 2B         DEC  HL
+ 0B60 7D         LD   A,L
+ 0B61 B4         OR   H
+ 0B62 20FB       JR   NZ,0B5F,PO_T
+ 0B64 19         ADD  HL,DE
+ 0B65 19         ADD  HL,DE
+ 0B66 19         ADD  HL,DE
+ 0B67 CDFC0A     CALL 0AFC,PO_ST_PR
+ 0B6A 3007       JR   NC,0B73
+ 0B6C 21C75C     LD   HL,+5CC7
+ 0B6F 3601       LD   (HL),+01
+ 0B71 23         INC  HL
+ 0B72 77         LD   (HL),A
+ 0B73 CDE00B     CALL 0BE0
+ 0B76 F1         POP  AF
+ 0B77 FB         EI
+ 0B78 C9         RET
+ 0B79 FEA5       CP   +A5
+ 0B7B 3806       JR   C,0B83
+ 0B7D D6A5       SUB  +A5
+ 0B7F D7         RST  0010,PRINT_A_1
+ 0B80 100C       DJNZ 0B8E
+ 0B82 C9         RET
+ 0B83 C34014     JP   1440
+ 0B86 FF         RST  0038,MASK_INT
+ 0B87 3E3F       LD   A,+3F
+ 0B89 FE0D       CP   +0D
+ 0B8B 2007       JR   NZ,0B94
+ 0B8D CD970B     CALL 0B97
+ 0B90 3E0A       LD   A,+0A
+ 0B92 1803       JR   0B97
+ 0B94 FE20       CP   +20
+ 0B96 D8         RET  C
+ 0B97 060B       LD   B,+0B
+ 0B99 2F         CPL
+ 0B9A 4F         LD   C,A
+ 0B9B 3AC65C     LD   A,(5CC6)
+ 0B9E D3FE       OUT  (+FE),A
+ 0BA0 3EEF       LD   A,+EF
+ 0BA2 D3EF       OUT  (+EF),A
+ 0BA4 2F         CPL
+ 0BA5 D3F7       OUT  (+F7),A
+ 0BA7 2AC35C     LD   HL,(5CC3)
+ 0BAA 54         LD   D,H
+ 0BAB 5D         LD   E,L
+ 0BAC 1B         DEC  DE
+ 0BAD 7A         LD   A,D
+ 0BAE B3         OR   E
+ 0BAF 20FB       JR   NZ,0BAC
+ 0BB1 CD8E0D     CALL 0D8E,CLS_3
+ 0BB4 DBEF       IN   A,(+EF)
+ 0BB6 E608       AND  +08
+ 0BB8 28F7       JR   Z,0BB1
+ 0BBA 37         SCF
+ 0BBB F3         DI
+ 0BBC CE00       ADC  A,+00
+ 0BBE D3F7       OUT  (+F7),A
+ 0BC0 54         LD   D,H
+ 0BC1 5D         LD   E,L
+ 0BC2 1B         DEC  DE
+ 0BC3 7A         LD   A,D
+ 0BC4 B3         OR   E
+ 0BC5 20FB       JR   NZ,0BC2
+ 0BC7 1B         DEC  DE
+ 0BC8 AF         XOR  A
+ 0BC9 CB39       SRL  C
+ 0BCB 10EF       DJNZ 0BBC
+ 0BCD 7F         LD   A,A
+ 0BCE 7F         LD   A,A
+ 0BCF 7F         LD   A,A
+ 0BD0 FB         EI
+ 0BD1 3E01       LD   A,+01
+ 0BD3 0EEF       LD   C,+EF
+ 0BD5 06EE       LD   B,+EE
+ 0BD7 D3F7       OUT  (+F7),A
+ 0BD9 ED41       OUT  (C),B
+ 0BDB 2B         DEC  HL
+ 0BDC 7D         LD   A,L
+ 0BDD B4         OR   H
+ 0BDE 20FB       JR   NZ,0BDB,PO_ATTR
+ 0BE0 3A485C     LD   A,(BORDCR)
+ 0BE3 E638       AND  +38
+ 0BE5 0F         RRCA
+ 0BE6 0F         RRCA
+ 0BE7 0F         RRCA
+ 0BE8 D3FE       OUT  (+FE),A
+ 0BEA C9         RET
+ 0BEB 21F60A     LD   HL,+0AF6
+ 0BEE 1808       JR   0BF8
+ 0BF0 21350B     LD   HL,+0B35
+ 0BF3 1803       JR   0BF8
+ 0BF5 21C50E     LD   HL,+0EC5
+ 0BF8 FDCB029E   RES  3,(TVFLAG)
+ 0BFC E5         PUSH HL
+ 0BFD 2A3D5C     LD   HL,(ERRSP)
+ 0C00 5E         LD   E,(HL)
+ 0C01 23         INC  HL
+ 0C02 56         LD   D,(HL)
+ 0C03 A7         AND  A
+ 0C04 217F10     LD   HL,+107F
+ 0C07 ED52       SBC  HL,DE
+ 0C09 2027       JR   NZ,0C32
+ 0C0B E1         POP  HL
+ 0C0C ED7B3D5C   LD   SP,(ERRSP)
+ 0C10 D1         POP  DE
+ 0C11 D1         POP  DE
+ 0C12 ED533D5C   LD   (ERRSP),DE
+ 0C16 E5         PUSH HL
+ 0C17 111C0C     LD   DE,+0C1C
+ 0C1A D5         PUSH DE
+ 0C1B E9         JP   (HL)
+ 0C1C 3806       JR   C,0C24
+ 0C1E 280B       JR   Z,0C2B
+ 0C20 CD5D00     CALL 005D
+ 0C23 07         RLCA
+ 0C24 FE0D       CP   +0D
+ 0C26 2806       JR   Z,0C2E
+ 0C28 D7         RST  0010,PRINT_A_1
+ 0C29 85         ADD  A,L
+ 0C2A 0F         RRCA
+ 0C2B E1         POP  HL
+ 0C2C 18E8       JR   0C16
+ 0C2E E1         POP  HL
+ 0C2F C30007     JP   0700
+ 0C32 E1         POP  HL
+ 0C33 11380C     LD   DE,+0C38
+ 0C36 D5         PUSH DE
+ 0C37 E9         JP   (HL)
+ 0C38 D8         RET  C
+ 0C39 C8         RET  Z
+ 0C3A FDCB7C66   BIT  4,(IY+7C)
+ 0C3E 28E0       JR   Z,0C20
+ 0C40 C9         RET
+ 0C41 210020     LD   HL,+2000
+ 0C44 18B2       JR   0BF8
+ 0C46 2A4F5C     LD   HL,(CHANS)
+ 0C49 B7         OR   A
+ 0C4A ED52       SBC  HL,DE
+ 0C4C ED5BDA5C   LD   DE,(5CDA)
+ 0C50 19         ADD  HL,DE
+ 0C51 22DA5C     LD   (5CDA),HL
+ 0C54 C9         RET
+ 0C55 FDCB7CE6   SET  4,(IY+7C)
+ 0C59 CDA20C     CALL 0CA2
+ 0C5C 2A4F5C     LD   HL,(CHANS)
+ 0C5F E5         PUSH HL
+ 0C60 CD3705     CALL 0537
+ 0C63 CDA20C     CALL 0CA2
+ 0C66 CD3705     CALL 0537
+ 0C69 D1         POP  DE
+ 0C6A CD460C     CALL 0C46
+ 0C6D 2ADA5C     LD   HL,(5CDA)
+ 0C70 22515C     LD   (CURCHL),HL
+ 0C73 D7         RST  0010,PRINT_A_1
+ 0C74 E615       AND  +15
+ 0C76 3804       JR   C,0C7C
+ 0C78 28F9       JR   Z,0C73
+ 0C7A 180B       JR   0C87
+ 0C7C 2AE25C     LD   HL,(5CE2)
+ 0C7F 22515C     LD   (CURCHL),HL
+ 0C82 D7         RST  0010,PRINT_A_1
+ 0C83 1000       DJNZ 0C85
+ 0C85 18E6       JR   0C6D
+ 0C87 FDCB7CA6   RES  4,(IY+7C)
+ 0C8B 2A4F5C     LD   HL,(CHANS)
+ 0C8E E5         PUSH HL
+ 0C8F CD3705     CALL 0537
+ 0C92 CDE70C     CALL 0CE7
+ 0C95 CD3705     CALL 0537
+ 0C98 D1         POP  DE
+ 0C99 CD460C     CALL 0C46
+ 0C9C CDE70C     CALL 0CE7
+ 0C9F C39510     JP   1095
+ 0CA2 3AD85C     LD   A,(5CD8)
+ 0CA5 3C         INC  A
+ 0CA6 280B       JR   Z,0CB3
+ 0CA8 3D         DEC  A
+ 0CA9 D7         RST  0010,PRINT_A_1
+ 0CAA 01162A     LD   BC,+2A16
+ 0CAD 51         LD   D,C
+ 0CAE 5C         LD   E,H
+ 0CAF 22DA5C     LD   (5CDA),HL
+ 0CB2 C9         RET
+ 0CB3 3AD95C     LD   A,(5CD9)
+ 0CB6 FE44       CP   +44
+ 0CB8 2008       JR   NZ,0CC2
+ 0CBA CD9C0E     CALL 0E9C
+ 0CBD DD22DA5C   LD   (5CDA),IX
+ 0CC1 C9         RET
+ 0CC2 FE4E       CP   +4E
+ 0CC4 2008       JR   NZ,0CCE
+ 0CC6 CD9121     CALL 2191
+ 0CC9 DD22DA5C   LD   (5CDA),IX
+ 0CCD C9         RET
+ 0CCE FE54       CP   +54
+ 0CD0 2806       JR   Z,0CD8
+ 0CD2 FE42       CP   +42
+ 0CD4 2802       JR   Z,0CD8
+ 0CD6 E7         RST  0020,NEXT_CHAR
+ 0CD7 00         NOP
+ 0CD8 CDA70A     CALL 0AA7
+ 0CDB ED53DA5C   LD   (5CDA),DE
+ 0CDF D5         PUSH DE
+ 0CE0 DDE1       POP  IX
+ 0CE2 DDCB04FE   SET  7,(IX+04)
+ 0CE6 C9         RET
+ 0CE7 3AD85C     LD   A,(5CD8)
+ 0CEA 3C         INC  A
+ 0CEB C0         RET  NZ
+ 0CEC 3AD95C     LD   A,(5CD9)
+ 0CEF FE44       CP   +44
+ 0CF1 2008       JR   NZ,0CFB
+ 0CF3 DD2ADA5C   LD   IX,(5CDA)
+ 0CF7 CD2010     CALL 1020
+ 0CFA C9         RET
+ 0CFB FE4E       CP   +4E
+ 0CFD C0         RET  NZ
+ 0CFE DD2ADA5C   LD   IX,(5CDA)
+ 0D02 DD22515C   LD   (CURCHL),IX
+ 0D06 CDCC21     CALL 21CC
+ 0D09 C9         RET
+ 0D0A E5         PUSH HL
+ 0D0B E5         PUSH HL
+ 0D0C ED5BE45C   LD   DE,(5CE4)
+ 0D10 CD250D     CALL 0D25
+ 0D13 ED53E45C   LD   (5CE4),DE
+ 0D17 E1         POP  HL
+ 0D18 ED5BDC5C   LD   DE,(5CDC)
+ 0D1C CD250D     CALL 0D25
+ 0D1F ED53DC5C   LD   (5CDC),DE
+ 0D23 E1         POP  HL
+ 0D24 C9         RET
+ 0D25 37         SCF
+ 0D26 ED52       SBC  HL,DE
+ 0D28 D0         RET  NC
+ 0D29 2A655C     LD   HL,(STKEND)
+ 0D2C ED52       SBC  HL,DE
+ 0D2E D8         RET  C
+ 0D2F EB         EX   HL,DE
+ 0D30 09         ADD  HL,BC
+ 0D31 EB         EX   HL,DE
+ 0D32 C9         RET
+ 0D33 D7         RST  0010,PRINT_A_1
+ 0D34 27         DAA
+ 0D35 17         RLA
+ 0D36 79         LD   A,C
+ 0D37 B0         OR   B
+ 0D38 C8         RET  Z
+ 0D39 E5         PUSH HL
+ 0D3A 2A4F5C     LD   HL,(CHANS)
+ 0D3D 2B         DEC  HL
+ 0D3E 09         ADD  HL,BC
+ 0D3F E3         EX   (SP),HL
+ 0D40 D7         RST  0010,PRINT_A_1
+ 0D41 EB         EX   HL,DE
+ 0D42 162A       LD   D,+2A
+ 0D44 4F         LD   C,A
+ 0D45 5C         LD   E,H
+ 0D46 111400     LD   DE,+0014
+ 0D49 19         ADD  HL,DE
+ 0D4A D1         POP  DE
+ 0D4B 37         SCF
+ 0D4C ED52       SBC  HL,DE
+ 0D4E D0         RET  NC
+ 0D4F EB         EX   HL,DE
+ 0D50 22515C     LD   (CURCHL),HL
+ 0D53 E5         PUSH HL
+ 0D54 DDE1       POP  IX
+ 0D56 CD3015     CALL 1530
+ 0D59 FE42       CP   +42
+ 0D5B 282E       JR   Z,0D8B
+ 0D5D FE54       CP   +54
+ 0D5F 200D       JR   NZ,0D6E,CLS_LOWER
+ 0D61 FDCB7C4E   BIT  1,(IY+7C)
+ 0D65 2024       JR   NZ,0D8B
+ 0D67 3E0D       LD   A,+0D
+ 0D69 CD790B     CALL 0B79
+ 0D6C 181D       JR   0D8B
+ 0D6E FE4E       CP   +4E
+ 0D70 200B       JR   NZ,0D7D
+ 0D72 FDCB7C4E   BIT  1,(IY+7C)
+ 0D76 2013       JR   NZ,0D8B
+ 0D78 CDCC21     CALL 21CC
+ 0D7B 180E       JR   0D8B
+ 0D7D FE44       CP   +44
+ 0D7F 200A       JR   NZ,0D8B
+ 0D81 FDCB7C4E   BIT  1,(IY+7C)
+ 0D85 CA2010     JP   Z,1020
+ 0D88 C34B10     JP   104B
+ 0D8B C34B10     JP   104B
+ 0D8E 3E7F       LD   A,+7F
+ 0D90 DBFE       IN   A,(+FE)
+ 0D92 F6FE       OR   +FE
+ 0D94 DBFE       IN   A,(+FE)
+ 0D96 1F         RRA
+ 0D97 D8         RET  C
+ 0D98 CDE00B     CALL 0BE0
+ 0D9B FB         EI
+ 0D9C CD5D00     CALL 005D
+ 0D9F 14         INC  D
+ 0DA0 FE22       CP   +22
+ 0DA2 3802       JR   C,0DA6
+ 0DA4 E7         RST  0020,NEXT_CHAR
+ 0DA5 12         LD   (DE),A
+ 0DA6 FE06       CP   +06
+ 0DA8 3806       JR   C,0DB0
+ 0DAA D612       SUB  +12
+ 0DAC 38F6       JR   C,0DA4
+ 0DAE C606       ADD  A,+06
+ 0DB0 FD3600FF   LD   (ERRNR),+FF
+ 0DB4 FDCB7CD6   SET  2,(IY+7C)
+ 0DB8 23         INC  HL
+ 0DB9 E3         EX   (SP),HL
+ 0DBA E5         PUSH HL
+ 0DBB 87         ADD  A,A
+ 0DBC 1600       LD   D,+00
+ 0DBE 5F         LD   E,A
+ 0DBF 216015     LD   HL,+1560
+ 0DC2 19         ADD  HL,DE
+ 0DC3 5E         LD   E,(HL)
+ 0DC4 23         INC  HL
+ 0DC5 56         LD   D,(HL)
+ 0DC6 F1         POP  AF
+ 0DC7 21FC06     LD   HL,+06FC
+ 0DCA E5         PUSH HL
+ 0DCB EB         EX   HL,DE
+ 0DCC E9         JP   (HL)
+ 0DCD 2AED5C     LD   HL,(5CED)
+ 0DD0 E9         JP   (HL)
+ 0DD1 ED5BED5C   LD   DE,(5CED)
+ 0DD5 3AEF5C     LD   A,(5CEF)
+ 0DD8 4F         LD   C,A
+ 0DD9 C31A17     JP   171A
+ 0DDC ED4BED5C   LD   BC,(5CED)
+ 0DE0 C3A512     JP   12A5
+ 0DE3 0D         DEC  C
+ 0DE4 0E20       LD   C,+20
+ 0DE6 0E35       LD   C,+35
+ 0DE8 0B         DEC  BC
+ 0DE9 97         SUB  A
+ 0DEA 0B         DEC  BC
+ 0DEB 300E       JR   NC,0DFB
+ 0DED 35         DEC  (HL)
+ 0DEE 0E91       LD   C,+91
+ 0DF0 21AE22     LD   HL,+22AE
+ 0DF3 BB         CP   E
+ 0DF4 229620     LD   (2096),HL
+ 0DF7 1F         RRA
+ 0DF8 0ECD       LD   C,+CD
+ 0DFA 0D         DEC  C
+ 0DFB 9C         SBC  A,H
+ 0DFC 0E20       LD   C,+20
+ 0DFE 10F1       DJNZ 0DF1
+ 0E00 0E3E       LD   C,+3E
+ 0E02 0F         RRCA
+ 0E03 6A         LD   L,D
+ 0E04 0E4B       LD   C,+4B
+ 0E06 10D1       DJNZ 0DD9,CL_SET
+ 0E08 0D         DEC  C
+ 0E09 DC0D62     CALL C,620D
+ 0E0C 11FBFD     LD   DE,+FDFB
+ 0E0F CB01       RLC  C
+ 0E11 AE         XOR  (HL)
+ 0E12 76         HALT
+ 0E13 D7         RST  0010,PRINT_A_1
+ 0E14 BF         CP   A
+ 0E15 02         LD   (BC),A
+ 0E16 FDCB016E   BIT  5,(FLAGS)
+ 0E1A 28F6       JR   Z,0E12
+ 0E1C 3A085C     LD   A,(LASTK)
+ 0E1F C9         RET
+ 0E20 F5         PUSH AF
+ 0E21 3EFE       LD   A,+FE
+ 0E23 218C5C     LD   HL,SCRCT
+ 0E26 36FF       LD   (HL),+FF
+ 0E28 D7         RST  0010,PRINT_A_1
+ 0E29 0116F1     LD   BC,+F116
+ 0E2C D7         RST  0010,PRINT_A_1
+ 0E2D 1000       DJNZ 0E2F
+ 0E2F C9         RET
+ 0E30 F5         PUSH AF
+ 0E31 3E03       LD   A,+03
+ 0E33 18EE       JR   0E23
+ 0E35 AF         XOR  A
+ 0E36 DBFE       IN   A,(+FE)
+ 0E38 E61F       AND  +1F
+ 0E3A D61F       SUB  +1F
+ 0E3C C9         RET
+ 0E3D C5         PUSH BC
+ 0E3E 060B       LD   B,+0B
+ 0E40 7E         LD   A,(HL)
+ 0E41 CD530E     CALL 0E53
+ 0E44 23         INC  HL
+ 0E45 10F9       DJNZ 0E40
+ 0E47 3E0D       LD   A,+0D
+ 0E49 CD530E     CALL 0E53
+ 0E4C E5         PUSH HL
+ 0E4D D7         RST  0010,PRINT_A_1
+ 0E4E 4D         LD   C,L
+ 0E4F 0D         DEC  C
+ 0E50 E1         POP  HL
+ 0E51 C1         POP  BC
+ 0E52 C9         RET
+ 0E53 E5         PUSH HL
+ 0E54 DDE5       PUSH IX
+ 0E56 E67F       AND  +7F
+ 0E58 D7         RST  0010,PRINT_A_1
+ 0E59 1000       DJNZ 0E5B
+ 0E5B DDE1       POP  IX
+ 0E5D E1         POP  HL
+ 0E5E C9         RET
+ 0E5F 08         EX   AF,AF'
+ 0E60 00         NOP
+ 0E61 08         EX   AF,AF'
+ 0E62 00         NOP
+ 0E63 C4190F     CALL NZ,0F19
+ 0E66 F5         PUSH AF
+ 0E67 0B         DEC  BC
+ 0E68 320101     LD   (0101),A
+ 0E6B 3201CD     LD   (CD01),A
+ 0E6E 83         ADD  A,E
+ 0E6F 0A         LD   A,(BC)
+ 0E70 215F0E     LD   HL,+0E5F
+ 0E73 013201     LD   BC,+0132
+ 0E76 CD920A     CALL 0A92
+ 0E79 D5         PUSH DE
+ 0E7A D5         PUSH DE
+ 0E7B DDE1       POP  IX
+ 0E7D 3AD65C     LD   A,(5CD6)
+ 0E80 DD770C     LD   (IX+0C),A
+ 0E83 210D00     LD   HL,+000D
+ 0E86 19         ADD  HL,DE
+ 0E87 E5         PUSH HL
+ 0E88 010B00     LD   BC,+000B
+ 0E8B 3E20       LD   A,+20
+ 0E8D CDF101     CALL 01F1
+ 0E90 D1         POP  DE
+ 0E91 2ADC5C     LD   HL,(5CDC)
+ 0E94 ED4BDA5C   LD   BC,(5CDA)
+ 0E98 EDB0       LDIR
+ 0E9A D1         POP  DE
+ 0E9B C9         RET
+ 0E9C CD6A0E     CALL 0E6A
+ 0E9F CD040F     CALL 0F04
+ 0EA2 D5         PUSH DE
+ 0EA3 0E02       LD   C,+02
+ 0EA5 CD1A17     CALL 171A
+ 0EA8 D1         POP  DE
+ 0EA9 3C         INC  A
+ 0EAA C0         RET  NZ
+ 0EAB DDCB0BC6   SET  0,(IX+0B)
+ 0EAF 0E09       LD   C,+09
+ 0EB1 CDA015     CALL 15A0
+ 0EB4 3C         INC  A
+ 0EB5 C0         RET  NZ
+ 0EB6 E7         RST  0020,NEXT_CHAR
+ 0EB7 0F         RRCA
+ 0EB8 CD9C0E     CALL 0E9C
+ 0EBB DDCB04BE   RES  7,(IX+04)
+ 0EBF DDE5       PUSH IX
+ 0EC1 D1         POP  DE
+ 0EC2 C3D30A     JP   0AD3
+ 0EC5 DD2A515C   LD   IX,(CURCHL)
+ 0EC9 DDCB0B46   BIT  0,(IX+0B)
+ 0ECD 2802       JR   Z,0ED1
+ 0ECF E7         RST  0020,NEXT_CHAR
+ 0ED0 0D         DEC  C
+ 0ED1 DD5E30     LD   E,(IX+30)
+ 0ED4 DD5631     LD   D,(IX+31)
+ 0ED7 7B         LD   A,E
+ 0ED8 B2         OR   D
+ 0ED9 2816       JR   Z,0EF1
+ 0EDB 1B         DEC  DE
+ 0EDC DD7330     LD   (IX+30),E
+ 0EDF DD7231     LD   (IX+31),D
+ 0EE2 DDE5       PUSH IX
+ 0EE4 E1         POP  HL
+ 0EE5 013101     LD   BC,+0131
+ 0EE8 09         ADD  HL,BC
+ 0EE9 ED52       SBC  HL,DE
+ 0EEB 7E         LD   A,(HL)
+ 0EEC FE1A       CP   +1A
+ 0EEE C8         RET  Z
+ 0EEF 37         SCF
+ 0EF0 C9         RET
+ 0EF1 CD040F     CALL 0F04
+ 0EF4 0E07       LD   C,+07
+ 0EF6 CD1A17     CALL 171A
+ 0EF9 B7         OR   A
+ 0EFA C0         RET  NZ
+ 0EFB DD7730     LD   (IX+30),A
+ 0EFE DD363101   LD   (IX+31),+01
+ 0F02 18CD       JR   0ED1
+ 0F04 DDE5       PUSH IX
+ 0F06 D1         POP  DE
+ 0F07 D5         PUSH DE
+ 0F08 213200     LD   HL,+0032
+ 0F0B 19         ADD  HL,DE
+ 0F0C EB         EX   HL,DE
+ 0F0D 0E0D       LD   C,+0D
+ 0F0F CD1A17     CALL 171A
+ 0F12 D1         POP  DE
+ 0F13 210C00     LD   HL,+000C
+ 0F16 19         ADD  HL,DE
+ 0F17 EB         EX   HL,DE
+ 0F18 C9         RET
+ 0F19 DD2A515C   LD   IX,(CURCHL)
+ 0F1D DDCB0B46   BIT  0,(IX+0B)
+ 0F21 2002       JR   NZ,0F25
+ 0F23 E7         RST  0020,NEXT_CHAR
+ 0F24 0C         INC  C
+ 0F25 DD5E30     LD   E,(IX+30)
+ 0F28 DD5631     LD   D,(IX+31)
+ 0F2B DDE5       PUSH IX
+ 0F2D DD19       ADD  IX,DE
+ 0F2F DD7732     LD   (IX+32),A
+ 0F32 DDE1       POP  IX
+ 0F34 13         INC  DE
+ 0F35 DD7330     LD   (IX+30),E
+ 0F38 DD7231     LD   (IX+31),D
+ 0F3B CB42       BIT  0,D
+ 0F3D C8         RET  Z
+ 0F3E DD363100   LD   (IX+31),+00
+ 0F42 CD040F     CALL 0F04
+ 0F45 0E08       LD   C,+08
+ 0F47 CD1A17     CALL 171A
+ 0F4A B7         OR   A
+ 0F4B C8         RET  Z
+ 0F4C E7         RST  0020,NEXT_CHAR
+ 0F4D 0F         RRCA
+ 0F4E 110028     LD   DE,+2800
+ 0F51 CD700E     CALL 0E70
+ 0F54 CD9F0E     CALL 0E9F
+ 0F57 DDCB0B46   BIT  0,(IX+0B)
+ 0F5B 2002       JR   NZ,0F5F
+ 0F5D E7         RST  0020,NEXT_CHAR
+ 0F5E 0C         INC  C
+ 0F5F 113228     LD   DE,+2832
+ 0F62 21E65C     LD   HL,+5CE6
+ 0F65 010900     LD   BC,+0009
+ 0F68 DD7130     LD   (IX+30),C
+ 0F6B EDB0       LDIR
+ 0F6D 2AE95C     LD   HL,(5CE9)
+ 0F70 ED4BE75C   LD   BC,(5CE7)
+ 0F74 79         LD   A,C
+ 0F75 B0         OR   B
+ 0F76 281C       JR   Z,0F94
+ 0F78 DDCB3146   BIT  0,(IX+31)
+ 0F7C 280A       JR   Z,0F88
+ 0F7E E5         PUSH HL
+ 0F7F C5         PUSH BC
+ 0F80 CD3E0F     CALL 0F3E
+ 0F83 C1         POP  BC
+ 0F84 E1         POP  HL
+ 0F85 113228     LD   DE,+2832
+ 0F88 EDA0       LDI
+ 0F8A DD3430     INC  (IX+30)
+ 0F8D 20E5       JR   NZ,0F74
+ 0F8F DD3431     INC  (IX+31)
+ 0F92 18E0       JR   0F74
+ 0F94 CD3E0F     CALL 0F3E
+ 0F97 CD040F     CALL 0F04
+ 0F9A 0E03       LD   C,+03
+ 0F9C CD1A17     CALL 171A
+ 0F9F 3C         INC  A
+ 0FA0 C0         RET  NZ
+ 0FA1 E7         RST  0020,NEXT_CHAR
+ 0FA2 111100     LD   DE,+0011
+ 0FA5 28CD       JR   Z,0F74
+ 0FA7 70         LD   (HL),B
+ 0FA8 0E11       LD   C,+11
+ 0FAA 0C         INC  C
+ 0FAB 280E       JR   Z,0FBB
+ 0FAD 02         LD   (BC),A
+ 0FAE CD1A17     CALL 171A
+ 0FB1 3C         INC  A
+ 0FB2 2002       JR   NZ,0FB6
+ 0FB4 E7         RST  0020,NEXT_CHAR
+ 0FB5 11CD04     LD   DE,+04CD
+ 0FB8 0F         RRCA
+ 0FB9 0E07       LD   C,+07
+ 0FBB CD1A17     CALL 171A
+ 0FBE B7         OR   A
+ 0FBF 20F3       JR   NZ,0FB4
+ 0FC1 213228     LD   HL,+2832
+ 0FC4 11E65C     LD   DE,+5CE6
+ 0FC7 010900     LD   BC,+0009
+ 0FCA EDB0       LDIR
+ 0FCC C9         RET
+ 0FCD 013B28     LD   BC,+283B
+ 0FD0 C5         PUSH BC
+ 0FD1 E5         PUSH HL
+ 0FD2 01F700     LD   BC,+00F7
+ 0FD5 7B         LD   A,E
+ 0FD6 B2         OR   D
+ 0FD7 2844       JR   Z,101D
+ 0FD9 6B         LD   L,E
+ 0FDA 62         LD   H,D
+ 0FDB ED42       SBC  HL,BC
+ 0FDD 3804       JR   C,0FE3
+ 0FDF 5D         LD   E,L
+ 0FE0 54         LD   D,H
+ 0FE1 1805       JR   0FE8
+ 0FE3 4B         LD   C,E
+ 0FE4 42         LD   B,D
+ 0FE5 110000     LD   DE,+0000
+ 0FE8 EB         EX   HL,DE
+ 0FE9 D1         POP  DE
+ 0FEA E3         EX   (SP),HL
+ 0FEB FDCB7C7E   BIT  7,(IY+7C)
+ 0FEF 2004       JR   NZ,0FF5
+ 0FF1 EDB0       LDIR
+ 0FF3 180A       JR   0FFF
+ 0FF5 41         LD   B,C
+ 0FF6 1A         LD   A,(DE)
+ 0FF7 BE         CP   (HL)
+ 0FF8 C23609     JP   NZ,0936
+ 0FFB 13         INC  DE
+ 0FFC 23         INC  HL
+ 0FFD 10F7       DJNZ 0FF6
+ 0FFF EB         EX   HL,DE
+ 1000 D1         POP  DE
+ 1001 013228     LD   BC,+2832
+ 1004 C5         PUSH BC
+ 1005 E5         PUSH HL
+ 1006 7B         LD   A,E
+ 1007 B2         OR   D
+ 1008 2813       JR   Z,101D
+ 100A D5         PUSH DE
+ 100B CD040F     CALL 0F04
+ 100E 0E07       LD   C,+07
+ 1010 CD1A17     CALL 171A
+ 1013 B7         OR   A
+ 1014 C2200C     JP   NZ,0C20
+ 1017 D1         POP  DE
+ 1018 010001     LD   BC,+0100
+ 101B 18BC       JR   0FD9
+ 101D E1         POP  HL
+ 101E E1         POP  HL
+ 101F C9         RET
+ 1020 DDCB0B46   BIT  0,(IX+0B)
+ 1024 2825       JR   Z,104B
+ 1026 DDCB3146   BIT  0,(IX+31)
+ 102A 2019       JR   NZ,1045
+ 102C AF         XOR  A
+ 102D 47         LD   B,A
+ 102E DD9630     SUB  (IX+30)
+ 1031 2815       JR   Z,1048
+ 1033 4F         LD   C,A
+ 1034 DDE5       PUSH IX
+ 1036 E1         POP  HL
+ 1037 113200     LD   DE,+0032
+ 103A 19         ADD  HL,DE
+ 103B DD5E30     LD   E,(IX+30)
+ 103E 50         LD   D,B
+ 103F 19         ADD  HL,DE
+ 1040 3E1A       LD   A,+1A
+ 1042 CDF101     CALL 01F1
+ 1045 CD3E0F     CALL 0F3E
+ 1048 CD970F     CALL 0F97
+ 104B DD4E09     LD   C,(IX+09)
+ 104E DD460A     LD   B,(IX+0A)
+ 1051 C5         PUSH BC
+ 1052 DDE5       PUSH IX
+ 1054 E1         POP  HL
+ 1055 E5         PUSH HL
+ 1056 D7         RST  0010,PRINT_A_1
+ 1057 E8         RET  PE
+ 1058 19         ADD  HL,DE
+ 1059 E1         POP  HL
+ 105A ED5B4F5C   LD   DE,(CHANS)
+ 105E B7         OR   A
+ 105F ED52       SBC  HL,DE
+ 1061 23         INC  HL
+ 1062 C1         POP  BC
+ 1063 E5         PUSH HL
+ 1064 3E10       LD   A,+10
+ 1066 21165C     LD   HL,STRMS+6
+ 1069 225F5C     LD   (XPTR),HL
+ 106C 5E         LD   E,(HL)
+ 106D 23         INC  HL
+ 106E 56         LD   D,(HL)
+ 106F E1         POP  HL
+ 1070 E5         PUSH HL
+ 1071 B7         OR   A
+ 1072 ED52       SBC  HL,DE
+ 1074 2005       JR   NZ,107B
+ 1076 110000     LD   DE,+0000
+ 1079 1807       JR   1082
+ 107B 300B       JR   NC,1088
+ 107D EB         EX   HL,DE
+ 107E B7         OR   A
+ 107F ED42       SBC  HL,BC
+ 1081 EB         EX   HL,DE
+ 1082 2A5F5C     LD   HL,(XPTR)
+ 1085 73         LD   (HL),E
+ 1086 23         INC  HL
+ 1087 72         LD   (HL),D
+ 1088 2A5F5C     LD   HL,(XPTR)
+ 108B 23         INC  HL
+ 108C 23         INC  HL
+ 108D 3D         DEC  A
+ 108E 20D9       JR   NZ,1069
+ 1090 325F5C     LD   (XPTR),A
+ 1093 E1         POP  HL
+ 1094 C9         RET
+ 1095 DD210028   LD   IX,+2800
+ 1099 DD2A4F5C   LD   IX,(CHANS)
+ 109D 111400     LD   DE,+0014
+ 10A0 DD19       ADD  IX,DE
+ 10A2 DD7E00     LD   A,(IX+00)
+ 10A5 FE80       CP   +80
+ 10A7 2005       JR   NZ,10AE
+ 10A9 3EEE       LD   A,+EE
+ 10AB D3EF       OUT  (+EF),A
+ 10AD C9         RET
+ 10AE DD7E04     LD   A,(IX+04)
+ 10B1 FEC4       CP   +C4
+ 10B3 2005       JR   NZ,10BA
+ 10B5 CD4B10     CALL 104B
+ 10B8 18E8       JR   10A2
+ 10BA 87         ADD  A,A
+ 10BB 3005       JR   NC,10C2
+ 10BD CD4B10     CALL 104B
+ 10C0 18E0       JR   10A2
+ 10C2 DD5E09     LD   E,(IX+09)
+ 10C5 DD560A     LD   D,(IX+0A)
+ 10C8 DD19       ADD  IX,DE
+ 10CA 18D6       JR   10A2
+ 10CC 3F         CCF
+ 10CD 3F         CCF
+ 10CE 3F         CCF
+ 10CF 3F         CCF
+ 10D0 3F         CCF
+ 10D1 3F         CCF
+ 10D2 3F         CCF
+ 10D3 3F         CCF
+ 10D4 3F         CCF
+ 10D5 3F         CCF
+ 10D6 3F         CCF
+ 10D7 3AD85C     LD   A,(5CD8)
+ 10DA D7         RST  0010,PRINT_A_1
+ 10DB 0116CD     LD   BC,+CD16
+ 10DE A1         AND  C
+ 10DF 113D87     LD   DE,+873D
+ 10E2 87         ADD  A,A
+ 10E3 87         ADD  A,A
+ 10E4 87         ADD  A,A
+ 10E5 87         ADD  A,A
+ 10E6 5F         LD   E,A
+ 10E7 1600       LD   D,+00
+ 10E9 213328     LD   HL,+2833
+ 10EC 19         ADD  HL,DE
+ 10ED EB         EX   HL,DE
+ 10EE 210900     LD   HL,+0009
+ 10F1 19         ADD  HL,DE
+ 10F2 CB7E       BIT  7,(HL)
+ 10F4 EB         EX   HL,DE
+ 10F5 CC3D0E     CALL Z,0E3D
+ 10F8 CD040F     CALL 0F04
+ 10FB 0E05       LD   C,+05
+ 10FD CD1A17     CALL 171A
+ 1100 3C         INC  A
+ 1101 20DD       JR   NZ,10E0
+ 1103 3E0D       LD   A,+0D
+ 1105 CD530E     CALL 0E53
+ 1108 CD3F11     CALL 113F
+ 110B 110000     LD   DE,+0000
+ 110E 3E14       LD   A,+14
+ 1110 4E         LD   C,(HL)
+ 1111 23         INC  HL
+ 1112 0608       LD   B,+08
+ 1114 CB11       RL   C
+ 1116 3801       JR   C,1119
+ 1118 13         INC  DE
+ 1119 10F9       DJNZ 1114
+ 111B 3D         DEC  A
+ 111C 20F2       JR   NZ,1110
+ 111E EB         EX   HL,DE
+ 111F 29         ADD  HL,HL
+ 1120 4D         LD   C,L
+ 1121 44         LD   B,H
+ 1122 D7         RST  0010,PRINT_A_1
+ 1123 1B         DEC  DE
+ 1124 1A         LD   A,(DE)
+ 1125 213211     LD   HL,+1132
+ 1128 7E         LD   A,(HL)
+ 1129 CD530E     CALL 0E53
+ 112C 7E         LD   A,(HL)
+ 112D 87         ADD  A,A
+ 112E 23         INC  HL
+ 112F 30F7       JR   NC,1128
+ 1131 C9         RET
+ 1132 206B       JR   NZ,119F
+ 1134 62         LD   H,D
+ 1135 79         LD   A,C
+ 1136 74         LD   (HL),H
+ 1137 65         LD   H,L
+ 1138 73         LD   (HL),E
+ 1139 2066       JR   NZ,11A1
+ 113B 72         LD   (HL),D
+ 113C 65         LD   H,L
+ 113D 65         LD   H,L
+ 113E 8D         ADC  A,L
+ 113F 0E0C       LD   C,+0C
+ 1141 CD1A17     CALL 171A
+ 1144 2AD65C     LD   HL,(5CD6)
+ 1147 2D         DEC  L
+ 1148 BD         CP   L
+ 1149 F5         PUSH AF
+ 114A 2806       JR   Z,1152
+ 114C 5D         LD   E,L
+ 114D 0E01       LD   C,+01
+ 114F CD1A17     CALL 171A
+ 1152 0E0E       LD   C,+0E
+ 1154 CD1A17     CALL 171A
+ 1157 F1         POP  AF
+ 1158 C8         RET  Z
+ 1159 E5         PUSH HL
+ 115A 5F         LD   E,A
+ 115B 0E01       LD   C,+01
+ 115D CD1A17     CALL 171A
+ 1160 E1         POP  HL
+ 1161 C9         RET
+ 1162 CDA111     CALL 11A1
+ 1165 CD040F     CALL 0F04
+ 1168 0E06       LD   C,+06
+ 116A C31A17     JP   171A
+ 116D 3AD65C     LD   A,(5CD6)
+ 1170 3D         DEC  A
+ 1171 322B2A     LD   (2A2B),A
+ 1174 AF         XOR  A
+ 1175 322D2A     LD   (2A2D),A
+ 1178 213228     LD   HL,+2832
+ 117B 222F2A     LD   (2A2F),HL
+ 117E 36E5       LD   (HL),+E5
+ 1180 3E04       LD   A,+04
+ 1182 32352A     LD   (2A35),A
+ 1185 3AC65C     LD   A,(5CC6)
+ 1188 D3FE       OUT  (+FE),A
+ 118A 012A2A     LD   BC,+2A2A
+ 118D CDA512     CALL 12A5
+ 1190 F5         PUSH AF
+ 1191 CDE00B     CALL 0BE0
+ 1194 F1         POP  AF
+ 1195 D0         RET  NC
+ 1196 3A362A     LD   A,(2A36)
+ 1199 E610       AND  +10
+ 119B 2002       JR   NZ,119F
+ 119D E7         RST  0020,NEXT_CHAR
+ 119E 10E7       DJNZ 1187
+ 11A0 0E11       LD   C,+11
+ 11A2 00         NOP
+ 11A3 28CD       JR   Z,1172
+ 11A5 70         LD   (HL),B
+ 11A6 0ECD       LD   C,+CD
+ 11A8 04         INC  B
+ 11A9 0F         RRCA
+ 11AA 0E04       LD   C,+04
+ 11AC CD1A17     CALL 171A
+ 11AF 3C         INC  A
+ 11B0 C0         RET  NZ
+ 11B1 E7         RST  0020,NEXT_CHAR
+ 11B2 112100     LD   DE,+0021
+ 11B5 2801       JR   Z,11B8
+ 11B7 00         NOP
+ 11B8 04         INC  B
+ 11B9 CDF001     CALL 01F0
+ 11BC 3EE5       LD   A,+E5
+ 11BE 328829     LD   (2988),A
+ 11C1 21AE29     LD   HL,+29AE
+ 11C4 22AC29     LD   (29AC),HL
+ 11C7 21B229     LD   HL,+29B2
+ 11CA 22AE29     LD   (29AE),HL
+ 11CD 21EE29     LD   HL,+29EE
+ 11D0 22B029     LD   (29B0),HL
+ 11D3 32382A     LD   (2A38),A
+ 11D6 212A1F     LD   HL,+1F2A
+ 11D9 22332A     LD   (2A33),HL
+ 11DC 213228     LD   HL,+2832
+ 11DF 228D29     LD   (298D),HL
+ 11E2 CD1814     CALL 1418
+ 11E5 0E00       LD   C,+00
+ 11E7 C31A17     JP   171A
+ 11EA D387       OUT  (+87),A
+ 11EC E3         EX   (SP),HL
+ 11ED E3         EX   (SP),HL
+ 11EE E3         EX   (SP),HL
+ 11EF E3         EX   (SP),HL
+ 11F0 C9         RET
+ 11F1 DB87       IN   A,(+87)
+ 11F3 E3         EX   (SP),HL
+ 11F4 E3         EX   (SP),HL
+ 11F5 E3         EX   (SP),HL
+ 11F6 E3         EX   (SP),HL
+ 11F7 C9         RET
+ 11F8 217229     LD   HL,+2972
+ 11FB DB85       IN   A,(+85)
+ 11FD 17         RLA
+ 11FE 30FB       JR   NC,11FB
+ 1200 17         RLA
+ 1201 D8         RET  C
+ 1202 79         LD   A,C
+ 1203 CDEA11     CALL 11EA
+ 1206 4E         LD   C,(HL)
+ 1207 23         INC  HL
+ 1208 10F1       DJNZ 11FB
+ 120A C9         RET
+ 120B 327329     LD   (2973),A
+ 120E CD3C12     CALL 123C
+ 1211 BE         CP   (HL)
+ 1212 C8         RET  Z
+ 1213 010F03     LD   BC,+030F
+ 1216 CDF811     CALL 11F8
+ 1219 010801     LD   BC,+0108
+ 121C CDF811     CALL 11F8
+ 121F CD9412     CALL 1294
+ 1222 3A7A29     LD   A,(297A)
+ 1225 E620       AND  +20
+ 1227 28F0       JR   Z,1219,RAM_SET
+ 1229 CD3C12     CALL 123C
+ 122C 3A7B29     LD   A,(297B)
+ 122F 77         LD   (HL),A
+ 1230 DD7E02     LD   A,(IX+02)
+ 1233 0EDA       LD   C,+DA
+ 1235 0D         DEC  C
+ 1236 20FD       JR   NZ,1235
+ 1238 3D         DEC  A
+ 1239 20F8       JR   NZ,1233
+ 123B C9         RET
+ 123C 218129     LD   HL,+2981
+ 123F FDCB0146   BIT  0,(FLAGS)
+ 1243 C8         RET  Z
+ 1244 23         INC  HL
+ 1245 C9         RET
+ 1246 018700     LD   BC,+0087
+ 1249 DB85       IN   A,(+85)
+ 124B 07         RLCA
+ 124C 30FB       JR   NC,1249
+ 124E E640       AND  +40
+ 1250 2842       JR   Z,1294
+ 1252 EDA2       INI
+ 1254 E3         EX   (SP),HL
+ 1255 E3         EX   (SP),HL
+ 1256 DB85       IN   A,(+85)
+ 1258 07         RLCA
+ 1259 30FB       JR   NC,1256
+ 125B EDA2       INI
+ 125D E3         EX   (SP),HL
+ 125E E3         EX   (SP),HL
+ 125F 20F5       JR   NZ,1256
+ 1261 1822       JR   1285
+ 1263 FD7E0B     LD   A,(PPC)
+ 1266 1F         RRA
+ 1267 38DD       JR   C,1246
+ 1269 0600       LD   B,+00
+ 126B 0E87       LD   C,+87
+ 126D DB85       IN   A,(+85)
+ 126F 07         RLCA
+ 1270 30FB       JR   NC,126D
+ 1272 E640       AND  +40
+ 1274 281E       JR   Z,1294
+ 1276 EDA3       OUTI
+ 1278 E3         EX   (SP),HL
+ 1279 E3         EX   (SP),HL
+ 127A DB85       IN   A,(+85)
+ 127C 07         RLCA
+ 127D 30FB       JR   NC,127A
+ 127F EDA3       OUTI
+ 1281 E3         EX   (SP),HL
+ 1282 E3         EX   (SP),HL
+ 1283 20F5       JR   NZ,127A
+ 1285 3A7229     LD   A,(2972)
+ 1288 E603       AND  +03
+ 128A 3C         INC  A
+ 128B 87         ADD  A,A
+ 128C F619       OR   +19
+ 128E D307       OUT  (+07),A
+ 1290 E6FE       AND  +FE
+ 1292 D307       OUT  (+07),A
+ 1294 217A29     LD   HL,+297A
+ 1297 DB85       IN   A,(+85)
+ 1299 17         RLA
+ 129A 30FB       JR   NC,1297
+ 129C 17         RLA
+ 129D D0         RET  NC
+ 129E CDF111     CALL 11F1
+ 12A1 77         LD   (HL),A
+ 12A2 23         INC  HL
+ 12A3 18F2       JR   1297
+ 12A5 F3         DI
+ 12A6 ED738329   LD   (2983),SP
+ 12AA 31002C     LD   SP,+2C00
+ 12AD DDE5       PUSH IX
+ 12AF FDE5       PUSH IY
+ 12B1 C5         PUSH BC
+ 12B2 FDE1       POP  IY
+ 12B4 FD361002   LD   (EPPC+1),+02
+ 12B8 FD361104   LD   (VARS),+04
+ 12BC DB07       IN   A,(+07)
+ 12BE 2F         CPL
+ 12BF E601       AND  +01
+ 12C1 F5         PUSH AF
+ 12C2 FD7E01     LD   A,(FLAGS)
+ 12C5 FDBE0E     CP   (BORDCR)
+ 12C8 2808       JR   Z,12D2
+ 12CA FD770E     LD   (BORDCR),A
+ 12CD 47         LD   B,A
+ 12CE F1         POP  AF
+ 12CF AF         XOR  A
+ 12D0 F5         PUSH AF
+ 12D1 78         LD   A,B
+ 12D2 E601       AND  +01
+ 12D4 327229     LD   (2972),A
+ 12D7 3C         INC  A
+ 12D8 87         ADD  A,A
+ 12D9 F618       OR   +18
+ 12DB D307       OUT  (+07),A
+ 12DD FD6E09     LD   L,(NEWPPC+1)
+ 12E0 FD660A     LD   H,(NSPPC)
+ 12E3 E5         PUSH HL
+ 12E4 DDE1       POP  IX
+ 12E6 F1         POP  AF
+ 12E7 200E       JR   NZ,12F7
+ 12E9 DD7E03     LD   A,(IX+03)
+ 12EC B7         OR   A
+ 12ED 2808       JR   Z,12F7
+ 12EF 47         LD   B,A
+ 12F0 3E0A       LD   A,+0A
+ 12F2 CD3312     CALL 1233
+ 12F5 10F9       DJNZ 12F0
+ 12F7 0600       LD   B,+00
+ 12F9 FD7E04     LD   A,(ERRSP+1)
+ 12FC FE10       CP   +10
+ 12FE 3804       JR   C,1304
+ 1300 0604       LD   B,+04
+ 1302 D610       SUB  +10
+ 1304 21301F     LD   HL,+1F30
+ 1307 85         ADD  A,L
+ 1308 6F         LD   L,A
+ 1309 7E         LD   A,(HL)
+ 130A 327529     LD   (2975),A
+ 130D 3A7229     LD   A,(2972)
+ 1310 B0         OR   B
+ 1311 327229     LD   (2972),A
+ 1314 78         LD   A,B
+ 1315 0F         RRCA
+ 1316 0F         RRCA
+ 1317 327429     LD   (2974),A
+ 131A FD7E03     LD   A,(ERRSP)
+ 131D CD0B12     CALL 120B
+ 1320 21BB13     LD   HL,+13BB
+ 1323 117629     LD   DE,+2976
+ 1326 010400     LD   BC,+0004
+ 1329 EDB0       LDIR
+ 132B FD7E0B     LD   A,(PPC)
+ 132E B7         OR   A
+ 132F 2845       JR   Z,1376,MAIN_7
+ 1331 FE04       CP   +04
+ 1333 CA9413     JP   Z,1394
+ 1336 FD7E0B     LD   A,(PPC)
+ 1339 1F         RRA
+ 133A 014609     LD   BC,+0946
+ 133D 3802       JR   C,1341
+ 133F 0E45       LD   C,+45
+ 1341 CDF811     CALL 11F8
+ 1344 FD6E05     LD   L,(LISTSP)
+ 1347 FD6606     LD   H,(LISTSP+1)
+ 134A CD6312     CALL 1263
+ 134D 3A7A29     LD   A,(297A)
+ 1350 E6C0       AND  +C0
+ 1352 2822       JR   Z,1376,MAIN_7
+ 1354 FD3511     DEC  (VARS)
+ 1357 20DD       JR   NZ,1336
+ 1359 FD3510     DEC  (EPPC+1)
+ 135C 3A7B29     LD   A,(297B)
+ 135F 2818       JR   Z,1379
+ 1361 FD361104   LD   (VARS),+04
+ 1365 010702     LD   BC,+0207
+ 1368 CDF811     CALL 11F8
+ 136B CD1912     CALL 1219,RAM_SET
+ 136E FD7E03     LD   A,(ERRSP)
+ 1371 CD0B12     CALL 120B
+ 1374 18C0       JR   1336
+ 1376 AF         XOR  A
+ 1377 01C137     LD   BC,+37C1
+ 137A FD770C     LD   (PPC+1),A
+ 137D F5         PUSH AF
+ 137E 3A7229     LD   A,(2972)
+ 1381 E601       AND  +01
+ 1383 3C         INC  A
+ 1384 87         ADD  A,A
+ 1385 F610       OR   +10
+ 1387 D307       OUT  (+07),A
+ 1389 F1         POP  AF
+ 138A FDE1       POP  IY
+ 138C DDE1       POP  IX
+ 138E ED7B8329   LD   SP,(2983)
+ 1392 FB         EI
+ 1393 C9         RET
+ 1394 010702     LD   BC,+0207
+ 1397 CDF811     CALL 11F8
+ 139A CD1912     CALL 1219,RAM_SET
+ 139D FD360300   LD   (ERRSP),+00
+ 13A1 FD7E03     LD   A,(ERRSP)
+ 13A4 CD0B12     CALL 120B
+ 13A7 CDC313     CALL 13C3
+ 13AA 38CD       JR   C,1379
+ 13AC FD3403     INC  (ERRSP)
+ 13AF FD7E03     LD   A,(ERRSP)
+ 13B2 FE28       CP   +28
+ 13B4 38EB       JR   C,13A1
+ 13B6 FD3503     DEC  (ERRSP)
+ 13B9 18BB       JR   1376,MAIN_7
+ 13BB 01100E     LD   BC,+0E10
+ 13BE FF         RST  0038,MASK_INT
+ 13BF 011036     LD   BC,+3610
+ 13C2 E5         PUSH HL
+ 13C3 FD360402   LD   (ERRSP+1),+02
+ 13C7 213229     LD   HL,+2932
+ 13CA 0610       LD   B,+10
+ 13CC FD4E03     LD   C,(ERRSP)
+ 13CF FD5604     LD   D,(ERRSP+1)
+ 13D2 15         DEC  D
+ 13D3 1E01       LD   E,+01
+ 13D5 71         LD   (HL),C
+ 13D6 23         INC  HL
+ 13D7 72         LD   (HL),D
+ 13D8 23         INC  HL
+ 13D9 73         LD   (HL),E
+ 13DA 23         INC  HL
+ 13DB 1C         INC  E
+ 13DC 3601       LD   (HL),+01
+ 13DE 23         INC  HL
+ 13DF 10F4       DJNZ 13D5
+ 13E1 217229     LD   HL,+2972
+ 13E4 7E         LD   A,(HL)
+ 13E5 E603       AND  +03
+ 13E7 CB02       RLC  D
+ 13E9 CB02       RLC  D
+ 13EB B2         OR   D
+ 13EC 77         LD   (HL),A
+ 13ED 21BF13     LD   HL,+13BF
+ 13F0 117329     LD   DE,+2973
+ 13F3 010400     LD   BC,+0004
+ 13F6 EDB0       LDIR
+ 13F8 014D06     LD   BC,+064D
+ 13FB CDF811     CALL 11F8
+ 13FE 0640       LD   B,+40
+ 1400 213229     LD   HL,+2932
+ 1403 CD6B12     CALL 126B
+ 1406 3A7A29     LD   A,(297A)
+ 1409 E6C0       AND  +C0
+ 140B 2804       JR   Z,1411
+ 140D 3E10       LD   A,+10
+ 140F 37         SCF
+ 1410 C9         RET
+ 1411 FD3504     DEC  (ERRSP+1)
+ 1414 20B1       JR   NZ,13C7
+ 1416 B7         OR   A
+ 1417 C9         RET
+ 1418 3E00       LD   A,+00
+ 141A D307       OUT  (+07),A
+ 141C 3E10       LD   A,+10
+ 141E D307       OUT  (+07),A
+ 1420 010303     LD   BC,+0303
+ 1423 212A14     LD   HL,+142A
+ 1426 CDFB11     CALL 11FB
+ 1429 C9         RET
+ 142A 6F         LD   L,A
+ 142B FF         RST  0038,MASK_INT
+ 142C FF         RST  0038,MASK_INT
+ 142D FF         RST  0038,MASK_INT
+ 142E FF         RST  0038,MASK_INT
+ 142F FF         RST  0038,MASK_INT
+ 1430 FF         RST  0038,MASK_INT
+ 1431 FF         RST  0038,MASK_INT
+ 1432 FF         RST  0038,MASK_INT
+ 1433 FF         RST  0038,MASK_INT
+ 1434 FF         RST  0038,MASK_INT
+ 1435 FF         RST  0038,MASK_INT
+ 1436 FF         RST  0038,MASK_INT
+ 1437 FF         RST  0038,MASK_INT
+ 1438 FF         RST  0038,MASK_INT
+ 1439 FF         RST  0038,MASK_INT
+ 143A FF         RST  0038,MASK_INT
+ 143B FF         RST  0038,MASK_INT
+ 143C FF         RST  0038,MASK_INT
+ 143D FF         RST  0038,MASK_INT
+ 143E FF         RST  0038,MASK_INT
+ 143F FF         RST  0038,MASK_INT
+ 1440 213B5C     LD   HL,FLAGS
+ 1443 CB86       RES  0,(HL)
+ 1445 FE20       CP   +20
+ 1447 2002       JR   NZ,144B
+ 1449 CBC6       SET  0,(HL)
+ 144B FE7F       CP   +7F
+ 144D 3802       JR   C,1451
+ 144F 3E3F       LD   A,+3F
+ 1451 FE20       CP   +20
+ 1453 3817       JR   C,146C
+ 1455 F5         PUSH AF
+ 1456 FD3476     INC  (NMIADD)
+ 1459 3AB15C     LD   A,(NMIADD+1)
+ 145C FDBE76     CP   (NMIADD)
+ 145F 3007       JR   NC,1468
+ 1461 CD7014     CALL 1470
+ 1464 FD367601   LD   (NMIADD),+01
+ 1468 F1         POP  AF
+ 1469 C3970B     JP   0B97
+ 146C FE0D       CP   +0D
+ 146E 200E       JR   NZ,147E
+ 1470 FD367600   LD   (NMIADD),+00
+ 1474 3E0D       LD   A,+0D
+ 1476 CD970B     CALL 0B97
+ 1479 3E0A       LD   A,+0A
+ 147B C3970B     JP   0B97
+ 147E FE06       CP   +06
+ 1480 201F       JR   NZ,14A1
+ 1482 ED4BB05C   LD   BC,(NMIADD)
+ 1486 1E00       LD   E,+00
+ 1488 1C         INC  E
+ 1489 0C         INC  C
+ 148A 79         LD   A,C
+ 148B B8         CP   B
+ 148C 2808       JR   Z,1496
+ 148E D608       SUB  +08
+ 1490 2804       JR   Z,1496
+ 1492 30FA       JR   NC,148E
+ 1494 18F2       JR   1488
+ 1496 D5         PUSH DE
+ 1497 3E20       LD   A,+20
+ 1499 CD790B     CALL 0B79
+ 149C D1         POP  DE
+ 149D 1D         DEC  E
+ 149E C8         RET  Z
+ 149F 18F5       JR   1496
+ 14A1 FE16       CP   +16
+ 14A3 280C       JR   Z,14B1
+ 14A5 FE17       CP   +17
+ 14A7 2808       JR   Z,14B1
+ 14A9 FE10       CP   +10
+ 14AB D8         RET  C
+ 14AC 11CC14     LD   DE,+14CC
+ 14AF 1803       JR   14B4
+ 14B1 11C414     LD   DE,+14C4
+ 14B4 FD77D4     LD   (TVDATA),A
+ 14B7 2A515C     LD   HL,(CURCHL)
+ 14BA D5         PUSH DE
+ 14BB 110500     LD   DE,+0005
+ 14BE 19         ADD  HL,DE
+ 14BF D1         POP  DE
+ 14C0 73         LD   (HL),E
+ 14C1 23         INC  HL
+ 14C2 72         LD   (HL),D
+ 14C3 C9         RET
+ 14C4 11CC14     LD   DE,+14CC
+ 14C7 FD77D5     LD   (TVDATA+1),A
+ 14CA 18EB       JR   14B7
+ 14CC 11790B     LD   DE,+0B79
+ 14CF CDB714     CALL 14B7
+ 14D2 57         LD   D,A
+ 14D3 FD7ED4     LD   A,(TVDATA)
+ 14D6 FE16       CP   +16
+ 14D8 2808       JR   Z,14E2
+ 14DA FE17       CP   +17
+ 14DC 3F         CCF
+ 14DD C0         RET  NZ
+ 14DE FD7ED5     LD   A,(TVDATA+1)
+ 14E1 57         LD   D,A
+ 14E2 3AB15C     LD   A,(NMIADD+1)
+ 14E5 BA         CP   D
+ 14E6 2802       JR   Z,14EA
+ 14E8 3006       JR   NC,14F0
+ 14EA 47         LD   B,A
+ 14EB 7A         LD   A,D
+ 14EC 90         SUB  B
+ 14ED 57         LD   D,A
+ 14EE 18F2       JR   14E2
+ 14F0 7A         LD   A,D
+ 14F1 B7         OR   A
+ 14F2 CA7014     JP   Z,1470
+ 14F5 3AB05C     LD   A,(NMIADD)
+ 14F8 BA         CP   D
+ 14F9 C8         RET  Z
+ 14FA D5         PUSH DE
+ 14FB 3E20       LD   A,+20
+ 14FD CD790B     CALL 0B79
+ 1500 D1         POP  DE
+ 1501 18F2       JR   14F5
+ 1503 FF         RST  0038,MASK_INT
+ 1504 FF         RST  0038,MASK_INT
+ 1505 FF         RST  0038,MASK_INT
+ 1506 FF         RST  0038,MASK_INT
+ 1507 FF         RST  0038,MASK_INT
+ 1508 FF         RST  0038,MASK_INT
+ 1509 FF         RST  0038,MASK_INT
+ 150A FF         RST  0038,MASK_INT
+ 150B FF         RST  0038,MASK_INT
+ 150C FF         RST  0038,MASK_INT
+ 150D FF         RST  0038,MASK_INT
+ 150E FF         RST  0038,MASK_INT
+ 150F FF         RST  0038,MASK_INT
+ 1510 210050     LD   HL,+5000
+ 1513 22B05C     LD   (NMIADD),HL
+ 1516 C3B311     JP   11B3
+ 1519 FF         RST  0038,MASK_INT
+ 151A FF         RST  0038,MASK_INT
+ 151B FF         RST  0038,MASK_INT
+ 151C FF         RST  0038,MASK_INT
+ 151D FF         RST  0038,MASK_INT
+ 151E FF         RST  0038,MASK_INT
+ 151F FF         RST  0038,MASK_INT
+ 1520 210400     LD   HL,+0004
+ 1523 19         ADD  HL,DE
+ 1524 3642       LD   (HL),+42
+ 1526 210500     LD   HL,+0005
+ 1529 C9         RET
+ 152A FF         RST  0038,MASK_INT
+ 152B FF         RST  0038,MASK_INT
+ 152C FF         RST  0038,MASK_INT
+ 152D FF         RST  0038,MASK_INT
+ 152E FF         RST  0038,MASK_INT
+ 152F FF         RST  0038,MASK_INT
+ 1530 DD7E04     LD   A,(IX+04)
+ 1533 DDCB04FE   SET  7,(IX+04)
+ 1537 C9         RET
+ 1538 FF         RST  0038,MASK_INT
+ 1539 FF         RST  0038,MASK_INT
+ 153A FF         RST  0038,MASK_INT
+ 153B FF         RST  0038,MASK_INT
+ 153C FF         RST  0038,MASK_INT
+ 153D FF         RST  0038,MASK_INT
+ 153E FF         RST  0038,MASK_INT
+ 153F FF         RST  0038,MASK_INT
+ 1540 CDA70A     CALL 0AA7
+ 1543 D5         PUSH DE
+ 1544 DDE1       POP  IX
+ 1546 DDCB04FE   SET  7,(IX+04)
+ 154A C9         RET
+ 154B FF         RST  0038,MASK_INT
+ 154C FF         RST  0038,MASK_INT
+ 154D FF         RST  0038,MASK_INT
+ 154E FF         RST  0038,MASK_INT
+ 154F FF         RST  0038,MASK_INT
+ 1550 FF         RST  0038,MASK_INT
+ 1551 FF         RST  0038,MASK_INT
+ 1552 FF         RST  0038,MASK_INT
+ 1553 FF         RST  0038,MASK_INT
+ 1554 FF         RST  0038,MASK_INT
+ 1555 FF         RST  0038,MASK_INT
+ 1556 FF         RST  0038,MASK_INT
+ 1557 FF         RST  0038,MASK_INT
+ 1558 FF         RST  0038,MASK_INT
+ 1559 FF         RST  0038,MASK_INT
+ 155A FF         RST  0038,MASK_INT
+ 155B FF         RST  0038,MASK_INT
+ 155C FF         RST  0038,MASK_INT
+ 155D FF         RST  0038,MASK_INT
+ 155E FF         RST  0038,MASK_INT
+ 155F FF         RST  0038,MASK_INT
+ 1560 0D         DEC  C
+ 1561 0E20       LD   C,+20
+ 1563 0E35       LD   C,+35
+ 1565 0B         DEC  BC
+ 1566 97         SUB  A
+ 1567 0B         DEC  BC
+ 1568 300E       JR   NC,1578
+ 156A 35         DEC  (HL)
+ 156B 0E91       LD   C,+91
+ 156D 21AE22     LD   HL,+22AE
+ 1570 BB         CP   E
+ 1571 229620     LD   (2096),HL
+ 1574 1F         RRA
+ 1575 0ECD       LD   C,+CD
+ 1577 0D         DEC  C
+ 1578 9C         SBC  A,H
+ 1579 0E20       LD   C,+20
+ 157B 10F1       DJNZ 156E
+ 157D 0E3E       LD   C,+3E
+ 157F 0F         RRCA
+ 1580 6A         LD   L,D
+ 1581 0E4B       LD   C,+4B
+ 1583 10D1       DJNZ 1556
+ 1585 0D         DEC  C
+ 1586 DC0D62     CALL C,620D
+ 1589 114015     LD   DE,+1540
+ 158C FF         RST  0038,MASK_INT
+ 158D FF         RST  0038,MASK_INT
+ 158E FF         RST  0038,MASK_INT
+ 158F FF         RST  0038,MASK_INT
+ 1590 FF         RST  0038,MASK_INT
+ 1591 FF         RST  0038,MASK_INT
+ 1592 FF         RST  0038,MASK_INT
+ 1593 FF         RST  0038,MASK_INT
+ 1594 FF         RST  0038,MASK_INT
+ 1595 FF         RST  0038,MASK_INT
+ 1596 FF         RST  0038,MASK_INT
+ 1597 FF         RST  0038,MASK_INT
+ 1598 FF         RST  0038,MASK_INT
+ 1599 FF         RST  0038,MASK_INT
+ 159A FF         RST  0038,MASK_INT
+ 159B FF         RST  0038,MASK_INT
+ 159C FF         RST  0038,MASK_INT
+ 159D FF         RST  0038,MASK_INT
+ 159E FF         RST  0038,MASK_INT
+ 159F FF         RST  0038,MASK_INT
+ 15A0 CD1A17     CALL 171A
+ 15A3 DDE5       PUSH IX
+ 15A5 E1         POP  HL
+ 15A6 ED5B4F5C   LD   DE,(CHANS)
+ 15AA B7         OR   A
+ 15AB ED52       SBC  HL,DE
+ 15AD 23         INC  HL
+ 15AE C9         RET
+ 15AF FF         RST  0038,MASK_INT
+ 15B0 FF         RST  0038,MASK_INT
+ 15B1 FF         RST  0038,MASK_INT
+ 15B2 FF         RST  0038,MASK_INT
+ 15B3 FF         RST  0038,MASK_INT
+ 15B4 FF         RST  0038,MASK_INT
+ 15B5 FF         RST  0038,MASK_INT
+ 15B6 FF         RST  0038,MASK_INT
+ 15B7 FF         RST  0038,MASK_INT
+ 15B8 FF         RST  0038,MASK_INT
+ 15B9 FF         RST  0038,MASK_INT
+ 15BA FF         RST  0038,MASK_INT
+ 15BB FF         RST  0038,MASK_INT
+ 15BC FF         RST  0038,MASK_INT
+ 15BD FF         RST  0038,MASK_INT
+ 15BE FF         RST  0038,MASK_INT
+ 15BF FF         RST  0038,MASK_INT
+ 15C0 FF         RST  0038,MASK_INT
+ 15C1 FF         RST  0038,MASK_INT
+ 15C2 FF         RST  0038,MASK_INT
+ 15C3 FF         RST  0038,MASK_INT
+ 15C4 FF         RST  0038,MASK_INT
+ 15C5 FF         RST  0038,MASK_INT
+ 15C6 FF         RST  0038,MASK_INT
+ 15C7 FF         RST  0038,MASK_INT
+ 15C8 FF         RST  0038,MASK_INT
+ 15C9 FF         RST  0038,MASK_INT
+ 15CA FF         RST  0038,MASK_INT
+ 15CB FF         RST  0038,MASK_INT
+ 15CC FF         RST  0038,MASK_INT
+ 15CD FF         RST  0038,MASK_INT
+ 15CE FF         RST  0038,MASK_INT
+ 15CF FF         RST  0038,MASK_INT
+ 15D0 FF         RST  0038,MASK_INT
+ 15D1 FF         RST  0038,MASK_INT
+ 15D2 FF         RST  0038,MASK_INT
+ 15D3 FF         RST  0038,MASK_INT
+ 15D4 FF         RST  0038,MASK_INT
+ 15D5 FF         RST  0038,MASK_INT
+ 15D6 FF         RST  0038,MASK_INT
+ 15D7 FF         RST  0038,MASK_INT
+ 15D8 FF         RST  0038,MASK_INT
+ 15D9 FF         RST  0038,MASK_INT
+ 15DA FF         RST  0038,MASK_INT
+ 15DB FF         RST  0038,MASK_INT
+ 15DC FF         RST  0038,MASK_INT
+ 15DD FF         RST  0038,MASK_INT
+ 15DE FF         RST  0038,MASK_INT
+ 15DF FF         RST  0038,MASK_INT
+ 15E0 FF         RST  0038,MASK_INT
+ 15E1 FF         RST  0038,MASK_INT
+ 15E2 FF         RST  0038,MASK_INT
+ 15E3 FF         RST  0038,MASK_INT
+ 15E4 FF         RST  0038,MASK_INT
+ 15E5 FF         RST  0038,MASK_INT
+ 15E6 FF         RST  0038,MASK_INT
+ 15E7 FF         RST  0038,MASK_INT
+ 15E8 FF         RST  0038,MASK_INT
+ 15E9 FF         RST  0038,MASK_INT
+ 15EA FF         RST  0038,MASK_INT
+ 15EB FF         RST  0038,MASK_INT
+ 15EC FF         RST  0038,MASK_INT
+ 15ED FF         RST  0038,MASK_INT
+ 15EE FF         RST  0038,MASK_INT
+ 15EF FF         RST  0038,MASK_INT
+ 15F0 FF         RST  0038,MASK_INT
+ 15F1 FF         RST  0038,MASK_INT
+ 15F2 FF         RST  0038,MASK_INT
+ 15F3 FF         RST  0038,MASK_INT
+ 15F4 FF         RST  0038,MASK_INT
+ 15F5 FF         RST  0038,MASK_INT
+ 15F6 FF         RST  0038,MASK_INT
+ 15F7 FF         RST  0038,MASK_INT
+ 15F8 FF         RST  0038,MASK_INT
+ 15F9 FF         RST  0038,MASK_INT
+ 15FA FF         RST  0038,MASK_INT
+ 15FB FF         RST  0038,MASK_INT
+ 15FC FF         RST  0038,MASK_INT
+ 15FD FF         RST  0038,MASK_INT
+ 15FE FF         RST  0038,MASK_INT
+ 15FF FF         RST  0038,MASK_INT
+ 1600 FF         RST  0038,MASK_INT
+ 1601 FF         RST  0038,MASK_INT
+ 1602 FF         RST  0038,MASK_INT
+ 1603 FF         RST  0038,MASK_INT
+ 1604 FF         RST  0038,MASK_INT
+ 1605 FF         RST  0038,MASK_INT
+ 1606 FF         RST  0038,MASK_INT
+ 1607 FF         RST  0038,MASK_INT
+ 1608 FF         RST  0038,MASK_INT
+ 1609 FF         RST  0038,MASK_INT
+ 160A FF         RST  0038,MASK_INT
+ 160B FF         RST  0038,MASK_INT
+ 160C FF         RST  0038,MASK_INT
+ 160D FF         RST  0038,MASK_INT
+ 160E FF         RST  0038,MASK_INT
+ 160F FF         RST  0038,MASK_INT
+ 1610 FF         RST  0038,MASK_INT
+ 1611 FF         RST  0038,MASK_INT
+ 1612 FF         RST  0038,MASK_INT
+ 1613 FF         RST  0038,MASK_INT
+ 1614 FF         RST  0038,MASK_INT
+ 1615 FF         RST  0038,MASK_INT
+ 1616 FF         RST  0038,MASK_INT
+ 1617 FF         RST  0038,MASK_INT
+ 1618 FF         RST  0038,MASK_INT
+ 1619 FF         RST  0038,MASK_INT
+ 161A FF         RST  0038,MASK_INT
+ 161B FF         RST  0038,MASK_INT
+ 161C FF         RST  0038,MASK_INT
+ 161D FF         RST  0038,MASK_INT
+ 161E FF         RST  0038,MASK_INT
+ 161F FF         RST  0038,MASK_INT
+ 1620 FF         RST  0038,MASK_INT
+ 1621 FF         RST  0038,MASK_INT
+ 1622 FF         RST  0038,MASK_INT
+ 1623 FF         RST  0038,MASK_INT
+ 1624 FF         RST  0038,MASK_INT
+ 1625 FF         RST  0038,MASK_INT
+ 1626 FF         RST  0038,MASK_INT
+ 1627 FF         RST  0038,MASK_INT
+ 1628 FF         RST  0038,MASK_INT
+ 1629 FF         RST  0038,MASK_INT
+ 162A FF         RST  0038,MASK_INT
+ 162B FF         RST  0038,MASK_INT
+ 162C FF         RST  0038,MASK_INT
+ 162D FF         RST  0038,MASK_INT
+ 162E FF         RST  0038,MASK_INT
+ 162F FF         RST  0038,MASK_INT
+ 1630 FF         RST  0038,MASK_INT
+ 1631 FF         RST  0038,MASK_INT
+ 1632 FF         RST  0038,MASK_INT
+ 1633 FF         RST  0038,MASK_INT
+ 1634 FF         RST  0038,MASK_INT
+ 1635 FF         RST  0038,MASK_INT
+ 1636 FF         RST  0038,MASK_INT
+ 1637 FF         RST  0038,MASK_INT
+ 1638 FF         RST  0038,MASK_INT
+ 1639 FF         RST  0038,MASK_INT
+ 163A FF         RST  0038,MASK_INT
+ 163B FF         RST  0038,MASK_INT
+ 163C FF         RST  0038,MASK_INT
+ 163D FF         RST  0038,MASK_INT
+ 163E FF         RST  0038,MASK_INT
+ 163F FF         RST  0038,MASK_INT
+ 1640 FF         RST  0038,MASK_INT
+ 1641 FF         RST  0038,MASK_INT
+ 1642 FF         RST  0038,MASK_INT
+ 1643 FF         RST  0038,MASK_INT
+ 1644 FF         RST  0038,MASK_INT
+ 1645 FF         RST  0038,MASK_INT
+ 1646 FF         RST  0038,MASK_INT
+ 1647 FF         RST  0038,MASK_INT
+ 1648 FF         RST  0038,MASK_INT
+ 1649 FF         RST  0038,MASK_INT
+ 164A FF         RST  0038,MASK_INT
+ 164B FF         RST  0038,MASK_INT
+ 164C FF         RST  0038,MASK_INT
+ 164D FF         RST  0038,MASK_INT
+ 164E FF         RST  0038,MASK_INT
+ 164F FF         RST  0038,MASK_INT
+ 1650 FF         RST  0038,MASK_INT
+ 1651 FF         RST  0038,MASK_INT
+ 1652 FF         RST  0038,MASK_INT
+ 1653 FF         RST  0038,MASK_INT
+ 1654 FF         RST  0038,MASK_INT
+ 1655 FF         RST  0038,MASK_INT
+ 1656 FF         RST  0038,MASK_INT
+ 1657 FF         RST  0038,MASK_INT
+ 1658 FF         RST  0038,MASK_INT
+ 1659 FF         RST  0038,MASK_INT
+ 165A FF         RST  0038,MASK_INT
+ 165B FF         RST  0038,MASK_INT
+ 165C FF         RST  0038,MASK_INT
+ 165D FF         RST  0038,MASK_INT
+ 165E FF         RST  0038,MASK_INT
+ 165F FF         RST  0038,MASK_INT
+ 1660 FF         RST  0038,MASK_INT
+ 1661 FF         RST  0038,MASK_INT
+ 1662 FF         RST  0038,MASK_INT
+ 1663 FF         RST  0038,MASK_INT
+ 1664 FF         RST  0038,MASK_INT
+ 1665 FF         RST  0038,MASK_INT
+ 1666 FF         RST  0038,MASK_INT
+ 1667 FF         RST  0038,MASK_INT
+ 1668 FF         RST  0038,MASK_INT
+ 1669 FF         RST  0038,MASK_INT
+ 166A FF         RST  0038,MASK_INT
+ 166B FF         RST  0038,MASK_INT
+ 166C FF         RST  0038,MASK_INT
+ 166D FF         RST  0038,MASK_INT
+ 166E FF         RST  0038,MASK_INT
+ 166F FF         RST  0038,MASK_INT
+ 1670 FF         RST  0038,MASK_INT
+ 1671 FF         RST  0038,MASK_INT
+ 1672 FF         RST  0038,MASK_INT
+ 1673 FF         RST  0038,MASK_INT
+ 1674 FF         RST  0038,MASK_INT
+ 1675 FF         RST  0038,MASK_INT
+ 1676 FF         RST  0038,MASK_INT
+ 1677 FF         RST  0038,MASK_INT
+ 1678 FF         RST  0038,MASK_INT
+ 1679 FF         RST  0038,MASK_INT
+ 167A FF         RST  0038,MASK_INT
+ 167B FF         RST  0038,MASK_INT
+ 167C FF         RST  0038,MASK_INT
+ 167D FF         RST  0038,MASK_INT
+ 167E FF         RST  0038,MASK_INT
+ 167F FF         RST  0038,MASK_INT
+ 1680 FF         RST  0038,MASK_INT
+ 1681 FF         RST  0038,MASK_INT
+ 1682 FF         RST  0038,MASK_INT
+ 1683 FF         RST  0038,MASK_INT
+ 1684 FF         RST  0038,MASK_INT
+ 1685 FF         RST  0038,MASK_INT
+ 1686 FF         RST  0038,MASK_INT
+ 1687 FF         RST  0038,MASK_INT
+ 1688 FF         RST  0038,MASK_INT
+ 1689 FF         RST  0038,MASK_INT
+ 168A FF         RST  0038,MASK_INT
+ 168B FF         RST  0038,MASK_INT
+ 168C FF         RST  0038,MASK_INT
+ 168D FF         RST  0038,MASK_INT
+ 168E FF         RST  0038,MASK_INT
+ 168F FF         RST  0038,MASK_INT
+ 1690 FF         RST  0038,MASK_INT
+ 1691 FF         RST  0038,MASK_INT
+ 1692 FF         RST  0038,MASK_INT
+ 1693 FF         RST  0038,MASK_INT
+ 1694 FF         RST  0038,MASK_INT
+ 1695 FF         RST  0038,MASK_INT
+ 1696 FF         RST  0038,MASK_INT
+ 1697 FF         RST  0038,MASK_INT
+ 1698 FF         RST  0038,MASK_INT
+ 1699 FF         RST  0038,MASK_INT
+ 169A FF         RST  0038,MASK_INT
+ 169B FF         RST  0038,MASK_INT
+ 169C FF         RST  0038,MASK_INT
+ 169D FF         RST  0038,MASK_INT
+ 169E FF         RST  0038,MASK_INT
+ 169F FF         RST  0038,MASK_INT
+ 16A0 FF         RST  0038,MASK_INT
+ 16A1 FF         RST  0038,MASK_INT
+ 16A2 FF         RST  0038,MASK_INT
+ 16A3 FF         RST  0038,MASK_INT
+ 16A4 FF         RST  0038,MASK_INT
+ 16A5 FF         RST  0038,MASK_INT
+ 16A6 FF         RST  0038,MASK_INT
+ 16A7 FF         RST  0038,MASK_INT
+ 16A8 FF         RST  0038,MASK_INT
+ 16A9 FF         RST  0038,MASK_INT
+ 16AA FF         RST  0038,MASK_INT
+ 16AB FF         RST  0038,MASK_INT
+ 16AC FF         RST  0038,MASK_INT
+ 16AD FF         RST  0038,MASK_INT
+ 16AE FF         RST  0038,MASK_INT
+ 16AF FF         RST  0038,MASK_INT
+ 16B0 FF         RST  0038,MASK_INT
+ 16B1 FF         RST  0038,MASK_INT
+ 16B2 FF         RST  0038,MASK_INT
+ 16B3 FF         RST  0038,MASK_INT
+ 16B4 FF         RST  0038,MASK_INT
+ 16B5 FF         RST  0038,MASK_INT
+ 16B6 FF         RST  0038,MASK_INT
+ 16B7 FF         RST  0038,MASK_INT
+ 16B8 FF         RST  0038,MASK_INT
+ 16B9 FF         RST  0038,MASK_INT
+ 16BA FF         RST  0038,MASK_INT
+ 16BB FF         RST  0038,MASK_INT
+ 16BC FF         RST  0038,MASK_INT
+ 16BD FF         RST  0038,MASK_INT
+ 16BE FF         RST  0038,MASK_INT
+ 16BF FF         RST  0038,MASK_INT
+ 16C0 FF         RST  0038,MASK_INT
+ 16C1 FF         RST  0038,MASK_INT
+ 16C2 FF         RST  0038,MASK_INT
+ 16C3 FF         RST  0038,MASK_INT
+ 16C4 FF         RST  0038,MASK_INT
+ 16C5 FF         RST  0038,MASK_INT
+ 16C6 FF         RST  0038,MASK_INT
+ 16C7 FF         RST  0038,MASK_INT
+ 16C8 FF         RST  0038,MASK_INT
+ 16C9 FF         RST  0038,MASK_INT
+ 16CA FF         RST  0038,MASK_INT
+ 16CB FF         RST  0038,MASK_INT
+ 16CC FF         RST  0038,MASK_INT
+ 16CD FF         RST  0038,MASK_INT
+ 16CE FF         RST  0038,MASK_INT
+ 16CF FF         RST  0038,MASK_INT
+ 16D0 FF         RST  0038,MASK_INT
+ 16D1 FF         RST  0038,MASK_INT
+ 16D2 FF         RST  0038,MASK_INT
+ 16D3 FF         RST  0038,MASK_INT
+ 16D4 FF         RST  0038,MASK_INT
+ 16D5 FF         RST  0038,MASK_INT
+ 16D6 FF         RST  0038,MASK_INT
+ 16D7 FF         RST  0038,MASK_INT
+ 16D8 FF         RST  0038,MASK_INT
+ 16D9 FF         RST  0038,MASK_INT
+ 16DA FF         RST  0038,MASK_INT
+ 16DB FF         RST  0038,MASK_INT
+ 16DC FF         RST  0038,MASK_INT
+ 16DD FF         RST  0038,MASK_INT
+ 16DE FF         RST  0038,MASK_INT
+ 16DF FF         RST  0038,MASK_INT
+ 16E0 FF         RST  0038,MASK_INT
+ 16E1 FF         RST  0038,MASK_INT
+ 16E2 FF         RST  0038,MASK_INT
+ 16E3 FF         RST  0038,MASK_INT
+ 16E4 FF         RST  0038,MASK_INT
+ 16E5 FF         RST  0038,MASK_INT
+ 16E6 FF         RST  0038,MASK_INT
+ 16E7 FF         RST  0038,MASK_INT
+ 16E8 FF         RST  0038,MASK_INT
+ 16E9 FF         RST  0038,MASK_INT
+ 16EA FF         RST  0038,MASK_INT
+ 16EB FF         RST  0038,MASK_INT
+ 16EC FF         RST  0038,MASK_INT
+ 16ED FF         RST  0038,MASK_INT
+ 16EE FF         RST  0038,MASK_INT
+ 16EF FF         RST  0038,MASK_INT
+ 16F0 FF         RST  0038,MASK_INT
+ 16F1 FF         RST  0038,MASK_INT
+ 16F2 FF         RST  0038,MASK_INT
+ 16F3 FF         RST  0038,MASK_INT
+ 16F4 FF         RST  0038,MASK_INT
+ 16F5 FF         RST  0038,MASK_INT
+ 16F6 FF         RST  0038,MASK_INT
+ 16F7 FF         RST  0038,MASK_INT
+ 16F8 FF         RST  0038,MASK_INT
+ 16F9 FF         RST  0038,MASK_INT
+ 16FA FF         RST  0038,MASK_INT
+ 16FB FF         RST  0038,MASK_INT
+ 16FC FF         RST  0038,MASK_INT
+ 16FD FF         RST  0038,MASK_INT
+ 16FE FF         RST  0038,MASK_INT
+ 16FF FF         RST  0038,MASK_INT
+ 1700 FF         RST  0038,MASK_INT
+ 1701 FF         RST  0038,MASK_INT
+ 1702 FF         RST  0038,MASK_INT
+ 1703 FF         RST  0038,MASK_INT
+ 1704 FF         RST  0038,MASK_INT
+ 1705 FF         RST  0038,MASK_INT
+ 1706 FF         RST  0038,MASK_INT
+ 1707 FF         RST  0038,MASK_INT
+ 1708 23         INC  HL
+ 1709 CD9701     CALL 0197
+ 170C CB3F       SRL  A
+ 170E D603       SUB  +03
+ 1710 FDCB7C8E   RES  1,(IY+7C)
+ 1714 CD330D     CALL 0D33
+ 1717 C35905     JP   0559
+ 171A DDE5       PUSH IX
+ 171C D5         PUSH DE
+ 171D DDE1       POP  IX
+ 171F 210000     LD   HL,+0000
+ 1722 228629     LD   (2986),HL
+ 1725 7D         LD   A,L
+ 1726 32AB29     LD   (29AB),A
+ 1729 329B29     LD   (299B),A
+ 172C 7B         LD   A,E
+ 172D 329329     LD   (2993),A
+ 1730 21A41E     LD   HL,+1EA4
+ 1733 E5         PUSH HL
+ 1734 79         LD   A,C
+ 1735 FE18       CP   +18
+ 1737 D0         RET  NC
+ 1738 214517     LD   HL,+1745
+ 173B 87         ADD  A,A
+ 173C 4F         LD   C,A
+ 173D 0600       LD   B,+00
+ 173F 09         ADD  HL,BC
+ 1740 7E         LD   A,(HL)
+ 1741 23         INC  HL
+ 1742 66         LD   H,(HL)
+ 1743 6F         LD   L,A
+ 1744 E9         JP   (HL)
+ 1745 D5         PUSH DE
+ 1746 1D         DEC  E
+ 1747 CA1DE1     JP   Z,E11D
+ 174A 1D         DEC  E
+ 174B EB         EX   HL,DE
+ 174C 1D         DEC  E
+ 174D F1         POP  AF
+ 174E 1D         DEC  E
+ 174F 0F         RRCA
+ 1750 1E1C       LD   E,+1C
+ 1752 1E25       LD   E,+25
+ 1754 1E2B       LD   E,+2B
+ 1756 1E31       LD   E,+31
+ 1758 1E3B       LD   E,+3B
+ 175A 1E44       LD   E,+44
+ 175C 1E49       LD   E,+49
+ 175E 1E4F       LD   E,+4F
+ 1760 1E56       LD   E,+56
+ 1762 1E60       LD   E,+60
+ 1764 185D       JR   17C3
+ 1766 1E62       LD   E,+62
+ 1768 1E6F       LD   E,+6F
+ 176A 1E75       LD   E,+75
+ 176C 1E7B       LD   E,+7B
+ 176E 1E9F       LD   E,+9F
+ 1770 1D         DEC  E
+ 1771 81         ADD  A,C
+ 1772 1E93       LD   E,+93
+ 1774 1E3E       LD   E,+3E
+ 1776 013286     LD   BC,+8632
+ 1779 29         ADD  HL,HL
+ 177A C9         RET
+ 177B 2AAC29     LD   HL,(29AC)
+ 177E 3A8529     LD   A,(2985)
+ 1781 4F         LD   C,A
+ 1782 0600       LD   B,+00
+ 1784 09         ADD  HL,BC
+ 1785 09         ADD  HL,BC
+ 1786 4E         LD   C,(HL)
+ 1787 23         INC  HL
+ 1788 46         LD   B,(HL)
+ 1789 C5         PUSH BC
+ 178A 4F         LD   C,A
+ 178B CDFC1E     CALL 1EFC
+ 178E E1         POP  HL
+ 178F 22A729     LD   (29A7),HL
+ 1792 012900     LD   BC,+0029
+ 1795 09         ADD  HL,BC
+ 1796 22A929     LD   (29A9),HL
+ 1799 C9         RET
+ 179A 3AA429     LD   A,(29A4)
+ 179D E6FC       AND  +FC
+ 179F 1F         RRA
+ 17A0 1F         RRA
+ 17A1 6F         LD   L,A
+ 17A2 2600       LD   H,+00
+ 17A4 229F29     LD   (299F),HL
+ 17A7 1F         RRA
+ 17A8 32A529     LD   (29A5),A
+ 17AB 2A9F29     LD   HL,(299F)
+ 17AE 7D         LD   A,L
+ 17AF 1F         RRA
+ 17B0 E61F       AND  +1F
+ 17B2 F5         PUSH AF
+ 17B3 0E06       LD   C,+06
+ 17B5 CD1F18     CALL 181F,LIST_4
+ 17B8 4D         LD   C,L
+ 17B9 CD071F     CALL 1F07
+ 17BC F1         POP  AF
+ 17BD 4F         LD   C,A
+ 17BE C30C1F     JP   1F0C
+ 17C1 DDE5       PUSH IX
+ 17C3 DD09       ADD  IX,BC
+ 17C5 DD09       ADD  IX,BC
+ 17C7 DD6E10     LD   L,(IX+10)
+ 17CA DD6611     LD   H,(IX+11)
+ 17CD DDE1       POP  IX
+ 17CF C9         RET
+ 17D0 3A9D29     LD   A,(299D)
+ 17D3 E6F0       AND  +F0
+ 17D5 0F         RRCA
+ 17D6 0F         RRCA
+ 17D7 0F         RRCA
+ 17D8 0F         RRCA
+ 17D9 C9         RET
+ 17DA 4F         LD   C,A
+ 17DB 3A8529     LD   A,(2985)
+ 17DE 47         LD   B,A
+ 17DF 3E01       LD   A,+01
+ 17E1 04         INC  B
+ 17E2 05         DEC  B
+ 17E3 2803       JR   Z,17E8
+ 17E5 87         ADD  A,A
+ 17E6 10FD       DJNZ 17E5
+ 17E8 B1         OR   C
+ 17E9 C9         RET
+ 17EA CDD017     CALL 17D0
+ 17ED 4F         LD   C,A
+ 17EE 0600       LD   B,+00
+ 17F0 CDC117     CALL 17C1
+ 17F3 229F29     LD   (299F),HL
+ 17F6 C9         RET
+ 17F7 2A9F29     LD   HL,(299F)
+ 17FA 7D         LD   A,L
+ 17FB B4         OR   H
+ 17FC C9         RET
+ 17FD 2A9F29     LD   HL,(299F)
+ 1800 29         ADD  HL,HL
+ 1801 29         ADD  HL,HL
+ 1802 29         ADD  HL,HL
+ 1803 29         ADD  HL,HL
+ 1804 22A129     LD   (29A1),HL
+ 1807 3A9D29     LD   A,(299D)
+ 180A E60F       AND  +0F
+ 180C B5         OR   L
+ 180D 6F         LD   L,A
+ 180E 229F29     LD   (299F),HL
+ 1811 C9         RET
+ 1812 DD7E20     LD   A,(IX+20)
+ 1815 329D29     LD   (299D),A
+ 1818 DD7E0F     LD   A,(IX+0F)
+ 181B 329C29     LD   (299C),A
+ 181E C9         RET
+ 181F 0C         INC  C
+ 1820 0D         DEC  C
+ 1821 C8         RET  Z
+ 1822 B7         OR   A
+ 1823 CB1C       RR   H
+ 1825 CB1D       RR   L
+ 1827 18F7       JR   1820
+ 1829 3A9229     LD   A,(2992)
+ 182C FE02       CP   +02
+ 182E 2801       JR   Z,1831
+ 1830 AF         XOR  A
+ 1831 4F         LD   C,A
+ 1832 3A9D29     LD   A,(299D)
+ 1835 81         ADD  A,C
+ 1836 DD7720     LD   (IX+20),A
+ 1839 3A9C29     LD   A,(299C)
+ 183C DD770F     LD   (IX+0F),A
+ 183F C9         RET
+ 1840 0600       LD   B,+00
+ 1842 2A8D29     LD   HL,(298D)
+ 1845 AF         XOR  A
+ 1846 8E         ADC  A,(HL)
+ 1847 23         INC  HL
+ 1848 10FC       DJNZ 1846
+ 184A C9         RET
+ 184B 04         INC  B
+ 184C 05         DEC  B
+ 184D C8         RET  Z
+ 184E B7         OR   A
+ 184F 1F         RRA
+ 1850 10FC       DJNZ 184E
+ 1852 C9         RET
+ 1853 3A8529     LD   A,(2985)
+ 1856 47         LD   B,A
+ 1857 3A8929     LD   A,(2989)
+ 185A CD4B18     CALL 184B
+ 185D E601       AND  +01
+ 185F C9         RET
+ 1860 3A8929     LD   A,(2989)
+ 1863 CDDA17     CALL 17DA
+ 1866 328929     LD   (2989),A
+ 1869 2AA729     LD   HL,(29A7)
+ 186C 3681       LD   (HL),+81
+ 186E C9         RET
+ 186F CD8618     CALL 1886
+ 1872 110900     LD   DE,+0009
+ 1875 19         ADD  HL,DE
+ 1876 7E         LD   A,(HL)
+ 1877 1803       JR   187C
+ 1879 DD7E09     LD   A,(IX+09)
+ 187C 17         RLA
+ 187D D0         RET  NC
+ 187E E7         RST  0020,NEXT_CHAR
+ 187F 18CD       JR   184E
+ 1881 53         LD   D,E
+ 1882 18C8       JR   184C
+ 1884 E7         RST  0020,NEXT_CHAR
+ 1885 17         RLA
+ 1886 2A8D29     LD   HL,(298D)
+ 1889 3AA329     LD   A,(29A3)
+ 188C 85         ADD  A,L
+ 188D 6F         LD   L,A
+ 188E D0         RET  NC
+ 188F 24         INC  H
+ 1890 C9         RET
+ 1891 3AA429     LD   A,(29A4)
+ 1894 2AA729     LD   HL,(29A7)
+ 1897 BE         CP   (HL)
+ 1898 C9         RET
+ 1899 CD9118     CALL 1891
+ 189C D8         RET  C
+ 189D 3C         INC  A
+ 189E 77         LD   (HL),A
+ 189F C9         RET
+ 18A0 0EFF       LD   C,+FF
+ 18A2 3AA529     LD   A,(29A5)
+ 18A5 D610       SUB  +10
+ 18A7 D0         RET  NC
+ 18A8 CD4018     CALL 1840
+ 18AB ED5BA529   LD   DE,(29A5)
+ 18AF 1600       LD   D,+00
+ 18B1 2AA929     LD   HL,(29A9)
+ 18B4 19         ADD  HL,DE
+ 18B5 0C         INC  C
+ 18B6 280A       JR   Z,18C2
+ 18B8 BE         CP   (HL)
+ 18B9 C8         RET  Z
+ 18BA CD9118     CALL 1891
+ 18BD D0         RET  NC
+ 18BE CD6018     CALL 1860
+ 18C1 C9         RET
+ 18C2 77         LD   (HL),A
+ 18C3 C9         RET
+ 18C4 CDA018     CALL 18A0
+ 18C7 CDDE18     CALL 18DE
+ 18CA 0E01       LD   C,+01
+ 18CC CD191F     CALL 1F19
+ 18CF C3D818     JP   18D8
+ 18D2 CDDE18     CALL 18DE
+ 18D5 CD161F     CALL 1F16
+ 18D8 ED4B8B29   LD   BC,(298B)
+ 18DC 1804       JR   18E2
+ 18DE ED4B8D29   LD   BC,(298D)
+ 18E2 C3111F     JP   1F11
+ 18E5 2A8D29     LD   HL,(298D)
+ 18E8 ED5B8B29   LD   DE,(298B)
+ 18EC 010001     LD   BC,+0100
+ 18EF EDB0       LDIR
+ 18F1 C9         RET
+ 18F2 3AA429     LD   A,(29A4)
+ 18F5 FEFF       CP   +FF
+ 18F7 C0         RET  NZ
+ 18F8 3C         INC  A
+ 18F9 C9         RET
+ 18FA 21A429     LD   HL,+29A4
+ 18FD 36FF       LD   (HL),+FF
+ 18FF C9         RET
+ 1900 3AA429     LD   A,(29A4)
+ 1903 3C         INC  A
+ 1904 47         LD   B,A
+ 1905 32A429     LD   (29A4),A
+ 1908 3E7F       LD   A,+7F
+ 190A 90         SUB  B
+ 190B 3003       JR   NC,1910
+ 190D C3FA18     JP   18FA
+ 1910 78         LD   A,B
+ 1911 E607       AND  +07
+ 1913 0605       LD   B,+05
+ 1915 87         ADD  A,A
+ 1916 10FD       DJNZ 1915
+ 1918 32A329     LD   (29A3),A
+ 191B B7         OR   A
+ 191C C0         RET  NZ
+ 191D C5         PUSH BC
+ 191E CD9A17     CALL 179A
+ 1921 CDD218     CALL 18D2
+ 1924 C1         POP  BC
+ 1925 C3A218     JP   18A2
+ 1928 79         LD   A,C
+ 1929 E607       AND  +07
+ 192B 3C         INC  A
+ 192C 5F         LD   E,A
+ 192D 57         LD   D,A
+ 192E 79         LD   A,C
+ 192F 0F         RRCA
+ 1930 0F         RRCA
+ 1931 0F         RRCA
+ 1932 E61F       AND  +1F
+ 1934 4F         LD   C,A
+ 1935 78         LD   A,B
+ 1936 87         ADD  A,A
+ 1937 87         ADD  A,A
+ 1938 87         ADD  A,A
+ 1939 87         ADD  A,A
+ 193A 87         ADD  A,A
+ 193B B1         OR   C
+ 193C 4F         LD   C,A
+ 193D 78         LD   A,B
+ 193E 0F         RRCA
+ 193F 0F         RRCA
+ 1940 0F         RRCA
+ 1941 E61F       AND  +1F
+ 1943 47         LD   B,A
+ 1944 2AA729     LD   HL,(29A7)
+ 1947 23         INC  HL
+ 1948 09         ADD  HL,BC
+ 1949 7E         LD   A,(HL)
+ 194A 07         RLCA
+ 194B 1D         DEC  E
+ 194C 20FC       JR   NZ,194A
+ 194E C9         RET
+ 194F D5         PUSH DE
+ 1950 CD2819     CALL 1928
+ 1953 E6FE       AND  +FE
+ 1955 C1         POP  BC
+ 1956 B1         OR   C
+ 1957 0F         RRCA
+ 1958 15         DEC  D
+ 1959 20FC       JR   NZ,1957
+ 195B 77         LD   (HL),A
+ 195C C9         RET
+ 195D CD8618     CALL 1886
+ 1960 111000     LD   DE,+0010
+ 1963 19         ADD  HL,DE
+ 1964 C5         PUSH BC
+ 1965 0E09       LD   C,+09
+ 1967 D1         POP  DE
+ 1968 0D         DEC  C
+ 1969 C8         RET  Z
+ 196A D5         PUSH DE
+ 196B C5         PUSH BC
+ 196C 4E         LD   C,(HL)
+ 196D 23         INC  HL
+ 196E 46         LD   B,(HL)
+ 196F E5         PUSH HL
+ 1970 79         LD   A,C
+ 1971 B0         OR   B
+ 1972 2809       JR   Z,197D
+ 1974 79         LD   A,C
+ 1975 D6A0       SUB  +A0
+ 1977 78         LD   A,B
+ 1978 DE00       SBC  A,+00
+ 197A DC4F19     CALL C,194F
+ 197D E1         POP  HL
+ 197E 23         INC  HL
+ 197F C1         POP  BC
+ 1980 18E5       JR   1967
+ 1982 2AA729     LD   HL,(29A7)
+ 1985 23         INC  HL
+ 1986 E5         PUSH HL
+ 1987 5D         LD   E,L
+ 1988 54         LD   D,H
+ 1989 3600       LD   (HL),+00
+ 198B 13         INC  DE
+ 198C 012700     LD   BC,+0027
+ 198F EDB0       LDIR
+ 1991 E1         POP  HL
+ 1992 36C0       LD   (HL),+C0
+ 1994 CDF71E     CALL 1EF7
+ 1997 2B         DEC  HL
+ 1998 3607       LD   (HL),+07
+ 199A CDFA18     CALL 18FA
+ 199D 0EFF       LD   C,+FF
+ 199F CD0019     CALL 1900
+ 19A2 CDF218     CALL 18F2
+ 19A5 C8         RET  Z
+ 19A6 CD8618     CALL 1886
+ 19A9 3EE5       LD   A,+E5
+ 19AB BE         CP   (HL)
+ 19AC 28EF       JR   Z,199D
+ 19AE 0E01       LD   C,+01
+ 19B0 CD5D19     CALL 195D
+ 19B3 CD9918     CALL 1899
+ 19B6 18E5       JR   199D
+ 19B8 3A9129     LD   A,(2991)
+ 19BB C37717     JP   1777
+ 19BE 3EFF       LD   A,+FF
+ 19C0 329129     LD   (2991),A
+ 19C3 79         LD   A,C
+ 19C4 329529     LD   (2995),A
+ 19C7 DD229629   LD   (2996),IX
+ 19CB CDFA18     CALL 18FA
+ 19CE CDF71E     CALL 1EF7
+ 19D1 0E00       LD   C,+00
+ 19D3 CD0019     CALL 1900
+ 19D6 CDF218     CALL 18F2
+ 19D9 284D       JR   Z,1A28,OUT_NUM_2
+ 19DB ED5B9629   LD   DE,(2996)
+ 19DF 1A         LD   A,(DE)
+ 19E0 FEE5       CP   +E5
+ 19E2 2805       JR   Z,19E9
+ 19E4 CD9118     CALL 1891
+ 19E7 303F       JR   NC,1A28,OUT_NUM_2
+ 19E9 CD8618     CALL 1886
+ 19EC ED4B9529   LD   BC,(2995)
+ 19F0 0600       LD   B,+00
+ 19F2 79         LD   A,C
+ 19F3 B7         OR   A
+ 19F4 2821       JR   Z,1A17
+ 19F6 1A         LD   A,(DE)
+ 19F7 FE3F       CP   +3F
+ 19F9 2816       JR   Z,1A11
+ 19FB 78         LD   A,B
+ 19FC FE0D       CP   +0D
+ 19FE 2811       JR   Z,1A11
+ 1A00 FE0C       CP   +0C
+ 1A02 1A         LD   A,(DE)
+ 1A03 2807       JR   Z,1A0C
+ 1A05 96         SUB  (HL)
+ 1A06 E67F       AND  +7F
+ 1A08 20C7       JR   NZ,19D1
+ 1A0A 1805       JR   1A11
+ 1A0C 96         SUB  (HL)
+ 1A0D E61F       AND  +1F
+ 1A0F 20C0       JR   NZ,19D1
+ 1A11 13         INC  DE
+ 1A12 23         INC  HL
+ 1A13 04         INC  B
+ 1A14 0D         DEC  C
+ 1A15 18DB       JR   19F2
+ 1A17 3AA429     LD   A,(29A4)
+ 1A1A E607       AND  +07
+ 1A1C 328629     LD   (2986),A
+ 1A1F 219129     LD   HL,+2991
+ 1A22 7E         LD   A,(HL)
+ 1A23 17         RLA
+ 1A24 D0         RET  NC
+ 1A25 AF         XOR  A
+ 1A26 77         LD   (HL),A
+ 1A27 C9         RET
+ 1A28 CDFA18     CALL 18FA
+ 1A2B 3EFF       LD   A,+FF
+ 1A2D C37717     JP   1777
+ 1A30 CD8018     CALL 1880
+ 1A33 0E0C       LD   C,+0C
+ 1A35 CDBE19     CALL 19BE
+ 1A38 CDF218     CALL 18F2
+ 1A3B C8         RET  Z
+ 1A3C CD6F18     CALL 186F
+ 1A3F CD8618     CALL 1886
+ 1A42 36E5       LD   (HL),+E5
+ 1A44 0E00       LD   C,+00
+ 1A46 CD5D19     CALL 195D
+ 1A49 CDC418     CALL 18C4
+ 1A4C CDD119     CALL 19D1
+ 1A4F C3381A     JP   1A38
+ 1A52 50         LD   D,B
+ 1A53 59         LD   E,C
+ 1A54 79         LD   A,C
+ 1A55 B0         OR   B
+ 1A56 280B       JR   Z,1A63
+ 1A58 0B         DEC  BC
+ 1A59 D5         PUSH DE
+ 1A5A C5         PUSH BC
+ 1A5B CD2819     CALL 1928
+ 1A5E 1F         RRA
+ 1A5F 3019       JR   NC,1A7A
+ 1A61 C1         POP  BC
+ 1A62 D1         POP  DE
+ 1A63 7B         LD   A,E
+ 1A64 D6A0       SUB  +A0
+ 1A66 7A         LD   A,D
+ 1A67 DE00       SBC  A,+00
+ 1A69 3017       JR   NC,1A82
+ 1A6B 13         INC  DE
+ 1A6C C5         PUSH BC
+ 1A6D D5         PUSH DE
+ 1A6E 42         LD   B,D
+ 1A6F 4B         LD   C,E
+ 1A70 CD2819     CALL 1928
+ 1A73 1F         RRA
+ 1A74 3004       JR   NC,1A7A
+ 1A76 D1         POP  DE
+ 1A77 C1         POP  BC
+ 1A78 18DA       JR   1A54
+ 1A7A 17         RLA
+ 1A7B 3C         INC  A
+ 1A7C CD5719     CALL 1957
+ 1A7F E1         POP  HL
+ 1A80 D1         POP  DE
+ 1A81 C9         RET
+ 1A82 79         LD   A,C
+ 1A83 B0         OR   B
+ 1A84 20CE       JR   NZ,1A54
+ 1A86 210000     LD   HL,+0000
+ 1A89 C9         RET
+ 1A8A 0E00       LD   C,+00
+ 1A8C 1E20       LD   E,+20
+ 1A8E CD8618     CALL 1886
+ 1A91 EB         EX   HL,DE
+ 1A92 7D         LD   A,L
+ 1A93 0600       LD   B,+00
+ 1A95 DDE5       PUSH IX
+ 1A97 E1         POP  HL
+ 1A98 09         ADD  HL,BC
+ 1A99 4F         LD   C,A
+ 1A9A EDB0       LDIR
+ 1A9C CD9A17     CALL 179A
+ 1A9F C3C418     JP   18C4
+ 1AA2 CD8018     CALL 1880
+ 1AA5 0E0C       LD   C,+0C
+ 1AA7 CDBE19     CALL 19BE
+ 1AAA DD7E00     LD   A,(IX+00)
+ 1AAD DD7710     LD   (IX+10),A
+ 1AB0 CDF218     CALL 18F2
+ 1AB3 C8         RET  Z
+ 1AB4 CD6F18     CALL 186F
+ 1AB7 0E10       LD   C,+10
+ 1AB9 1E0C       LD   E,+0C
+ 1ABB CD8E1A     CALL 1A8E
+ 1ABE CDD119     CALL 19D1
+ 1AC1 18ED       JR   1AB0
+ 1AC3 0E0C       LD   C,+0C
+ 1AC5 CDBE19     CALL 19BE
+ 1AC8 CDF218     CALL 18F2
+ 1ACB C8         RET  Z
+ 1ACC 0E00       LD   C,+00
+ 1ACE 1E0C       LD   E,+0C
+ 1AD0 CD8E1A     CALL 1A8E
+ 1AD3 CDD119     CALL 19D1
+ 1AD6 18F0       JR   1AC8
+ 1AD8 0E0F       LD   C,+0F
+ 1ADA CDBE19     CALL 19BE
+ 1ADD CDF218     CALL 18F2
+ 1AE0 C8         RET  Z
+ 1AE1 CD8618     CALL 1886
+ 1AE4 012000     LD   BC,+0020
+ 1AE7 DDE5       PUSH IX
+ 1AE9 D1         POP  DE
+ 1AEA EDB0       LDIR
+ 1AEC DDCB0EFE   SET  7,(IX+0E)
+ 1AF0 C9         RET
+ 1AF1 7E         LD   A,(HL)
+ 1AF2 23         INC  HL
+ 1AF3 B6         OR   (HL)
+ 1AF4 2B         DEC  HL
+ 1AF5 C0         RET  NZ
+ 1AF6 1A         LD   A,(DE)
+ 1AF7 77         LD   (HL),A
+ 1AF8 13         INC  DE
+ 1AF9 23         INC  HL
+ 1AFA 1A         LD   A,(DE)
+ 1AFB 77         LD   (HL),A
+ 1AFC 1B         DEC  DE
+ 1AFD 2B         DEC  HL
+ 1AFE C9         RET
+ 1AFF AF         XOR  A
+ 1B00 328629     LD   (2986),A
+ 1B03 32A429     LD   (29A4),A
+ 1B06 CD5318     CALL 1853
+ 1B09 C0         RET  NZ
+ 1B0A DDCB0E7E   BIT  7,(IX+0E)
+ 1B0E C0         RET  NZ
+ 1B0F 0E0F       LD   C,+0F
+ 1B11 CDBE19     CALL 19BE
+ 1B14 CDF218     CALL 18F2
+ 1B17 C8         RET  Z
+ 1B18 011000     LD   BC,+0010
+ 1B1B CD8618     CALL 1886
+ 1B1E 09         ADD  HL,BC
+ 1B1F EB         EX   HL,DE
+ 1B20 DDE5       PUSH IX
+ 1B22 E1         POP  HL
+ 1B23 09         ADD  HL,BC
+ 1B24 0E08       LD   C,+08
+ 1B26 CDF11A     CALL 1AF1
+ 1B29 EB         EX   HL,DE
+ 1B2A CDF11A     CALL 1AF1
+ 1B2D EB         EX   HL,DE
+ 1B2E 1A         LD   A,(DE)
+ 1B2F BE         CP   (HL)
+ 1B30 201A       JR   NZ,1B4C
+ 1B32 13         INC  DE
+ 1B33 23         INC  HL
+ 1B34 1A         LD   A,(DE)
+ 1B35 BE         CP   (HL)
+ 1B36 2014       JR   NZ,1B4C
+ 1B38 13         INC  DE
+ 1B39 23         INC  HL
+ 1B3A 0D         DEC  C
+ 1B3B 20E9       JR   NZ,1B26
+ 1B3D 3EFF       LD   A,+FF
+ 1B3F 328F29     LD   (298F),A
+ 1B42 EB         EX   HL,DE
+ 1B43 01EFFF     LD   BC,+FFEF
+ 1B46 09         ADD  HL,BC
+ 1B47 1A         LD   A,(DE)
+ 1B48 77         LD   (HL),A
+ 1B49 C39C1A     JP   1A9C
+ 1B4C 218629     LD   HL,+2986
+ 1B4F 35         DEC  (HL)
+ 1B50 C9         RET
+ 1B51 CD8018     CALL 1880
+ 1B54 DDE5       PUSH IX
+ 1B56 DD218829   LD   IX,+2988
+ 1B5A 0E01       LD   C,+01
+ 1B5C CDBE19     CALL 19BE
+ 1B5F CDF218     CALL 18F2
+ 1B62 DDE1       POP  IX
+ 1B64 C8         RET  Z
+ 1B65 DDE5       PUSH IX
+ 1B67 0611       LD   B,+11
+ 1B69 AF         XOR  A
+ 1B6A DD770F     LD   (IX+0F),A
+ 1B6D DD23       INC  IX
+ 1B6F 10F9       DJNZ 1B6A
+ 1B71 DDE1       POP  IX
+ 1B73 DD770D     LD   (IX+0D),A
+ 1B76 CD9918     CALL 1899
+ 1B79 CD8A1A     CALL 1A8A
+ 1B7C DDCB0EFE   SET  7,(IX+0E)
+ 1B80 C9         RET
+ 1B81 AF         XOR  A
+ 1B82 328F29     LD   (298F),A
+ 1B85 CDFF1A     CALL 1AFF
+ 1B88 CDF218     CALL 18F2
+ 1B8B C8         RET  Z
+ 1B8C DD7E0C     LD   A,(IX+0C)
+ 1B8F 3C         INC  A
+ 1B90 E61F       AND  +1F
+ 1B92 DD770C     LD   (IX+0C),A
+ 1B95 0E0F       LD   C,+0F
+ 1B97 CDBE19     CALL 19BE
+ 1B9A CDF218     CALL 18F2
+ 1B9D 2010       JR   NZ,1BAF
+ 1B9F 3A9029     LD   A,(2990)
+ 1BA2 3C         INC  A
+ 1BA3 2814       JR   Z,1BB9
+ 1BA5 CD511B     CALL 1B51
+ 1BA8 CDF218     CALL 18F2
+ 1BAB 280C       JR   Z,1BB9
+ 1BAD 1803       JR   1BB2,REM
+ 1BAF CDE11A     CALL 1AE1
+ 1BB2 CD1218     CALL 1812
+ 1BB5 AF         XOR  A
+ 1BB6 C37717     JP   1777
+ 1BB9 CD7517     CALL 1775
+ 1BBC DDCB0EFE   SET  7,(IX+0E)
+ 1BC0 C9         RET
+ 1BC1 3E02       LD   A,+02
+ 1BC3 329229     LD   (2992),A
+ 1BC6 3EFF       LD   A,+FF
+ 1BC8 329029     LD   (2990),A
+ 1BCB CD1218     CALL 1812
+ 1BCE 3A9D29     LD   A,(299D)
+ 1BD1 219C29     LD   HL,+299C
+ 1BD4 BE         CP   (HL)
+ 1BD5 3811       JR   C,1BE8
+ 1BD7 FE80       CP   +80
+ 1BD9 2021       JR   NZ,1BFC
+ 1BDB CD811B     CALL 1B81
+ 1BDE AF         XOR  A
+ 1BDF 329D29     LD   (299D),A
+ 1BE2 3A8629     LD   A,(2986)
+ 1BE5 B7         OR   A
+ 1BE6 2014       JR   NZ,1BFC
+ 1BE8 CDEA17     CALL 17EA
+ 1BEB CDF717     CALL 17F7
+ 1BEE 280C       JR   Z,1BFC
+ 1BF0 CDFD17     CALL 17FD
+ 1BF3 CDAB17     CALL 17AB
+ 1BF6 CD161F     CALL 1F16
+ 1BF9 C32918     JP   1829
+ 1BFC C37517     JP   1775
+ 1BFF 3E02       LD   A,+02
+ 1C01 329229     LD   (2992),A
+ 1C04 AF         XOR  A
+ 1C05 329029     LD   (2990),A
+ 1C08 CD8018     CALL 1880
+ 1C0B CD7918     CALL 1879
+ 1C0E CD1218     CALL 1812
+ 1C11 3A9D29     LD   A,(299D)
+ 1C14 FE80       CP   +80
+ 1C16 30E4       JR   NC,1BFC
+ 1C18 CDEA17     CALL 17EA
+ 1C1B CDF717     CALL 17F7
+ 1C1E 0E00       LD   C,+00
+ 1C20 2037       JR   NZ,1C59,VAL_FET_2
+ 1C22 CDD017     CALL 17D0
+ 1C25 329429     LD   (2994),A
+ 1C28 010000     LD   BC,+0000
+ 1C2B B7         OR   A
+ 1C2C 2807       JR   Z,1C35
+ 1C2E 4F         LD   C,A
+ 1C2F 0B         DEC  BC
+ 1C30 CDC117     CALL 17C1
+ 1C33 44         LD   B,H
+ 1C34 4D         LD   C,L
+ 1C35 CD521A     CALL 1A52
+ 1C38 7D         LD   A,L
+ 1C39 B4         OR   H
+ 1C3A 2005       JR   NZ,1C41
+ 1C3C 3E02       LD   A,+02
+ 1C3E C37717     JP   1777
+ 1C41 229F29     LD   (299F),HL
+ 1C44 EB         EX   HL,DE
+ 1C45 DDE5       PUSH IX
+ 1C47 E1         POP  HL
+ 1C48 011000     LD   BC,+0010
+ 1C4B 09         ADD  HL,BC
+ 1C4C 3A9429     LD   A,(2994)
+ 1C4F 4F         LD   C,A
+ 1C50 0600       LD   B,+00
+ 1C52 09         ADD  HL,BC
+ 1C53 09         ADD  HL,BC
+ 1C54 73         LD   (HL),E
+ 1C55 23         INC  HL
+ 1C56 72         LD   (HL),D
+ 1C57 0E02       LD   C,+02
+ 1C59 3A8629     LD   A,(2986)
+ 1C5C B7         OR   A
+ 1C5D C0         RET  NZ
+ 1C5E C5         PUSH BC
+ 1C5F CDFD17     CALL 17FD
+ 1C62 3A9229     LD   A,(2992)
+ 1C65 3D         DEC  A
+ 1C66 203D       JR   NZ,1CA5
+ 1C68 C1         POP  BC
+ 1C69 C5         PUSH BC
+ 1C6A 79         LD   A,C
+ 1C6B 3D         DEC  A
+ 1C6C 3D         DEC  A
+ 1C6D 2036       JR   NZ,1CA5
+ 1C6F E5         PUSH HL
+ 1C70 2A8D29     LD   HL,(298D)
+ 1C73 54         LD   D,H
+ 1C74 5D         LD   E,L
+ 1C75 13         INC  DE
+ 1C76 3600       LD   (HL),+00
+ 1C78 01FF00     LD   BC,+00FF
+ 1C7B EDB0       LDIR
+ 1C7D CDDE18     CALL 18DE
+ 1C80 2AA129     LD   HL,(29A1)
+ 1C83 0E02       LD   C,+02
+ 1C85 229F29     LD   (299F),HL
+ 1C88 C5         PUSH BC
+ 1C89 CDAB17     CALL 17AB
+ 1C8C C1         POP  BC
+ 1C8D CD191F     CALL 1F19
+ 1C90 2A9F29     LD   HL,(299F)
+ 1C93 0E00       LD   C,+00
+ 1C95 3E0F       LD   A,+0F
+ 1C97 47         LD   B,A
+ 1C98 A5         AND  L
+ 1C99 B8         CP   B
+ 1C9A 23         INC  HL
+ 1C9B 23         INC  HL
+ 1C9C 20E7       JR   NZ,1C85
+ 1C9E E1         POP  HL
+ 1C9F 229F29     LD   (299F),HL
+ 1CA2 CDD818     CALL 18D8
+ 1CA5 CDAB17     CALL 17AB
+ 1CA8 C1         POP  BC
+ 1CA9 C5         PUSH BC
+ 1CAA CD191F     CALL 1F19
+ 1CAD C1         POP  BC
+ 1CAE 3A9D29     LD   A,(299D)
+ 1CB1 219C29     LD   HL,+299C
+ 1CB4 BE         CP   (HL)
+ 1CB5 3805       JR   C,1CBC
+ 1CB7 77         LD   (HL),A
+ 1CB8 34         INC  (HL)
+ 1CB9 34         INC  (HL)
+ 1CBA 0E02       LD   C,+02
+ 1CBC 0D         DEC  C
+ 1CBD 0D         DEC  C
+ 1CBE 2006       JR   NZ,1CC6
+ 1CC0 F5         PUSH AF
+ 1CC1 DDCB0EBE   RES  7,(IX+0E)
+ 1CC5 F1         POP  AF
+ 1CC6 FE7E       CP   +7E
+ 1CC8 201B       JR   NZ,1CE5
+ 1CCA 3A9229     LD   A,(2992)
+ 1CCD FE02       CP   +02
+ 1CCF 2014       JR   NZ,1CE5
+ 1CD1 CD2918     CALL 1829
+ 1CD4 CD811B     CALL 1B81
+ 1CD7 218629     LD   HL,+2986
+ 1CDA 7E         LD   A,(HL)
+ 1CDB B7         OR   A
+ 1CDC 2005       JR   NZ,1CE3
+ 1CDE 3D         DEC  A
+ 1CDF 3D         DEC  A
+ 1CE0 329D29     LD   (299D),A
+ 1CE3 3600       LD   (HL),+00
+ 1CE5 C32918     JP   1829
+ 1CE8 AF         XOR  A
+ 1CE9 329229     LD   (2992),A
+ 1CEC C5         PUSH BC
+ 1CED DD7E21     LD   A,(IX+21)
+ 1CF0 DD7720     LD   (IX+20),A
+ 1CF3 DDCB20BE   RES  7,(IX+20)
+ 1CF7 17         RLA
+ 1CF8 DD7E22     LD   A,(IX+22)
+ 1CFB 17         RLA
+ 1CFC E61F       AND  +1F
+ 1CFE DDBE0C     CP   (IX+0C)
+ 1D01 2832       JR   Z,1D35
+ 1D03 4F         LD   C,A
+ 1D04 C5         PUSH BC
+ 1D05 D5         PUSH DE
+ 1D06 CDFF1A     CALL 1AFF
+ 1D09 D1         POP  DE
+ 1D0A C1         POP  BC
+ 1D0B 2E03       LD   L,+03
+ 1D0D 3A8629     LD   A,(2986)
+ 1D10 3C         INC  A
+ 1D11 2827       JR   Z,1D3A
+ 1D13 DD710C     LD   (IX+0C),C
+ 1D16 DD360E00   LD   (IX+0E),+00
+ 1D1A CDD81A     CALL 1AD8
+ 1D1D 3A8629     LD   A,(2986)
+ 1D20 3C         INC  A
+ 1D21 2012       JR   NZ,1D35
+ 1D23 C1         POP  BC
+ 1D24 C5         PUSH BC
+ 1D25 2E04       LD   L,+04
+ 1D27 0C         INC  C
+ 1D28 2810       JR   Z,1D3A
+ 1D2A CD511B     CALL 1B51
+ 1D2D 2E05       LD   L,+05
+ 1D2F 3A8629     LD   A,(2986)
+ 1D32 3C         INC  A
+ 1D33 2805       JR   Z,1D3A
+ 1D35 C1         POP  BC
+ 1D36 AF         XOR  A
+ 1D37 C37717     JP   1777
+ 1D3A DD360EC0   LD   (IX+0E),+C0
+ 1D3E C1         POP  BC
+ 1D3F 7D         LD   A,L
+ 1D40 328629     LD   (2986),A
+ 1D43 B7         OR   A
+ 1D44 DDCB0EFE   SET  7,(IX+0E)
+ 1D48 C9         RET
+ 1D49 0EFF       LD   C,+FF
+ 1D4B CDE81C     CALL 1CE8
+ 1D4E CCC61B     CALL Z,1BC6
+ 1D51 C9         RET
+ 1D52 0E00       LD   C,+00
+ 1D54 CDE81C     CALL 1CE8
+ 1D57 CC041C     CALL Z,1C04
+ 1D5A C9         RET
+ 1D5B CB21       SLA  C
+ 1D5D 3001       JR   NC,1D60
+ 1D5F 04         INC  B
+ 1D60 B7         OR   A
+ 1D61 CB18       RR   B
+ 1D63 CB19       RR   C
+ 1D65 C9         RET
+ 1D66 0E0C       LD   C,+0C
+ 1D68 CDBE19     CALL 19BE
+ 1D6B AF         XOR  A
+ 1D6C DD7721     LD   (IX+21),A
+ 1D6F DD7722     LD   (IX+22),A
+ 1D72 DD7723     LD   (IX+23),A
+ 1D75 CDF218     CALL 18F2
+ 1D78 2824       JR   Z,1D9E
+ 1D7A CD8618     CALL 1886
+ 1D7D 110C00     LD   DE,+000C
+ 1D80 19         ADD  HL,DE
+ 1D81 46         LD   B,(HL)
+ 1D82 23         INC  HL
+ 1D83 23         INC  HL
+ 1D84 23         INC  HL
+ 1D85 4E         LD   C,(HL)
+ 1D86 CD5B1D     CALL 1D5B
+ 1D89 79         LD   A,C
+ 1D8A DD9621     SUB  (IX+21)
+ 1D8D 78         LD   A,B
+ 1D8E DD9E22     SBC  A,(IX+22)
+ 1D91 3806       JR   C,1D99
+ 1D93 DD7022     LD   (IX+22),B
+ 1D96 DD7121     LD   (IX+21),C
+ 1D99 CDD119     CALL 19D1
+ 1D9C 18D7       JR   1D75
+ 1D9E C9         RET
+ 1D9F DD4E20     LD   C,(IX+20)
+ 1DA2 DD460C     LD   B,(IX+0C)
+ 1DA5 CD5B1D     CALL 1D5B
+ 1DA8 DD7121     LD   (IX+21),C
+ 1DAB DD7022     LD   (IX+22),B
+ 1DAE C9         RET
+ 1DAF CD7B17     CALL 177B
+ 1DB2 3A8529     LD   A,(2985)
+ 1DB5 47         LD   B,A
+ 1DB6 3A8A29     LD   A,(298A)
+ 1DB9 CD4B18     CALL 184B
+ 1DBC 1F         RRA
+ 1DBD D8         RET  C
+ 1DBE 3A8A29     LD   A,(298A)
+ 1DC1 CDDA17     CALL 17DA
+ 1DC4 328A29     LD   (298A),A
+ 1DC7 C38219     JP   1982
+ 1DCA 3A9329     LD   A,(2993)
+ 1DCD 218529     LD   HL,+2985
+ 1DD0 BE         CP   (HL)
+ 1DD1 C8         RET  Z
+ 1DD2 77         LD   (HL),A
+ 1DD3 18DA       JR   1DAF
+ 1DD5 AF         XOR  A
+ 1DD6 328929     LD   (2989),A
+ 1DD9 328A29     LD   (298A),A
+ 1DDC 3D         DEC  A
+ 1DDD 328529     LD   (2985),A
+ 1DE0 C9         RET
+ 1DE1 DD360E00   LD   (IX+0E),+00
+ 1DE5 CDC81E     CALL 1EC8
+ 1DE8 C3D81A     JP   1AD8
+ 1DEB CDC81E     CALL 1EC8
+ 1DEE C3FF1A     JP   1AFF
+ 1DF1 0E00       LD   C,+00
+ 1DF3 EB         EX   HL,DE
+ 1DF4 7E         LD   A,(HL)
+ 1DF5 FE3F       CP   +3F
+ 1DF7 2810       JR   Z,1E09
+ 1DF9 DD7E0C     LD   A,(IX+0C)
+ 1DFC FE3F       CP   +3F
+ 1DFE 2804       JR   Z,1E04
+ 1E00 DD360E00   LD   (IX+0E),+00
+ 1E04 CDC81E     CALL 1EC8
+ 1E07 0E0F       LD   C,+0F
+ 1E09 CDBE19     CALL 19BE
+ 1E0C C3E518     JP   18E5
+ 1E0F DD2A9629   LD   IX,(2996)
+ 1E13 CDC81E     CALL 1EC8
+ 1E16 CDD119     CALL 19D1
+ 1E19 C3E518     JP   18E5
+ 1E1C CDC81E     CALL 1EC8
+ 1E1F CD301A     CALL 1A30,OUT_NUM_3
+ 1E22 C3B819     JP   19B8,NEXT_ONE
+ 1E25 CDC81E     CALL 1EC8
+ 1E28 C3C11B     JP   1BC1
+ 1E2B CDC81E     CALL 1EC8
+ 1E2E C3FF1B     JP   1BFF
+ 1E31 DD360E00   LD   (IX+0E),+00
+ 1E35 CDC81E     CALL 1EC8
+ 1E38 C3511B     JP   1B51
+ 1E3B CDC81E     CALL 1EC8
+ 1E3E CDA21A     CALL 1AA2
+ 1E41 C3B819     JP   19B8,NEXT_ONE
+ 1E44 3A8A29     LD   A,(298A)
+ 1E47 1803       JR   1E4C
+ 1E49 3A8529     LD   A,(2985)
+ 1E4C C37717     JP   1777
+ 1E4F ED538B29   LD   (298B),DE
+ 1E53 C3D818     JP   18D8
+ 1E56 2AA729     LD   HL,(29A7)
+ 1E59 23         INC  HL
+ 1E5A C36B1E     JP   1E6B
+ 1E5D 3A8929     LD   A,(2989)
+ 1E60 18EA       JR   1E4C
+ 1E62 CDC81E     CALL 1EC8
+ 1E65 CDC31A     CALL 1AC3
+ 1E68 C3B819     JP   19B8,NEXT_ONE
+ 1E6B 228629     LD   (2986),HL
+ 1E6E C9         RET
+ 1E6F CDC81E     CALL 1EC8
+ 1E72 C3491D     JP   1D49
+ 1E75 CDC81E     CALL 1EC8
+ 1E78 C3521D     JP   1D52
+ 1E7B CDC81E     CALL 1EC8
+ 1E7E C3661D     JP   1D66
+ 1E81 7B         LD   A,E
+ 1E82 2F         CPL
+ 1E83 5F         LD   E,A
+ 1E84 3A8A29     LD   A,(298A)
+ 1E87 A3         AND  E
+ 1E88 328A29     LD   (298A),A
+ 1E8B 3A8929     LD   A,(2989)
+ 1E8E A3         AND  E
+ 1E8F 328929     LD   (2989),A
+ 1E92 C9         RET
+ 1E93 CDC81E     CALL 1EC8
+ 1E96 3E01       LD   A,+01
+ 1E98 329229     LD   (2992),A
+ 1E9B 0E00       LD   C,+00
+ 1E9D CDEC1C     CALL 1CEC
+ 1EA0 CC041C     CALL Z,1C04
+ 1EA3 C9         RET
+ 1EA4 3AAB29     LD   A,(29AB)
+ 1EA7 3C         INC  A
+ 1EA8 2016       JR   NZ,1EC0
+ 1EAA DD360000   LD   (IX+00),+00
+ 1EAE 3A9B29     LD   A,(299B)
+ 1EB1 B7         OR   A
+ 1EB2 280C       JR   Z,1EC0
+ 1EB4 DD7700     LD   (IX+00),A
+ 1EB7 3A9A29     LD   A,(299A)
+ 1EBA 329329     LD   (2993),A
+ 1EBD CDCA1D     CALL 1DCA
+ 1EC0 DDE1       POP  IX
+ 1EC2 2A8629     LD   HL,(2986)
+ 1EC5 7D         LD   A,L
+ 1EC6 44         LD   B,H
+ 1EC7 C9         RET
+ 1EC8 3EFF       LD   A,+FF
+ 1ECA 32AB29     LD   (29AB),A
+ 1ECD DD7E00     LD   A,(IX+00)
+ 1ED0 3D         DEC  A
+ 1ED1 329329     LD   (2993),A
+ 1ED4 ED4B8429   LD   BC,(2984)
+ 1ED8 4F         LD   C,A
+ 1ED9 F2E11E     JP   P,1EE1
+ 1EDC 90         SUB  B
+ 1EDD 2013       JR   NZ,1EF2
+ 1EDF E7         RST  0020,NEXT_CHAR
+ 1EE0 04         INC  B
+ 1EE1 78         LD   A,B
+ 1EE2 04         INC  B
+ 1EE3 2001       JR   NZ,1EE6
+ 1EE5 79         LD   A,C
+ 1EE6 329A29     LD   (299A),A
+ 1EE9 DD7E00     LD   A,(IX+00)
+ 1EEC 329B29     LD   (299B),A
+ 1EEF CDCA1D     CALL 1DCA
+ 1EF2 DD360000   LD   (IX+00),+00
+ 1EF6 C9         RET
+ 1EF7 AF         XOR  A
+ 1EF8 322D2A     LD   (2A2D),A
+ 1EFB C9         RET
+ 1EFC 2600       LD   H,+00
+ 1EFE 79         LD   A,C
+ 1EFF FE02       CP   +02
+ 1F01 D0         RET  NC
+ 1F02 2C         INC  L
+ 1F03 322B2A     LD   (2A2B),A
+ 1F06 C9         RET
+ 1F07 79         LD   A,C
+ 1F08 322D2A     LD   (2A2D),A
+ 1F0B C9         RET
+ 1F0C 79         LD   A,C
+ 1F0D 322E2A     LD   (2A2E),A
+ 1F10 C9         RET
+ 1F11 ED432F2A   LD   (2A2F),BC
+ 1F15 C9         RET
+ 1F16 3E01       LD   A,+01
+ 1F18 013E02     LD   BC,+023E
+ 1F1B C38211     JP   1182
+ 1F1E FF         RST  0038,MASK_INT
+ 1F1F FF         RST  0038,MASK_INT
+ 1F20 FF         RST  0038,MASK_INT
+ 1F21 FF         RST  0038,MASK_INT
+ 1F22 FF         RST  0038,MASK_INT
+ 1F23 FF         RST  0038,MASK_INT
+ 1F24 FF         RST  0038,MASK_INT
+ 1F25 FF         RST  0038,MASK_INT
+ 1F26 FF         RST  0038,MASK_INT
+ 1F27 FF         RST  0038,MASK_INT
+ 1F28 FF         RST  0038,MASK_INT
+ 1F29 FF         RST  0038,MASK_INT
+ 1F2A 010D23     LD   BC,+230D
+ 1F2D 64         LD   H,H
+ 1F2E 301F       JR   NC,1F4F,PAUSE_END
+ 1F30 010305     LD   BC,+0503
+ 1F33 07         RLCA
+ 1F34 09         ADD  HL,BC
+ 1F35 0B         DEC  BC
+ 1F36 0D         DEC  C
+ 1F37 0F         RRCA
+ 1F38 02         LD   (BC),A
+ 1F39 04         INC  B
+ 1F3A 0608       LD   B,+08
+ 1F3C 0A         LD   A,(BC)
+ 1F3D 0C         INC  C
+ 1F3E 0E10       LD   C,+10
+ 1F40 FF         RST  0038,MASK_INT
+ 1F41 FF         RST  0038,MASK_INT
+ 1F42 FF         RST  0038,MASK_INT
+ 1F43 FF         RST  0038,MASK_INT
+ 1F44 FF         RST  0038,MASK_INT
+ 1F45 FF         RST  0038,MASK_INT
+ 1F46 FF         RST  0038,MASK_INT
+ 1F47 FF         RST  0038,MASK_INT
+ 1F48 FF         RST  0038,MASK_INT
+ 1F49 FF         RST  0038,MASK_INT
+ 1F4A FF         RST  0038,MASK_INT
+ 1F4B FF         RST  0038,MASK_INT
+ 1F4C FF         RST  0038,MASK_INT
+ 1F4D FF         RST  0038,MASK_INT
+ 1F4E FF         RST  0038,MASK_INT
+ 1F4F FF         RST  0038,MASK_INT
+ 1F50 FF         RST  0038,MASK_INT
+ 1F51 FF         RST  0038,MASK_INT
+ 1F52 FF         RST  0038,MASK_INT
+ 1F53 FF         RST  0038,MASK_INT
+ 1F54 FF         RST  0038,MASK_INT
+ 1F55 FF         RST  0038,MASK_INT
+ 1F56 FF         RST  0038,MASK_INT
+ 1F57 FF         RST  0038,MASK_INT
+ 1F58 FF         RST  0038,MASK_INT
+ 1F59 FF         RST  0038,MASK_INT
+ 1F5A FF         RST  0038,MASK_INT
+ 1F5B FF         RST  0038,MASK_INT
+ 1F5C FF         RST  0038,MASK_INT
+ 1F5D FF         RST  0038,MASK_INT
+ 1F5E FF         RST  0038,MASK_INT
+ 1F5F FF         RST  0038,MASK_INT
+ 1F60 FF         RST  0038,MASK_INT
+ 1F61 FF         RST  0038,MASK_INT
+ 1F62 FF         RST  0038,MASK_INT
+ 1F63 FF         RST  0038,MASK_INT
+ 1F64 FF         RST  0038,MASK_INT
+ 1F65 FF         RST  0038,MASK_INT
+ 1F66 FF         RST  0038,MASK_INT
+ 1F67 FF         RST  0038,MASK_INT
+ 1F68 FF         RST  0038,MASK_INT
+ 1F69 FF         RST  0038,MASK_INT
+ 1F6A FF         RST  0038,MASK_INT
+ 1F6B FF         RST  0038,MASK_INT
+ 1F6C FF         RST  0038,MASK_INT
+ 1F6D FF         RST  0038,MASK_INT
+ 1F6E FF         RST  0038,MASK_INT
+ 1F6F FF         RST  0038,MASK_INT
+ 1F70 FF         RST  0038,MASK_INT
+ 1F71 FF         RST  0038,MASK_INT
+ 1F72 FF         RST  0038,MASK_INT
+ 1F73 FF         RST  0038,MASK_INT
+ 1F74 FF         RST  0038,MASK_INT
+ 1F75 FF         RST  0038,MASK_INT
+ 1F76 FF         RST  0038,MASK_INT
+ 1F77 FF         RST  0038,MASK_INT
+ 1F78 FF         RST  0038,MASK_INT
+ 1F79 FF         RST  0038,MASK_INT
+ 1F7A FF         RST  0038,MASK_INT
+ 1F7B FF         RST  0038,MASK_INT
+ 1F7C FF         RST  0038,MASK_INT
+ 1F7D FF         RST  0038,MASK_INT
+ 1F7E FF         RST  0038,MASK_INT
+ 1F7F FF         RST  0038,MASK_INT
+ 1F80 FF         RST  0038,MASK_INT
+ 1F81 FF         RST  0038,MASK_INT
+ 1F82 FF         RST  0038,MASK_INT
+ 1F83 FF         RST  0038,MASK_INT
+ 1F84 FF         RST  0038,MASK_INT
+ 1F85 FF         RST  0038,MASK_INT
+ 1F86 FF         RST  0038,MASK_INT
+ 1F87 FF         RST  0038,MASK_INT
+ 1F88 FF         RST  0038,MASK_INT
+ 1F89 FF         RST  0038,MASK_INT
+ 1F8A FF         RST  0038,MASK_INT
+ 1F8B FF         RST  0038,MASK_INT
+ 1F8C FF         RST  0038,MASK_INT
+ 1F8D FF         RST  0038,MASK_INT
+ 1F8E FF         RST  0038,MASK_INT
+ 1F8F FF         RST  0038,MASK_INT
+ 1F90 FF         RST  0038,MASK_INT
+ 1F91 FF         RST  0038,MASK_INT
+ 1F92 FF         RST  0038,MASK_INT
+ 1F93 FF         RST  0038,MASK_INT
+ 1F94 FF         RST  0038,MASK_INT
+ 1F95 FF         RST  0038,MASK_INT
+ 1F96 FF         RST  0038,MASK_INT
+ 1F97 FF         RST  0038,MASK_INT
+ 1F98 FF         RST  0038,MASK_INT
+ 1F99 FF         RST  0038,MASK_INT
+ 1F9A FF         RST  0038,MASK_INT
+ 1F9B FF         RST  0038,MASK_INT
+ 1F9C FF         RST  0038,MASK_INT
+ 1F9D FF         RST  0038,MASK_INT
+ 1F9E FF         RST  0038,MASK_INT
+ 1F9F FF         RST  0038,MASK_INT
+ 1FA0 FF         RST  0038,MASK_INT
+ 1FA1 FF         RST  0038,MASK_INT
+ 1FA2 FF         RST  0038,MASK_INT
+ 1FA3 FF         RST  0038,MASK_INT
+ 1FA4 FF         RST  0038,MASK_INT
+ 1FA5 FF         RST  0038,MASK_INT
+ 1FA6 FF         RST  0038,MASK_INT
+ 1FA7 FF         RST  0038,MASK_INT
+ 1FA8 FF         RST  0038,MASK_INT
+ 1FA9 FF         RST  0038,MASK_INT
+ 1FAA FF         RST  0038,MASK_INT
+ 1FAB FF         RST  0038,MASK_INT
+ 1FAC FF         RST  0038,MASK_INT
+ 1FAD FF         RST  0038,MASK_INT
+ 1FAE FF         RST  0038,MASK_INT
+ 1FAF FF         RST  0038,MASK_INT
+ 1FB0 FF         RST  0038,MASK_INT
+ 1FB1 FF         RST  0038,MASK_INT
+ 1FB2 FF         RST  0038,MASK_INT
+ 1FB3 FF         RST  0038,MASK_INT
+ 1FB4 FF         RST  0038,MASK_INT
+ 1FB5 FF         RST  0038,MASK_INT
+ 1FB6 FF         RST  0038,MASK_INT
+ 1FB7 FF         RST  0038,MASK_INT
+ 1FB8 FF         RST  0038,MASK_INT
+ 1FB9 FF         RST  0038,MASK_INT
+ 1FBA FF         RST  0038,MASK_INT
+ 1FBB FF         RST  0038,MASK_INT
+ 1FBC FF         RST  0038,MASK_INT
+ 1FBD FF         RST  0038,MASK_INT
+ 1FBE FF         RST  0038,MASK_INT
+ 1FBF FF         RST  0038,MASK_INT
+ 1FC0 FF         RST  0038,MASK_INT
+ 1FC1 FF         RST  0038,MASK_INT
+ 1FC2 FF         RST  0038,MASK_INT
+ 1FC3 FF         RST  0038,MASK_INT
+ 1FC4 FF         RST  0038,MASK_INT
+ 1FC5 FF         RST  0038,MASK_INT
+ 1FC6 FF         RST  0038,MASK_INT
+ 1FC7 FF         RST  0038,MASK_INT
+ 1FC8 FF         RST  0038,MASK_INT
+ 1FC9 FF         RST  0038,MASK_INT
+ 1FCA FF         RST  0038,MASK_INT
+ 1FCB FF         RST  0038,MASK_INT
+ 1FCC FF         RST  0038,MASK_INT
+ 1FCD FF         RST  0038,MASK_INT
+ 1FCE FF         RST  0038,MASK_INT
+ 1FCF FF         RST  0038,MASK_INT
+ 1FD0 FF         RST  0038,MASK_INT
+ 1FD1 FF         RST  0038,MASK_INT
+ 1FD2 FF         RST  0038,MASK_INT
+ 1FD3 FF         RST  0038,MASK_INT
+ 1FD4 FF         RST  0038,MASK_INT
+ 1FD5 FF         RST  0038,MASK_INT
+ 1FD6 FF         RST  0038,MASK_INT
+ 1FD7 FF         RST  0038,MASK_INT
+ 1FD8 FF         RST  0038,MASK_INT
+ 1FD9 FF         RST  0038,MASK_INT
+ 1FDA FF         RST  0038,MASK_INT
+ 1FDB FF         RST  0038,MASK_INT
+ 1FDC FF         RST  0038,MASK_INT
+ 1FDD FF         RST  0038,MASK_INT
+ 1FDE FF         RST  0038,MASK_INT
+ 1FDF FF         RST  0038,MASK_INT
+ 1FE0 FF         RST  0038,MASK_INT
+ 1FE1 FF         RST  0038,MASK_INT
+ 1FE2 FF         RST  0038,MASK_INT
+ 1FE3 FF         RST  0038,MASK_INT
+ 1FE4 FF         RST  0038,MASK_INT
+ 1FE5 FF         RST  0038,MASK_INT
+ 1FE6 FF         RST  0038,MASK_INT
+ 1FE7 FF         RST  0038,MASK_INT
+ 1FE8 FF         RST  0038,MASK_INT
+ 1FE9 FF         RST  0038,MASK_INT
+ 1FEA FF         RST  0038,MASK_INT
+ 1FEB FF         RST  0038,MASK_INT
+ 1FEC FF         RST  0038,MASK_INT
+ 1FED FF         RST  0038,MASK_INT
+ 1FEE FF         RST  0038,MASK_INT
+ 1FEF FF         RST  0038,MASK_INT
+ 1FF0 FF         RST  0038,MASK_INT
+ 1FF1 FF         RST  0038,MASK_INT
+ 1FF2 FF         RST  0038,MASK_INT
+ 1FF3 FF         RST  0038,MASK_INT
+ 1FF4 FF         RST  0038,MASK_INT
+ 1FF5 FF         RST  0038,MASK_INT
+ 1FF6 FF         RST  0038,MASK_INT
+ 1FF7 FF         RST  0038,MASK_INT
+ 1FF8 FF         RST  0038,MASK_INT
+ 1FF9 FF         RST  0038,MASK_INT
+ 1FFA FF         RST  0038,MASK_INT
+ 1FFB FF         RST  0038,MASK_INT
+ 1FFC FF         RST  0038,MASK_INT
+ 1FFD FF         RST  0038,MASK_INT
+ 1FFE FF         RST  0038,MASK_INT
+ 1FFF FF         RST  0038,MASK_INT
+ 2000 DD2A515C   LD   IX,(CURCHL)
+ 2004 DD7E10     LD   A,(IX+10)
+ 2007 A7         AND  A
+ 2008 2802       JR   Z,200C
+ 200A E7         RST  0020,NEXT_CHAR
+ 200B 0D         DEC  C
+ 200C DD7E14     LD   A,(IX+14)
+ 200F A7         AND  A
+ 2010 2814       JR   Z,2026
+ 2012 DD5E13     LD   E,(IX+13)
+ 2015 3D         DEC  A
+ 2016 93         SUB  E
+ 2017 380D       JR   C,2026
+ 2019 1600       LD   D,+00
+ 201B 1C         INC  E
+ 201C DD7313     LD   (IX+13),E
+ 201F DD19       ADD  IX,DE
+ 2021 DD7E14     LD   A,(IX+14)
+ 2024 37         SCF
+ 2025 C9         RET
+ 2026 DD7E0F     LD   A,(IX+0F)
+ 2029 A7         AND  A
+ 202A C0         RET  NZ
+ 202B 3AC65C     LD   A,(5CC6)
+ 202E D3FE       OUT  (+FE),A
+ 2030 F3         DI
+ 2031 CDF121     CALL 21F1
+ 2034 3015       JR   NC,204B
+ 2036 CD0021     CALL 2100
+ 2039 2010       JR   NZ,204B
+ 203B FB         EI
+ 203C CDE00B     CALL 0BE0
+ 203F DD361300   LD   (IX+13),+00
+ 2043 3AD25C     LD   A,(5CD2)
+ 2046 DD770F     LD   (IX+0F),A
+ 2049 18C1       JR   200C
+ 204B DD7E0B     LD   A,(IX+0B)
+ 204E A7         AND  A
+ 204F 28E0       JR   Z,2031
+ 2051 FB         EI
+ 2052 CDE00B     CALL 0BE0
+ 2055 AF         XOR  A
+ 2056 C9         RET
+ 2057 DD2A515C   LD   IX,(CURCHL)
+ 205B 47         LD   B,A
+ 205C DD7E14     LD   A,(IX+14)
+ 205F A7         AND  A
+ 2060 78         LD   A,B
+ 2061 2802       JR   Z,2065
+ 2063 E7         RST  0020,NEXT_CHAR
+ 2064 0C         INC  C
+ 2065 DD5E10     LD   E,(IX+10)
+ 2068 1C         INC  E
+ 2069 2008       JR   NZ,2073
+ 206B F5         PUSH AF
+ 206C AF         XOR  A
+ 206D CDF320     CALL 20F3
+ 2070 F1         POP  AF
+ 2071 1E01       LD   E,+01
+ 2073 DD7310     LD   (IX+10),E
+ 2076 1600       LD   D,+00
+ 2078 DD19       ADD  IX,DE
+ 207A DD7714     LD   (IX+14),A
+ 207D C9         RET
+ 207E CD8B22     CALL 228B
+ 2081 DD7E0B     LD   A,(IX+0B)
+ 2084 A7         AND  A
+ 2085 C8         RET  Z
+ 2086 21CD5C     LD   HL,+5CCD
+ 2089 3600       LD   (HL),+00
+ 208B 1E01       LD   E,+01
+ 208D CD5822     CALL 2258,CO_TEMP_B
+ 2090 C0         RET  NZ
+ 2091 3ACD5C     LD   A,(5CCD)
+ 2094 3D         DEC  A
+ 2095 C9         RET
+ 2096 DD770F     LD   (IX+0F),A
+ 2099 3AC65C     LD   A,(5CC6)
+ 209C D3FE       OUT  (+FE),A
+ 209E DDE5       PUSH IX
+ 20A0 D1         POP  DE
+ 20A1 211500     LD   HL,+0015
+ 20A4 19         ADD  HL,DE
+ 20A5 AF         XOR  A
+ 20A6 DD4610     LD   B,(IX+10)
+ 20A9 86         ADD  A,(HL)
+ 20AA 23         INC  HL
+ 20AB 10FC       DJNZ 20A9
+ 20AD DD7711     LD   (IX+11),A
+ 20B0 210B00     LD   HL,+000B
+ 20B3 19         ADD  HL,DE
+ 20B4 E5         PUSH HL
+ 20B5 0607       LD   B,+07
+ 20B7 AF         XOR  A
+ 20B8 86         ADD  A,(HL)
+ 20B9 23         INC  HL
+ 20BA 10FC       DJNZ 20B8
+ 20BC 77         LD   (HL),A
+ 20BD F3         DI
+ 20BE CD2722     CALL 2227
+ 20C1 E1         POP  HL
+ 20C2 E5         PUSH HL
+ 20C3 1E08       LD   E,+08
+ 20C5 CD7E20     CALL 207E
+ 20C8 20F4       JR   NZ,20BE
+ 20CA DDE5       PUSH IX
+ 20CC E1         POP  HL
+ 20CD 111500     LD   DE,+0015
+ 20D0 19         ADD  HL,DE
+ 20D1 DD5E10     LD   E,(IX+10)
+ 20D4 7B         LD   A,E
+ 20D5 A7         AND  A
+ 20D6 2809       JR   Z,20E1
+ 20D8 0620       LD   B,+20
+ 20DA 10FE       DJNZ 20DA
+ 20DC CD7E20     CALL 207E
+ 20DF 20DD       JR   NZ,20BE
+ 20E1 DD340D     INC  (IX+0D)
+ 20E4 2003       JR   NZ,20E9
+ 20E6 DD340E     INC  (IX+0E)
+ 20E9 E1         POP  HL
+ 20EA CDE00B     CALL 0BE0
+ 20ED FB         EI
+ 20EE DD7E0B     LD   A,(IX+0B)
+ 20F1 A7         AND  A
+ 20F2 C9         RET
+ 20F3 CD9620     CALL 2096,INPUT_1
+ 20F6 C0         RET  NZ
+ 20F7 110015     LD   DE,+1500
+ 20FA 1B         DEC  DE
+ 20FB 7B         LD   A,E
+ 20FC B2         OR   D
+ 20FD 20FB       JR   NZ,20FA,IN_PROMPT
+ 20FF C9         RET
+ 2100 21CE5C     LD   HL,+5CCE
+ 2103 1E08       LD   E,+08
+ 2105 CD5822     CALL 2258,CO_TEMP_B
+ 2108 C0         RET  NZ
+ 2109 21CE5C     LD   HL,+5CCE
+ 210C AF         XOR  A
+ 210D 0607       LD   B,+07
+ 210F 86         ADD  A,(HL)
+ 2110 23         INC  HL
+ 2111 10FC       DJNZ 210F
+ 2113 BE         CP   (HL)
+ 2114 C0         RET  NZ
+ 2115 3ACE5C     LD   A,(5CCE)
+ 2118 A7         AND  A
+ 2119 280D       JR   Z,2128
+ 211B DDBE0C     CP   (IX+0C)
+ 211E C0         RET  NZ
+ 211F 3ACF5C     LD   A,(5CCF)
+ 2122 DDBE0B     CP   (IX+0B)
+ 2125 C0         RET  NZ
+ 2126 1805       JR   212D
+ 2128 DD7E0B     LD   A,(IX+0B)
+ 212B B7         OR   A
+ 212C C0         RET  NZ
+ 212D 2AD05C     LD   HL,(5CD0)
+ 2130 DD5E0D     LD   E,(IX+0D)
+ 2133 DD560E     LD   D,(IX+0E)
+ 2136 A7         AND  A
+ 2137 ED52       SBC  HL,DE
+ 2139 2812       JR   Z,214D
+ 213B 23         INC  HL
+ 213C 7C         LD   A,H
+ 213D B5         OR   L
+ 213E C0         RET  NZ
+ 213F D5         PUSH DE
+ 2140 CD4D21     CALL 214D
+ 2143 D1         POP  DE
+ 2144 DD730D     LD   (IX+0D),E
+ 2147 DD720E     LD   (IX+0E),D
+ 214A F601       OR   +01
+ 214C C9         RET
+ 214D 3ACE5C     LD   A,(5CCE)
+ 2150 B7         OR   A
+ 2151 C48422     CALL NZ,2284
+ 2154 3AD35C     LD   A,(5CD3)
+ 2157 A7         AND  A
+ 2158 2821       JR   Z,217B
+ 215A DDE5       PUSH IX
+ 215C E1         POP  HL
+ 215D 111500     LD   DE,+0015
+ 2160 19         ADD  HL,DE
+ 2161 E5         PUSH HL
+ 2162 5F         LD   E,A
+ 2163 CD5822     CALL 2258,CO_TEMP_B
+ 2166 E1         POP  HL
+ 2167 C0         RET  NZ
+ 2168 3AD35C     LD   A,(5CD3)
+ 216B 47         LD   B,A
+ 216C 3AD45C     LD   A,(5CD4)
+ 216F 96         SUB  (HL)
+ 2170 23         INC  HL
+ 2171 10FC       DJNZ 216F
+ 2173 C0         RET  NZ
+ 2174 3ACE5C     LD   A,(5CCE)
+ 2177 A7         AND  A
+ 2178 C48422     CALL NZ,2284
+ 217B 3AD35C     LD   A,(5CD3)
+ 217E DD7714     LD   (IX+14),A
+ 2181 DD340D     INC  (IX+0D)
+ 2184 2003       JR   NZ,2189
+ 2186 DD340E     INC  (IX+0E)
+ 2189 BF         CP   A
+ 218A C9         RET
+ 218B CD9E21     CALL 219E
+ 218E C3D30A     JP   0AD3
+ 2191 CD9E21     CALL 219E
+ 2194 DDCB04FE   SET  7,(IX+04)
+ 2198 C9         RET
+ 2199 110028     LD   DE,+2800
+ 219C 1806       JR   21A4
+ 219E 011401     LD   BC,+0114
+ 21A1 CD830A     CALL 0A83
+ 21A4 21C121     LD   HL,+21C1
+ 21A7 011401     LD   BC,+0114
+ 21AA CD920A     CALL 0A92
+ 21AD D5         PUSH DE
+ 21AE DDE1       POP  IX
+ 21B0 3AD65C     LD   A,(5CD6)
+ 21B3 DD770B     LD   (IX+0B),A
+ 21B6 3AC55C     LD   A,(5CC5)
+ 21B9 DD770C     LD   (IX+0C),A
+ 21BC ED53515C   LD   (CURCHL),DE
+ 21C0 C9         RET
+ 21C1 08         EX   AF,AF'
+ 21C2 00         NOP
+ 21C3 08         EX   AF,AF'
+ 21C4 00         NOP
+ 21C5 4E         LD   C,(HL)
+ 21C6 57         LD   D,A
+ 21C7 2041       JR   NZ,220A
+ 21C9 0C         INC  C
+ 21CA 14         INC  D
+ 21CB 01DD2A     LD   BC,+2ADD
+ 21CE 51         LD   D,C
+ 21CF 5C         LD   E,H
+ 21D0 DD7E10     LD   A,(IX+10)
+ 21D3 A7         AND  A
+ 21D4 C8         RET  Z
+ 21D5 3E01       LD   A,+01
+ 21D7 C3F320     JP   20F3
+ 21DA ED5F       LD   A,R
+ 21DC F6C0       OR   +C0
+ 21DE 47         LD   B,A
+ 21DF CDE521     CALL 21E5
+ 21E2 38F6       JR   C,21DA
+ 21E4 C9         RET
+ 21E5 CD8E0D     CALL 0D8E,CLS_3
+ 21E8 C5         PUSH BC
+ 21E9 C1         POP  BC
+ 21EA DBF7       IN   A,(+F7)
+ 21EC 0F         RRCA
+ 21ED D8         RET  C
+ 21EE 10F8       DJNZ 21E8
+ 21F0 C9         RET
+ 21F1 21C201     LD   HL,+01C2
+ 21F4 0680       LD   B,+80
+ 21F6 CDE521     CALL 21E5
+ 21F9 300D       JR   NC,2208
+ 21FB 2B         DEC  HL
+ 21FC 2B         DEC  HL
+ 21FD 7C         LD   A,H
+ 21FE B5         OR   L
+ 21FF 20F3       JR   NZ,21F4
+ 2201 DD7E0B     LD   A,(IX+0B)
+ 2204 A7         AND  A
+ 2205 28ED       JR   Z,21F4
+ 2207 C9         RET
+ 2208 DBF7       IN   A,(+F7)
+ 220A 0F         RRCA
+ 220B 380F       JR   C,221C
+ 220D CD8E0D     CALL 0D8E,CLS_3
+ 2210 2B         DEC  HL
+ 2211 7C         LD   A,H
+ 2212 B5         OR   L
+ 2213 20F3       JR   NZ,2208
+ 2215 DD7E0B     LD   A,(IX+0B)
+ 2218 A7         AND  A
+ 2219 28ED       JR   Z,2208
+ 221B C9         RET
+ 221C 2E09       LD   L,+09
+ 221E 2D         DEC  L
+ 221F 37         SCF
+ 2220 C8         RET  Z
+ 2221 060E       LD   B,+0E
+ 2223 10FE       DJNZ 2223
+ 2225 18F7       JR   221E
+ 2227 CDDA21     CALL 21DA
+ 222A 0EF7       LD   C,+F7
+ 222C 210900     LD   HL,+0009
+ 222F 3AC55C     LD   A,(5CC5)
+ 2232 5F         LD   E,A
+ 2233 DBF7       IN   A,(+F7)
+ 2235 0F         RRCA
+ 2236 38EF       JR   C,2227
+ 2238 ED61       OUT  (C),H
+ 223A 54         LD   D,H
+ 223B 2600       LD   H,+00
+ 223D CB03       RLC  E
+ 223F CB14       RL   H
+ 2241 0608       LD   B,+08
+ 2243 10FE       DJNZ 2243
+ 2245 DBF7       IN   A,(+F7)
+ 2247 E601       AND  +01
+ 2249 BA         CP   D
+ 224A 28DB       JR   Z,2227
+ 224C 2D         DEC  L
+ 224D 20E9       JR   NZ,2238
+ 224F 3E01       LD   A,+01
+ 2251 D3F7       OUT  (+F7),A
+ 2253 060E       LD   B,+0E
+ 2255 10FE       DJNZ 2255
+ 2257 C9         RET
+ 2258 06FF       LD   B,+FF
+ 225A DBF7       IN   A,(+F7)
+ 225C 1F         RRA
+ 225D 3804       JR   C,2263
+ 225F 10F9       DJNZ 225A
+ 2261 04         INC  B
+ 2262 C9         RET
+ 2263 43         LD   B,E
+ 2264 1E80       LD   E,+80
+ 2266 3ECE       LD   A,+CE
+ 2268 D3EF       OUT  (+EF),A
+ 226A 00         NOP
+ 226B 00         NOP
+ 226C DD23       INC  IX
+ 226E DD2B       DEC  IX
+ 2270 DD23       INC  IX
+ 2272 DD2B       DEC  IX
+ 2274 3E00       LD   A,+00
+ 2276 DBF7       IN   A,(+F7)
+ 2278 1F         RRA
+ 2279 CB1B       RR   E
+ 227B D27422     JP   NC,2274
+ 227E 73         LD   (HL),E
+ 227F 23         INC  HL
+ 2280 10E2       DJNZ 2264
+ 2282 BF         CP   A
+ 2283 C9         RET
+ 2284 3E01       LD   A,+01
+ 2286 21CD5C     LD   HL,+5CCD
+ 2289 77         LD   (HL),A
+ 228A 5F         LD   E,A
+ 228B AF         XOR  A
+ 228C D3F7       OUT  (+F7),A
+ 228E 0604       LD   B,+04
+ 2290 10FE       DJNZ 2290
+ 2292 7E         LD   A,(HL)
+ 2293 2F         CPL
+ 2294 37         SCF
+ 2295 17         RLA
+ 2296 060A       LD   B,+0A
+ 2298 D3F7       OUT  (+F7),A
+ 229A 1F         RRA
+ 229B A7         AND  A
+ 229C 05         DEC  B
+ 229D 1600       LD   D,+00
+ 229F C29822     JP   NZ,2298
+ 22A2 23         INC  HL
+ 22A3 1D         DEC  E
+ 22A4 E5         PUSH HL
+ 22A5 E1         POP  HL
+ 22A6 C29222     JP   NZ,2292
+ 22A9 3E01       LD   A,+01
+ 22AB D3F7       OUT  (+F7),A
+ 22AD C9         RET
+ 22AE CDCC21     CALL 21CC
+ 22B1 DDE5       PUSH IX
+ 22B3 E1         POP  HL
+ 22B4 011401     LD   BC,+0114
+ 22B7 D7         RST  0010,PRINT_A_1
+ 22B8 E8         RET  PE
+ 22B9 19         ADD  HL,DE
+ 22BA C9         RET
+ 22BB 3AC65C     LD   A,(5CC6)
+ 22BE D3FE       OUT  (+FE),A
+ 22C0 F3         DI
+ 22C1 CDF121     CALL 21F1
+ 22C4 3007       JR   NC,22CD
+ 22C6 CD0021     CALL 2100
+ 22C9 2002       JR   NZ,22CD
+ 22CB B7         OR   A
+ 22CC 3E37       LD   A,+37
+ 22CE FB         EI
+ 22CF F5         PUSH AF
+ 22D0 CDE00B     CALL 0BE0
+ 22D3 F1         POP  AF
+ 22D4 C9         RET
+ 22D5 FF         RST  0038,MASK_INT
+ 22D6 FF         RST  0038,MASK_INT
+ 22D7 FF         RST  0038,MASK_INT
+ 22D8 FF         RST  0038,MASK_INT
+ 22D9 FF         RST  0038,MASK_INT
+ 22DA FF         RST  0038,MASK_INT
+ 22DB FF         RST  0038,MASK_INT
+ 22DC FF         RST  0038,MASK_INT
+ 22DD FF         RST  0038,MASK_INT
+ 22DE FF         RST  0038,MASK_INT
+ 22DF FF         RST  0038,MASK_INT
+ 22E0 FF         RST  0038,MASK_INT
+ 22E1 FF         RST  0038,MASK_INT
+ 22E2 FF         RST  0038,MASK_INT
+ 22E3 FF         RST  0038,MASK_INT
+ 22E4 FF         RST  0038,MASK_INT
+ 22E5 FF         RST  0038,MASK_INT
+ 22E6 FF         RST  0038,MASK_INT
+ 22E7 FF         RST  0038,MASK_INT
+ 22E8 FF         RST  0038,MASK_INT
+ 22E9 FF         RST  0038,MASK_INT
+ 22EA FF         RST  0038,MASK_INT
+ 22EB FF         RST  0038,MASK_INT
+ 22EC FF         RST  0038,MASK_INT
+ 22ED FF         RST  0038,MASK_INT
+ 22EE FF         RST  0038,MASK_INT
+ 22EF FF         RST  0038,MASK_INT
+ 22F0 FF         RST  0038,MASK_INT
+ 22F1 FF         RST  0038,MASK_INT
+ 22F2 FF         RST  0038,MASK_INT
+ 22F3 FF         RST  0038,MASK_INT
+ 22F4 FF         RST  0038,MASK_INT
+ 22F5 FF         RST  0038,MASK_INT
+ 22F6 FF         RST  0038,MASK_INT
+ 22F7 FF         RST  0038,MASK_INT
+ 22F8 FF         RST  0038,MASK_INT
+ 22F9 FF         RST  0038,MASK_INT
+ 22FA FF         RST  0038,MASK_INT
+ 22FB FF         RST  0038,MASK_INT
+ 22FC FF         RST  0038,MASK_INT
+ 22FD FF         RST  0038,MASK_INT
+ 22FE FF         RST  0038,MASK_INT
+ 22FF FF         RST  0038,MASK_INT
+ 2300 FF         RST  0038,MASK_INT
+ 2301 FF         RST  0038,MASK_INT
+ 2302 FF         RST  0038,MASK_INT
+ 2303 FF         RST  0038,MASK_INT
+ 2304 FF         RST  0038,MASK_INT
+ 2305 FF         RST  0038,MASK_INT
+ 2306 FF         RST  0038,MASK_INT
+ 2307 FF         RST  0038,MASK_INT
+ 2308 FF         RST  0038,MASK_INT
+ 2309 FF         RST  0038,MASK_INT
+ 230A FF         RST  0038,MASK_INT
+ 230B FF         RST  0038,MASK_INT
+ 230C FF         RST  0038,MASK_INT
+ 230D FF         RST  0038,MASK_INT
+ 230E FF         RST  0038,MASK_INT
+ 230F FF         RST  0038,MASK_INT
+ 2310 FF         RST  0038,MASK_INT
+ 2311 FF         RST  0038,MASK_INT
+ 2312 FF         RST  0038,MASK_INT
+ 2313 FF         RST  0038,MASK_INT
+ 2314 FF         RST  0038,MASK_INT
+ 2315 FF         RST  0038,MASK_INT
+ 2316 FF         RST  0038,MASK_INT
+ 2317 FF         RST  0038,MASK_INT
+ 2318 FF         RST  0038,MASK_INT
+ 2319 FF         RST  0038,MASK_INT
+ 231A FF         RST  0038,MASK_INT
+ 231B FF         RST  0038,MASK_INT
+ 231C FF         RST  0038,MASK_INT
+ 231D FF         RST  0038,MASK_INT
+ 231E FF         RST  0038,MASK_INT
+ 231F FF         RST  0038,MASK_INT
+ 2320 FF         RST  0038,MASK_INT
+ 2321 FF         RST  0038,MASK_INT
+ 2322 FF         RST  0038,MASK_INT
+ 2323 FF         RST  0038,MASK_INT
+ 2324 FF         RST  0038,MASK_INT
+ 2325 FF         RST  0038,MASK_INT
+ 2326 FF         RST  0038,MASK_INT
+ 2327 FF         RST  0038,MASK_INT
+ 2328 FF         RST  0038,MASK_INT
+ 2329 FF         RST  0038,MASK_INT
+ 232A FF         RST  0038,MASK_INT
+ 232B FF         RST  0038,MASK_INT
+ 232C FF         RST  0038,MASK_INT
+ 232D FF         RST  0038,MASK_INT
+ 232E FF         RST  0038,MASK_INT
+ 232F FF         RST  0038,MASK_INT
+ 2330 FF         RST  0038,MASK_INT
+ 2331 FF         RST  0038,MASK_INT
+ 2332 FF         RST  0038,MASK_INT
+ 2333 FF         RST  0038,MASK_INT
+ 2334 FF         RST  0038,MASK_INT
+ 2335 FF         RST  0038,MASK_INT
+ 2336 FF         RST  0038,MASK_INT
+ 2337 FF         RST  0038,MASK_INT
+ 2338 FF         RST  0038,MASK_INT
+ 2339 FF         RST  0038,MASK_INT
+ 233A FF         RST  0038,MASK_INT
+ 233B FF         RST  0038,MASK_INT
+ 233C FF         RST  0038,MASK_INT
+ 233D FF         RST  0038,MASK_INT
+ 233E FF         RST  0038,MASK_INT
+ 233F FF         RST  0038,MASK_INT
+ 2340 FF         RST  0038,MASK_INT
+ 2341 FF         RST  0038,MASK_INT
+ 2342 FF         RST  0038,MASK_INT
+ 2343 FF         RST  0038,MASK_INT
+ 2344 FF         RST  0038,MASK_INT
+ 2345 FF         RST  0038,MASK_INT
+ 2346 FF         RST  0038,MASK_INT
+ 2347 FF         RST  0038,MASK_INT
+ 2348 FF         RST  0038,MASK_INT
+ 2349 FF         RST  0038,MASK_INT
+ 234A FF         RST  0038,MASK_INT
+ 234B FF         RST  0038,MASK_INT
+ 234C FF         RST  0038,MASK_INT
+ 234D FF         RST  0038,MASK_INT
+ 234E FF         RST  0038,MASK_INT
+ 234F FF         RST  0038,MASK_INT
+ 2350 FF         RST  0038,MASK_INT
+ 2351 FF         RST  0038,MASK_INT
+ 2352 FF         RST  0038,MASK_INT
+ 2353 FF         RST  0038,MASK_INT
+ 2354 FF         RST  0038,MASK_INT
+ 2355 FF         RST  0038,MASK_INT
+ 2356 FF         RST  0038,MASK_INT
+ 2357 FF         RST  0038,MASK_INT
+ 2358 FF         RST  0038,MASK_INT
+ 2359 FF         RST  0038,MASK_INT
+ 235A FF         RST  0038,MASK_INT
+ 235B FF         RST  0038,MASK_INT
+ 235C FF         RST  0038,MASK_INT
+ 235D FF         RST  0038,MASK_INT
+ 235E FF         RST  0038,MASK_INT
+ 235F FF         RST  0038,MASK_INT
+ 2360 FF         RST  0038,MASK_INT
+ 2361 FF         RST  0038,MASK_INT
+ 2362 FF         RST  0038,MASK_INT
+ 2363 FF         RST  0038,MASK_INT
+ 2364 FF         RST  0038,MASK_INT
+ 2365 FF         RST  0038,MASK_INT
+ 2366 FF         RST  0038,MASK_INT
+ 2367 FF         RST  0038,MASK_INT
+ 2368 FF         RST  0038,MASK_INT
+ 2369 FF         RST  0038,MASK_INT
+ 236A FF         RST  0038,MASK_INT
+ 236B FF         RST  0038,MASK_INT
+ 236C FF         RST  0038,MASK_INT
+ 236D FF         RST  0038,MASK_INT
+ 236E FF         RST  0038,MASK_INT
+ 236F FF         RST  0038,MASK_INT
+ 2370 FF         RST  0038,MASK_INT
+ 2371 FF         RST  0038,MASK_INT
+ 2372 FF         RST  0038,MASK_INT
+ 2373 FF         RST  0038,MASK_INT
+ 2374 FF         RST  0038,MASK_INT
+ 2375 FF         RST  0038,MASK_INT
+ 2376 FF         RST  0038,MASK_INT
+ 2377 FF         RST  0038,MASK_INT
+ 2378 FF         RST  0038,MASK_INT
+ 2379 FF         RST  0038,MASK_INT
+ 237A FF         RST  0038,MASK_INT
+ 237B FF         RST  0038,MASK_INT
+ 237C FF         RST  0038,MASK_INT
+ 237D FF         RST  0038,MASK_INT
+ 237E FF         RST  0038,MASK_INT
+ 237F FF         RST  0038,MASK_INT
+ 2380 FF         RST  0038,MASK_INT
+ 2381 FF         RST  0038,MASK_INT
+ 2382 FF         RST  0038,MASK_INT
+ 2383 FF         RST  0038,MASK_INT
+ 2384 FF         RST  0038,MASK_INT
+ 2385 FF         RST  0038,MASK_INT
+ 2386 FF         RST  0038,MASK_INT
+ 2387 FF         RST  0038,MASK_INT
+ 2388 FF         RST  0038,MASK_INT
+ 2389 FF         RST  0038,MASK_INT
+ 238A FF         RST  0038,MASK_INT
+ 238B FF         RST  0038,MASK_INT
+ 238C FF         RST  0038,MASK_INT
+ 238D FF         RST  0038,MASK_INT
+ 238E FF         RST  0038,MASK_INT
+ 238F FF         RST  0038,MASK_INT
+ 2390 FF         RST  0038,MASK_INT
+ 2391 FF         RST  0038,MASK_INT
+ 2392 FF         RST  0038,MASK_INT
+ 2393 FF         RST  0038,MASK_INT
+ 2394 FF         RST  0038,MASK_INT
+ 2395 FF         RST  0038,MASK_INT
+ 2396 FF         RST  0038,MASK_INT
+ 2397 FF         RST  0038,MASK_INT
+ 2398 FF         RST  0038,MASK_INT
+ 2399 FF         RST  0038,MASK_INT
+ 239A FF         RST  0038,MASK_INT
+ 239B FF         RST  0038,MASK_INT
+ 239C FF         RST  0038,MASK_INT
+ 239D FF         RST  0038,MASK_INT
+ 239E FF         RST  0038,MASK_INT
+ 239F FF         RST  0038,MASK_INT
+ 23A0 FF         RST  0038,MASK_INT
+ 23A1 FF         RST  0038,MASK_INT
+ 23A2 FF         RST  0038,MASK_INT
+ 23A3 FF         RST  0038,MASK_INT
+ 23A4 FF         RST  0038,MASK_INT
+ 23A5 FF         RST  0038,MASK_INT
+ 23A6 FF         RST  0038,MASK_INT
+ 23A7 FF         RST  0038,MASK_INT
+ 23A8 FF         RST  0038,MASK_INT
+ 23A9 FF         RST  0038,MASK_INT
+ 23AA FF         RST  0038,MASK_INT
+ 23AB FF         RST  0038,MASK_INT
+ 23AC FF         RST  0038,MASK_INT
+ 23AD FF         RST  0038,MASK_INT
+ 23AE FF         RST  0038,MASK_INT
+ 23AF FF         RST  0038,MASK_INT
+ 23B0 FF         RST  0038,MASK_INT
+ 23B1 FF         RST  0038,MASK_INT
+ 23B2 FF         RST  0038,MASK_INT
+ 23B3 FF         RST  0038,MASK_INT
+ 23B4 FF         RST  0038,MASK_INT
+ 23B5 FF         RST  0038,MASK_INT
+ 23B6 FF         RST  0038,MASK_INT
+ 23B7 FF         RST  0038,MASK_INT
+ 23B8 FF         RST  0038,MASK_INT
+ 23B9 FF         RST  0038,MASK_INT
+ 23BA FF         RST  0038,MASK_INT
+ 23BB FF         RST  0038,MASK_INT
+ 23BC FF         RST  0038,MASK_INT
+ 23BD FF         RST  0038,MASK_INT
+ 23BE FF         RST  0038,MASK_INT
+ 23BF FF         RST  0038,MASK_INT
+ 23C0 FF         RST  0038,MASK_INT
+ 23C1 FF         RST  0038,MASK_INT
+ 23C2 FF         RST  0038,MASK_INT
+ 23C3 FF         RST  0038,MASK_INT
+ 23C4 FF         RST  0038,MASK_INT
+ 23C5 FF         RST  0038,MASK_INT
+ 23C6 FF         RST  0038,MASK_INT
+ 23C7 FF         RST  0038,MASK_INT
+ 23C8 FF         RST  0038,MASK_INT
+ 23C9 FF         RST  0038,MASK_INT
+ 23CA FF         RST  0038,MASK_INT
+ 23CB FF         RST  0038,MASK_INT
+ 23CC FF         RST  0038,MASK_INT
+ 23CD FF         RST  0038,MASK_INT
+ 23CE FF         RST  0038,MASK_INT
+ 23CF FF         RST  0038,MASK_INT
+ 23D0 FF         RST  0038,MASK_INT
+ 23D1 FF         RST  0038,MASK_INT
+ 23D2 FF         RST  0038,MASK_INT
+ 23D3 FF         RST  0038,MASK_INT
+ 23D4 FF         RST  0038,MASK_INT
+ 23D5 FF         RST  0038,MASK_INT
+ 23D6 FF         RST  0038,MASK_INT
+ 23D7 FF         RST  0038,MASK_INT
+ 23D8 FF         RST  0038,MASK_INT
+ 23D9 FF         RST  0038,MASK_INT
+ 23DA FF         RST  0038,MASK_INT
+ 23DB FF         RST  0038,MASK_INT
+ 23DC FF         RST  0038,MASK_INT
+ 23DD FF         RST  0038,MASK_INT
+ 23DE FF         RST  0038,MASK_INT
+ 23DF FF         RST  0038,MASK_INT
+ 23E0 FF         RST  0038,MASK_INT
+ 23E1 FF         RST  0038,MASK_INT
+ 23E2 FF         RST  0038,MASK_INT
+ 23E3 FF         RST  0038,MASK_INT
+ 23E4 FF         RST  0038,MASK_INT
+ 23E5 FF         RST  0038,MASK_INT
+ 23E6 FF         RST  0038,MASK_INT
+ 23E7 FF         RST  0038,MASK_INT
+ 23E8 FF         RST  0038,MASK_INT
+ 23E9 FF         RST  0038,MASK_INT
+ 23EA FF         RST  0038,MASK_INT
+ 23EB FF         RST  0038,MASK_INT
+ 23EC FF         RST  0038,MASK_INT
+ 23ED FF         RST  0038,MASK_INT
+ 23EE FF         RST  0038,MASK_INT
+ 23EF FF         RST  0038,MASK_INT
+ 23F0 323231     LD   (3132),A
+ 23F3 313931     LD   SP,+3139
+ 23F6 54         LD   D,H
+ 23F7 34         INC  (HL)
+ 23F8 3048       JR   NC,2442
+ 23FA 325331     LD   (3153),A
+ 23FD 3600       LD   (HL),+00
+ 23FF 00         NOP
+ 2400 FF         RST  0038,MASK_INT
+ 2401 FF         RST  0038,MASK_INT
+ 2402 FF         RST  0038,MASK_INT
+ 2403 FF         RST  0038,MASK_INT
+ 2404 FF         RST  0038,MASK_INT
+ 2405 FF         RST  0038,MASK_INT
+ 2406 FF         RST  0038,MASK_INT
+ 2407 FF         RST  0038,MASK_INT
+ 2408 FF         RST  0038,MASK_INT
+ 2409 FF         RST  0038,MASK_INT
+ 240A FF         RST  0038,MASK_INT
+ 240B FF         RST  0038,MASK_INT
+ 240C FF         RST  0038,MASK_INT
+ 240D FF         RST  0038,MASK_INT
+ 240E FF         RST  0038,MASK_INT
+ 240F FF         RST  0038,MASK_INT
+ 2410 FF         RST  0038,MASK_INT
+ 2411 FF         RST  0038,MASK_INT
+ 2412 FF         RST  0038,MASK_INT
+ 2413 FF         RST  0038,MASK_INT
+ 2414 FF         RST  0038,MASK_INT
+ 2415 FF         RST  0038,MASK_INT
+ 2416 FF         RST  0038,MASK_INT
+ 2417 FF         RST  0038,MASK_INT
+ 2418 FF         RST  0038,MASK_INT
+ 2419 FF         RST  0038,MASK_INT
+ 241A FF         RST  0038,MASK_INT
+ 241B FF         RST  0038,MASK_INT
+ 241C FF         RST  0038,MASK_INT
+ 241D FF         RST  0038,MASK_INT
+ 241E FF         RST  0038,MASK_INT
+ 241F FF         RST  0038,MASK_INT
+ 2420 FF         RST  0038,MASK_INT
+ 2421 FF         RST  0038,MASK_INT
+ 2422 FF         RST  0038,MASK_INT
+ 2423 FF         RST  0038,MASK_INT
+ 2424 FF         RST  0038,MASK_INT
+ 2425 FF         RST  0038,MASK_INT
+ 2426 FF         RST  0038,MASK_INT
+ 2427 FF         RST  0038,MASK_INT
+ 2428 FF         RST  0038,MASK_INT
+ 2429 FF         RST  0038,MASK_INT
+ 242A FF         RST  0038,MASK_INT
+ 242B FF         RST  0038,MASK_INT
+ 242C FF         RST  0038,MASK_INT
+ 242D FF         RST  0038,MASK_INT
+ 242E FF         RST  0038,MASK_INT
+ 242F FF         RST  0038,MASK_INT
+ 2430 FF         RST  0038,MASK_INT
+ 2431 FF         RST  0038,MASK_INT
+ 2432 FF         RST  0038,MASK_INT
+ 2433 FF         RST  0038,MASK_INT
+ 2434 FF         RST  0038,MASK_INT
+ 2435 FF         RST  0038,MASK_INT
+ 2436 FF         RST  0038,MASK_INT
+ 2437 FF         RST  0038,MASK_INT
+ 2438 FF         RST  0038,MASK_INT
+ 2439 FF         RST  0038,MASK_INT
+ 243A FF         RST  0038,MASK_INT
+ 243B FF         RST  0038,MASK_INT
+ 243C FF         RST  0038,MASK_INT
+ 243D FF         RST  0038,MASK_INT
+ 243E FF         RST  0038,MASK_INT
+ 243F FF         RST  0038,MASK_INT
+ 2440 FF         RST  0038,MASK_INT
+ 2441 FF         RST  0038,MASK_INT
+ 2442 FF         RST  0038,MASK_INT
+ 2443 FF         RST  0038,MASK_INT
+ 2444 FF         RST  0038,MASK_INT
+ 2445 FF         RST  0038,MASK_INT
+ 2446 FF         RST  0038,MASK_INT
+ 2447 FF         RST  0038,MASK_INT
+ 2448 FF         RST  0038,MASK_INT
+ 2449 FF         RST  0038,MASK_INT
+ 244A FF         RST  0038,MASK_INT
+ 244B FF         RST  0038,MASK_INT
+ 244C FF         RST  0038,MASK_INT
+ 244D FF         RST  0038,MASK_INT
+ 244E FF         RST  0038,MASK_INT
+ 244F FF         RST  0038,MASK_INT
+ 2450 FF         RST  0038,MASK_INT
+ 2451 FF         RST  0038,MASK_INT
+ 2452 FF         RST  0038,MASK_INT
+ 2453 FF         RST  0038,MASK_INT
+ 2454 FF         RST  0038,MASK_INT
+ 2455 FF         RST  0038,MASK_INT
+ 2456 FF         RST  0038,MASK_INT
+ 2457 FF         RST  0038,MASK_INT
+ 2458 FF         RST  0038,MASK_INT
+ 2459 FF         RST  0038,MASK_INT
+ 245A FF         RST  0038,MASK_INT
+ 245B FF         RST  0038,MASK_INT
+ 245C FF         RST  0038,MASK_INT
+ 245D FF         RST  0038,MASK_INT
+ 245E FF         RST  0038,MASK_INT
+ 245F FF         RST  0038,MASK_INT
+ 2460 FF         RST  0038,MASK_INT
+ 2461 FF         RST  0038,MASK_INT
+ 2462 FF         RST  0038,MASK_INT
+ 2463 FF         RST  0038,MASK_INT
+ 2464 FF         RST  0038,MASK_INT
+ 2465 FF         RST  0038,MASK_INT
+ 2466 FF         RST  0038,MASK_INT
+ 2467 FF         RST  0038,MASK_INT
+ 2468 FF         RST  0038,MASK_INT
+ 2469 FF         RST  0038,MASK_INT
+ 246A FF         RST  0038,MASK_INT
+ 246B FF         RST  0038,MASK_INT
+ 246C FF         RST  0038,MASK_INT
+ 246D FF         RST  0038,MASK_INT
+ 246E FF         RST  0038,MASK_INT
+ 246F FF         RST  0038,MASK_INT
+ 2470 FF         RST  0038,MASK_INT
+ 2471 FF         RST  0038,MASK_INT
+ 2472 FF         RST  0038,MASK_INT
+ 2473 FF         RST  0038,MASK_INT
+ 2474 FF         RST  0038,MASK_INT
+ 2475 FF         RST  0038,MASK_INT
+ 2476 FF         RST  0038,MASK_INT
+ 2477 FF         RST  0038,MASK_INT
+ 2478 FF         RST  0038,MASK_INT
+ 2479 FF         RST  0038,MASK_INT
+ 247A FF         RST  0038,MASK_INT
+ 247B FF         RST  0038,MASK_INT
+ 247C FF         RST  0038,MASK_INT
+ 247D FF         RST  0038,MASK_INT
+ 247E FF         RST  0038,MASK_INT
+ 247F FF         RST  0038,MASK_INT
+ 2480 FF         RST  0038,MASK_INT
+ 2481 FF         RST  0038,MASK_INT
+ 2482 FF         RST  0038,MASK_INT
+ 2483 FF         RST  0038,MASK_INT
+ 2484 FF         RST  0038,MASK_INT
+ 2485 FF         RST  0038,MASK_INT
+ 2486 FF         RST  0038,MASK_INT
+ 2487 FF         RST  0038,MASK_INT
+ 2488 FF         RST  0038,MASK_INT
+ 2489 FF         RST  0038,MASK_INT
+ 248A FF         RST  0038,MASK_INT
+ 248B FF         RST  0038,MASK_INT
+ 248C FF         RST  0038,MASK_INT
+ 248D FF         RST  0038,MASK_INT
+ 248E FF         RST  0038,MASK_INT
+ 248F FF         RST  0038,MASK_INT
+ 2490 FF         RST  0038,MASK_INT
+ 2491 FF         RST  0038,MASK_INT
+ 2492 FF         RST  0038,MASK_INT
+ 2493 FF         RST  0038,MASK_INT
+ 2494 FF         RST  0038,MASK_INT
+ 2495 FF         RST  0038,MASK_INT
+ 2496 FF         RST  0038,MASK_INT
+ 2497 FF         RST  0038,MASK_INT
+ 2498 FF         RST  0038,MASK_INT
+ 2499 FF         RST  0038,MASK_INT
+ 249A FF         RST  0038,MASK_INT
+ 249B FF         RST  0038,MASK_INT
+ 249C FF         RST  0038,MASK_INT
+ 249D FF         RST  0038,MASK_INT
+ 249E FF         RST  0038,MASK_INT
+ 249F FF         RST  0038,MASK_INT
+ 24A0 FF         RST  0038,MASK_INT
+ 24A1 FF         RST  0038,MASK_INT
+ 24A2 FF         RST  0038,MASK_INT
+ 24A3 FF         RST  0038,MASK_INT
+ 24A4 FF         RST  0038,MASK_INT
+ 24A5 FF         RST  0038,MASK_INT
+ 24A6 FF         RST  0038,MASK_INT
+ 24A7 FF         RST  0038,MASK_INT
+ 24A8 FF         RST  0038,MASK_INT
+ 24A9 FF         RST  0038,MASK_INT
+ 24AA FF         RST  0038,MASK_INT
+ 24AB FF         RST  0038,MASK_INT
+ 24AC FF         RST  0038,MASK_INT
+ 24AD FF         RST  0038,MASK_INT
+ 24AE FF         RST  0038,MASK_INT
+ 24AF FF         RST  0038,MASK_INT
+ 24B0 FF         RST  0038,MASK_INT
+ 24B1 FF         RST  0038,MASK_INT
+ 24B2 FF         RST  0038,MASK_INT
+ 24B3 FF         RST  0038,MASK_INT
+ 24B4 FF         RST  0038,MASK_INT
+ 24B5 FF         RST  0038,MASK_INT
+ 24B6 FF         RST  0038,MASK_INT
+ 24B7 FF         RST  0038,MASK_INT
+ 24B8 FF         RST  0038,MASK_INT
+ 24B9 FF         RST  0038,MASK_INT
+ 24BA FF         RST  0038,MASK_INT
+ 24BB FF         RST  0038,MASK_INT
+ 24BC FF         RST  0038,MASK_INT
+ 24BD FF         RST  0038,MASK_INT
+ 24BE FF         RST  0038,MASK_INT
+ 24BF FF         RST  0038,MASK_INT
+ 24C0 FF         RST  0038,MASK_INT
+ 24C1 FF         RST  0038,MASK_INT
+ 24C2 FF         RST  0038,MASK_INT
+ 24C3 FF         RST  0038,MASK_INT
+ 24C4 FF         RST  0038,MASK_INT
+ 24C5 FF         RST  0038,MASK_INT
+ 24C6 FF         RST  0038,MASK_INT
+ 24C7 FF         RST  0038,MASK_INT
+ 24C8 FF         RST  0038,MASK_INT
+ 24C9 FF         RST  0038,MASK_INT
+ 24CA FF         RST  0038,MASK_INT
+ 24CB FF         RST  0038,MASK_INT
+ 24CC FF         RST  0038,MASK_INT
+ 24CD FF         RST  0038,MASK_INT
+ 24CE FF         RST  0038,MASK_INT
+ 24CF FF         RST  0038,MASK_INT
+ 24D0 FF         RST  0038,MASK_INT
+ 24D1 FF         RST  0038,MASK_INT
+ 24D2 FF         RST  0038,MASK_INT
+ 24D3 FF         RST  0038,MASK_INT
+ 24D4 FF         RST  0038,MASK_INT
+ 24D5 FF         RST  0038,MASK_INT
+ 24D6 FF         RST  0038,MASK_INT
+ 24D7 FF         RST  0038,MASK_INT
+ 24D8 FF         RST  0038,MASK_INT
+ 24D9 FF         RST  0038,MASK_INT
+ 24DA FF         RST  0038,MASK_INT
+ 24DB FF         RST  0038,MASK_INT
+ 24DC FF         RST  0038,MASK_INT
+ 24DD FF         RST  0038,MASK_INT
+ 24DE FF         RST  0038,MASK_INT
+ 24DF FF         RST  0038,MASK_INT
+ 24E0 FF         RST  0038,MASK_INT
+ 24E1 FF         RST  0038,MASK_INT
+ 24E2 FF         RST  0038,MASK_INT
+ 24E3 FF         RST  0038,MASK_INT
+ 24E4 FF         RST  0038,MASK_INT
+ 24E5 FF         RST  0038,MASK_INT
+ 24E6 FF         RST  0038,MASK_INT
+ 24E7 FF         RST  0038,MASK_INT
+ 24E8 FF         RST  0038,MASK_INT
+ 24E9 FF         RST  0038,MASK_INT
+ 24EA FF         RST  0038,MASK_INT
+ 24EB FF         RST  0038,MASK_INT
+ 24EC FF         RST  0038,MASK_INT
+ 24ED FF         RST  0038,MASK_INT
+ 24EE FF         RST  0038,MASK_INT
+ 24EF FF         RST  0038,MASK_INT
+ 24F0 FF         RST  0038,MASK_INT
+ 24F1 FF         RST  0038,MASK_INT
+ 24F2 FF         RST  0038,MASK_INT
+ 24F3 FF         RST  0038,MASK_INT
+ 24F4 FF         RST  0038,MASK_INT
+ 24F5 FF         RST  0038,MASK_INT
+ 24F6 FF         RST  0038,MASK_INT
+ 24F7 FF         RST  0038,MASK_INT
+ 24F8 FF         RST  0038,MASK_INT
+ 24F9 FF         RST  0038,MASK_INT
+ 24FA FF         RST  0038,MASK_INT
+ 24FB FF         RST  0038,MASK_INT
+ 24FC FF         RST  0038,MASK_INT
+ 24FD FF         RST  0038,MASK_INT
+ 24FE FF         RST  0038,MASK_INT
+ 24FF FF         RST  0038,MASK_INT
+ 2500 FF         RST  0038,MASK_INT
+ 2501 FF         RST  0038,MASK_INT
+ 2502 FF         RST  0038,MASK_INT
+ 2503 FF         RST  0038,MASK_INT
+ 2504 FF         RST  0038,MASK_INT
+ 2505 FF         RST  0038,MASK_INT
+ 2506 FF         RST  0038,MASK_INT
+ 2507 FF         RST  0038,MASK_INT
+ 2508 FF         RST  0038,MASK_INT
+ 2509 FF         RST  0038,MASK_INT
+ 250A FF         RST  0038,MASK_INT
+ 250B FF         RST  0038,MASK_INT
+ 250C FF         RST  0038,MASK_INT
+ 250D FF         RST  0038,MASK_INT
+ 250E FF         RST  0038,MASK_INT
+ 250F FF         RST  0038,MASK_INT
+ 2510 FF         RST  0038,MASK_INT
+ 2511 FF         RST  0038,MASK_INT
+ 2512 FF         RST  0038,MASK_INT
+ 2513 FF         RST  0038,MASK_INT
+ 2514 FF         RST  0038,MASK_INT
+ 2515 FF         RST  0038,MASK_INT
+ 2516 FF         RST  0038,MASK_INT
+ 2517 FF         RST  0038,MASK_INT
+ 2518 FF         RST  0038,MASK_INT
+ 2519 FF         RST  0038,MASK_INT
+ 251A FF         RST  0038,MASK_INT
+ 251B FF         RST  0038,MASK_INT
+ 251C FF         RST  0038,MASK_INT
+ 251D FF         RST  0038,MASK_INT
+ 251E FF         RST  0038,MASK_INT
+ 251F FF         RST  0038,MASK_INT
+ 2520 FF         RST  0038,MASK_INT
+ 2521 FF         RST  0038,MASK_INT
+ 2522 FF         RST  0038,MASK_INT
+ 2523 FF         RST  0038,MASK_INT
+ 2524 FF         RST  0038,MASK_INT
+ 2525 FF         RST  0038,MASK_INT
+ 2526 FF         RST  0038,MASK_INT
+ 2527 FF         RST  0038,MASK_INT
+ 2528 FF         RST  0038,MASK_INT
+ 2529 FF         RST  0038,MASK_INT
+ 252A FF         RST  0038,MASK_INT
+ 252B FF         RST  0038,MASK_INT
+ 252C FF         RST  0038,MASK_INT
+ 252D FF         RST  0038,MASK_INT
+ 252E FF         RST  0038,MASK_INT
+ 252F FF         RST  0038,MASK_INT
+ 2530 FF         RST  0038,MASK_INT
+ 2531 FF         RST  0038,MASK_INT
+ 2532 FF         RST  0038,MASK_INT
+ 2533 FF         RST  0038,MASK_INT
+ 2534 FF         RST  0038,MASK_INT
+ 2535 FF         RST  0038,MASK_INT
+ 2536 FF         RST  0038,MASK_INT
+ 2537 FF         RST  0038,MASK_INT
+ 2538 FF         RST  0038,MASK_INT
+ 2539 FF         RST  0038,MASK_INT
+ 253A FF         RST  0038,MASK_INT
+ 253B FF         RST  0038,MASK_INT
+ 253C FF         RST  0038,MASK_INT
+ 253D FF         RST  0038,MASK_INT
+ 253E FF         RST  0038,MASK_INT
+ 253F FF         RST  0038,MASK_INT
+ 2540 FF         RST  0038,MASK_INT
+ 2541 FF         RST  0038,MASK_INT
+ 2542 FF         RST  0038,MASK_INT
+ 2543 FF         RST  0038,MASK_INT
+ 2544 FF         RST  0038,MASK_INT
+ 2545 FF         RST  0038,MASK_INT
+ 2546 FF         RST  0038,MASK_INT
+ 2547 FF         RST  0038,MASK_INT
+ 2548 FF         RST  0038,MASK_INT
+ 2549 FF         RST  0038,MASK_INT
+ 254A FF         RST  0038,MASK_INT
+ 254B FF         RST  0038,MASK_INT
+ 254C FF         RST  0038,MASK_INT
+ 254D FF         RST  0038,MASK_INT
+ 254E FF         RST  0038,MASK_INT
+ 254F FF         RST  0038,MASK_INT
+ 2550 FF         RST  0038,MASK_INT
+ 2551 FF         RST  0038,MASK_INT
+ 2552 FF         RST  0038,MASK_INT
+ 2553 FF         RST  0038,MASK_INT
+ 2554 FF         RST  0038,MASK_INT
+ 2555 FF         RST  0038,MASK_INT
+ 2556 FF         RST  0038,MASK_INT
+ 2557 FF         RST  0038,MASK_INT
+ 2558 FF         RST  0038,MASK_INT
+ 2559 FF         RST  0038,MASK_INT
+ 255A FF         RST  0038,MASK_INT
+ 255B FF         RST  0038,MASK_INT
+ 255C FF         RST  0038,MASK_INT
+ 255D FF         RST  0038,MASK_INT
+ 255E FF         RST  0038,MASK_INT
+ 255F FF         RST  0038,MASK_INT
+ 2560 FF         RST  0038,MASK_INT
+ 2561 FF         RST  0038,MASK_INT
+ 2562 FF         RST  0038,MASK_INT
+ 2563 FF         RST  0038,MASK_INT
+ 2564 FF         RST  0038,MASK_INT
+ 2565 FF         RST  0038,MASK_INT
+ 2566 FF         RST  0038,MASK_INT
+ 2567 FF         RST  0038,MASK_INT
+ 2568 FF         RST  0038,MASK_INT
+ 2569 FF         RST  0038,MASK_INT
+ 256A FF         RST  0038,MASK_INT
+ 256B FF         RST  0038,MASK_INT
+ 256C FF         RST  0038,MASK_INT
+ 256D FF         RST  0038,MASK_INT
+ 256E FF         RST  0038,MASK_INT
+ 256F FF         RST  0038,MASK_INT
+ 2570 FF         RST  0038,MASK_INT
+ 2571 FF         RST  0038,MASK_INT
+ 2572 FF         RST  0038,MASK_INT
+ 2573 FF         RST  0038,MASK_INT
+ 2574 FF         RST  0038,MASK_INT
+ 2575 FF         RST  0038,MASK_INT
+ 2576 FF         RST  0038,MASK_INT
+ 2577 FF         RST  0038,MASK_INT
+ 2578 FF         RST  0038,MASK_INT
+ 2579 FF         RST  0038,MASK_INT
+ 257A FF         RST  0038,MASK_INT
+ 257B FF         RST  0038,MASK_INT
+ 257C FF         RST  0038,MASK_INT
+ 257D FF         RST  0038,MASK_INT
+ 257E FF         RST  0038,MASK_INT
+ 257F FF         RST  0038,MASK_INT
+ 2580 FF         RST  0038,MASK_INT
+ 2581 FF         RST  0038,MASK_INT
+ 2582 FF         RST  0038,MASK_INT
+ 2583 FF         RST  0038,MASK_INT
+ 2584 FF         RST  0038,MASK_INT
+ 2585 FF         RST  0038,MASK_INT
+ 2586 FF         RST  0038,MASK_INT
+ 2587 FF         RST  0038,MASK_INT
+ 2588 FF         RST  0038,MASK_INT
+ 2589 FF         RST  0038,MASK_INT
+ 258A FF         RST  0038,MASK_INT
+ 258B FF         RST  0038,MASK_INT
+ 258C FF         RST  0038,MASK_INT
+ 258D FF         RST  0038,MASK_INT
+ 258E FF         RST  0038,MASK_INT
+ 258F FF         RST  0038,MASK_INT
+ 2590 FF         RST  0038,MASK_INT
+ 2591 FF         RST  0038,MASK_INT
+ 2592 FF         RST  0038,MASK_INT
+ 2593 FF         RST  0038,MASK_INT
+ 2594 FF         RST  0038,MASK_INT
+ 2595 FF         RST  0038,MASK_INT
+ 2596 FF         RST  0038,MASK_INT
+ 2597 FF         RST  0038,MASK_INT
+ 2598 FF         RST  0038,MASK_INT
+ 2599 FF         RST  0038,MASK_INT
+ 259A FF         RST  0038,MASK_INT
+ 259B FF         RST  0038,MASK_INT
+ 259C FF         RST  0038,MASK_INT
+ 259D FF         RST  0038,MASK_INT
+ 259E FF         RST  0038,MASK_INT
+ 259F FF         RST  0038,MASK_INT
+ 25A0 FF         RST  0038,MASK_INT
+ 25A1 FF         RST  0038,MASK_INT
+ 25A2 FF         RST  0038,MASK_INT
+ 25A3 FF         RST  0038,MASK_INT
+ 25A4 FF         RST  0038,MASK_INT
+ 25A5 FF         RST  0038,MASK_INT
+ 25A6 FF         RST  0038,MASK_INT
+ 25A7 FF         RST  0038,MASK_INT
+ 25A8 FF         RST  0038,MASK_INT
+ 25A9 FF         RST  0038,MASK_INT
+ 25AA FF         RST  0038,MASK_INT
+ 25AB FF         RST  0038,MASK_INT
+ 25AC FF         RST  0038,MASK_INT
+ 25AD FF         RST  0038,MASK_INT
+ 25AE FF         RST  0038,MASK_INT
+ 25AF FF         RST  0038,MASK_INT
+ 25B0 FF         RST  0038,MASK_INT
+ 25B1 FF         RST  0038,MASK_INT
+ 25B2 FF         RST  0038,MASK_INT
+ 25B3 FF         RST  0038,MASK_INT
+ 25B4 FF         RST  0038,MASK_INT
+ 25B5 FF         RST  0038,MASK_INT
+ 25B6 FF         RST  0038,MASK_INT
+ 25B7 FF         RST  0038,MASK_INT
+ 25B8 FF         RST  0038,MASK_INT
+ 25B9 FF         RST  0038,MASK_INT
+ 25BA FF         RST  0038,MASK_INT
+ 25BB FF         RST  0038,MASK_INT
+ 25BC FF         RST  0038,MASK_INT
+ 25BD FF         RST  0038,MASK_INT
+ 25BE FF         RST  0038,MASK_INT
+ 25BF FF         RST  0038,MASK_INT
+ 25C0 FF         RST  0038,MASK_INT
+ 25C1 FF         RST  0038,MASK_INT
+ 25C2 FF         RST  0038,MASK_INT
+ 25C3 FF         RST  0038,MASK_INT
+ 25C4 FF         RST  0038,MASK_INT
+ 25C5 FF         RST  0038,MASK_INT
+ 25C6 FF         RST  0038,MASK_INT
+ 25C7 FF         RST  0038,MASK_INT
+ 25C8 FF         RST  0038,MASK_INT
+ 25C9 FF         RST  0038,MASK_INT
+ 25CA FF         RST  0038,MASK_INT
+ 25CB FF         RST  0038,MASK_INT
+ 25CC FF         RST  0038,MASK_INT
+ 25CD FF         RST  0038,MASK_INT
+ 25CE FF         RST  0038,MASK_INT
+ 25CF FF         RST  0038,MASK_INT
+ 25D0 FF         RST  0038,MASK_INT
+ 25D1 FF         RST  0038,MASK_INT
+ 25D2 FF         RST  0038,MASK_INT
+ 25D3 FF         RST  0038,MASK_INT
+ 25D4 FF         RST  0038,MASK_INT
+ 25D5 FF         RST  0038,MASK_INT
+ 25D6 FF         RST  0038,MASK_INT
+ 25D7 FF         RST  0038,MASK_INT
+ 25D8 FF         RST  0038,MASK_INT
+ 25D9 FF         RST  0038,MASK_INT
+ 25DA FF         RST  0038,MASK_INT
+ 25DB FF         RST  0038,MASK_INT
+ 25DC FF         RST  0038,MASK_INT
+ 25DD FF         RST  0038,MASK_INT
+ 25DE FF         RST  0038,MASK_INT
+ 25DF FF         RST  0038,MASK_INT
+ 25E0 FF         RST  0038,MASK_INT
+ 25E1 FF         RST  0038,MASK_INT
+ 25E2 FF         RST  0038,MASK_INT
+ 25E3 FF         RST  0038,MASK_INT
+ 25E4 FF         RST  0038,MASK_INT
+ 25E5 FF         RST  0038,MASK_INT
+ 25E6 FF         RST  0038,MASK_INT
+ 25E7 FF         RST  0038,MASK_INT
+ 25E8 FF         RST  0038,MASK_INT
+ 25E9 FF         RST  0038,MASK_INT
+ 25EA FF         RST  0038,MASK_INT
+ 25EB FF         RST  0038,MASK_INT
+ 25EC FF         RST  0038,MASK_INT
+ 25ED FF         RST  0038,MASK_INT
+ 25EE FF         RST  0038,MASK_INT
+ 25EF FF         RST  0038,MASK_INT
+ 25F0 FF         RST  0038,MASK_INT
+ 25F1 FF         RST  0038,MASK_INT
+ 25F2 FF         RST  0038,MASK_INT
+ 25F3 FF         RST  0038,MASK_INT
+ 25F4 FF         RST  0038,MASK_INT
+ 25F5 FF         RST  0038,MASK_INT
+ 25F6 FF         RST  0038,MASK_INT
+ 25F7 FF         RST  0038,MASK_INT
+ 25F8 FF         RST  0038,MASK_INT
+ 25F9 FF         RST  0038,MASK_INT
+ 25FA FF         RST  0038,MASK_INT
+ 25FB FF         RST  0038,MASK_INT
+ 25FC FF         RST  0038,MASK_INT
+ 25FD FF         RST  0038,MASK_INT
+ 25FE FF         RST  0038,MASK_INT
+ 25FF FF         RST  0038,MASK_INT
+ 2600 FF         RST  0038,MASK_INT
+ 2601 FF         RST  0038,MASK_INT
+ 2602 FF         RST  0038,MASK_INT
+ 2603 FF         RST  0038,MASK_INT
+ 2604 FF         RST  0038,MASK_INT
+ 2605 FF         RST  0038,MASK_INT
+ 2606 FF         RST  0038,MASK_INT
+ 2607 FF         RST  0038,MASK_INT
+ 2608 FF         RST  0038,MASK_INT
+ 2609 FF         RST  0038,MASK_INT
+ 260A FF         RST  0038,MASK_INT
+ 260B FF         RST  0038,MASK_INT
+ 260C FF         RST  0038,MASK_INT
+ 260D FF         RST  0038,MASK_INT
+ 260E FF         RST  0038,MASK_INT
+ 260F FF         RST  0038,MASK_INT
+ 2610 FF         RST  0038,MASK_INT
+ 2611 FF         RST  0038,MASK_INT
+ 2612 FF         RST  0038,MASK_INT
+ 2613 FF         RST  0038,MASK_INT
+ 2614 FF         RST  0038,MASK_INT
+ 2615 FF         RST  0038,MASK_INT
+ 2616 FF         RST  0038,MASK_INT
+ 2617 FF         RST  0038,MASK_INT
+ 2618 FF         RST  0038,MASK_INT
+ 2619 FF         RST  0038,MASK_INT
+ 261A FF         RST  0038,MASK_INT
+ 261B FF         RST  0038,MASK_INT
+ 261C FF         RST  0038,MASK_INT
+ 261D FF         RST  0038,MASK_INT
+ 261E FF         RST  0038,MASK_INT
+ 261F FF         RST  0038,MASK_INT
+ 2620 FF         RST  0038,MASK_INT
+ 2621 FF         RST  0038,MASK_INT
+ 2622 FF         RST  0038,MASK_INT
+ 2623 FF         RST  0038,MASK_INT
+ 2624 FF         RST  0038,MASK_INT
+ 2625 FF         RST  0038,MASK_INT
+ 2626 FF         RST  0038,MASK_INT
+ 2627 FF         RST  0038,MASK_INT
+ 2628 FF         RST  0038,MASK_INT
+ 2629 FF         RST  0038,MASK_INT
+ 262A FF         RST  0038,MASK_INT
+ 262B FF         RST  0038,MASK_INT
+ 262C FF         RST  0038,MASK_INT
+ 262D FF         RST  0038,MASK_INT
+ 262E FF         RST  0038,MASK_INT
+ 262F FF         RST  0038,MASK_INT
+ 2630 FF         RST  0038,MASK_INT
+ 2631 FF         RST  0038,MASK_INT
+ 2632 FF         RST  0038,MASK_INT
+ 2633 FF         RST  0038,MASK_INT
+ 2634 FF         RST  0038,MASK_INT
+ 2635 FF         RST  0038,MASK_INT
+ 2636 FF         RST  0038,MASK_INT
+ 2637 FF         RST  0038,MASK_INT
+ 2638 FF         RST  0038,MASK_INT
+ 2639 FF         RST  0038,MASK_INT
+ 263A FF         RST  0038,MASK_INT
+ 263B FF         RST  0038,MASK_INT
+ 263C FF         RST  0038,MASK_INT
+ 263D FF         RST  0038,MASK_INT
+ 263E FF         RST  0038,MASK_INT
+ 263F FF         RST  0038,MASK_INT
+ 2640 FF         RST  0038,MASK_INT
+ 2641 FF         RST  0038,MASK_INT
+ 2642 FF         RST  0038,MASK_INT
+ 2643 FF         RST  0038,MASK_INT
+ 2644 FF         RST  0038,MASK_INT
+ 2645 FF         RST  0038,MASK_INT
+ 2646 FF         RST  0038,MASK_INT
+ 2647 FF         RST  0038,MASK_INT
+ 2648 FF         RST  0038,MASK_INT
+ 2649 FF         RST  0038,MASK_INT
+ 264A FF         RST  0038,MASK_INT
+ 264B FF         RST  0038,MASK_INT
+ 264C FF         RST  0038,MASK_INT
+ 264D FF         RST  0038,MASK_INT
+ 264E FF         RST  0038,MASK_INT
+ 264F FF         RST  0038,MASK_INT
+ 2650 FF         RST  0038,MASK_INT
+ 2651 FF         RST  0038,MASK_INT
+ 2652 FF         RST  0038,MASK_INT
+ 2653 FF         RST  0038,MASK_INT
+ 2654 FF         RST  0038,MASK_INT
+ 2655 FF         RST  0038,MASK_INT
+ 2656 FF         RST  0038,MASK_INT
+ 2657 FF         RST  0038,MASK_INT
+ 2658 FF         RST  0038,MASK_INT
+ 2659 FF         RST  0038,MASK_INT
+ 265A FF         RST  0038,MASK_INT
+ 265B FF         RST  0038,MASK_INT
+ 265C FF         RST  0038,MASK_INT
+ 265D FF         RST  0038,MASK_INT
+ 265E FF         RST  0038,MASK_INT
+ 265F FF         RST  0038,MASK_INT
+ 2660 FF         RST  0038,MASK_INT
+ 2661 FF         RST  0038,MASK_INT
+ 2662 FF         RST  0038,MASK_INT
+ 2663 FF         RST  0038,MASK_INT
+ 2664 FF         RST  0038,MASK_INT
+ 2665 FF         RST  0038,MASK_INT
+ 2666 FF         RST  0038,MASK_INT
+ 2667 FF         RST  0038,MASK_INT
+ 2668 FF         RST  0038,MASK_INT
+ 2669 FF         RST  0038,MASK_INT
+ 266A FF         RST  0038,MASK_INT
+ 266B FF         RST  0038,MASK_INT
+ 266C FF         RST  0038,MASK_INT
+ 266D FF         RST  0038,MASK_INT
+ 266E FF         RST  0038,MASK_INT
+ 266F FF         RST  0038,MASK_INT
+ 2670 FF         RST  0038,MASK_INT
+ 2671 FF         RST  0038,MASK_INT
+ 2672 FF         RST  0038,MASK_INT
+ 2673 FF         RST  0038,MASK_INT
+ 2674 FF         RST  0038,MASK_INT
+ 2675 FF         RST  0038,MASK_INT
+ 2676 FF         RST  0038,MASK_INT
+ 2677 FF         RST  0038,MASK_INT
+ 2678 FF         RST  0038,MASK_INT
+ 2679 FF         RST  0038,MASK_INT
+ 267A FF         RST  0038,MASK_INT
+ 267B FF         RST  0038,MASK_INT
+ 267C FF         RST  0038,MASK_INT
+ 267D FF         RST  0038,MASK_INT
+ 267E FF         RST  0038,MASK_INT
+ 267F FF         RST  0038,MASK_INT
+ 2680 FF         RST  0038,MASK_INT
+ 2681 FF         RST  0038,MASK_INT
+ 2682 FF         RST  0038,MASK_INT
+ 2683 FF         RST  0038,MASK_INT
+ 2684 FF         RST  0038,MASK_INT
+ 2685 FF         RST  0038,MASK_INT
+ 2686 FF         RST  0038,MASK_INT
+ 2687 FF         RST  0038,MASK_INT
+ 2688 FF         RST  0038,MASK_INT
+ 2689 FF         RST  0038,MASK_INT
+ 268A FF         RST  0038,MASK_INT
+ 268B FF         RST  0038,MASK_INT
+ 268C FF         RST  0038,MASK_INT
+ 268D FF         RST  0038,MASK_INT
+ 268E FF         RST  0038,MASK_INT
+ 268F FF         RST  0038,MASK_INT
+ 2690 FF         RST  0038,MASK_INT
+ 2691 FF         RST  0038,MASK_INT
+ 2692 FF         RST  0038,MASK_INT
+ 2693 FF         RST  0038,MASK_INT
+ 2694 FF         RST  0038,MASK_INT
+ 2695 FF         RST  0038,MASK_INT
+ 2696 FF         RST  0038,MASK_INT
+ 2697 FF         RST  0038,MASK_INT
+ 2698 FF         RST  0038,MASK_INT
+ 2699 FF         RST  0038,MASK_INT
+ 269A FF         RST  0038,MASK_INT
+ 269B FF         RST  0038,MASK_INT
+ 269C FF         RST  0038,MASK_INT
+ 269D FF         RST  0038,MASK_INT
+ 269E FF         RST  0038,MASK_INT
+ 269F FF         RST  0038,MASK_INT
+ 26A0 FF         RST  0038,MASK_INT
+ 26A1 FF         RST  0038,MASK_INT
+ 26A2 FF         RST  0038,MASK_INT
+ 26A3 FF         RST  0038,MASK_INT
+ 26A4 FF         RST  0038,MASK_INT
+ 26A5 FF         RST  0038,MASK_INT
+ 26A6 FF         RST  0038,MASK_INT
+ 26A7 FF         RST  0038,MASK_INT
+ 26A8 FF         RST  0038,MASK_INT
+ 26A9 FF         RST  0038,MASK_INT
+ 26AA FF         RST  0038,MASK_INT
+ 26AB FF         RST  0038,MASK_INT
+ 26AC FF         RST  0038,MASK_INT
+ 26AD FF         RST  0038,MASK_INT
+ 26AE FF         RST  0038,MASK_INT
+ 26AF FF         RST  0038,MASK_INT
+ 26B0 FF         RST  0038,MASK_INT
+ 26B1 FF         RST  0038,MASK_INT
+ 26B2 FF         RST  0038,MASK_INT
+ 26B3 FF         RST  0038,MASK_INT
+ 26B4 FF         RST  0038,MASK_INT
+ 26B5 FF         RST  0038,MASK_INT
+ 26B6 FF         RST  0038,MASK_INT
+ 26B7 FF         RST  0038,MASK_INT
+ 26B8 FF         RST  0038,MASK_INT
+ 26B9 FF         RST  0038,MASK_INT
+ 26BA FF         RST  0038,MASK_INT
+ 26BB FF         RST  0038,MASK_INT
+ 26BC FF         RST  0038,MASK_INT
+ 26BD FF         RST  0038,MASK_INT
+ 26BE FF         RST  0038,MASK_INT
+ 26BF FF         RST  0038,MASK_INT
+ 26C0 FF         RST  0038,MASK_INT
+ 26C1 FF         RST  0038,MASK_INT
+ 26C2 FF         RST  0038,MASK_INT
+ 26C3 FF         RST  0038,MASK_INT
+ 26C4 FF         RST  0038,MASK_INT
+ 26C5 FF         RST  0038,MASK_INT
+ 26C6 FF         RST  0038,MASK_INT
+ 26C7 FF         RST  0038,MASK_INT
+ 26C8 FF         RST  0038,MASK_INT
+ 26C9 FF         RST  0038,MASK_INT
+ 26CA FF         RST  0038,MASK_INT
+ 26CB FF         RST  0038,MASK_INT
+ 26CC FF         RST  0038,MASK_INT
+ 26CD FF         RST  0038,MASK_INT
+ 26CE FF         RST  0038,MASK_INT
+ 26CF FF         RST  0038,MASK_INT
+ 26D0 FF         RST  0038,MASK_INT
+ 26D1 FF         RST  0038,MASK_INT
+ 26D2 FF         RST  0038,MASK_INT
+ 26D3 FF         RST  0038,MASK_INT
+ 26D4 FF         RST  0038,MASK_INT
+ 26D5 FF         RST  0038,MASK_INT
+ 26D6 FF         RST  0038,MASK_INT
+ 26D7 FF         RST  0038,MASK_INT
+ 26D8 FF         RST  0038,MASK_INT
+ 26D9 FF         RST  0038,MASK_INT
+ 26DA FF         RST  0038,MASK_INT
+ 26DB FF         RST  0038,MASK_INT
+ 26DC FF         RST  0038,MASK_INT
+ 26DD FF         RST  0038,MASK_INT
+ 26DE FF         RST  0038,MASK_INT
+ 26DF FF         RST  0038,MASK_INT
+ 26E0 FF         RST  0038,MASK_INT
+ 26E1 FF         RST  0038,MASK_INT
+ 26E2 FF         RST  0038,MASK_INT
+ 26E3 FF         RST  0038,MASK_INT
+ 26E4 FF         RST  0038,MASK_INT
+ 26E5 FF         RST  0038,MASK_INT
+ 26E6 FF         RST  0038,MASK_INT
+ 26E7 FF         RST  0038,MASK_INT
+ 26E8 FF         RST  0038,MASK_INT
+ 26E9 FF         RST  0038,MASK_INT
+ 26EA FF         RST  0038,MASK_INT
+ 26EB FF         RST  0038,MASK_INT
+ 26EC FF         RST  0038,MASK_INT
+ 26ED FF         RST  0038,MASK_INT
+ 26EE FF         RST  0038,MASK_INT
+ 26EF FF         RST  0038,MASK_INT
+ 26F0 FF         RST  0038,MASK_INT
+ 26F1 FF         RST  0038,MASK_INT
+ 26F2 FF         RST  0038,MASK_INT
+ 26F3 FF         RST  0038,MASK_INT
+ 26F4 FF         RST  0038,MASK_INT
+ 26F5 FF         RST  0038,MASK_INT
+ 26F6 FF         RST  0038,MASK_INT
+ 26F7 FF         RST  0038,MASK_INT
+ 26F8 FF         RST  0038,MASK_INT
+ 26F9 FF         RST  0038,MASK_INT
+ 26FA FF         RST  0038,MASK_INT
+ 26FB FF         RST  0038,MASK_INT
+ 26FC FF         RST  0038,MASK_INT
+ 26FD FF         RST  0038,MASK_INT
+ 26FE FF         RST  0038,MASK_INT
+ 26FF FF         RST  0038,MASK_INT
+ 2700 FF         RST  0038,MASK_INT
+ 2701 FF         RST  0038,MASK_INT
+ 2702 FF         RST  0038,MASK_INT
+ 2703 FF         RST  0038,MASK_INT
+ 2704 FF         RST  0038,MASK_INT
+ 2705 FF         RST  0038,MASK_INT
+ 2706 FF         RST  0038,MASK_INT
+ 2707 FF         RST  0038,MASK_INT
+ 2708 FF         RST  0038,MASK_INT
+ 2709 FF         RST  0038,MASK_INT
+ 270A FF         RST  0038,MASK_INT
+ 270B FF         RST  0038,MASK_INT
+ 270C FF         RST  0038,MASK_INT
+ 270D FF         RST  0038,MASK_INT
+ 270E FF         RST  0038,MASK_INT
+ 270F FF         RST  0038,MASK_INT
+ 2710 FF         RST  0038,MASK_INT
+ 2711 FF         RST  0038,MASK_INT
+ 2712 FF         RST  0038,MASK_INT
+ 2713 FF         RST  0038,MASK_INT
+ 2714 FF         RST  0038,MASK_INT
+ 2715 FF         RST  0038,MASK_INT
+ 2716 FF         RST  0038,MASK_INT
+ 2717 FF         RST  0038,MASK_INT
+ 2718 FF         RST  0038,MASK_INT
+ 2719 FF         RST  0038,MASK_INT
+ 271A FF         RST  0038,MASK_INT
+ 271B FF         RST  0038,MASK_INT
+ 271C FF         RST  0038,MASK_INT
+ 271D FF         RST  0038,MASK_INT
+ 271E FF         RST  0038,MASK_INT
+ 271F FF         RST  0038,MASK_INT
+ 2720 FF         RST  0038,MASK_INT
+ 2721 FF         RST  0038,MASK_INT
+ 2722 FF         RST  0038,MASK_INT
+ 2723 FF         RST  0038,MASK_INT
+ 2724 FF         RST  0038,MASK_INT
+ 2725 FF         RST  0038,MASK_INT
+ 2726 FF         RST  0038,MASK_INT
+ 2727 FF         RST  0038,MASK_INT
+ 2728 FF         RST  0038,MASK_INT
+ 2729 FF         RST  0038,MASK_INT
+ 272A FF         RST  0038,MASK_INT
+ 272B FF         RST  0038,MASK_INT
+ 272C FF         RST  0038,MASK_INT
+ 272D FF         RST  0038,MASK_INT
+ 272E FF         RST  0038,MASK_INT
+ 272F FF         RST  0038,MASK_INT
+ 2730 FF         RST  0038,MASK_INT
+ 2731 FF         RST  0038,MASK_INT
+ 2732 FF         RST  0038,MASK_INT
+ 2733 FF         RST  0038,MASK_INT
+ 2734 FF         RST  0038,MASK_INT
+ 2735 FF         RST  0038,MASK_INT
+ 2736 FF         RST  0038,MASK_INT
+ 2737 FF         RST  0038,MASK_INT
+ 2738 FF         RST  0038,MASK_INT
+ 2739 FF         RST  0038,MASK_INT
+ 273A FF         RST  0038,MASK_INT
+ 273B FF         RST  0038,MASK_INT
+ 273C FF         RST  0038,MASK_INT
+ 273D FF         RST  0038,MASK_INT
+ 273E FF         RST  0038,MASK_INT
+ 273F FF         RST  0038,MASK_INT
+ 2740 FF         RST  0038,MASK_INT
+ 2741 FF         RST  0038,MASK_INT
+ 2742 FF         RST  0038,MASK_INT
+ 2743 FF         RST  0038,MASK_INT
+ 2744 FF         RST  0038,MASK_INT
+ 2745 FF         RST  0038,MASK_INT
+ 2746 FF         RST  0038,MASK_INT
+ 2747 FF         RST  0038,MASK_INT
+ 2748 FF         RST  0038,MASK_INT
+ 2749 FF         RST  0038,MASK_INT
+ 274A FF         RST  0038,MASK_INT
+ 274B FF         RST  0038,MASK_INT
+ 274C FF         RST  0038,MASK_INT
+ 274D FF         RST  0038,MASK_INT
+ 274E FF         RST  0038,MASK_INT
+ 274F FF         RST  0038,MASK_INT
+ 2750 FF         RST  0038,MASK_INT
+ 2751 FF         RST  0038,MASK_INT
+ 2752 FF         RST  0038,MASK_INT
+ 2753 FF         RST  0038,MASK_INT
+ 2754 FF         RST  0038,MASK_INT
+ 2755 FF         RST  0038,MASK_INT
+ 2756 FF         RST  0038,MASK_INT
+ 2757 FF         RST  0038,MASK_INT
+ 2758 FF         RST  0038,MASK_INT
+ 2759 FF         RST  0038,MASK_INT
+ 275A FF         RST  0038,MASK_INT
+ 275B FF         RST  0038,MASK_INT
+ 275C FF         RST  0038,MASK_INT
+ 275D FF         RST  0038,MASK_INT
+ 275E FF         RST  0038,MASK_INT
+ 275F FF         RST  0038,MASK_INT
+ 2760 FF         RST  0038,MASK_INT
+ 2761 FF         RST  0038,MASK_INT
+ 2762 FF         RST  0038,MASK_INT
+ 2763 FF         RST  0038,MASK_INT
+ 2764 FF         RST  0038,MASK_INT
+ 2765 FF         RST  0038,MASK_INT
+ 2766 FF         RST  0038,MASK_INT
+ 2767 FF         RST  0038,MASK_INT
+ 2768 FF         RST  0038,MASK_INT
+ 2769 FF         RST  0038,MASK_INT
+ 276A FF         RST  0038,MASK_INT
+ 276B FF         RST  0038,MASK_INT
+ 276C FF         RST  0038,MASK_INT
+ 276D FF         RST  0038,MASK_INT
+ 276E FF         RST  0038,MASK_INT
+ 276F FF         RST  0038,MASK_INT
+ 2770 FF         RST  0038,MASK_INT
+ 2771 FF         RST  0038,MASK_INT
+ 2772 FF         RST  0038,MASK_INT
+ 2773 FF         RST  0038,MASK_INT
+ 2774 FF         RST  0038,MASK_INT
+ 2775 FF         RST  0038,MASK_INT
+ 2776 FF         RST  0038,MASK_INT
+ 2777 FF         RST  0038,MASK_INT
+ 2778 FF         RST  0038,MASK_INT
+ 2779 FF         RST  0038,MASK_INT
+ 277A FF         RST  0038,MASK_INT
+ 277B FF         RST  0038,MASK_INT
+ 277C FF         RST  0038,MASK_INT
+ 277D FF         RST  0038,MASK_INT
+ 277E FF         RST  0038,MASK_INT
+ 277F FF         RST  0038,MASK_INT
+ 2780 FF         RST  0038,MASK_INT
+ 2781 FF         RST  0038,MASK_INT
+ 2782 FF         RST  0038,MASK_INT
+ 2783 FF         RST  0038,MASK_INT
+ 2784 FF         RST  0038,MASK_INT
+ 2785 FF         RST  0038,MASK_INT
+ 2786 FF         RST  0038,MASK_INT
+ 2787 FF         RST  0038,MASK_INT
+ 2788 FF         RST  0038,MASK_INT
+ 2789 FF         RST  0038,MASK_INT
+ 278A FF         RST  0038,MASK_INT
+ 278B FF         RST  0038,MASK_INT
+ 278C FF         RST  0038,MASK_INT
+ 278D FF         RST  0038,MASK_INT
+ 278E FF         RST  0038,MASK_INT
+ 278F FF         RST  0038,MASK_INT
+ 2790 FF         RST  0038,MASK_INT
+ 2791 FF         RST  0038,MASK_INT
+ 2792 FF         RST  0038,MASK_INT
+ 2793 FF         RST  0038,MASK_INT
+ 2794 FF         RST  0038,MASK_INT
+ 2795 FF         RST  0038,MASK_INT
+ 2796 FF         RST  0038,MASK_INT
+ 2797 FF         RST  0038,MASK_INT
+ 2798 FF         RST  0038,MASK_INT
+ 2799 FF         RST  0038,MASK_INT
+ 279A FF         RST  0038,MASK_INT
+ 279B FF         RST  0038,MASK_INT
+ 279C FF         RST  0038,MASK_INT
+ 279D FF         RST  0038,MASK_INT
+ 279E FF         RST  0038,MASK_INT
+ 279F FF         RST  0038,MASK_INT
+ 27A0 FF         RST  0038,MASK_INT
+ 27A1 FF         RST  0038,MASK_INT
+ 27A2 FF         RST  0038,MASK_INT
+ 27A3 FF         RST  0038,MASK_INT
+ 27A4 FF         RST  0038,MASK_INT
+ 27A5 FF         RST  0038,MASK_INT
+ 27A6 FF         RST  0038,MASK_INT
+ 27A7 FF         RST  0038,MASK_INT
+ 27A8 FF         RST  0038,MASK_INT
+ 27A9 FF         RST  0038,MASK_INT
+ 27AA FF         RST  0038,MASK_INT
+ 27AB FF         RST  0038,MASK_INT
+ 27AC FF         RST  0038,MASK_INT
+ 27AD FF         RST  0038,MASK_INT
+ 27AE FF         RST  0038,MASK_INT
+ 27AF FF         RST  0038,MASK_INT
+ 27B0 FF         RST  0038,MASK_INT
+ 27B1 FF         RST  0038,MASK_INT
+ 27B2 FF         RST  0038,MASK_INT
+ 27B3 FF         RST  0038,MASK_INT
+ 27B4 FF         RST  0038,MASK_INT
+ 27B5 FF         RST  0038,MASK_INT
+ 27B6 FF         RST  0038,MASK_INT
+ 27B7 FF         RST  0038,MASK_INT
+ 27B8 FF         RST  0038,MASK_INT
+ 27B9 FF         RST  0038,MASK_INT
+ 27BA FF         RST  0038,MASK_INT
+ 27BB FF         RST  0038,MASK_INT
+ 27BC FF         RST  0038,MASK_INT
+ 27BD FF         RST  0038,MASK_INT
+ 27BE FF         RST  0038,MASK_INT
+ 27BF FF         RST  0038,MASK_INT
+ 27C0 FF         RST  0038,MASK_INT
+ 27C1 FF         RST  0038,MASK_INT
+ 27C2 FF         RST  0038,MASK_INT
+ 27C3 FF         RST  0038,MASK_INT
+ 27C4 FF         RST  0038,MASK_INT
+ 27C5 FF         RST  0038,MASK_INT
+ 27C6 FF         RST  0038,MASK_INT
+ 27C7 FF         RST  0038,MASK_INT
+ 27C8 FF         RST  0038,MASK_INT
+ 27C9 FF         RST  0038,MASK_INT
+ 27CA FF         RST  0038,MASK_INT
+ 27CB FF         RST  0038,MASK_INT
+ 27CC FF         RST  0038,MASK_INT
+ 27CD FF         RST  0038,MASK_INT
+ 27CE FF         RST  0038,MASK_INT
+ 27CF FF         RST  0038,MASK_INT
+ 27D0 FF         RST  0038,MASK_INT
+ 27D1 FF         RST  0038,MASK_INT
+ 27D2 FF         RST  0038,MASK_INT
+ 27D3 FF         RST  0038,MASK_INT
+ 27D4 FF         RST  0038,MASK_INT
+ 27D5 FF         RST  0038,MASK_INT
+ 27D6 FF         RST  0038,MASK_INT
+ 27D7 FF         RST  0038,MASK_INT
+ 27D8 FF         RST  0038,MASK_INT
+ 27D9 FF         RST  0038,MASK_INT
+ 27DA FF         RST  0038,MASK_INT
+ 27DB FF         RST  0038,MASK_INT
+ 27DC FF         RST  0038,MASK_INT
+ 27DD FF         RST  0038,MASK_INT
+ 27DE FF         RST  0038,MASK_INT
+ 27DF FF         RST  0038,MASK_INT
+ 27E0 FF         RST  0038,MASK_INT
+ 27E1 FF         RST  0038,MASK_INT
+ 27E2 FF         RST  0038,MASK_INT
+ 27E3 FF         RST  0038,MASK_INT
+ 27E4 FF         RST  0038,MASK_INT
+ 27E5 FF         RST  0038,MASK_INT
+ 27E6 FF         RST  0038,MASK_INT
+ 27E7 FF         RST  0038,MASK_INT
+ 27E8 FF         RST  0038,MASK_INT
+ 27E9 FF         RST  0038,MASK_INT
+ 27EA FF         RST  0038,MASK_INT
+ 27EB FF         RST  0038,MASK_INT
+ 27EC FF         RST  0038,MASK_INT
+ 27ED FF         RST  0038,MASK_INT
+ 27EE FF         RST  0038,MASK_INT
+ 27EF FF         RST  0038,MASK_INT
+ 27F0 FF         RST  0038,MASK_INT
+ 27F1 FF         RST  0038,MASK_INT
+ 27F2 FF         RST  0038,MASK_INT
+ 27F3 FF         RST  0038,MASK_INT
+ 27F4 FF         RST  0038,MASK_INT
+ 27F5 FF         RST  0038,MASK_INT
+ 27F6 FF         RST  0038,MASK_INT
+ 27F7 FF         RST  0038,MASK_INT
+ 27F8 FF         RST  0038,MASK_INT
+ 27F9 FF         RST  0038,MASK_INT
+ 27FA FF         RST  0038,MASK_INT
+ 27FB FF         RST  0038,MASK_INT
+ 27FC FF         RST  0038,MASK_INT
+ 27FD FF         RST  0038,MASK_INT
+ 27FE FF         RST  0038,MASK_INT
+ 27FF FF         RST  0038,MASK_INT
+ 2800 08         EX   AF,AF'
+ 2801 00         NOP
+ 2802 08         EX   AF,AF'
+ 2803 00         NOP
+ 2804 C4190F     CALL NZ,0F19
+ 2807 F5         PUSH AF
+ 2808 0B         DEC  BC
+ 2809 320100     LD   (0001),A
+ 280C 01726F     LD   BC,+6F72
+ 280F 6D         LD   L,L
+ 2810 73         LD   (HL),E
+ 2811 61         LD   H,C
+ 2812 76         HALT
+ 2813 65         LD   H,L
+ 2814 33         INC  SP
+ 2815 2020       JR   NZ,2837
+ 2817 2000       JR   NZ,2819
+ 2819 00         NOP
+ 281A 80         ADD  A,B
+ 281B 0F         RRCA
+ 281C 1800       JR   281E
+ 281E 00         NOP
+ 281F 00         NOP
+ 2820 00         NOP
+ 2821 00         NOP
+ 2822 00         NOP
+ 2823 00         NOP
+ 2824 00         NOP
+ 2825 00         NOP
+ 2826 00         NOP
+ 2827 00         NOP
+ 2828 00         NOP
+ 2829 00         NOP
+ 282A 00         NOP
+ 282B 00         NOP
+ 282C 1000       DJNZ 282E
+ 282E 00         NOP
+ 282F 00         NOP
+ 2830 00         NOP
+ 2831 00         NOP
+ 2832 00         NOP
+ 2833 00         NOP
+ 2834 00         NOP
+ 2835 00         NOP
+ 2836 00         NOP
+ 2837 00         NOP
+ 2838 00         NOP
+ 2839 00         NOP
+ 283A 00         NOP
+ 283B 00         NOP
+ 283C 00         NOP
+ 283D 00         NOP
+ 283E 00         NOP
+ 283F 00         NOP
+ 2840 00         NOP
+ 2841 00         NOP
+ 2842 00         NOP
+ 2843 00         NOP
+ 2844 00         NOP
+ 2845 00         NOP
+ 2846 00         NOP
+ 2847 00         NOP
+ 2848 00         NOP
+ 2849 00         NOP
+ 284A 00         NOP
+ 284B 00         NOP
+ 284C 00         NOP
+ 284D 00         NOP
+ 284E 00         NOP
+ 284F 00         NOP
+ 2850 00         NOP
+ 2851 1A         LD   A,(DE)
+ 2852 1A         LD   A,(DE)
+ 2853 1A         LD   A,(DE)
+ 2854 1A         LD   A,(DE)
+ 2855 1A         LD   A,(DE)
+ 2856 1A         LD   A,(DE)
+ 2857 1A         LD   A,(DE)
+ 2858 1A         LD   A,(DE)
+ 2859 1A         LD   A,(DE)
+ 285A 1A         LD   A,(DE)
+ 285B 1A         LD   A,(DE)
+ 285C 1A         LD   A,(DE)
+ 285D 1A         LD   A,(DE)
+ 285E 1A         LD   A,(DE)
+ 285F 1A         LD   A,(DE)
+ 2860 1A         LD   A,(DE)
+ 2861 1A         LD   A,(DE)
+ 2862 1A         LD   A,(DE)
+ 2863 1A         LD   A,(DE)
+ 2864 1A         LD   A,(DE)
+ 2865 1A         LD   A,(DE)
+ 2866 1A         LD   A,(DE)
+ 2867 1A         LD   A,(DE)
+ 2868 1A         LD   A,(DE)
+ 2869 1A         LD   A,(DE)
+ 286A 1A         LD   A,(DE)
+ 286B 1A         LD   A,(DE)
+ 286C 1A         LD   A,(DE)
+ 286D 1A         LD   A,(DE)
+ 286E 1A         LD   A,(DE)
+ 286F 1A         LD   A,(DE)
+ 2870 1A         LD   A,(DE)
+ 2871 1A         LD   A,(DE)
+ 2872 1A         LD   A,(DE)
+ 2873 1A         LD   A,(DE)
+ 2874 1A         LD   A,(DE)
+ 2875 1A         LD   A,(DE)
+ 2876 1A         LD   A,(DE)
+ 2877 1A         LD   A,(DE)
+ 2878 1A         LD   A,(DE)
+ 2879 1A         LD   A,(DE)
+ 287A 1A         LD   A,(DE)
+ 287B 1A         LD   A,(DE)
+ 287C 1A         LD   A,(DE)
+ 287D 1A         LD   A,(DE)
+ 287E 1A         LD   A,(DE)
+ 287F 1A         LD   A,(DE)
+ 2880 1A         LD   A,(DE)
+ 2881 1A         LD   A,(DE)
+ 2882 1A         LD   A,(DE)
+ 2883 1A         LD   A,(DE)
+ 2884 1A         LD   A,(DE)
+ 2885 1A         LD   A,(DE)
+ 2886 1A         LD   A,(DE)
+ 2887 1A         LD   A,(DE)
+ 2888 1A         LD   A,(DE)
+ 2889 1A         LD   A,(DE)
+ 288A 1A         LD   A,(DE)
+ 288B 1A         LD   A,(DE)
+ 288C 1A         LD   A,(DE)
+ 288D 1A         LD   A,(DE)
+ 288E 1A         LD   A,(DE)
+ 288F 1A         LD   A,(DE)
+ 2890 1A         LD   A,(DE)
+ 2891 1A         LD   A,(DE)
+ 2892 1A         LD   A,(DE)
+ 2893 1A         LD   A,(DE)
+ 2894 1A         LD   A,(DE)
+ 2895 1A         LD   A,(DE)
+ 2896 1A         LD   A,(DE)
+ 2897 1A         LD   A,(DE)
+ 2898 1A         LD   A,(DE)
+ 2899 1A         LD   A,(DE)
+ 289A 1A         LD   A,(DE)
+ 289B 1A         LD   A,(DE)
+ 289C 1A         LD   A,(DE)
+ 289D 1A         LD   A,(DE)
+ 289E 1A         LD   A,(DE)
+ 289F 1A         LD   A,(DE)
+ 28A0 1A         LD   A,(DE)
+ 28A1 1A         LD   A,(DE)
+ 28A2 1A         LD   A,(DE)
+ 28A3 1A         LD   A,(DE)
+ 28A4 1A         LD   A,(DE)
+ 28A5 1A         LD   A,(DE)
+ 28A6 1A         LD   A,(DE)
+ 28A7 1A         LD   A,(DE)
+ 28A8 1A         LD   A,(DE)
+ 28A9 1A         LD   A,(DE)
+ 28AA 1A         LD   A,(DE)
+ 28AB 1A         LD   A,(DE)
+ 28AC 1A         LD   A,(DE)
+ 28AD 1A         LD   A,(DE)
+ 28AE 1A         LD   A,(DE)
+ 28AF 1A         LD   A,(DE)
+ 28B0 1A         LD   A,(DE)
+ 28B1 1A         LD   A,(DE)
+ 28B2 1A         LD   A,(DE)
+ 28B3 1A         LD   A,(DE)
+ 28B4 1A         LD   A,(DE)
+ 28B5 1A         LD   A,(DE)
+ 28B6 1A         LD   A,(DE)
+ 28B7 1A         LD   A,(DE)
+ 28B8 1A         LD   A,(DE)
+ 28B9 1A         LD   A,(DE)
+ 28BA 1A         LD   A,(DE)
+ 28BB 1A         LD   A,(DE)
+ 28BC 1A         LD   A,(DE)
+ 28BD 1A         LD   A,(DE)
+ 28BE 1A         LD   A,(DE)
+ 28BF 1A         LD   A,(DE)
+ 28C0 1A         LD   A,(DE)
+ 28C1 1A         LD   A,(DE)
+ 28C2 1A         LD   A,(DE)
+ 28C3 1A         LD   A,(DE)
+ 28C4 1A         LD   A,(DE)
+ 28C5 1A         LD   A,(DE)
+ 28C6 1A         LD   A,(DE)
+ 28C7 1A         LD   A,(DE)
+ 28C8 1A         LD   A,(DE)
+ 28C9 1A         LD   A,(DE)
+ 28CA 1A         LD   A,(DE)
+ 28CB 1A         LD   A,(DE)
+ 28CC 1A         LD   A,(DE)
+ 28CD 1A         LD   A,(DE)
+ 28CE 1A         LD   A,(DE)
+ 28CF 1A         LD   A,(DE)
+ 28D0 1A         LD   A,(DE)
+ 28D1 1A         LD   A,(DE)
+ 28D2 1A         LD   A,(DE)
+ 28D3 1A         LD   A,(DE)
+ 28D4 1A         LD   A,(DE)
+ 28D5 1A         LD   A,(DE)
+ 28D6 1A         LD   A,(DE)
+ 28D7 1A         LD   A,(DE)
+ 28D8 1A         LD   A,(DE)
+ 28D9 1A         LD   A,(DE)
+ 28DA 1A         LD   A,(DE)
+ 28DB 1A         LD   A,(DE)
+ 28DC 1A         LD   A,(DE)
+ 28DD 1A         LD   A,(DE)
+ 28DE 1A         LD   A,(DE)
+ 28DF 1A         LD   A,(DE)
+ 28E0 1A         LD   A,(DE)
+ 28E1 1A         LD   A,(DE)
+ 28E2 1A         LD   A,(DE)
+ 28E3 1A         LD   A,(DE)
+ 28E4 1A         LD   A,(DE)
+ 28E5 1A         LD   A,(DE)
+ 28E6 1A         LD   A,(DE)
+ 28E7 1A         LD   A,(DE)
+ 28E8 1A         LD   A,(DE)
+ 28E9 1A         LD   A,(DE)
+ 28EA 1A         LD   A,(DE)
+ 28EB 1A         LD   A,(DE)
+ 28EC 1A         LD   A,(DE)
+ 28ED 1A         LD   A,(DE)
+ 28EE 1A         LD   A,(DE)
+ 28EF 1A         LD   A,(DE)
+ 28F0 1A         LD   A,(DE)
+ 28F1 1A         LD   A,(DE)
+ 28F2 1A         LD   A,(DE)
+ 28F3 1A         LD   A,(DE)
+ 28F4 1A         LD   A,(DE)
+ 28F5 1A         LD   A,(DE)
+ 28F6 1A         LD   A,(DE)
+ 28F7 1A         LD   A,(DE)
+ 28F8 1A         LD   A,(DE)
+ 28F9 1A         LD   A,(DE)
+ 28FA 1A         LD   A,(DE)
+ 28FB 1A         LD   A,(DE)
+ 28FC 1A         LD   A,(DE)
+ 28FD 1A         LD   A,(DE)
+ 28FE 1A         LD   A,(DE)
+ 28FF 1A         LD   A,(DE)
+ 2900 1A         LD   A,(DE)
+ 2901 1A         LD   A,(DE)
+ 2902 1A         LD   A,(DE)
+ 2903 1A         LD   A,(DE)
+ 2904 1A         LD   A,(DE)
+ 2905 1A         LD   A,(DE)
+ 2906 1A         LD   A,(DE)
+ 2907 1A         LD   A,(DE)
+ 2908 1A         LD   A,(DE)
+ 2909 1A         LD   A,(DE)
+ 290A 1A         LD   A,(DE)
+ 290B 1A         LD   A,(DE)
+ 290C 1A         LD   A,(DE)
+ 290D 1A         LD   A,(DE)
+ 290E 1A         LD   A,(DE)
+ 290F 1A         LD   A,(DE)
+ 2910 1A         LD   A,(DE)
+ 2911 1A         LD   A,(DE)
+ 2912 1A         LD   A,(DE)
+ 2913 1A         LD   A,(DE)
+ 2914 1A         LD   A,(DE)
+ 2915 1A         LD   A,(DE)
+ 2916 1A         LD   A,(DE)
+ 2917 1A         LD   A,(DE)
+ 2918 1A         LD   A,(DE)
+ 2919 1A         LD   A,(DE)
+ 291A 1A         LD   A,(DE)
+ 291B 1A         LD   A,(DE)
+ 291C 1A         LD   A,(DE)
+ 291D 1A         LD   A,(DE)
+ 291E 1A         LD   A,(DE)
+ 291F 1A         LD   A,(DE)
+ 2920 1A         LD   A,(DE)
+ 2921 1A         LD   A,(DE)
+ 2922 1A         LD   A,(DE)
+ 2923 1A         LD   A,(DE)
+ 2924 1A         LD   A,(DE)
+ 2925 1A         LD   A,(DE)
+ 2926 1A         LD   A,(DE)
+ 2927 1A         LD   A,(DE)
+ 2928 1A         LD   A,(DE)
+ 2929 1A         LD   A,(DE)
+ 292A 1A         LD   A,(DE)
+ 292B 1A         LD   A,(DE)
+ 292C 1A         LD   A,(DE)
+ 292D 1A         LD   A,(DE)
+ 292E 1A         LD   A,(DE)
+ 292F 1A         LD   A,(DE)
+ 2930 1A         LD   A,(DE)
+ 2931 1A         LD   A,(DE)
+ 2932 00         NOP
+ 2933 00         NOP
+ 2934 00         NOP
+ 2935 00         NOP
+ 2936 00         NOP
+ 2937 00         NOP
+ 2938 00         NOP
+ 2939 00         NOP
+ 293A 00         NOP
+ 293B 00         NOP
+ 293C 00         NOP
+ 293D 00         NOP
+ 293E 00         NOP
+ 293F 00         NOP
+ 2940 00         NOP
+ 2941 00         NOP
+ 2942 00         NOP
+ 2943 00         NOP
+ 2944 00         NOP
+ 2945 00         NOP
+ 2946 00         NOP
+ 2947 00         NOP
+ 2948 00         NOP
+ 2949 00         NOP
+ 294A 00         NOP
+ 294B 00         NOP
+ 294C 00         NOP
+ 294D 00         NOP
+ 294E 00         NOP
+ 294F 00         NOP
+ 2950 00         NOP
+ 2951 00         NOP
+ 2952 00         NOP
+ 2953 00         NOP
+ 2954 00         NOP
+ 2955 00         NOP
+ 2956 00         NOP
+ 2957 00         NOP
+ 2958 00         NOP
+ 2959 00         NOP
+ 295A 00         NOP
+ 295B 00         NOP
+ 295C 00         NOP
+ 295D 00         NOP
+ 295E 00         NOP
+ 295F 00         NOP
+ 2960 00         NOP
+ 2961 00         NOP
+ 2962 00         NOP
+ 2963 00         NOP
+ 2964 00         NOP
+ 2965 00         NOP
+ 2966 00         NOP
+ 2967 00         NOP
+ 2968 00         NOP
+ 2969 00         NOP
+ 296A 00         NOP
+ 296B 00         NOP
+ 296C 00         NOP
+ 296D 00         NOP
+ 296E 00         NOP
+ 296F 00         NOP
+ 2970 00         NOP
+ 2971 00         NOP
+ 2972 00         NOP
+ 2973 0600       LD   B,+00
+ 2975 0F         RRCA
+ 2976 01100E     LD   BC,+0E10
+ 2979 FF         RST  0038,MASK_INT
+ 297A 00         NOP
+ 297B 00         NOP
+ 297C 00         NOP
+ 297D 0600       LD   B,+00
+ 297F 1001       DJNZ 2982
+ 2981 0600       LD   B,+00
+ 2983 8A         ADC  A,D
+ 2984 61         LD   H,C
+ 2985 00         NOP
+ 2986 00         NOP
+ 2987 00         NOP
+ 2988 E5         PUSH HL
+ 2989 00         NOP
+ 298A 013228     LD   BC,+2832
+ 298D 322800     LD   (0028),A
+ 2990 FF         RST  0038,MASK_INT
+ 2991 00         NOP
+ 2992 02         LD   (BC),A
+ 2993 00         NOP
+ 2994 00         NOP
+ 2995 0F         RRCA
+ 2996 0C         INC  C
+ 2997 2800       JR   Z,2999
+ 2999 00         NOP
+ 299A 00         NOP
+ 299B 010F0E     LD   BC,+0E0F
+ 299E 00         NOP
+ 299F 8E         ADC  A,(HL)
+ 29A0 018001     LD   BC,+0180
+ 29A3 A0         AND  B
+ 29A4 05         DEC  B
+ 29A5 00         NOP
+ 29A6 00         NOP
+ 29A7 B2         OR   D
+ 29A8 29         ADD  HL,HL
+ 29A9 DB29       IN   A,(+29)
+ 29AB FF         RST  0038,MASK_INT
+ 29AC AE         XOR  (HL)
+ 29AD 29         ADD  HL,HL
+ 29AE B2         OR   D
+ 29AF 29         ADD  HL,HL
+ 29B0 EE29       XOR  +29
+ 29B2 07         RLCA
+ 29B3 FF         RST  0038,MASK_INT
+ 29B4 FF         RST  0038,MASK_INT
+ 29B5 FF         RST  0038,MASK_INT
+ 29B6 80         ADD  A,B
+ 29B7 00         NOP
+ 29B8 00         NOP
+ 29B9 00         NOP
+ 29BA 00         NOP
+ 29BB 00         NOP
+ 29BC 00         NOP
+ 29BD 00         NOP
+ 29BE 00         NOP
+ 29BF 00         NOP
+ 29C0 00         NOP
+ 29C1 00         NOP
+ 29C2 00         NOP
+ 29C3 00         NOP
+ 29C4 00         NOP
+ 29C5 00         NOP
+ 29C6 00         NOP
+ 29C7 00         NOP
+ 29C8 00         NOP
+ 29C9 00         NOP
+ 29CA 00         NOP
+ 29CB 00         NOP
+ 29CC 00         NOP
+ 29CD 00         NOP
+ 29CE 00         NOP
+ 29CF 00         NOP
+ 29D0 00         NOP
+ 29D1 00         NOP
+ 29D2 00         NOP
+ 29D3 00         NOP
+ 29D4 00         NOP
+ 29D5 00         NOP
+ 29D6 00         NOP
+ 29D7 00         NOP
+ 29D8 00         NOP
+ 29D9 00         NOP
+ 29DA 00         NOP
+ 29DB 62         LD   H,D
+ 29DC E4E4E4     CALL PO,E4E4
+ 29DF E4E4E4     CALL PO,E4E4
+ 29E2 E4E4E4     CALL PO,E4E4
+ 29E5 E4E4E4     CALL PO,E4E4
+ 29E8 E4E4E4     CALL PO,E4E4
+ 29EB 00         NOP
+ 29EC 00         NOP
+ 29ED 00         NOP
+ 29EE 00         NOP
+ 29EF 00         NOP
+ 29F0 00         NOP
+ 29F1 00         NOP
+ 29F2 00         NOP
+ 29F3 00         NOP
+ 29F4 00         NOP
+ 29F5 00         NOP
+ 29F6 00         NOP
+ 29F7 00         NOP
+ 29F8 00         NOP
+ 29F9 00         NOP
+ 29FA 00         NOP
+ 29FB 00         NOP
+ 29FC 00         NOP
+ 29FD 00         NOP
+ 29FE 00         NOP
+ 29FF 00         NOP
+ 2A00 00         NOP
+ 2A01 00         NOP
+ 2A02 00         NOP
+ 2A03 00         NOP
+ 2A04 00         NOP
+ 2A05 00         NOP
+ 2A06 00         NOP
+ 2A07 00         NOP
+ 2A08 00         NOP
+ 2A09 00         NOP
+ 2A0A 00         NOP
+ 2A0B 00         NOP
+ 2A0C 00         NOP
+ 2A0D 00         NOP
+ 2A0E 00         NOP
+ 2A0F 00         NOP
+ 2A10 00         NOP
+ 2A11 00         NOP
+ 2A12 00         NOP
+ 2A13 00         NOP
+ 2A14 00         NOP
+ 2A15 00         NOP
+ 2A16 00         NOP
+ 2A17 00         NOP
+ 2A18 00         NOP
+ 2A19 00         NOP
+ 2A1A 00         NOP
+ 2A1B 00         NOP
+ 2A1C 00         NOP
+ 2A1D 00         NOP
+ 2A1E 00         NOP
+ 2A1F 00         NOP
+ 2A20 00         NOP
+ 2A21 00         NOP
+ 2A22 00         NOP
+ 2A23 00         NOP
+ 2A24 00         NOP
+ 2A25 00         NOP
+ 2A26 00         NOP
+ 2A27 00         NOP
+ 2A28 00         NOP
+ 2A29 00         NOP
+ 2A2A 00         NOP
+ 2A2B 00         NOP
+ 2A2C 00         NOP
+ 2A2D 0607       LD   B,+07
+ 2A2F 322800     LD   (0028),A
+ 2A32 00         NOP
+ 2A33 2A1F01     LD   HL,(011F)
+ 2A36 00         NOP
+ 2A37 00         NOP
+ 2A38 00         NOP
+ 2A39 00         NOP
+ 2A3A 02         LD   (BC),A
+ 2A3B 04         INC  B
+ 2A3C 00         NOP
+ 2A3D 00         NOP
+ 2A3E 00         NOP
+ 2A3F 00         NOP
+ 2A40 00         NOP
+ 2A41 00         NOP
+ 2A42 00         NOP
+ 2A43 00         NOP
+ 2A44 00         NOP
+ 2A45 00         NOP
+ 2A46 00         NOP
+ 2A47 00         NOP
+ 2A48 00         NOP
+ 2A49 00         NOP
+ 2A4A 00         NOP
+ 2A4B 00         NOP
+ 2A4C 00         NOP
+ 2A4D 00         NOP
+ 2A4E 00         NOP
+ 2A4F 00         NOP
+ 2A50 00         NOP
+ 2A51 00         NOP
+ 2A52 00         NOP
+ 2A53 00         NOP
+ 2A54 00         NOP
+ 2A55 00         NOP
+ 2A56 00         NOP
+ 2A57 00         NOP
+ 2A58 00         NOP
+ 2A59 00         NOP
+ 2A5A 00         NOP
+ 2A5B 00         NOP
+ 2A5C 00         NOP
+ 2A5D 00         NOP
+ 2A5E 00         NOP
+ 2A5F 00         NOP
+ 2A60 00         NOP
+ 2A61 00         NOP
+ 2A62 00         NOP
+ 2A63 00         NOP
+ 2A64 00         NOP
+ 2A65 00         NOP
+ 2A66 00         NOP
+ 2A67 00         NOP
+ 2A68 00         NOP
+ 2A69 00         NOP
+ 2A6A 00         NOP
+ 2A6B 00         NOP
+ 2A6C 00         NOP
+ 2A6D 00         NOP
+ 2A6E 00         NOP
+ 2A6F 00         NOP
+ 2A70 00         NOP
+ 2A71 00         NOP
+ 2A72 00         NOP
+ 2A73 00         NOP
+ 2A74 00         NOP
+ 2A75 00         NOP
+ 2A76 00         NOP
+ 2A77 00         NOP
+ 2A78 00         NOP
+ 2A79 00         NOP
+ 2A7A 00         NOP
+ 2A7B 00         NOP
+ 2A7C 00         NOP
+ 2A7D 00         NOP
+ 2A7E 00         NOP
+ 2A7F 00         NOP
+ 2A80 00         NOP
+ 2A81 00         NOP
+ 2A82 00         NOP
+ 2A83 00         NOP
+ 2A84 00         NOP
+ 2A85 00         NOP
+ 2A86 00         NOP
+ 2A87 00         NOP
+ 2A88 00         NOP
+ 2A89 00         NOP
+ 2A8A 00         NOP
+ 2A8B 00         NOP
+ 2A8C 00         NOP
+ 2A8D 00         NOP
+ 2A8E 00         NOP
+ 2A8F 00         NOP
+ 2A90 00         NOP
+ 2A91 00         NOP
+ 2A92 00         NOP
+ 2A93 00         NOP
+ 2A94 00         NOP
+ 2A95 00         NOP
+ 2A96 00         NOP
+ 2A97 00         NOP
+ 2A98 00         NOP
+ 2A99 00         NOP
+ 2A9A 00         NOP
+ 2A9B 00         NOP
+ 2A9C 00         NOP
+ 2A9D 00         NOP
+ 2A9E 00         NOP
+ 2A9F 00         NOP
+ 2AA0 00         NOP
+ 2AA1 00         NOP
+ 2AA2 00         NOP
+ 2AA3 00         NOP
+ 2AA4 00         NOP
+ 2AA5 00         NOP
+ 2AA6 00         NOP
+ 2AA7 00         NOP
+ 2AA8 00         NOP
+ 2AA9 00         NOP
+ 2AAA 00         NOP
+ 2AAB 00         NOP
+ 2AAC 00         NOP
+ 2AAD 00         NOP
+ 2AAE 00         NOP
+ 2AAF 00         NOP
+ 2AB0 00         NOP
+ 2AB1 00         NOP
+ 2AB2 00         NOP
+ 2AB3 00         NOP
+ 2AB4 00         NOP
+ 2AB5 00         NOP
+ 2AB6 00         NOP
+ 2AB7 00         NOP
+ 2AB8 00         NOP
+ 2AB9 00         NOP
+ 2ABA 00         NOP
+ 2ABB 00         NOP
+ 2ABC 00         NOP
+ 2ABD 00         NOP
+ 2ABE 00         NOP
+ 2ABF 00         NOP
+ 2AC0 00         NOP
+ 2AC1 00         NOP
+ 2AC2 00         NOP
+ 2AC3 00         NOP
+ 2AC4 00         NOP
+ 2AC5 00         NOP
+ 2AC6 00         NOP
+ 2AC7 00         NOP
+ 2AC8 00         NOP
+ 2AC9 00         NOP
+ 2ACA 00         NOP
+ 2ACB 00         NOP
+ 2ACC 00         NOP
+ 2ACD 00         NOP
+ 2ACE 00         NOP
+ 2ACF 00         NOP
+ 2AD0 00         NOP
+ 2AD1 00         NOP
+ 2AD2 00         NOP
+ 2AD3 00         NOP
+ 2AD4 00         NOP
+ 2AD5 00         NOP
+ 2AD6 00         NOP
+ 2AD7 00         NOP
+ 2AD8 00         NOP
+ 2AD9 00         NOP
+ 2ADA 00         NOP
+ 2ADB 00         NOP
+ 2ADC 00         NOP
+ 2ADD 00         NOP
+ 2ADE 00         NOP
+ 2ADF 00         NOP
+ 2AE0 00         NOP
+ 2AE1 00         NOP
+ 2AE2 00         NOP
+ 2AE3 00         NOP
+ 2AE4 00         NOP
+ 2AE5 00         NOP
+ 2AE6 00         NOP
+ 2AE7 00         NOP
+ 2AE8 00         NOP
+ 2AE9 00         NOP
+ 2AEA 00         NOP
+ 2AEB 00         NOP
+ 2AEC 00         NOP
+ 2AED 00         NOP
+ 2AEE 00         NOP
+ 2AEF 00         NOP
+ 2AF0 00         NOP
+ 2AF1 00         NOP
+ 2AF2 00         NOP
+ 2AF3 00         NOP
+ 2AF4 00         NOP
+ 2AF5 00         NOP
+ 2AF6 00         NOP
+ 2AF7 00         NOP
+ 2AF8 00         NOP
+ 2AF9 00         NOP
+ 2AFA 00         NOP
+ 2AFB 00         NOP
+ 2AFC 00         NOP
+ 2AFD 00         NOP
+ 2AFE 00         NOP
+ 2AFF 00         NOP
+ 2B00 00         NOP
+ 2B01 00         NOP
+ 2B02 00         NOP
+ 2B03 00         NOP
+ 2B04 00         NOP
+ 2B05 00         NOP
+ 2B06 00         NOP
+ 2B07 00         NOP
+ 2B08 00         NOP
+ 2B09 00         NOP
+ 2B0A 00         NOP
+ 2B0B 00         NOP
+ 2B0C 00         NOP
+ 2B0D 00         NOP
+ 2B0E 00         NOP
+ 2B0F 00         NOP
+ 2B10 00         NOP
+ 2B11 00         NOP
+ 2B12 00         NOP
+ 2B13 00         NOP
+ 2B14 00         NOP
+ 2B15 00         NOP
+ 2B16 00         NOP
+ 2B17 00         NOP
+ 2B18 00         NOP
+ 2B19 00         NOP
+ 2B1A 00         NOP
+ 2B1B 00         NOP
+ 2B1C 00         NOP
+ 2B1D 00         NOP
+ 2B1E 00         NOP
+ 2B1F 00         NOP
+ 2B20 00         NOP
+ 2B21 00         NOP
+ 2B22 00         NOP
+ 2B23 00         NOP
+ 2B24 00         NOP
+ 2B25 00         NOP
+ 2B26 00         NOP
+ 2B27 00         NOP
+ 2B28 00         NOP
+ 2B29 00         NOP
+ 2B2A 00         NOP
+ 2B2B 00         NOP
+ 2B2C 00         NOP
+ 2B2D 00         NOP
+ 2B2E 00         NOP
+ 2B2F 00         NOP
+ 2B30 00         NOP
+ 2B31 00         NOP
+ 2B32 00         NOP
+ 2B33 00         NOP
+ 2B34 00         NOP
+ 2B35 00         NOP
+ 2B36 00         NOP
+ 2B37 00         NOP
+ 2B38 00         NOP
+ 2B39 00         NOP
+ 2B3A 00         NOP
+ 2B3B 00         NOP
+ 2B3C 00         NOP
+ 2B3D 00         NOP
+ 2B3E 00         NOP
+ 2B3F 00         NOP
+ 2B40 00         NOP
+ 2B41 00         NOP
+ 2B42 00         NOP
+ 2B43 00         NOP
+ 2B44 00         NOP
+ 2B45 00         NOP
+ 2B46 00         NOP
+ 2B47 00         NOP
+ 2B48 00         NOP
+ 2B49 00         NOP
+ 2B4A 00         NOP
+ 2B4B 00         NOP
+ 2B4C 00         NOP
+ 2B4D 00         NOP
+ 2B4E 00         NOP
+ 2B4F 00         NOP
+ 2B50 00         NOP
+ 2B51 00         NOP
+ 2B52 00         NOP
+ 2B53 00         NOP
+ 2B54 00         NOP
+ 2B55 00         NOP
+ 2B56 00         NOP
+ 2B57 00         NOP
+ 2B58 00         NOP
+ 2B59 00         NOP
+ 2B5A 00         NOP
+ 2B5B 00         NOP
+ 2B5C 00         NOP
+ 2B5D 00         NOP
+ 2B5E 00         NOP
+ 2B5F 00         NOP
+ 2B60 00         NOP
+ 2B61 00         NOP
+ 2B62 00         NOP
+ 2B63 00         NOP
+ 2B64 00         NOP
+ 2B65 00         NOP
+ 2B66 00         NOP
+ 2B67 00         NOP
+ 2B68 00         NOP
+ 2B69 00         NOP
+ 2B6A 00         NOP
+ 2B6B 00         NOP
+ 2B6C 00         NOP
+ 2B6D 00         NOP
+ 2B6E 00         NOP
+ 2B6F 00         NOP
+ 2B70 00         NOP
+ 2B71 00         NOP
+ 2B72 00         NOP
+ 2B73 00         NOP
+ 2B74 00         NOP
+ 2B75 00         NOP
+ 2B76 00         NOP
+ 2B77 00         NOP
+ 2B78 00         NOP
+ 2B79 00         NOP
+ 2B7A 00         NOP
+ 2B7B 00         NOP
+ 2B7C 00         NOP
+ 2B7D 00         NOP
+ 2B7E 00         NOP
+ 2B7F 00         NOP
+ 2B80 00         NOP
+ 2B81 00         NOP
+ 2B82 00         NOP
+ 2B83 00         NOP
+ 2B84 00         NOP
+ 2B85 00         NOP
+ 2B86 00         NOP
+ 2B87 00         NOP
+ 2B88 00         NOP
+ 2B89 00         NOP
+ 2B8A 00         NOP
+ 2B8B 00         NOP
+ 2B8C 00         NOP
+ 2B8D 00         NOP
+ 2B8E 00         NOP
+ 2B8F 00         NOP
+ 2B90 00         NOP
+ 2B91 00         NOP
+ 2B92 00         NOP
+ 2B93 00         NOP
+ 2B94 00         NOP
+ 2B95 00         NOP
+ 2B96 00         NOP
+ 2B97 00         NOP
+ 2B98 00         NOP
+ 2B99 00         NOP
+ 2B9A 00         NOP
+ 2B9B 00         NOP
+ 2B9C 00         NOP
+ 2B9D 00         NOP
+ 2B9E 00         NOP
+ 2B9F 00         NOP
+ 2BA0 00         NOP
+ 2BA1 00         NOP
+ 2BA2 00         NOP
+ 2BA3 00         NOP
+ 2BA4 00         NOP
+ 2BA5 00         NOP
+ 2BA6 00         NOP
+ 2BA7 00         NOP
+ 2BA8 00         NOP
+ 2BA9 00         NOP
+ 2BAA 00         NOP
+ 2BAB 00         NOP
+ 2BAC 00         NOP
+ 2BAD 00         NOP
+ 2BAE 00         NOP
+ 2BAF 00         NOP
+ 2BB0 00         NOP
+ 2BB1 00         NOP
+ 2BB2 00         NOP
+ 2BB3 00         NOP
+ 2BB4 00         NOP
+ 2BB5 00         NOP
+ 2BB6 00         NOP
+ 2BB7 00         NOP
+ 2BB8 00         NOP
+ 2BB9 00         NOP
+ 2BBA 00         NOP
+ 2BBB 00         NOP
+ 2BBC 00         NOP
+ 2BBD 00         NOP
+ 2BBE 00         NOP
+ 2BBF 00         NOP
+ 2BC0 00         NOP
+ 2BC1 00         NOP
+ 2BC2 00         NOP
+ 2BC3 00         NOP
+ 2BC4 00         NOP
+ 2BC5 00         NOP
+ 2BC6 00         NOP
+ 2BC7 00         NOP
+ 2BC8 00         NOP
+ 2BC9 00         NOP
+ 2BCA 00         NOP
+ 2BCB 00         NOP
+ 2BCC 00         NOP
+ 2BCD 00         NOP
+ 2BCE 00         NOP
+ 2BCF 00         NOP
+ 2BD0 00         NOP
+ 2BD1 00         NOP
+ 2BD2 00         NOP
+ 2BD3 00         NOP
+ 2BD4 00         NOP
+ 2BD5 00         NOP
+ 2BD6 00         NOP
+ 2BD7 00         NOP
+ 2BD8 00         NOP
+ 2BD9 00         NOP
+ 2BDA 00         NOP
+ 2BDB 00         NOP
+ 2BDC 00         NOP
+ 2BDD 00         NOP
+ 2BDE 00         NOP
+ 2BDF 00         NOP
+ 2BE0 00         NOP
+ 2BE1 00         NOP
+ 2BE2 00         NOP
+ 2BE3 00         NOP
+ 2BE4 00         NOP
+ 2BE5 00         NOP
+ 2BE6 00         NOP
+ 2BE7 00         NOP
+ 2BE8 00         NOP
+ 2BE9 00         NOP
+ 2BEA 00         NOP
+ 2BEB 00         NOP
+ 2BEC 00         NOP
+ 2BED 00         NOP
+ 2BEE 00         NOP
+ 2BEF 00         NOP
+ 2BF0 00         NOP
+ 2BF1 00         NOP
+ 2BF2 00         NOP
+ 2BF3 00         NOP
+ 2BF4 00         NOP
+ 2BF5 00         NOP
+ 2BF6 A1         AND  C
+ 2BF7 12         LD   (DE),A
+ 2BF8 A1         AND  C
+ 2BF9 12         LD   (DE),A
+ 2BFA 44         LD   B,H
+ 2BFB 00         NOP
+ 2BFC 3A5C0C     LD   A,(0C5C)
+ 2BFF 2808       JR   Z,2C09
+ 2C01 00         NOP
+ 2C02 08         EX   AF,AF'
+ 2C03 00         NOP
+ 2C04 C4190F     CALL NZ,0F19
+ 2C07 F5         PUSH AF
+ 2C08 0B         DEC  BC
+ 2C09 320100     LD   (0001),A
+ 2C0C 01726F     LD   BC,+6F72
+ 2C0F 6D         LD   L,L
+ 2C10 73         LD   (HL),E
+ 2C11 61         LD   H,C
+ 2C12 76         HALT
+ 2C13 65         LD   H,L
+ 2C14 33         INC  SP
+ 2C15 2020       JR   NZ,2C37
+ 2C17 2000       JR   NZ,2C19
+ 2C19 00         NOP
+ 2C1A 80         ADD  A,B
+ 2C1B 0F         RRCA
+ 2C1C 1800       JR   2C1E
+ 2C1E 00         NOP
+ 2C1F 00         NOP
+ 2C20 00         NOP
+ 2C21 00         NOP
+ 2C22 00         NOP
+ 2C23 00         NOP
+ 2C24 00         NOP
+ 2C25 00         NOP
+ 2C26 00         NOP
+ 2C27 00         NOP
+ 2C28 00         NOP
+ 2C29 00         NOP
+ 2C2A 00         NOP
+ 2C2B 00         NOP
+ 2C2C 1000       DJNZ 2C2E,D_NO_LOOP
+ 2C2E 00         NOP
+ 2C2F 00         NOP
+ 2C30 00         NOP
+ 2C31 00         NOP
+ 2C32 00         NOP
+ 2C33 00         NOP
+ 2C34 00         NOP
+ 2C35 00         NOP
+ 2C36 00         NOP
+ 2C37 00         NOP
+ 2C38 00         NOP
+ 2C39 00         NOP
+ 2C3A 00         NOP
+ 2C3B 00         NOP
+ 2C3C 00         NOP
+ 2C3D 00         NOP
+ 2C3E 00         NOP
+ 2C3F 00         NOP
+ 2C40 00         NOP
+ 2C41 00         NOP
+ 2C42 00         NOP
+ 2C43 00         NOP
+ 2C44 00         NOP
+ 2C45 00         NOP
+ 2C46 00         NOP
+ 2C47 00         NOP
+ 2C48 00         NOP
+ 2C49 00         NOP
+ 2C4A 00         NOP
+ 2C4B 00         NOP
+ 2C4C 00         NOP
+ 2C4D 00         NOP
+ 2C4E 00         NOP
+ 2C4F 00         NOP
+ 2C50 00         NOP
+ 2C51 1A         LD   A,(DE)
+ 2C52 1A         LD   A,(DE)
+ 2C53 1A         LD   A,(DE)
+ 2C54 1A         LD   A,(DE)
+ 2C55 1A         LD   A,(DE)
+ 2C56 1A         LD   A,(DE)
+ 2C57 1A         LD   A,(DE)
+ 2C58 1A         LD   A,(DE)
+ 2C59 1A         LD   A,(DE)
+ 2C5A 1A         LD   A,(DE)
+ 2C5B 1A         LD   A,(DE)
+ 2C5C 1A         LD   A,(DE)
+ 2C5D 1A         LD   A,(DE)
+ 2C5E 1A         LD   A,(DE)
+ 2C5F 1A         LD   A,(DE)
+ 2C60 1A         LD   A,(DE)
+ 2C61 1A         LD   A,(DE)
+ 2C62 1A         LD   A,(DE)
+ 2C63 1A         LD   A,(DE)
+ 2C64 1A         LD   A,(DE)
+ 2C65 1A         LD   A,(DE)
+ 2C66 1A         LD   A,(DE)
+ 2C67 1A         LD   A,(DE)
+ 2C68 1A         LD   A,(DE)
+ 2C69 1A         LD   A,(DE)
+ 2C6A 1A         LD   A,(DE)
+ 2C6B 1A         LD   A,(DE)
+ 2C6C 1A         LD   A,(DE)
+ 2C6D 1A         LD   A,(DE)
+ 2C6E 1A         LD   A,(DE)
+ 2C6F 1A         LD   A,(DE)
+ 2C70 1A         LD   A,(DE)
+ 2C71 1A         LD   A,(DE)
+ 2C72 1A         LD   A,(DE)
+ 2C73 1A         LD   A,(DE)
+ 2C74 1A         LD   A,(DE)
+ 2C75 1A         LD   A,(DE)
+ 2C76 1A         LD   A,(DE)
+ 2C77 1A         LD   A,(DE)
+ 2C78 1A         LD   A,(DE)
+ 2C79 1A         LD   A,(DE)
+ 2C7A 1A         LD   A,(DE)
+ 2C7B 1A         LD   A,(DE)
+ 2C7C 1A         LD   A,(DE)
+ 2C7D 1A         LD   A,(DE)
+ 2C7E 1A         LD   A,(DE)
+ 2C7F 1A         LD   A,(DE)
+ 2C80 1A         LD   A,(DE)
+ 2C81 1A         LD   A,(DE)
+ 2C82 1A         LD   A,(DE)
+ 2C83 1A         LD   A,(DE)
+ 2C84 1A         LD   A,(DE)
+ 2C85 1A         LD   A,(DE)
+ 2C86 1A         LD   A,(DE)
+ 2C87 1A         LD   A,(DE)
+ 2C88 1A         LD   A,(DE)
+ 2C89 1A         LD   A,(DE)
+ 2C8A 1A         LD   A,(DE)
+ 2C8B 1A         LD   A,(DE)
+ 2C8C 1A         LD   A,(DE)
+ 2C8D 1A         LD   A,(DE)
+ 2C8E 1A         LD   A,(DE)
+ 2C8F 1A         LD   A,(DE)
+ 2C90 1A         LD   A,(DE)
+ 2C91 1A         LD   A,(DE)
+ 2C92 1A         LD   A,(DE)
+ 2C93 1A         LD   A,(DE)
+ 2C94 1A         LD   A,(DE)
+ 2C95 1A         LD   A,(DE)
+ 2C96 1A         LD   A,(DE)
+ 2C97 1A         LD   A,(DE)
+ 2C98 1A         LD   A,(DE)
+ 2C99 1A         LD   A,(DE)
+ 2C9A 1A         LD   A,(DE)
+ 2C9B 1A         LD   A,(DE)
+ 2C9C 1A         LD   A,(DE)
+ 2C9D 1A         LD   A,(DE)
+ 2C9E 1A         LD   A,(DE)
+ 2C9F 1A         LD   A,(DE)
+ 2CA0 1A         LD   A,(DE)
+ 2CA1 1A         LD   A,(DE)
+ 2CA2 1A         LD   A,(DE)
+ 2CA3 1A         LD   A,(DE)
+ 2CA4 1A         LD   A,(DE)
+ 2CA5 1A         LD   A,(DE)
+ 2CA6 1A         LD   A,(DE)
+ 2CA7 1A         LD   A,(DE)
+ 2CA8 1A         LD   A,(DE)
+ 2CA9 1A         LD   A,(DE)
+ 2CAA 1A         LD   A,(DE)
+ 2CAB 1A         LD   A,(DE)
+ 2CAC 1A         LD   A,(DE)
+ 2CAD 1A         LD   A,(DE)
+ 2CAE 1A         LD   A,(DE)
+ 2CAF 1A         LD   A,(DE)
+ 2CB0 1A         LD   A,(DE)
+ 2CB1 1A         LD   A,(DE)
+ 2CB2 1A         LD   A,(DE)
+ 2CB3 1A         LD   A,(DE)
+ 2CB4 1A         LD   A,(DE)
+ 2CB5 1A         LD   A,(DE)
+ 2CB6 1A         LD   A,(DE)
+ 2CB7 1A         LD   A,(DE)
+ 2CB8 1A         LD   A,(DE)
+ 2CB9 1A         LD   A,(DE)
+ 2CBA 1A         LD   A,(DE)
+ 2CBB 1A         LD   A,(DE)
+ 2CBC 1A         LD   A,(DE)
+ 2CBD 1A         LD   A,(DE)
+ 2CBE 1A         LD   A,(DE)
+ 2CBF 1A         LD   A,(DE)
+ 2CC0 1A         LD   A,(DE)
+ 2CC1 1A         LD   A,(DE)
+ 2CC2 1A         LD   A,(DE)
+ 2CC3 1A         LD   A,(DE)
+ 2CC4 1A         LD   A,(DE)
+ 2CC5 1A         LD   A,(DE)
+ 2CC6 1A         LD   A,(DE)
+ 2CC7 1A         LD   A,(DE)
+ 2CC8 1A         LD   A,(DE)
+ 2CC9 1A         LD   A,(DE)
+ 2CCA 1A         LD   A,(DE)
+ 2CCB 1A         LD   A,(DE)
+ 2CCC 1A         LD   A,(DE)
+ 2CCD 1A         LD   A,(DE)
+ 2CCE 1A         LD   A,(DE)
+ 2CCF 1A         LD   A,(DE)
+ 2CD0 1A         LD   A,(DE)
+ 2CD1 1A         LD   A,(DE)
+ 2CD2 1A         LD   A,(DE)
+ 2CD3 1A         LD   A,(DE)
+ 2CD4 1A         LD   A,(DE)
+ 2CD5 1A         LD   A,(DE)
+ 2CD6 1A         LD   A,(DE)
+ 2CD7 1A         LD   A,(DE)
+ 2CD8 1A         LD   A,(DE)
+ 2CD9 1A         LD   A,(DE)
+ 2CDA 1A         LD   A,(DE)
+ 2CDB 1A         LD   A,(DE)
+ 2CDC 1A         LD   A,(DE)
+ 2CDD 1A         LD   A,(DE)
+ 2CDE 1A         LD   A,(DE)
+ 2CDF 1A         LD   A,(DE)
+ 2CE0 1A         LD   A,(DE)
+ 2CE1 1A         LD   A,(DE)
+ 2CE2 1A         LD   A,(DE)
+ 2CE3 1A         LD   A,(DE)
+ 2CE4 1A         LD   A,(DE)
+ 2CE5 1A         LD   A,(DE)
+ 2CE6 1A         LD   A,(DE)
+ 2CE7 1A         LD   A,(DE)
+ 2CE8 1A         LD   A,(DE)
+ 2CE9 1A         LD   A,(DE)
+ 2CEA 1A         LD   A,(DE)
+ 2CEB 1A         LD   A,(DE)
+ 2CEC 1A         LD   A,(DE)
+ 2CED 1A         LD   A,(DE)
+ 2CEE 1A         LD   A,(DE)
+ 2CEF 1A         LD   A,(DE)
+ 2CF0 1A         LD   A,(DE)
+ 2CF1 1A         LD   A,(DE)
+ 2CF2 1A         LD   A,(DE)
+ 2CF3 1A         LD   A,(DE)
+ 2CF4 1A         LD   A,(DE)
+ 2CF5 1A         LD   A,(DE)
+ 2CF6 1A         LD   A,(DE)
+ 2CF7 1A         LD   A,(DE)
+ 2CF8 1A         LD   A,(DE)
+ 2CF9 1A         LD   A,(DE)
+ 2CFA 1A         LD   A,(DE)
+ 2CFB 1A         LD   A,(DE)
+ 2CFC 1A         LD   A,(DE)
+ 2CFD 1A         LD   A,(DE)
+ 2CFE 1A         LD   A,(DE)
+ 2CFF 1A         LD   A,(DE)
+ 2D00 1A         LD   A,(DE)
+ 2D01 1A         LD   A,(DE)
+ 2D02 1A         LD   A,(DE)
+ 2D03 1A         LD   A,(DE)
+ 2D04 1A         LD   A,(DE)
+ 2D05 1A         LD   A,(DE)
+ 2D06 1A         LD   A,(DE)
+ 2D07 1A         LD   A,(DE)
+ 2D08 1A         LD   A,(DE)
+ 2D09 1A         LD   A,(DE)
+ 2D0A 1A         LD   A,(DE)
+ 2D0B 1A         LD   A,(DE)
+ 2D0C 1A         LD   A,(DE)
+ 2D0D 1A         LD   A,(DE)
+ 2D0E 1A         LD   A,(DE)
+ 2D0F 1A         LD   A,(DE)
+ 2D10 1A         LD   A,(DE)
+ 2D11 1A         LD   A,(DE)
+ 2D12 1A         LD   A,(DE)
+ 2D13 1A         LD   A,(DE)
+ 2D14 1A         LD   A,(DE)
+ 2D15 1A         LD   A,(DE)
+ 2D16 1A         LD   A,(DE)
+ 2D17 1A         LD   A,(DE)
+ 2D18 1A         LD   A,(DE)
+ 2D19 1A         LD   A,(DE)
+ 2D1A 1A         LD   A,(DE)
+ 2D1B 1A         LD   A,(DE)
+ 2D1C 1A         LD   A,(DE)
+ 2D1D 1A         LD   A,(DE)
+ 2D1E 1A         LD   A,(DE)
+ 2D1F 1A         LD   A,(DE)
+ 2D20 1A         LD   A,(DE)
+ 2D21 1A         LD   A,(DE)
+ 2D22 1A         LD   A,(DE)
+ 2D23 1A         LD   A,(DE)
+ 2D24 1A         LD   A,(DE)
+ 2D25 1A         LD   A,(DE)
+ 2D26 1A         LD   A,(DE)
+ 2D27 1A         LD   A,(DE)
+ 2D28 1A         LD   A,(DE)
+ 2D29 1A         LD   A,(DE)
+ 2D2A 1A         LD   A,(DE)
+ 2D2B 1A         LD   A,(DE)
+ 2D2C 1A         LD   A,(DE)
+ 2D2D 1A         LD   A,(DE)
+ 2D2E 1A         LD   A,(DE)
+ 2D2F 1A         LD   A,(DE)
+ 2D30 1A         LD   A,(DE)
+ 2D31 1A         LD   A,(DE)
+ 2D32 00         NOP
+ 2D33 00         NOP
+ 2D34 00         NOP
+ 2D35 00         NOP
+ 2D36 00         NOP
+ 2D37 00         NOP
+ 2D38 00         NOP
+ 2D39 00         NOP
+ 2D3A 00         NOP
+ 2D3B 00         NOP
+ 2D3C 00         NOP
+ 2D3D 00         NOP
+ 2D3E 00         NOP
+ 2D3F 00         NOP
+ 2D40 00         NOP
+ 2D41 00         NOP
+ 2D42 00         NOP
+ 2D43 00         NOP
+ 2D44 00         NOP
+ 2D45 00         NOP
+ 2D46 00         NOP
+ 2D47 00         NOP
+ 2D48 00         NOP
+ 2D49 00         NOP
+ 2D4A 00         NOP
+ 2D4B 00         NOP
+ 2D4C 00         NOP
+ 2D4D 00         NOP
+ 2D4E 00         NOP
+ 2D4F 00         NOP
+ 2D50 00         NOP
+ 2D51 00         NOP
+ 2D52 00         NOP
+ 2D53 00         NOP
+ 2D54 00         NOP
+ 2D55 00         NOP
+ 2D56 00         NOP
+ 2D57 00         NOP
+ 2D58 00         NOP
+ 2D59 00         NOP
+ 2D5A 00         NOP
+ 2D5B 00         NOP
+ 2D5C 00         NOP
+ 2D5D 00         NOP
+ 2D5E 00         NOP
+ 2D5F 00         NOP
+ 2D60 00         NOP
+ 2D61 00         NOP
+ 2D62 00         NOP
+ 2D63 00         NOP
+ 2D64 00         NOP
+ 2D65 00         NOP
+ 2D66 00         NOP
+ 2D67 00         NOP
+ 2D68 00         NOP
+ 2D69 00         NOP
+ 2D6A 00         NOP
+ 2D6B 00         NOP
+ 2D6C 00         NOP
+ 2D6D 00         NOP
+ 2D6E 00         NOP
+ 2D6F 00         NOP
+ 2D70 00         NOP
+ 2D71 00         NOP
+ 2D72 00         NOP
+ 2D73 0600       LD   B,+00
+ 2D75 0F         RRCA
+ 2D76 01100E     LD   BC,+0E10
+ 2D79 FF         RST  0038,MASK_INT
+ 2D7A 00         NOP
+ 2D7B 00         NOP
+ 2D7C 00         NOP
+ 2D7D 0600       LD   B,+00
+ 2D7F 1001       DJNZ 2D82
+ 2D81 0600       LD   B,+00
+ 2D83 8A         ADC  A,D
+ 2D84 61         LD   H,C
+ 2D85 00         NOP
+ 2D86 00         NOP
+ 2D87 00         NOP
+ 2D88 E5         PUSH HL
+ 2D89 00         NOP
+ 2D8A 013228     LD   BC,+2832
+ 2D8D 322800     LD   (0028),A
+ 2D90 FF         RST  0038,MASK_INT
+ 2D91 00         NOP
+ 2D92 02         LD   (BC),A
+ 2D93 00         NOP
+ 2D94 00         NOP
+ 2D95 0F         RRCA
+ 2D96 0C         INC  C
+ 2D97 2800       JR   Z,2D99
+ 2D99 00         NOP
+ 2D9A 00         NOP
+ 2D9B 010F0E     LD   BC,+0E0F
+ 2D9E 00         NOP
+ 2D9F 8E         ADC  A,(HL)
+ 2DA0 018001     LD   BC,+0180
+ 2DA3 A0         AND  B
+ 2DA4 05         DEC  B
+ 2DA5 00         NOP
+ 2DA6 00         NOP
+ 2DA7 B2         OR   D
+ 2DA8 29         ADD  HL,HL
+ 2DA9 DB29       IN   A,(+29)
+ 2DAB FF         RST  0038,MASK_INT
+ 2DAC AE         XOR  (HL)
+ 2DAD 29         ADD  HL,HL
+ 2DAE B2         OR   D
+ 2DAF 29         ADD  HL,HL
+ 2DB0 EE29       XOR  +29
+ 2DB2 07         RLCA
+ 2DB3 FF         RST  0038,MASK_INT
+ 2DB4 FF         RST  0038,MASK_INT
+ 2DB5 FF         RST  0038,MASK_INT
+ 2DB6 80         ADD  A,B
+ 2DB7 00         NOP
+ 2DB8 00         NOP
+ 2DB9 00         NOP
+ 2DBA 00         NOP
+ 2DBB 00         NOP
+ 2DBC 00         NOP
+ 2DBD 00         NOP
+ 2DBE 00         NOP
+ 2DBF 00         NOP
+ 2DC0 00         NOP
+ 2DC1 00         NOP
+ 2DC2 00         NOP
+ 2DC3 00         NOP
+ 2DC4 00         NOP
+ 2DC5 00         NOP
+ 2DC6 00         NOP
+ 2DC7 00         NOP
+ 2DC8 00         NOP
+ 2DC9 00         NOP
+ 2DCA 00         NOP
+ 2DCB 00         NOP
+ 2DCC 00         NOP
+ 2DCD 00         NOP
+ 2DCE 00         NOP
+ 2DCF 00         NOP
+ 2DD0 00         NOP
+ 2DD1 00         NOP
+ 2DD2 00         NOP
+ 2DD3 00         NOP
+ 2DD4 00         NOP
+ 2DD5 00         NOP
+ 2DD6 00         NOP
+ 2DD7 00         NOP
+ 2DD8 00         NOP
+ 2DD9 00         NOP
+ 2DDA 00         NOP
+ 2DDB 62         LD   H,D
+ 2DDC E4E4E4     CALL PO,E4E4
+ 2DDF E4E4E4     CALL PO,E4E4
+ 2DE2 E4E4E4     CALL PO,E4E4
+ 2DE5 E4E4E4     CALL PO,E4E4
+ 2DE8 E4E4E4     CALL PO,E4E4
+ 2DEB 00         NOP
+ 2DEC 00         NOP
+ 2DED 00         NOP
+ 2DEE 00         NOP
+ 2DEF 00         NOP
+ 2DF0 00         NOP
+ 2DF1 00         NOP
+ 2DF2 00         NOP
+ 2DF3 00         NOP
+ 2DF4 00         NOP
+ 2DF5 00         NOP
+ 2DF6 00         NOP
+ 2DF7 00         NOP
+ 2DF8 00         NOP
+ 2DF9 00         NOP
+ 2DFA 00         NOP
+ 2DFB 00         NOP
+ 2DFC 00         NOP
+ 2DFD 00         NOP
+ 2DFE 00         NOP
+ 2DFF 00         NOP
+ 2E00 00         NOP
+ 2E01 00         NOP
+ 2E02 00         NOP
+ 2E03 00         NOP
+ 2E04 00         NOP
+ 2E05 00         NOP
+ 2E06 00         NOP
+ 2E07 00         NOP
+ 2E08 00         NOP
+ 2E09 00         NOP
+ 2E0A 00         NOP
+ 2E0B 00         NOP
+ 2E0C 00         NOP
+ 2E0D 00         NOP
+ 2E0E 00         NOP
+ 2E0F 00         NOP
+ 2E10 00         NOP
+ 2E11 00         NOP
+ 2E12 00         NOP
+ 2E13 00         NOP
+ 2E14 00         NOP
+ 2E15 00         NOP
+ 2E16 00         NOP
+ 2E17 00         NOP
+ 2E18 00         NOP
+ 2E19 00         NOP
+ 2E1A 00         NOP
+ 2E1B 00         NOP
+ 2E1C 00         NOP
+ 2E1D 00         NOP
+ 2E1E 00         NOP
+ 2E1F 00         NOP
+ 2E20 00         NOP
+ 2E21 00         NOP
+ 2E22 00         NOP
+ 2E23 00         NOP
+ 2E24 00         NOP
+ 2E25 00         NOP
+ 2E26 00         NOP
+ 2E27 00         NOP
+ 2E28 00         NOP
+ 2E29 00         NOP
+ 2E2A 00         NOP
+ 2E2B 00         NOP
+ 2E2C 00         NOP
+ 2E2D 0607       LD   B,+07
+ 2E2F 322800     LD   (0028),A
+ 2E32 00         NOP
+ 2E33 2A1F01     LD   HL,(011F)
+ 2E36 00         NOP
+ 2E37 00         NOP
+ 2E38 00         NOP
+ 2E39 00         NOP
+ 2E3A 02         LD   (BC),A
+ 2E3B 04         INC  B
+ 2E3C 00         NOP
+ 2E3D 00         NOP
+ 2E3E 00         NOP
+ 2E3F 00         NOP
+ 2E40 00         NOP
+ 2E41 00         NOP
+ 2E42 00         NOP
+ 2E43 00         NOP
+ 2E44 00         NOP
+ 2E45 00         NOP
+ 2E46 00         NOP
+ 2E47 00         NOP
+ 2E48 00         NOP
+ 2E49 00         NOP
+ 2E4A 00         NOP
+ 2E4B 00         NOP
+ 2E4C 00         NOP
+ 2E4D 00         NOP
+ 2E4E 00         NOP
+ 2E4F 00         NOP
+ 2E50 00         NOP
+ 2E51 00         NOP
+ 2E52 00         NOP
+ 2E53 00         NOP
+ 2E54 00         NOP
+ 2E55 00         NOP
+ 2E56 00         NOP
+ 2E57 00         NOP
+ 2E58 00         NOP
+ 2E59 00         NOP
+ 2E5A 00         NOP
+ 2E5B 00         NOP
+ 2E5C 00         NOP
+ 2E5D 00         NOP
+ 2E5E 00         NOP
+ 2E5F 00         NOP
+ 2E60 00         NOP
+ 2E61 00         NOP
+ 2E62 00         NOP
+ 2E63 00         NOP
+ 2E64 00         NOP
+ 2E65 00         NOP
+ 2E66 00         NOP
+ 2E67 00         NOP
+ 2E68 00         NOP
+ 2E69 00         NOP
+ 2E6A 00         NOP
+ 2E6B 00         NOP
+ 2E6C 00         NOP
+ 2E6D 00         NOP
+ 2E6E 00         NOP
+ 2E6F 00         NOP
+ 2E70 00         NOP
+ 2E71 00         NOP
+ 2E72 00         NOP
+ 2E73 00         NOP
+ 2E74 00         NOP
+ 2E75 00         NOP
+ 2E76 00         NOP
+ 2E77 00         NOP
+ 2E78 00         NOP
+ 2E79 00         NOP
+ 2E7A 00         NOP
+ 2E7B 00         NOP
+ 2E7C 00         NOP
+ 2E7D 00         NOP
+ 2E7E 00         NOP
+ 2E7F 00         NOP
+ 2E80 00         NOP
+ 2E81 00         NOP
+ 2E82 00         NOP
+ 2E83 00         NOP
+ 2E84 00         NOP
+ 2E85 00         NOP
+ 2E86 00         NOP
+ 2E87 00         NOP
+ 2E88 00         NOP
+ 2E89 00         NOP
+ 2E8A 00         NOP
+ 2E8B 00         NOP
+ 2E8C 00         NOP
+ 2E8D 00         NOP
+ 2E8E 00         NOP
+ 2E8F 00         NOP
+ 2E90 00         NOP
+ 2E91 00         NOP
+ 2E92 00         NOP
+ 2E93 00         NOP
+ 2E94 00         NOP
+ 2E95 00         NOP
+ 2E96 00         NOP
+ 2E97 00         NOP
+ 2E98 00         NOP
+ 2E99 00         NOP
+ 2E9A 00         NOP
+ 2E9B 00         NOP
+ 2E9C 00         NOP
+ 2E9D 00         NOP
+ 2E9E 00         NOP
+ 2E9F 00         NOP
+ 2EA0 00         NOP
+ 2EA1 00         NOP
+ 2EA2 00         NOP
+ 2EA3 00         NOP
+ 2EA4 00         NOP
+ 2EA5 00         NOP
+ 2EA6 00         NOP
+ 2EA7 00         NOP
+ 2EA8 00         NOP
+ 2EA9 00         NOP
+ 2EAA 00         NOP
+ 2EAB 00         NOP
+ 2EAC 00         NOP
+ 2EAD 00         NOP
+ 2EAE 00         NOP
+ 2EAF 00         NOP
+ 2EB0 00         NOP
+ 2EB1 00         NOP
+ 2EB2 00         NOP
+ 2EB3 00         NOP
+ 2EB4 00         NOP
+ 2EB5 00         NOP
+ 2EB6 00         NOP
+ 2EB7 00         NOP
+ 2EB8 00         NOP
+ 2EB9 00         NOP
+ 2EBA 00         NOP
+ 2EBB 00         NOP
+ 2EBC 00         NOP
+ 2EBD 00         NOP
+ 2EBE 00         NOP
+ 2EBF 00         NOP
+ 2EC0 00         NOP
+ 2EC1 00         NOP
+ 2EC2 00         NOP
+ 2EC3 00         NOP
+ 2EC4 00         NOP
+ 2EC5 00         NOP
+ 2EC6 00         NOP
+ 2EC7 00         NOP
+ 2EC8 00         NOP
+ 2EC9 00         NOP
+ 2ECA 00         NOP
+ 2ECB 00         NOP
+ 2ECC 00         NOP
+ 2ECD 00         NOP
+ 2ECE 00         NOP
+ 2ECF 00         NOP
+ 2ED0 00         NOP
+ 2ED1 00         NOP
+ 2ED2 00         NOP
+ 2ED3 00         NOP
+ 2ED4 00         NOP
+ 2ED5 00         NOP
+ 2ED6 00         NOP
+ 2ED7 00         NOP
+ 2ED8 00         NOP
+ 2ED9 00         NOP
+ 2EDA 00         NOP
+ 2EDB 00         NOP
+ 2EDC 00         NOP
+ 2EDD 00         NOP
+ 2EDE 00         NOP
+ 2EDF 00         NOP
+ 2EE0 00         NOP
+ 2EE1 00         NOP
+ 2EE2 00         NOP
+ 2EE3 00         NOP
+ 2EE4 00         NOP
+ 2EE5 00         NOP
+ 2EE6 00         NOP
+ 2EE7 00         NOP
+ 2EE8 00         NOP
+ 2EE9 00         NOP
+ 2EEA 00         NOP
+ 2EEB 00         NOP
+ 2EEC 00         NOP
+ 2EED 00         NOP
+ 2EEE 00         NOP
+ 2EEF 00         NOP
+ 2EF0 00         NOP
+ 2EF1 00         NOP
+ 2EF2 00         NOP
+ 2EF3 00         NOP
+ 2EF4 00         NOP
+ 2EF5 00         NOP
+ 2EF6 00         NOP
+ 2EF7 00         NOP
+ 2EF8 00         NOP
+ 2EF9 00         NOP
+ 2EFA 00         NOP
+ 2EFB 00         NOP
+ 2EFC 00         NOP
+ 2EFD 00         NOP
+ 2EFE 00         NOP
+ 2EFF 00         NOP
+ 2F00 00         NOP
+ 2F01 00         NOP
+ 2F02 00         NOP
+ 2F03 00         NOP
+ 2F04 00         NOP
+ 2F05 00         NOP
+ 2F06 00         NOP
+ 2F07 00         NOP
+ 2F08 00         NOP
+ 2F09 00         NOP
+ 2F0A 00         NOP
+ 2F0B 00         NOP
+ 2F0C 00         NOP
+ 2F0D 00         NOP
+ 2F0E 00         NOP
+ 2F0F 00         NOP
+ 2F10 00         NOP
+ 2F11 00         NOP
+ 2F12 00         NOP
+ 2F13 00         NOP
+ 2F14 00         NOP
+ 2F15 00         NOP
+ 2F16 00         NOP
+ 2F17 00         NOP
+ 2F18 00         NOP
+ 2F19 00         NOP
+ 2F1A 00         NOP
+ 2F1B 00         NOP
+ 2F1C 00         NOP
+ 2F1D 00         NOP
+ 2F1E 00         NOP
+ 2F1F 00         NOP
+ 2F20 00         NOP
+ 2F21 00         NOP
+ 2F22 00         NOP
+ 2F23 00         NOP
+ 2F24 00         NOP
+ 2F25 00         NOP
+ 2F26 00         NOP
+ 2F27 00         NOP
+ 2F28 00         NOP
+ 2F29 00         NOP
+ 2F2A 00         NOP
+ 2F2B 00         NOP
+ 2F2C 00         NOP
+ 2F2D 00         NOP
+ 2F2E 00         NOP
+ 2F2F 00         NOP
+ 2F30 00         NOP
+ 2F31 00         NOP
+ 2F32 00         NOP
+ 2F33 00         NOP
+ 2F34 00         NOP
+ 2F35 00         NOP
+ 2F36 00         NOP
+ 2F37 00         NOP
+ 2F38 00         NOP
+ 2F39 00         NOP
+ 2F3A 00         NOP
+ 2F3B 00         NOP
+ 2F3C 00         NOP
+ 2F3D 00         NOP
+ 2F3E 00         NOP
+ 2F3F 00         NOP
+ 2F40 00         NOP
+ 2F41 00         NOP
+ 2F42 00         NOP
+ 2F43 00         NOP
+ 2F44 00         NOP
+ 2F45 00         NOP
+ 2F46 00         NOP
+ 2F47 00         NOP
+ 2F48 00         NOP
+ 2F49 00         NOP
+ 2F4A 00         NOP
+ 2F4B 00         NOP
+ 2F4C 00         NOP
+ 2F4D 00         NOP
+ 2F4E 00         NOP
+ 2F4F 00         NOP
+ 2F50 00         NOP
+ 2F51 00         NOP
+ 2F52 00         NOP
+ 2F53 00         NOP
+ 2F54 00         NOP
+ 2F55 00         NOP
+ 2F56 00         NOP
+ 2F57 00         NOP
+ 2F58 00         NOP
+ 2F59 00         NOP
+ 2F5A 00         NOP
+ 2F5B 00         NOP
+ 2F5C 00         NOP
+ 2F5D 00         NOP
+ 2F5E 00         NOP
+ 2F5F 00         NOP
+ 2F60 00         NOP
+ 2F61 00         NOP
+ 2F62 00         NOP
+ 2F63 00         NOP
+ 2F64 00         NOP
+ 2F65 00         NOP
+ 2F66 00         NOP
+ 2F67 00         NOP
+ 2F68 00         NOP
+ 2F69 00         NOP
+ 2F6A 00         NOP
+ 2F6B 00         NOP
+ 2F6C 00         NOP
+ 2F6D 00         NOP
+ 2F6E 00         NOP
+ 2F6F 00         NOP
+ 2F70 00         NOP
+ 2F71 00         NOP
+ 2F72 00         NOP
+ 2F73 00         NOP
+ 2F74 00         NOP
+ 2F75 00         NOP
+ 2F76 00         NOP
+ 2F77 00         NOP
+ 2F78 00         NOP
+ 2F79 00         NOP
+ 2F7A 00         NOP
+ 2F7B 00         NOP
+ 2F7C 00         NOP
+ 2F7D 00         NOP
+ 2F7E 00         NOP
+ 2F7F 00         NOP
+ 2F80 00         NOP
+ 2F81 00         NOP
+ 2F82 00         NOP
+ 2F83 00         NOP
+ 2F84 00         NOP
+ 2F85 00         NOP
+ 2F86 00         NOP
+ 2F87 00         NOP
+ 2F88 00         NOP
+ 2F89 00         NOP
+ 2F8A 00         NOP
+ 2F8B 00         NOP
+ 2F8C 00         NOP
+ 2F8D 00         NOP
+ 2F8E 00         NOP
+ 2F8F 00         NOP
+ 2F90 00         NOP
+ 2F91 00         NOP
+ 2F92 00         NOP
+ 2F93 00         NOP
+ 2F94 00         NOP
+ 2F95 00         NOP
+ 2F96 00         NOP
+ 2F97 00         NOP
+ 2F98 00         NOP
+ 2F99 00         NOP
+ 2F9A 00         NOP
+ 2F9B 00         NOP
+ 2F9C 00         NOP
+ 2F9D 00         NOP
+ 2F9E 00         NOP
+ 2F9F 00         NOP
+ 2FA0 00         NOP
+ 2FA1 00         NOP
+ 2FA2 00         NOP
+ 2FA3 00         NOP
+ 2FA4 00         NOP
+ 2FA5 00         NOP
+ 2FA6 00         NOP
+ 2FA7 00         NOP
+ 2FA8 00         NOP
+ 2FA9 00         NOP
+ 2FAA 00         NOP
+ 2FAB 00         NOP
+ 2FAC 00         NOP
+ 2FAD 00         NOP
+ 2FAE 00         NOP
+ 2FAF 00         NOP
+ 2FB0 00         NOP
+ 2FB1 00         NOP
+ 2FB2 00         NOP
+ 2FB3 00         NOP
+ 2FB4 00         NOP
+ 2FB5 00         NOP
+ 2FB6 00         NOP
+ 2FB7 00         NOP
+ 2FB8 00         NOP
+ 2FB9 00         NOP
+ 2FBA 00         NOP
+ 2FBB 00         NOP
+ 2FBC 00         NOP
+ 2FBD 00         NOP
+ 2FBE 00         NOP
+ 2FBF 00         NOP
+ 2FC0 00         NOP
+ 2FC1 00         NOP
+ 2FC2 00         NOP
+ 2FC3 00         NOP
+ 2FC4 00         NOP
+ 2FC5 00         NOP
+ 2FC6 00         NOP
+ 2FC7 00         NOP
+ 2FC8 00         NOP
+ 2FC9 00         NOP
+ 2FCA 00         NOP
+ 2FCB 00         NOP
+ 2FCC 00         NOP
+ 2FCD 00         NOP
+ 2FCE 00         NOP
+ 2FCF 00         NOP
+ 2FD0 00         NOP
+ 2FD1 00         NOP
+ 2FD2 00         NOP
+ 2FD3 00         NOP
+ 2FD4 00         NOP
+ 2FD5 00         NOP
+ 2FD6 00         NOP
+ 2FD7 00         NOP
+ 2FD8 00         NOP
+ 2FD9 00         NOP
+ 2FDA 00         NOP
+ 2FDB 00         NOP
+ 2FDC 00         NOP
+ 2FDD 00         NOP
+ 2FDE 00         NOP
+ 2FDF 00         NOP
+ 2FE0 00         NOP
+ 2FE1 00         NOP
+ 2FE2 00         NOP
+ 2FE3 00         NOP
+ 2FE4 00         NOP
+ 2FE5 00         NOP
+ 2FE6 00         NOP
+ 2FE7 00         NOP
+ 2FE8 00         NOP
+ 2FE9 00         NOP
+ 2FEA 00         NOP
+ 2FEB 00         NOP
+ 2FEC 00         NOP
+ 2FED 00         NOP
+ 2FEE 00         NOP
+ 2FEF 00         NOP
+ 2FF0 00         NOP
+ 2FF1 00         NOP
+ 2FF2 00         NOP
+ 2FF3 00         NOP
+ 2FF4 00         NOP
+ 2FF5 00         NOP
+ 2FF6 A1         AND  C
+ 2FF7 12         LD   (DE),A
+ 2FF8 A1         AND  C
+ 2FF9 12         LD   (DE),A
+ 2FFA 44         LD   B,H
+ 2FFB 00         NOP
+ 2FFC 3A5C0C     LD   A,(0C5C)
+ 2FFF 28FF       JR   Z,3000
+ 3001 FF         RST  0038,MASK_INT
+ 3002 FF         RST  0038,MASK_INT
+ 3003 FF         RST  0038,MASK_INT
+ 3004 FF         RST  0038,MASK_INT
+ 3005 FF         RST  0038,MASK_INT
+ 3006 FF         RST  0038,MASK_INT
+ 3007 FF         RST  0038,MASK_INT
+ 3008 FF         RST  0038,MASK_INT
+ 3009 FF         RST  0038,MASK_INT
+ 300A FF         RST  0038,MASK_INT
+ 300B FF         RST  0038,MASK_INT
+ 300C FF         RST  0038,MASK_INT
+ 300D FF         RST  0038,MASK_INT
+ 300E FF         RST  0038,MASK_INT
+ 300F FF         RST  0038,MASK_INT
+ 3010 FF         RST  0038,MASK_INT
+ 3011 FF         RST  0038,MASK_INT
+ 3012 FF         RST  0038,MASK_INT
+ 3013 FF         RST  0038,MASK_INT
+ 3014 FF         RST  0038,MASK_INT
+ 3015 FF         RST  0038,MASK_INT
+ 3016 FF         RST  0038,MASK_INT
+ 3017 FF         RST  0038,MASK_INT
+ 3018 FF         RST  0038,MASK_INT
+ 3019 FF         RST  0038,MASK_INT
+ 301A FF         RST  0038,MASK_INT
+ 301B FF         RST  0038,MASK_INT
+ 301C FF         RST  0038,MASK_INT
+ 301D FF         RST  0038,MASK_INT
+ 301E FF         RST  0038,MASK_INT
+ 301F FF         RST  0038,MASK_INT
+ 3020 FF         RST  0038,MASK_INT
+ 3021 FF         RST  0038,MASK_INT
+ 3022 FF         RST  0038,MASK_INT
+ 3023 FF         RST  0038,MASK_INT
+ 3024 FF         RST  0038,MASK_INT
+ 3025 FF         RST  0038,MASK_INT
+ 3026 FF         RST  0038,MASK_INT
+ 3027 FF         RST  0038,MASK_INT
+ 3028 FF         RST  0038,MASK_INT
+ 3029 FF         RST  0038,MASK_INT
+ 302A FF         RST  0038,MASK_INT
+ 302B FF         RST  0038,MASK_INT
+ 302C FF         RST  0038,MASK_INT
+ 302D FF         RST  0038,MASK_INT
+ 302E FF         RST  0038,MASK_INT
+ 302F FF         RST  0038,MASK_INT
+ 3030 FF         RST  0038,MASK_INT
+ 3031 FF         RST  0038,MASK_INT
+ 3032 FF         RST  0038,MASK_INT
+ 3033 FF         RST  0038,MASK_INT
+ 3034 FF         RST  0038,MASK_INT
+ 3035 FF         RST  0038,MASK_INT
+ 3036 FF         RST  0038,MASK_INT
+ 3037 FF         RST  0038,MASK_INT
+ 3038 FF         RST  0038,MASK_INT
+ 3039 FF         RST  0038,MASK_INT
+ 303A FF         RST  0038,MASK_INT
+ 303B FF         RST  0038,MASK_INT
+ 303C FF         RST  0038,MASK_INT
+ 303D FF         RST  0038,MASK_INT
+ 303E FF         RST  0038,MASK_INT
+ 303F FF         RST  0038,MASK_INT
+ 3040 FF         RST  0038,MASK_INT
+ 3041 FF         RST  0038,MASK_INT
+ 3042 FF         RST  0038,MASK_INT
+ 3043 FF         RST  0038,MASK_INT
+ 3044 FF         RST  0038,MASK_INT
+ 3045 FF         RST  0038,MASK_INT
+ 3046 FF         RST  0038,MASK_INT
+ 3047 FF         RST  0038,MASK_INT
+ 3048 FF         RST  0038,MASK_INT
+ 3049 FF         RST  0038,MASK_INT
+ 304A FF         RST  0038,MASK_INT
+ 304B FF         RST  0038,MASK_INT
+ 304C FF         RST  0038,MASK_INT
+ 304D FF         RST  0038,MASK_INT
+ 304E FF         RST  0038,MASK_INT
+ 304F FF         RST  0038,MASK_INT
+ 3050 FF         RST  0038,MASK_INT
+ 3051 FF         RST  0038,MASK_INT
+ 3052 FF         RST  0038,MASK_INT
+ 3053 FF         RST  0038,MASK_INT
+ 3054 FF         RST  0038,MASK_INT
+ 3055 FF         RST  0038,MASK_INT
+ 3056 FF         RST  0038,MASK_INT
+ 3057 FF         RST  0038,MASK_INT
+ 3058 FF         RST  0038,MASK_INT
+ 3059 FF         RST  0038,MASK_INT
+ 305A FF         RST  0038,MASK_INT
+ 305B FF         RST  0038,MASK_INT
+ 305C FF         RST  0038,MASK_INT
+ 305D FF         RST  0038,MASK_INT
+ 305E FF         RST  0038,MASK_INT
+ 305F FF         RST  0038,MASK_INT
+ 3060 FF         RST  0038,MASK_INT
+ 3061 FF         RST  0038,MASK_INT
+ 3062 FF         RST  0038,MASK_INT
+ 3063 FF         RST  0038,MASK_INT
+ 3064 FF         RST  0038,MASK_INT
+ 3065 FF         RST  0038,MASK_INT
+ 3066 FF         RST  0038,MASK_INT
+ 3067 FF         RST  0038,MASK_INT
+ 3068 FF         RST  0038,MASK_INT
+ 3069 FF         RST  0038,MASK_INT
+ 306A FF         RST  0038,MASK_INT
+ 306B FF         RST  0038,MASK_INT
+ 306C FF         RST  0038,MASK_INT
+ 306D FF         RST  0038,MASK_INT
+ 306E FF         RST  0038,MASK_INT
+ 306F FF         RST  0038,MASK_INT
+ 3070 FF         RST  0038,MASK_INT
+ 3071 FF         RST  0038,MASK_INT
+ 3072 FF         RST  0038,MASK_INT
+ 3073 FF         RST  0038,MASK_INT
+ 3074 FF         RST  0038,MASK_INT
+ 3075 FF         RST  0038,MASK_INT
+ 3076 FF         RST  0038,MASK_INT
+ 3077 FF         RST  0038,MASK_INT
+ 3078 FF         RST  0038,MASK_INT
+ 3079 FF         RST  0038,MASK_INT
+ 307A FF         RST  0038,MASK_INT
+ 307B FF         RST  0038,MASK_INT
+ 307C FF         RST  0038,MASK_INT
+ 307D FF         RST  0038,MASK_INT
+ 307E FF         RST  0038,MASK_INT
+ 307F FF         RST  0038,MASK_INT
+ 3080 FF         RST  0038,MASK_INT
+ 3081 FF         RST  0038,MASK_INT
+ 3082 FF         RST  0038,MASK_INT
+ 3083 FF         RST  0038,MASK_INT
+ 3084 FF         RST  0038,MASK_INT
+ 3085 FF         RST  0038,MASK_INT
+ 3086 FF         RST  0038,MASK_INT
+ 3087 FF         RST  0038,MASK_INT
+ 3088 FF         RST  0038,MASK_INT
+ 3089 FF         RST  0038,MASK_INT
+ 308A FF         RST  0038,MASK_INT
+ 308B FF         RST  0038,MASK_INT
+ 308C FF         RST  0038,MASK_INT
+ 308D FF         RST  0038,MASK_INT
+ 308E FF         RST  0038,MASK_INT
+ 308F FF         RST  0038,MASK_INT
+ 3090 FF         RST  0038,MASK_INT
+ 3091 FF         RST  0038,MASK_INT
+ 3092 FF         RST  0038,MASK_INT
+ 3093 FF         RST  0038,MASK_INT
+ 3094 FF         RST  0038,MASK_INT
+ 3095 FF         RST  0038,MASK_INT
+ 3096 FF         RST  0038,MASK_INT
+ 3097 FF         RST  0038,MASK_INT
+ 3098 FF         RST  0038,MASK_INT
+ 3099 FF         RST  0038,MASK_INT
+ 309A FF         RST  0038,MASK_INT
+ 309B FF         RST  0038,MASK_INT
+ 309C FF         RST  0038,MASK_INT
+ 309D FF         RST  0038,MASK_INT
+ 309E FF         RST  0038,MASK_INT
+ 309F FF         RST  0038,MASK_INT
+ 30A0 FF         RST  0038,MASK_INT
+ 30A1 FF         RST  0038,MASK_INT
+ 30A2 FF         RST  0038,MASK_INT
+ 30A3 FF         RST  0038,MASK_INT
+ 30A4 FF         RST  0038,MASK_INT
+ 30A5 FF         RST  0038,MASK_INT
+ 30A6 FF         RST  0038,MASK_INT
+ 30A7 FF         RST  0038,MASK_INT
+ 30A8 FF         RST  0038,MASK_INT
+ 30A9 FF         RST  0038,MASK_INT
+ 30AA FF         RST  0038,MASK_INT
+ 30AB FF         RST  0038,MASK_INT
+ 30AC FF         RST  0038,MASK_INT
+ 30AD FF         RST  0038,MASK_INT
+ 30AE FF         RST  0038,MASK_INT
+ 30AF FF         RST  0038,MASK_INT
+ 30B0 FF         RST  0038,MASK_INT
+ 30B1 FF         RST  0038,MASK_INT
+ 30B2 FF         RST  0038,MASK_INT
+ 30B3 FF         RST  0038,MASK_INT
+ 30B4 FF         RST  0038,MASK_INT
+ 30B5 FF         RST  0038,MASK_INT
+ 30B6 FF         RST  0038,MASK_INT
+ 30B7 FF         RST  0038,MASK_INT
+ 30B8 FF         RST  0038,MASK_INT
+ 30B9 FF         RST  0038,MASK_INT
+ 30BA FF         RST  0038,MASK_INT
+ 30BB FF         RST  0038,MASK_INT
+ 30BC FF         RST  0038,MASK_INT
+ 30BD FF         RST  0038,MASK_INT
+ 30BE FF         RST  0038,MASK_INT
+ 30BF FF         RST  0038,MASK_INT
+ 30C0 FF         RST  0038,MASK_INT
+ 30C1 FF         RST  0038,MASK_INT
+ 30C2 FF         RST  0038,MASK_INT
+ 30C3 FF         RST  0038,MASK_INT
+ 30C4 FF         RST  0038,MASK_INT
+ 30C5 FF         RST  0038,MASK_INT
+ 30C6 FF         RST  0038,MASK_INT
+ 30C7 FF         RST  0038,MASK_INT
+ 30C8 FF         RST  0038,MASK_INT
+ 30C9 FF         RST  0038,MASK_INT
+ 30CA FF         RST  0038,MASK_INT
+ 30CB FF         RST  0038,MASK_INT
+ 30CC FF         RST  0038,MASK_INT
+ 30CD FF         RST  0038,MASK_INT
+ 30CE FF         RST  0038,MASK_INT
+ 30CF FF         RST  0038,MASK_INT
+ 30D0 FF         RST  0038,MASK_INT
+ 30D1 FF         RST  0038,MASK_INT
+ 30D2 FF         RST  0038,MASK_INT
+ 30D3 FF         RST  0038,MASK_INT
+ 30D4 FF         RST  0038,MASK_INT
+ 30D5 FF         RST  0038,MASK_INT
+ 30D6 FF         RST  0038,MASK_INT
+ 30D7 FF         RST  0038,MASK_INT
+ 30D8 FF         RST  0038,MASK_INT
+ 30D9 FF         RST  0038,MASK_INT
+ 30DA FF         RST  0038,MASK_INT
+ 30DB FF         RST  0038,MASK_INT
+ 30DC FF         RST  0038,MASK_INT
+ 30DD FF         RST  0038,MASK_INT
+ 30DE FF         RST  0038,MASK_INT
+ 30DF FF         RST  0038,MASK_INT
+ 30E0 FF         RST  0038,MASK_INT
+ 30E1 FF         RST  0038,MASK_INT
+ 30E2 FF         RST  0038,MASK_INT
+ 30E3 FF         RST  0038,MASK_INT
+ 30E4 FF         RST  0038,MASK_INT
+ 30E5 FF         RST  0038,MASK_INT
+ 30E6 FF         RST  0038,MASK_INT
+ 30E7 FF         RST  0038,MASK_INT
+ 30E8 FF         RST  0038,MASK_INT
+ 30E9 FF         RST  0038,MASK_INT
+ 30EA FF         RST  0038,MASK_INT
+ 30EB FF         RST  0038,MASK_INT
+ 30EC FF         RST  0038,MASK_INT
+ 30ED FF         RST  0038,MASK_INT
+ 30EE FF         RST  0038,MASK_INT
+ 30EF FF         RST  0038,MASK_INT
+ 30F0 FF         RST  0038,MASK_INT
+ 30F1 FF         RST  0038,MASK_INT
+ 30F2 FF         RST  0038,MASK_INT
+ 30F3 FF         RST  0038,MASK_INT
+ 30F4 FF         RST  0038,MASK_INT
+ 30F5 FF         RST  0038,MASK_INT
+ 30F6 FF         RST  0038,MASK_INT
+ 30F7 FF         RST  0038,MASK_INT
+ 30F8 FF         RST  0038,MASK_INT
+ 30F9 FF         RST  0038,MASK_INT
+ 30FA FF         RST  0038,MASK_INT
+ 30FB FF         RST  0038,MASK_INT
+ 30FC FF         RST  0038,MASK_INT
+ 30FD FF         RST  0038,MASK_INT
+ 30FE FF         RST  0038,MASK_INT
+ 30FF FF         RST  0038,MASK_INT
+ 3100 FF         RST  0038,MASK_INT
+ 3101 FF         RST  0038,MASK_INT
+ 3102 FF         RST  0038,MASK_INT
+ 3103 FF         RST  0038,MASK_INT
+ 3104 FF         RST  0038,MASK_INT
+ 3105 FF         RST  0038,MASK_INT
+ 3106 FF         RST  0038,MASK_INT
+ 3107 FF         RST  0038,MASK_INT
+ 3108 FF         RST  0038,MASK_INT
+ 3109 FF         RST  0038,MASK_INT
+ 310A FF         RST  0038,MASK_INT
+ 310B FF         RST  0038,MASK_INT
+ 310C FF         RST  0038,MASK_INT
+ 310D FF         RST  0038,MASK_INT
+ 310E FF         RST  0038,MASK_INT
+ 310F FF         RST  0038,MASK_INT
+ 3110 FF         RST  0038,MASK_INT
+ 3111 FF         RST  0038,MASK_INT
+ 3112 FF         RST  0038,MASK_INT
+ 3113 FF         RST  0038,MASK_INT
+ 3114 FF         RST  0038,MASK_INT
+ 3115 FF         RST  0038,MASK_INT
+ 3116 FF         RST  0038,MASK_INT
+ 3117 FF         RST  0038,MASK_INT
+ 3118 FF         RST  0038,MASK_INT
+ 3119 FF         RST  0038,MASK_INT
+ 311A FF         RST  0038,MASK_INT
+ 311B FF         RST  0038,MASK_INT
+ 311C FF         RST  0038,MASK_INT
+ 311D FF         RST  0038,MASK_INT
+ 311E FF         RST  0038,MASK_INT
+ 311F FF         RST  0038,MASK_INT
+ 3120 FF         RST  0038,MASK_INT
+ 3121 FF         RST  0038,MASK_INT
+ 3122 FF         RST  0038,MASK_INT
+ 3123 FF         RST  0038,MASK_INT
+ 3124 FF         RST  0038,MASK_INT
+ 3125 FF         RST  0038,MASK_INT
+ 3126 FF         RST  0038,MASK_INT
+ 3127 FF         RST  0038,MASK_INT
+ 3128 FF         RST  0038,MASK_INT
+ 3129 FF         RST  0038,MASK_INT
+ 312A FF         RST  0038,MASK_INT
+ 312B FF         RST  0038,MASK_INT
+ 312C FF         RST  0038,MASK_INT
+ 312D FF         RST  0038,MASK_INT
+ 312E FF         RST  0038,MASK_INT
+ 312F FF         RST  0038,MASK_INT
+ 3130 FF         RST  0038,MASK_INT
+ 3131 FF         RST  0038,MASK_INT
+ 3132 FF         RST  0038,MASK_INT
+ 3133 FF         RST  0038,MASK_INT
+ 3134 FF         RST  0038,MASK_INT
+ 3135 FF         RST  0038,MASK_INT
+ 3136 FF         RST  0038,MASK_INT
+ 3137 FF         RST  0038,MASK_INT
+ 3138 FF         RST  0038,MASK_INT
+ 3139 FF         RST  0038,MASK_INT
+ 313A FF         RST  0038,MASK_INT
+ 313B FF         RST  0038,MASK_INT
+ 313C FF         RST  0038,MASK_INT
+ 313D FF         RST  0038,MASK_INT
+ 313E FF         RST  0038,MASK_INT
+ 313F FF         RST  0038,MASK_INT
+ 3140 FF         RST  0038,MASK_INT
+ 3141 FF         RST  0038,MASK_INT
+ 3142 FF         RST  0038,MASK_INT
+ 3143 FF         RST  0038,MASK_INT
+ 3144 FF         RST  0038,MASK_INT
+ 3145 FF         RST  0038,MASK_INT
+ 3146 FF         RST  0038,MASK_INT
+ 3147 FF         RST  0038,MASK_INT
+ 3148 FF         RST  0038,MASK_INT
+ 3149 FF         RST  0038,MASK_INT
+ 314A FF         RST  0038,MASK_INT
+ 314B FF         RST  0038,MASK_INT
+ 314C FF         RST  0038,MASK_INT
+ 314D FF         RST  0038,MASK_INT
+ 314E FF         RST  0038,MASK_INT
+ 314F FF         RST  0038,MASK_INT
+ 3150 FF         RST  0038,MASK_INT
+ 3151 FF         RST  0038,MASK_INT
+ 3152 FF         RST  0038,MASK_INT
+ 3153 FF         RST  0038,MASK_INT
+ 3154 FF         RST  0038,MASK_INT
+ 3155 FF         RST  0038,MASK_INT
+ 3156 FF         RST  0038,MASK_INT
+ 3157 FF         RST  0038,MASK_INT
+ 3158 FF         RST  0038,MASK_INT
+ 3159 FF         RST  0038,MASK_INT
+ 315A FF         RST  0038,MASK_INT
+ 315B FF         RST  0038,MASK_INT
+ 315C FF         RST  0038,MASK_INT
+ 315D FF         RST  0038,MASK_INT
+ 315E FF         RST  0038,MASK_INT
+ 315F FF         RST  0038,MASK_INT
+ 3160 FF         RST  0038,MASK_INT
+ 3161 FF         RST  0038,MASK_INT
+ 3162 FF         RST  0038,MASK_INT
+ 3163 FF         RST  0038,MASK_INT
+ 3164 FF         RST  0038,MASK_INT
+ 3165 FF         RST  0038,MASK_INT
+ 3166 FF         RST  0038,MASK_INT
+ 3167 FF         RST  0038,MASK_INT
+ 3168 FF         RST  0038,MASK_INT
+ 3169 FF         RST  0038,MASK_INT
+ 316A FF         RST  0038,MASK_INT
+ 316B FF         RST  0038,MASK_INT
+ 316C FF         RST  0038,MASK_INT
+ 316D FF         RST  0038,MASK_INT
+ 316E FF         RST  0038,MASK_INT
+ 316F FF         RST  0038,MASK_INT
+ 3170 FF         RST  0038,MASK_INT
+ 3171 FF         RST  0038,MASK_INT
+ 3172 FF         RST  0038,MASK_INT
+ 3173 FF         RST  0038,MASK_INT
+ 3174 FF         RST  0038,MASK_INT
+ 3175 FF         RST  0038,MASK_INT
+ 3176 FF         RST  0038,MASK_INT
+ 3177 FF         RST  0038,MASK_INT
+ 3178 FF         RST  0038,MASK_INT
+ 3179 FF         RST  0038,MASK_INT
+ 317A FF         RST  0038,MASK_INT
+ 317B FF         RST  0038,MASK_INT
+ 317C FF         RST  0038,MASK_INT
+ 317D FF         RST  0038,MASK_INT
+ 317E FF         RST  0038,MASK_INT
+ 317F FF         RST  0038,MASK_INT
+ 3180 FF         RST  0038,MASK_INT
+ 3181 FF         RST  0038,MASK_INT
+ 3182 FF         RST  0038,MASK_INT
+ 3183 FF         RST  0038,MASK_INT
+ 3184 FF         RST  0038,MASK_INT
+ 3185 FF         RST  0038,MASK_INT
+ 3186 FF         RST  0038,MASK_INT
+ 3187 FF         RST  0038,MASK_INT
+ 3188 FF         RST  0038,MASK_INT
+ 3189 FF         RST  0038,MASK_INT
+ 318A FF         RST  0038,MASK_INT
+ 318B FF         RST  0038,MASK_INT
+ 318C FF         RST  0038,MASK_INT
+ 318D FF         RST  0038,MASK_INT
+ 318E FF         RST  0038,MASK_INT
+ 318F FF         RST  0038,MASK_INT
+ 3190 FF         RST  0038,MASK_INT
+ 3191 FF         RST  0038,MASK_INT
+ 3192 FF         RST  0038,MASK_INT
+ 3193 FF         RST  0038,MASK_INT
+ 3194 FF         RST  0038,MASK_INT
+ 3195 FF         RST  0038,MASK_INT
+ 3196 FF         RST  0038,MASK_INT
+ 3197 FF         RST  0038,MASK_INT
+ 3198 FF         RST  0038,MASK_INT
+ 3199 FF         RST  0038,MASK_INT
+ 319A FF         RST  0038,MASK_INT
+ 319B FF         RST  0038,MASK_INT
+ 319C FF         RST  0038,MASK_INT
+ 319D FF         RST  0038,MASK_INT
+ 319E FF         RST  0038,MASK_INT
+ 319F FF         RST  0038,MASK_INT
+ 31A0 FF         RST  0038,MASK_INT
+ 31A1 FF         RST  0038,MASK_INT
+ 31A2 FF         RST  0038,MASK_INT
+ 31A3 FF         RST  0038,MASK_INT
+ 31A4 FF         RST  0038,MASK_INT
+ 31A5 FF         RST  0038,MASK_INT
+ 31A6 FF         RST  0038,MASK_INT
+ 31A7 FF         RST  0038,MASK_INT
+ 31A8 FF         RST  0038,MASK_INT
+ 31A9 FF         RST  0038,MASK_INT
+ 31AA FF         RST  0038,MASK_INT
+ 31AB FF         RST  0038,MASK_INT
+ 31AC FF         RST  0038,MASK_INT
+ 31AD FF         RST  0038,MASK_INT
+ 31AE FF         RST  0038,MASK_INT
+ 31AF FF         RST  0038,MASK_INT
+ 31B0 FF         RST  0038,MASK_INT
+ 31B1 FF         RST  0038,MASK_INT
+ 31B2 FF         RST  0038,MASK_INT
+ 31B3 FF         RST  0038,MASK_INT
+ 31B4 FF         RST  0038,MASK_INT
+ 31B5 FF         RST  0038,MASK_INT
+ 31B6 FF         RST  0038,MASK_INT
+ 31B7 FF         RST  0038,MASK_INT
+ 31B8 FF         RST  0038,MASK_INT
+ 31B9 FF         RST  0038,MASK_INT
+ 31BA FF         RST  0038,MASK_INT
+ 31BB FF         RST  0038,MASK_INT
+ 31BC FF         RST  0038,MASK_INT
+ 31BD FF         RST  0038,MASK_INT
+ 31BE FF         RST  0038,MASK_INT
+ 31BF FF         RST  0038,MASK_INT
+ 31C0 FF         RST  0038,MASK_INT
+ 31C1 FF         RST  0038,MASK_INT
+ 31C2 FF         RST  0038,MASK_INT
+ 31C3 FF         RST  0038,MASK_INT
+ 31C4 FF         RST  0038,MASK_INT
+ 31C5 FF         RST  0038,MASK_INT
+ 31C6 FF         RST  0038,MASK_INT
+ 31C7 FF         RST  0038,MASK_INT
+ 31C8 FF         RST  0038,MASK_INT
+ 31C9 FF         RST  0038,MASK_INT
+ 31CA FF         RST  0038,MASK_INT
+ 31CB FF         RST  0038,MASK_INT
+ 31CC FF         RST  0038,MASK_INT
+ 31CD FF         RST  0038,MASK_INT
+ 31CE FF         RST  0038,MASK_INT
+ 31CF FF         RST  0038,MASK_INT
+ 31D0 FF         RST  0038,MASK_INT
+ 31D1 FF         RST  0038,MASK_INT
+ 31D2 FF         RST  0038,MASK_INT
+ 31D3 FF         RST  0038,MASK_INT
+ 31D4 FF         RST  0038,MASK_INT
+ 31D5 FF         RST  0038,MASK_INT
+ 31D6 FF         RST  0038,MASK_INT
+ 31D7 FF         RST  0038,MASK_INT
+ 31D8 FF         RST  0038,MASK_INT
+ 31D9 FF         RST  0038,MASK_INT
+ 31DA FF         RST  0038,MASK_INT
+ 31DB FF         RST  0038,MASK_INT
+ 31DC FF         RST  0038,MASK_INT
+ 31DD FF         RST  0038,MASK_INT
+ 31DE FF         RST  0038,MASK_INT
+ 31DF FF         RST  0038,MASK_INT
+ 31E0 FF         RST  0038,MASK_INT
+ 31E1 FF         RST  0038,MASK_INT
+ 31E2 FF         RST  0038,MASK_INT
+ 31E3 FF         RST  0038,MASK_INT
+ 31E4 FF         RST  0038,MASK_INT
+ 31E5 FF         RST  0038,MASK_INT
+ 31E6 FF         RST  0038,MASK_INT
+ 31E7 FF         RST  0038,MASK_INT
+ 31E8 FF         RST  0038,MASK_INT
+ 31E9 FF         RST  0038,MASK_INT
+ 31EA FF         RST  0038,MASK_INT
+ 31EB FF         RST  0038,MASK_INT
+ 31EC FF         RST  0038,MASK_INT
+ 31ED FF         RST  0038,MASK_INT
+ 31EE FF         RST  0038,MASK_INT
+ 31EF FF         RST  0038,MASK_INT
+ 31F0 FF         RST  0038,MASK_INT
+ 31F1 FF         RST  0038,MASK_INT
+ 31F2 FF         RST  0038,MASK_INT
+ 31F3 FF         RST  0038,MASK_INT
+ 31F4 FF         RST  0038,MASK_INT
+ 31F5 FF         RST  0038,MASK_INT
+ 31F6 FF         RST  0038,MASK_INT
+ 31F7 FF         RST  0038,MASK_INT
+ 31F8 FF         RST  0038,MASK_INT
+ 31F9 FF         RST  0038,MASK_INT
+ 31FA FF         RST  0038,MASK_INT
+ 31FB FF         RST  0038,MASK_INT
+ 31FC FF         RST  0038,MASK_INT
+ 31FD FF         RST  0038,MASK_INT
+ 31FE FF         RST  0038,MASK_INT
+ 31FF FF         RST  0038,MASK_INT
+ 3200 FF         RST  0038,MASK_INT
+ 3201 FF         RST  0038,MASK_INT
+ 3202 FF         RST  0038,MASK_INT
+ 3203 FF         RST  0038,MASK_INT
+ 3204 FF         RST  0038,MASK_INT
+ 3205 FF         RST  0038,MASK_INT
+ 3206 FF         RST  0038,MASK_INT
+ 3207 FF         RST  0038,MASK_INT
+ 3208 FF         RST  0038,MASK_INT
+ 3209 FF         RST  0038,MASK_INT
+ 320A FF         RST  0038,MASK_INT
+ 320B FF         RST  0038,MASK_INT
+ 320C FF         RST  0038,MASK_INT
+ 320D FF         RST  0038,MASK_INT
+ 320E FF         RST  0038,MASK_INT
+ 320F FF         RST  0038,MASK_INT
+ 3210 FF         RST  0038,MASK_INT
+ 3211 FF         RST  0038,MASK_INT
+ 3212 FF         RST  0038,MASK_INT
+ 3213 FF         RST  0038,MASK_INT
+ 3214 FF         RST  0038,MASK_INT
+ 3215 FF         RST  0038,MASK_INT
+ 3216 FF         RST  0038,MASK_INT
+ 3217 FF         RST  0038,MASK_INT
+ 3218 FF         RST  0038,MASK_INT
+ 3219 FF         RST  0038,MASK_INT
+ 321A FF         RST  0038,MASK_INT
+ 321B FF         RST  0038,MASK_INT
+ 321C FF         RST  0038,MASK_INT
+ 321D FF         RST  0038,MASK_INT
+ 321E FF         RST  0038,MASK_INT
+ 321F FF         RST  0038,MASK_INT
+ 3220 FF         RST  0038,MASK_INT
+ 3221 FF         RST  0038,MASK_INT
+ 3222 FF         RST  0038,MASK_INT
+ 3223 FF         RST  0038,MASK_INT
+ 3224 FF         RST  0038,MASK_INT
+ 3225 FF         RST  0038,MASK_INT
+ 3226 FF         RST  0038,MASK_INT
+ 3227 FF         RST  0038,MASK_INT
+ 3228 FF         RST  0038,MASK_INT
+ 3229 FF         RST  0038,MASK_INT
+ 322A FF         RST  0038,MASK_INT
+ 322B FF         RST  0038,MASK_INT
+ 322C FF         RST  0038,MASK_INT
+ 322D FF         RST  0038,MASK_INT
+ 322E FF         RST  0038,MASK_INT
+ 322F FF         RST  0038,MASK_INT
+ 3230 FF         RST  0038,MASK_INT
+ 3231 FF         RST  0038,MASK_INT
+ 3232 FF         RST  0038,MASK_INT
+ 3233 FF         RST  0038,MASK_INT
+ 3234 FF         RST  0038,MASK_INT
+ 3235 FF         RST  0038,MASK_INT
+ 3236 FF         RST  0038,MASK_INT
+ 3237 FF         RST  0038,MASK_INT
+ 3238 FF         RST  0038,MASK_INT
+ 3239 FF         RST  0038,MASK_INT
+ 323A FF         RST  0038,MASK_INT
+ 323B FF         RST  0038,MASK_INT
+ 323C FF         RST  0038,MASK_INT
+ 323D FF         RST  0038,MASK_INT
+ 323E FF         RST  0038,MASK_INT
+ 323F FF         RST  0038,MASK_INT
+ 3240 FF         RST  0038,MASK_INT
+ 3241 FF         RST  0038,MASK_INT
+ 3242 FF         RST  0038,MASK_INT
+ 3243 FF         RST  0038,MASK_INT
+ 3244 FF         RST  0038,MASK_INT
+ 3245 FF         RST  0038,MASK_INT
+ 3246 FF         RST  0038,MASK_INT
+ 3247 FF         RST  0038,MASK_INT
+ 3248 FF         RST  0038,MASK_INT
+ 3249 FF         RST  0038,MASK_INT
+ 324A FF         RST  0038,MASK_INT
+ 324B FF         RST  0038,MASK_INT
+ 324C FF         RST  0038,MASK_INT
+ 324D FF         RST  0038,MASK_INT
+ 324E FF         RST  0038,MASK_INT
+ 324F FF         RST  0038,MASK_INT
+ 3250 FF         RST  0038,MASK_INT
+ 3251 FF         RST  0038,MASK_INT
+ 3252 FF         RST  0038,MASK_INT
+ 3253 FF         RST  0038,MASK_INT
+ 3254 FF         RST  0038,MASK_INT
+ 3255 FF         RST  0038,MASK_INT
+ 3256 FF         RST  0038,MASK_INT
+ 3257 FF         RST  0038,MASK_INT
+ 3258 FF         RST  0038,MASK_INT
+ 3259 FF         RST  0038,MASK_INT
+ 325A FF         RST  0038,MASK_INT
+ 325B FF         RST  0038,MASK_INT
+ 325C FF         RST  0038,MASK_INT
+ 325D FF         RST  0038,MASK_INT
+ 325E FF         RST  0038,MASK_INT
+ 325F FF         RST  0038,MASK_INT
+ 3260 FF         RST  0038,MASK_INT
+ 3261 FF         RST  0038,MASK_INT
+ 3262 FF         RST  0038,MASK_INT
+ 3263 FF         RST  0038,MASK_INT
+ 3264 FF         RST  0038,MASK_INT
+ 3265 FF         RST  0038,MASK_INT
+ 3266 FF         RST  0038,MASK_INT
+ 3267 FF         RST  0038,MASK_INT
+ 3268 FF         RST  0038,MASK_INT
+ 3269 FF         RST  0038,MASK_INT
+ 326A FF         RST  0038,MASK_INT
+ 326B FF         RST  0038,MASK_INT
+ 326C FF         RST  0038,MASK_INT
+ 326D FF         RST  0038,MASK_INT
+ 326E FF         RST  0038,MASK_INT
+ 326F FF         RST  0038,MASK_INT
+ 3270 FF         RST  0038,MASK_INT
+ 3271 FF         RST  0038,MASK_INT
+ 3272 FF         RST  0038,MASK_INT
+ 3273 FF         RST  0038,MASK_INT
+ 3274 FF         RST  0038,MASK_INT
+ 3275 FF         RST  0038,MASK_INT
+ 3276 FF         RST  0038,MASK_INT
+ 3277 FF         RST  0038,MASK_INT
+ 3278 FF         RST  0038,MASK_INT
+ 3279 FF         RST  0038,MASK_INT
+ 327A FF         RST  0038,MASK_INT
+ 327B FF         RST  0038,MASK_INT
+ 327C FF         RST  0038,MASK_INT
+ 327D FF         RST  0038,MASK_INT
+ 327E FF         RST  0038,MASK_INT
+ 327F FF         RST  0038,MASK_INT
+ 3280 FF         RST  0038,MASK_INT
+ 3281 FF         RST  0038,MASK_INT
+ 3282 FF         RST  0038,MASK_INT
+ 3283 FF         RST  0038,MASK_INT
+ 3284 FF         RST  0038,MASK_INT
+ 3285 FF         RST  0038,MASK_INT
+ 3286 FF         RST  0038,MASK_INT
+ 3287 FF         RST  0038,MASK_INT
+ 3288 FF         RST  0038,MASK_INT
+ 3289 FF         RST  0038,MASK_INT
+ 328A FF         RST  0038,MASK_INT
+ 328B FF         RST  0038,MASK_INT
+ 328C FF         RST  0038,MASK_INT
+ 328D FF         RST  0038,MASK_INT
+ 328E FF         RST  0038,MASK_INT
+ 328F FF         RST  0038,MASK_INT
+ 3290 FF         RST  0038,MASK_INT
+ 3291 FF         RST  0038,MASK_INT
+ 3292 FF         RST  0038,MASK_INT
+ 3293 FF         RST  0038,MASK_INT
+ 3294 FF         RST  0038,MASK_INT
+ 3295 FF         RST  0038,MASK_INT
+ 3296 FF         RST  0038,MASK_INT
+ 3297 FF         RST  0038,MASK_INT
+ 3298 FF         RST  0038,MASK_INT
+ 3299 FF         RST  0038,MASK_INT
+ 329A FF         RST  0038,MASK_INT
+ 329B FF         RST  0038,MASK_INT
+ 329C FF         RST  0038,MASK_INT
+ 329D FF         RST  0038,MASK_INT
+ 329E FF         RST  0038,MASK_INT
+ 329F FF         RST  0038,MASK_INT
+ 32A0 FF         RST  0038,MASK_INT
+ 32A1 FF         RST  0038,MASK_INT
+ 32A2 FF         RST  0038,MASK_INT
+ 32A3 FF         RST  0038,MASK_INT
+ 32A4 FF         RST  0038,MASK_INT
+ 32A5 FF         RST  0038,MASK_INT
+ 32A6 FF         RST  0038,MASK_INT
+ 32A7 FF         RST  0038,MASK_INT
+ 32A8 FF         RST  0038,MASK_INT
+ 32A9 FF         RST  0038,MASK_INT
+ 32AA FF         RST  0038,MASK_INT
+ 32AB FF         RST  0038,MASK_INT
+ 32AC FF         RST  0038,MASK_INT
+ 32AD FF         RST  0038,MASK_INT
+ 32AE FF         RST  0038,MASK_INT
+ 32AF FF         RST  0038,MASK_INT
+ 32B0 FF         RST  0038,MASK_INT
+ 32B1 FF         RST  0038,MASK_INT
+ 32B2 FF         RST  0038,MASK_INT
+ 32B3 FF         RST  0038,MASK_INT
+ 32B4 FF         RST  0038,MASK_INT
+ 32B5 FF         RST  0038,MASK_INT
+ 32B6 FF         RST  0038,MASK_INT
+ 32B7 FF         RST  0038,MASK_INT
+ 32B8 FF         RST  0038,MASK_INT
+ 32B9 FF         RST  0038,MASK_INT
+ 32BA FF         RST  0038,MASK_INT
+ 32BB FF         RST  0038,MASK_INT
+ 32BC FF         RST  0038,MASK_INT
+ 32BD FF         RST  0038,MASK_INT
+ 32BE FF         RST  0038,MASK_INT
+ 32BF FF         RST  0038,MASK_INT
+ 32C0 FF         RST  0038,MASK_INT
+ 32C1 FF         RST  0038,MASK_INT
+ 32C2 FF         RST  0038,MASK_INT
+ 32C3 FF         RST  0038,MASK_INT
+ 32C4 FF         RST  0038,MASK_INT
+ 32C5 FF         RST  0038,MASK_INT
+ 32C6 FF         RST  0038,MASK_INT
+ 32C7 FF         RST  0038,MASK_INT
+ 32C8 FF         RST  0038,MASK_INT
+ 32C9 FF         RST  0038,MASK_INT
+ 32CA FF         RST  0038,MASK_INT
+ 32CB FF         RST  0038,MASK_INT
+ 32CC FF         RST  0038,MASK_INT
+ 32CD FF         RST  0038,MASK_INT
+ 32CE FF         RST  0038,MASK_INT
+ 32CF FF         RST  0038,MASK_INT
+ 32D0 FF         RST  0038,MASK_INT
+ 32D1 FF         RST  0038,MASK_INT
+ 32D2 FF         RST  0038,MASK_INT
+ 32D3 FF         RST  0038,MASK_INT
+ 32D4 FF         RST  0038,MASK_INT
+ 32D5 FF         RST  0038,MASK_INT
+ 32D6 FF         RST  0038,MASK_INT
+ 32D7 FF         RST  0038,MASK_INT
+ 32D8 FF         RST  0038,MASK_INT
+ 32D9 FF         RST  0038,MASK_INT
+ 32DA FF         RST  0038,MASK_INT
+ 32DB FF         RST  0038,MASK_INT
+ 32DC FF         RST  0038,MASK_INT
+ 32DD FF         RST  0038,MASK_INT
+ 32DE FF         RST  0038,MASK_INT
+ 32DF FF         RST  0038,MASK_INT
+ 32E0 FF         RST  0038,MASK_INT
+ 32E1 FF         RST  0038,MASK_INT
+ 32E2 FF         RST  0038,MASK_INT
+ 32E3 FF         RST  0038,MASK_INT
+ 32E4 FF         RST  0038,MASK_INT
+ 32E5 FF         RST  0038,MASK_INT
+ 32E6 FF         RST  0038,MASK_INT
+ 32E7 FF         RST  0038,MASK_INT
+ 32E8 FF         RST  0038,MASK_INT
+ 32E9 FF         RST  0038,MASK_INT
+ 32EA FF         RST  0038,MASK_INT
+ 32EB FF         RST  0038,MASK_INT
+ 32EC FF         RST  0038,MASK_INT
+ 32ED FF         RST  0038,MASK_INT
+ 32EE FF         RST  0038,MASK_INT
+ 32EF FF         RST  0038,MASK_INT
+ 32F0 FF         RST  0038,MASK_INT
+ 32F1 FF         RST  0038,MASK_INT
+ 32F2 FF         RST  0038,MASK_INT
+ 32F3 FF         RST  0038,MASK_INT
+ 32F4 FF         RST  0038,MASK_INT
+ 32F5 FF         RST  0038,MASK_INT
+ 32F6 FF         RST  0038,MASK_INT
+ 32F7 FF         RST  0038,MASK_INT
+ 32F8 FF         RST  0038,MASK_INT
+ 32F9 FF         RST  0038,MASK_INT
+ 32FA FF         RST  0038,MASK_INT
+ 32FB FF         RST  0038,MASK_INT
+ 32FC FF         RST  0038,MASK_INT
+ 32FD FF         RST  0038,MASK_INT
+ 32FE FF         RST  0038,MASK_INT
+ 32FF FF         RST  0038,MASK_INT
+ 3300 FF         RST  0038,MASK_INT
+ 3301 FF         RST  0038,MASK_INT
+ 3302 FF         RST  0038,MASK_INT
+ 3303 FF         RST  0038,MASK_INT
+ 3304 FF         RST  0038,MASK_INT
+ 3305 FF         RST  0038,MASK_INT
+ 3306 FF         RST  0038,MASK_INT
+ 3307 FF         RST  0038,MASK_INT
+ 3308 FF         RST  0038,MASK_INT
+ 3309 FF         RST  0038,MASK_INT
+ 330A FF         RST  0038,MASK_INT
+ 330B FF         RST  0038,MASK_INT
+ 330C FF         RST  0038,MASK_INT
+ 330D FF         RST  0038,MASK_INT
+ 330E FF         RST  0038,MASK_INT
+ 330F FF         RST  0038,MASK_INT
+ 3310 FF         RST  0038,MASK_INT
+ 3311 FF         RST  0038,MASK_INT
+ 3312 FF         RST  0038,MASK_INT
+ 3313 FF         RST  0038,MASK_INT
+ 3314 FF         RST  0038,MASK_INT
+ 3315 FF         RST  0038,MASK_INT
+ 3316 FF         RST  0038,MASK_INT
+ 3317 FF         RST  0038,MASK_INT
+ 3318 FF         RST  0038,MASK_INT
+ 3319 FF         RST  0038,MASK_INT
+ 331A FF         RST  0038,MASK_INT
+ 331B FF         RST  0038,MASK_INT
+ 331C FF         RST  0038,MASK_INT
+ 331D FF         RST  0038,MASK_INT
+ 331E FF         RST  0038,MASK_INT
+ 331F FF         RST  0038,MASK_INT
+ 3320 FF         RST  0038,MASK_INT
+ 3321 FF         RST  0038,MASK_INT
+ 3322 FF         RST  0038,MASK_INT
+ 3323 FF         RST  0038,MASK_INT
+ 3324 FF         RST  0038,MASK_INT
+ 3325 FF         RST  0038,MASK_INT
+ 3326 FF         RST  0038,MASK_INT
+ 3327 FF         RST  0038,MASK_INT
+ 3328 FF         RST  0038,MASK_INT
+ 3329 FF         RST  0038,MASK_INT
+ 332A FF         RST  0038,MASK_INT
+ 332B FF         RST  0038,MASK_INT
+ 332C FF         RST  0038,MASK_INT
+ 332D FF         RST  0038,MASK_INT
+ 332E FF         RST  0038,MASK_INT
+ 332F FF         RST  0038,MASK_INT
+ 3330 FF         RST  0038,MASK_INT
+ 3331 FF         RST  0038,MASK_INT
+ 3332 FF         RST  0038,MASK_INT
+ 3333 FF         RST  0038,MASK_INT
+ 3334 FF         RST  0038,MASK_INT
+ 3335 FF         RST  0038,MASK_INT
+ 3336 FF         RST  0038,MASK_INT
+ 3337 FF         RST  0038,MASK_INT
+ 3338 FF         RST  0038,MASK_INT
+ 3339 FF         RST  0038,MASK_INT
+ 333A FF         RST  0038,MASK_INT
+ 333B FF         RST  0038,MASK_INT
+ 333C FF         RST  0038,MASK_INT
+ 333D FF         RST  0038,MASK_INT
+ 333E FF         RST  0038,MASK_INT
+ 333F FF         RST  0038,MASK_INT
+ 3340 FF         RST  0038,MASK_INT
+ 3341 FF         RST  0038,MASK_INT
+ 3342 FF         RST  0038,MASK_INT
+ 3343 FF         RST  0038,MASK_INT
+ 3344 FF         RST  0038,MASK_INT
+ 3345 FF         RST  0038,MASK_INT
+ 3346 FF         RST  0038,MASK_INT
+ 3347 FF         RST  0038,MASK_INT
+ 3348 FF         RST  0038,MASK_INT
+ 3349 FF         RST  0038,MASK_INT
+ 334A FF         RST  0038,MASK_INT
+ 334B FF         RST  0038,MASK_INT
+ 334C FF         RST  0038,MASK_INT
+ 334D FF         RST  0038,MASK_INT
+ 334E FF         RST  0038,MASK_INT
+ 334F FF         RST  0038,MASK_INT
+ 3350 FF         RST  0038,MASK_INT
+ 3351 FF         RST  0038,MASK_INT
+ 3352 FF         RST  0038,MASK_INT
+ 3353 FF         RST  0038,MASK_INT
+ 3354 FF         RST  0038,MASK_INT
+ 3355 FF         RST  0038,MASK_INT
+ 3356 FF         RST  0038,MASK_INT
+ 3357 FF         RST  0038,MASK_INT
+ 3358 FF         RST  0038,MASK_INT
+ 3359 FF         RST  0038,MASK_INT
+ 335A FF         RST  0038,MASK_INT
+ 335B FF         RST  0038,MASK_INT
+ 335C FF         RST  0038,MASK_INT
+ 335D FF         RST  0038,MASK_INT
+ 335E FF         RST  0038,MASK_INT
+ 335F FF         RST  0038,MASK_INT
+ 3360 FF         RST  0038,MASK_INT
+ 3361 FF         RST  0038,MASK_INT
+ 3362 FF         RST  0038,MASK_INT
+ 3363 FF         RST  0038,MASK_INT
+ 3364 FF         RST  0038,MASK_INT
+ 3365 FF         RST  0038,MASK_INT
+ 3366 FF         RST  0038,MASK_INT
+ 3367 FF         RST  0038,MASK_INT
+ 3368 FF         RST  0038,MASK_INT
+ 3369 FF         RST  0038,MASK_INT
+ 336A FF         RST  0038,MASK_INT
+ 336B FF         RST  0038,MASK_INT
+ 336C FF         RST  0038,MASK_INT
+ 336D FF         RST  0038,MASK_INT
+ 336E FF         RST  0038,MASK_INT
+ 336F FF         RST  0038,MASK_INT
+ 3370 FF         RST  0038,MASK_INT
+ 3371 FF         RST  0038,MASK_INT
+ 3372 FF         RST  0038,MASK_INT
+ 3373 FF         RST  0038,MASK_INT
+ 3374 FF         RST  0038,MASK_INT
+ 3375 FF         RST  0038,MASK_INT
+ 3376 FF         RST  0038,MASK_INT
+ 3377 FF         RST  0038,MASK_INT
+ 3378 FF         RST  0038,MASK_INT
+ 3379 FF         RST  0038,MASK_INT
+ 337A FF         RST  0038,MASK_INT
+ 337B FF         RST  0038,MASK_INT
+ 337C FF         RST  0038,MASK_INT
+ 337D FF         RST  0038,MASK_INT
+ 337E FF         RST  0038,MASK_INT
+ 337F FF         RST  0038,MASK_INT
+ 3380 FF         RST  0038,MASK_INT
+ 3381 FF         RST  0038,MASK_INT
+ 3382 FF         RST  0038,MASK_INT
+ 3383 FF         RST  0038,MASK_INT
+ 3384 FF         RST  0038,MASK_INT
+ 3385 FF         RST  0038,MASK_INT
+ 3386 FF         RST  0038,MASK_INT
+ 3387 FF         RST  0038,MASK_INT
+ 3388 FF         RST  0038,MASK_INT
+ 3389 FF         RST  0038,MASK_INT
+ 338A FF         RST  0038,MASK_INT
+ 338B FF         RST  0038,MASK_INT
+ 338C FF         RST  0038,MASK_INT
+ 338D FF         RST  0038,MASK_INT
+ 338E FF         RST  0038,MASK_INT
+ 338F FF         RST  0038,MASK_INT
+ 3390 FF         RST  0038,MASK_INT
+ 3391 FF         RST  0038,MASK_INT
+ 3392 FF         RST  0038,MASK_INT
+ 3393 FF         RST  0038,MASK_INT
+ 3394 FF         RST  0038,MASK_INT
+ 3395 FF         RST  0038,MASK_INT
+ 3396 FF         RST  0038,MASK_INT
+ 3397 FF         RST  0038,MASK_INT
+ 3398 FF         RST  0038,MASK_INT
+ 3399 FF         RST  0038,MASK_INT
+ 339A FF         RST  0038,MASK_INT
+ 339B FF         RST  0038,MASK_INT
+ 339C FF         RST  0038,MASK_INT
+ 339D FF         RST  0038,MASK_INT
+ 339E FF         RST  0038,MASK_INT
+ 339F FF         RST  0038,MASK_INT
+ 33A0 FF         RST  0038,MASK_INT
+ 33A1 FF         RST  0038,MASK_INT
+ 33A2 FF         RST  0038,MASK_INT
+ 33A3 FF         RST  0038,MASK_INT
+ 33A4 FF         RST  0038,MASK_INT
+ 33A5 FF         RST  0038,MASK_INT
+ 33A6 FF         RST  0038,MASK_INT
+ 33A7 FF         RST  0038,MASK_INT
+ 33A8 FF         RST  0038,MASK_INT
+ 33A9 FF         RST  0038,MASK_INT
+ 33AA FF         RST  0038,MASK_INT
+ 33AB FF         RST  0038,MASK_INT
+ 33AC FF         RST  0038,MASK_INT
+ 33AD FF         RST  0038,MASK_INT
+ 33AE FF         RST  0038,MASK_INT
+ 33AF FF         RST  0038,MASK_INT
+ 33B0 FF         RST  0038,MASK_INT
+ 33B1 FF         RST  0038,MASK_INT
+ 33B2 FF         RST  0038,MASK_INT
+ 33B3 FF         RST  0038,MASK_INT
+ 33B4 FF         RST  0038,MASK_INT
+ 33B5 FF         RST  0038,MASK_INT
+ 33B6 FF         RST  0038,MASK_INT
+ 33B7 FF         RST  0038,MASK_INT
+ 33B8 FF         RST  0038,MASK_INT
+ 33B9 FF         RST  0038,MASK_INT
+ 33BA FF         RST  0038,MASK_INT
+ 33BB FF         RST  0038,MASK_INT
+ 33BC FF         RST  0038,MASK_INT
+ 33BD FF         RST  0038,MASK_INT
+ 33BE FF         RST  0038,MASK_INT
+ 33BF FF         RST  0038,MASK_INT
+ 33C0 FF         RST  0038,MASK_INT
+ 33C1 FF         RST  0038,MASK_INT
+ 33C2 FF         RST  0038,MASK_INT
+ 33C3 FF         RST  0038,MASK_INT
+ 33C4 FF         RST  0038,MASK_INT
+ 33C5 FF         RST  0038,MASK_INT
+ 33C6 FF         RST  0038,MASK_INT
+ 33C7 FF         RST  0038,MASK_INT
+ 33C8 FF         RST  0038,MASK_INT
+ 33C9 FF         RST  0038,MASK_INT
+ 33CA FF         RST  0038,MASK_INT
+ 33CB FF         RST  0038,MASK_INT
+ 33CC FF         RST  0038,MASK_INT
+ 33CD FF         RST  0038,MASK_INT
+ 33CE FF         RST  0038,MASK_INT
+ 33CF FF         RST  0038,MASK_INT
+ 33D0 FF         RST  0038,MASK_INT
+ 33D1 FF         RST  0038,MASK_INT
+ 33D2 FF         RST  0038,MASK_INT
+ 33D3 FF         RST  0038,MASK_INT
+ 33D4 FF         RST  0038,MASK_INT
+ 33D5 FF         RST  0038,MASK_INT
+ 33D6 FF         RST  0038,MASK_INT
+ 33D7 FF         RST  0038,MASK_INT
+ 33D8 FF         RST  0038,MASK_INT
+ 33D9 FF         RST  0038,MASK_INT
+ 33DA FF         RST  0038,MASK_INT
+ 33DB FF         RST  0038,MASK_INT
+ 33DC FF         RST  0038,MASK_INT
+ 33DD FF         RST  0038,MASK_INT
+ 33DE FF         RST  0038,MASK_INT
+ 33DF FF         RST  0038,MASK_INT
+ 33E0 FF         RST  0038,MASK_INT
+ 33E1 FF         RST  0038,MASK_INT
+ 33E2 FF         RST  0038,MASK_INT
+ 33E3 FF         RST  0038,MASK_INT
+ 33E4 FF         RST  0038,MASK_INT
+ 33E5 FF         RST  0038,MASK_INT
+ 33E6 FF         RST  0038,MASK_INT
+ 33E7 FF         RST  0038,MASK_INT
+ 33E8 FF         RST  0038,MASK_INT
+ 33E9 FF         RST  0038,MASK_INT
+ 33EA FF         RST  0038,MASK_INT
+ 33EB FF         RST  0038,MASK_INT
+ 33EC FF         RST  0038,MASK_INT
+ 33ED FF         RST  0038,MASK_INT
+ 33EE FF         RST  0038,MASK_INT
+ 33EF FF         RST  0038,MASK_INT
+ 33F0 FF         RST  0038,MASK_INT
+ 33F1 FF         RST  0038,MASK_INT
+ 33F2 FF         RST  0038,MASK_INT
+ 33F3 FF         RST  0038,MASK_INT
+ 33F4 FF         RST  0038,MASK_INT
+ 33F5 FF         RST  0038,MASK_INT
+ 33F6 FF         RST  0038,MASK_INT
+ 33F7 FF         RST  0038,MASK_INT
+ 33F8 FF         RST  0038,MASK_INT
+ 33F9 FF         RST  0038,MASK_INT
+ 33FA FF         RST  0038,MASK_INT
+ 33FB FF         RST  0038,MASK_INT
+ 33FC FF         RST  0038,MASK_INT
+ 33FD FF         RST  0038,MASK_INT
+ 33FE FF         RST  0038,MASK_INT
+ 33FF FF         RST  0038,MASK_INT
+ 3400 FF         RST  0038,MASK_INT
+ 3401 FF         RST  0038,MASK_INT
+ 3402 FF         RST  0038,MASK_INT
+ 3403 FF         RST  0038,MASK_INT
+ 3404 FF         RST  0038,MASK_INT
+ 3405 FF         RST  0038,MASK_INT
+ 3406 FF         RST  0038,MASK_INT
+ 3407 FF         RST  0038,MASK_INT
+ 3408 FF         RST  0038,MASK_INT
+ 3409 FF         RST  0038,MASK_INT
+ 340A FF         RST  0038,MASK_INT
+ 340B FF         RST  0038,MASK_INT
+ 340C FF         RST  0038,MASK_INT
+ 340D FF         RST  0038,MASK_INT
+ 340E FF         RST  0038,MASK_INT
+ 340F FF         RST  0038,MASK_INT
+ 3410 FF         RST  0038,MASK_INT
+ 3411 FF         RST  0038,MASK_INT
+ 3412 FF         RST  0038,MASK_INT
+ 3413 FF         RST  0038,MASK_INT
+ 3414 FF         RST  0038,MASK_INT
+ 3415 FF         RST  0038,MASK_INT
+ 3416 FF         RST  0038,MASK_INT
+ 3417 FF         RST  0038,MASK_INT
+ 3418 FF         RST  0038,MASK_INT
+ 3419 FF         RST  0038,MASK_INT
+ 341A FF         RST  0038,MASK_INT
+ 341B FF         RST  0038,MASK_INT
+ 341C FF         RST  0038,MASK_INT
+ 341D FF         RST  0038,MASK_INT
+ 341E FF         RST  0038,MASK_INT
+ 341F FF         RST  0038,MASK_INT
+ 3420 FF         RST  0038,MASK_INT
+ 3421 FF         RST  0038,MASK_INT
+ 3422 FF         RST  0038,MASK_INT
+ 3423 FF         RST  0038,MASK_INT
+ 3424 FF         RST  0038,MASK_INT
+ 3425 FF         RST  0038,MASK_INT
+ 3426 FF         RST  0038,MASK_INT
+ 3427 FF         RST  0038,MASK_INT
+ 3428 FF         RST  0038,MASK_INT
+ 3429 FF         RST  0038,MASK_INT
+ 342A FF         RST  0038,MASK_INT
+ 342B FF         RST  0038,MASK_INT
+ 342C FF         RST  0038,MASK_INT
+ 342D FF         RST  0038,MASK_INT
+ 342E FF         RST  0038,MASK_INT
+ 342F FF         RST  0038,MASK_INT
+ 3430 FF         RST  0038,MASK_INT
+ 3431 FF         RST  0038,MASK_INT
+ 3432 FF         RST  0038,MASK_INT
+ 3433 FF         RST  0038,MASK_INT
+ 3434 FF         RST  0038,MASK_INT
+ 3435 FF         RST  0038,MASK_INT
+ 3436 FF         RST  0038,MASK_INT
+ 3437 FF         RST  0038,MASK_INT
+ 3438 FF         RST  0038,MASK_INT
+ 3439 FF         RST  0038,MASK_INT
+ 343A FF         RST  0038,MASK_INT
+ 343B FF         RST  0038,MASK_INT
+ 343C FF         RST  0038,MASK_INT
+ 343D FF         RST  0038,MASK_INT
+ 343E FF         RST  0038,MASK_INT
+ 343F FF         RST  0038,MASK_INT
+ 3440 FF         RST  0038,MASK_INT
+ 3441 FF         RST  0038,MASK_INT
+ 3442 FF         RST  0038,MASK_INT
+ 3443 FF         RST  0038,MASK_INT
+ 3444 FF         RST  0038,MASK_INT
+ 3445 FF         RST  0038,MASK_INT
+ 3446 FF         RST  0038,MASK_INT
+ 3447 FF         RST  0038,MASK_INT
+ 3448 FF         RST  0038,MASK_INT
+ 3449 FF         RST  0038,MASK_INT
+ 344A FF         RST  0038,MASK_INT
+ 344B FF         RST  0038,MASK_INT
+ 344C FF         RST  0038,MASK_INT
+ 344D FF         RST  0038,MASK_INT
+ 344E FF         RST  0038,MASK_INT
+ 344F FF         RST  0038,MASK_INT
+ 3450 FF         RST  0038,MASK_INT
+ 3451 FF         RST  0038,MASK_INT
+ 3452 FF         RST  0038,MASK_INT
+ 3453 FF         RST  0038,MASK_INT
+ 3454 FF         RST  0038,MASK_INT
+ 3455 FF         RST  0038,MASK_INT
+ 3456 FF         RST  0038,MASK_INT
+ 3457 FF         RST  0038,MASK_INT
+ 3458 FF         RST  0038,MASK_INT
+ 3459 FF         RST  0038,MASK_INT
+ 345A FF         RST  0038,MASK_INT
+ 345B FF         RST  0038,MASK_INT
+ 345C FF         RST  0038,MASK_INT
+ 345D FF         RST  0038,MASK_INT
+ 345E FF         RST  0038,MASK_INT
+ 345F FF         RST  0038,MASK_INT
+ 3460 FF         RST  0038,MASK_INT
+ 3461 FF         RST  0038,MASK_INT
+ 3462 FF         RST  0038,MASK_INT
+ 3463 FF         RST  0038,MASK_INT
+ 3464 FF         RST  0038,MASK_INT
+ 3465 FF         RST  0038,MASK_INT
+ 3466 FF         RST  0038,MASK_INT
+ 3467 FF         RST  0038,MASK_INT
+ 3468 FF         RST  0038,MASK_INT
+ 3469 FF         RST  0038,MASK_INT
+ 346A FF         RST  0038,MASK_INT
+ 346B FF         RST  0038,MASK_INT
+ 346C FF         RST  0038,MASK_INT
+ 346D FF         RST  0038,MASK_INT
+ 346E FF         RST  0038,MASK_INT
+ 346F FF         RST  0038,MASK_INT
+ 3470 FF         RST  0038,MASK_INT
+ 3471 FF         RST  0038,MASK_INT
+ 3472 FF         RST  0038,MASK_INT
+ 3473 FF         RST  0038,MASK_INT
+ 3474 FF         RST  0038,MASK_INT
+ 3475 FF         RST  0038,MASK_INT
+ 3476 FF         RST  0038,MASK_INT
+ 3477 FF         RST  0038,MASK_INT
+ 3478 FF         RST  0038,MASK_INT
+ 3479 FF         RST  0038,MASK_INT
+ 347A FF         RST  0038,MASK_INT
+ 347B FF         RST  0038,MASK_INT
+ 347C FF         RST  0038,MASK_INT
+ 347D FF         RST  0038,MASK_INT
+ 347E FF         RST  0038,MASK_INT
+ 347F FF         RST  0038,MASK_INT
+ 3480 FF         RST  0038,MASK_INT
+ 3481 FF         RST  0038,MASK_INT
+ 3482 FF         RST  0038,MASK_INT
+ 3483 FF         RST  0038,MASK_INT
+ 3484 FF         RST  0038,MASK_INT
+ 3485 FF         RST  0038,MASK_INT
+ 3486 FF         RST  0038,MASK_INT
+ 3487 FF         RST  0038,MASK_INT
+ 3488 FF         RST  0038,MASK_INT
+ 3489 FF         RST  0038,MASK_INT
+ 348A FF         RST  0038,MASK_INT
+ 348B FF         RST  0038,MASK_INT
+ 348C FF         RST  0038,MASK_INT
+ 348D FF         RST  0038,MASK_INT
+ 348E FF         RST  0038,MASK_INT
+ 348F FF         RST  0038,MASK_INT
+ 3490 FF         RST  0038,MASK_INT
+ 3491 FF         RST  0038,MASK_INT
+ 3492 FF         RST  0038,MASK_INT
+ 3493 FF         RST  0038,MASK_INT
+ 3494 FF         RST  0038,MASK_INT
+ 3495 FF         RST  0038,MASK_INT
+ 3496 FF         RST  0038,MASK_INT
+ 3497 FF         RST  0038,MASK_INT
+ 3498 FF         RST  0038,MASK_INT
+ 3499 FF         RST  0038,MASK_INT
+ 349A FF         RST  0038,MASK_INT
+ 349B FF         RST  0038,MASK_INT
+ 349C FF         RST  0038,MASK_INT
+ 349D FF         RST  0038,MASK_INT
+ 349E FF         RST  0038,MASK_INT
+ 349F FF         RST  0038,MASK_INT
+ 34A0 FF         RST  0038,MASK_INT
+ 34A1 FF         RST  0038,MASK_INT
+ 34A2 FF         RST  0038,MASK_INT
+ 34A3 FF         RST  0038,MASK_INT
+ 34A4 FF         RST  0038,MASK_INT
+ 34A5 FF         RST  0038,MASK_INT
+ 34A6 FF         RST  0038,MASK_INT
+ 34A7 FF         RST  0038,MASK_INT
+ 34A8 FF         RST  0038,MASK_INT
+ 34A9 FF         RST  0038,MASK_INT
+ 34AA FF         RST  0038,MASK_INT
+ 34AB FF         RST  0038,MASK_INT
+ 34AC FF         RST  0038,MASK_INT
+ 34AD FF         RST  0038,MASK_INT
+ 34AE FF         RST  0038,MASK_INT
+ 34AF FF         RST  0038,MASK_INT
+ 34B0 FF         RST  0038,MASK_INT
+ 34B1 FF         RST  0038,MASK_INT
+ 34B2 FF         RST  0038,MASK_INT
+ 34B3 FF         RST  0038,MASK_INT
+ 34B4 FF         RST  0038,MASK_INT
+ 34B5 FF         RST  0038,MASK_INT
+ 34B6 FF         RST  0038,MASK_INT
+ 34B7 FF         RST  0038,MASK_INT
+ 34B8 FF         RST  0038,MASK_INT
+ 34B9 FF         RST  0038,MASK_INT
+ 34BA FF         RST  0038,MASK_INT
+ 34BB FF         RST  0038,MASK_INT
+ 34BC FF         RST  0038,MASK_INT
+ 34BD FF         RST  0038,MASK_INT
+ 34BE FF         RST  0038,MASK_INT
+ 34BF FF         RST  0038,MASK_INT
+ 34C0 FF         RST  0038,MASK_INT
+ 34C1 FF         RST  0038,MASK_INT
+ 34C2 FF         RST  0038,MASK_INT
+ 34C3 FF         RST  0038,MASK_INT
+ 34C4 FF         RST  0038,MASK_INT
+ 34C5 FF         RST  0038,MASK_INT
+ 34C6 FF         RST  0038,MASK_INT
+ 34C7 FF         RST  0038,MASK_INT
+ 34C8 FF         RST  0038,MASK_INT
+ 34C9 FF         RST  0038,MASK_INT
+ 34CA FF         RST  0038,MASK_INT
+ 34CB FF         RST  0038,MASK_INT
+ 34CC FF         RST  0038,MASK_INT
+ 34CD FF         RST  0038,MASK_INT
+ 34CE FF         RST  0038,MASK_INT
+ 34CF FF         RST  0038,MASK_INT
+ 34D0 FF         RST  0038,MASK_INT
+ 34D1 FF         RST  0038,MASK_INT
+ 34D2 FF         RST  0038,MASK_INT
+ 34D3 FF         RST  0038,MASK_INT
+ 34D4 FF         RST  0038,MASK_INT
+ 34D5 FF         RST  0038,MASK_INT
+ 34D6 FF         RST  0038,MASK_INT
+ 34D7 FF         RST  0038,MASK_INT
+ 34D8 FF         RST  0038,MASK_INT
+ 34D9 FF         RST  0038,MASK_INT
+ 34DA FF         RST  0038,MASK_INT
+ 34DB FF         RST  0038,MASK_INT
+ 34DC FF         RST  0038,MASK_INT
+ 34DD FF         RST  0038,MASK_INT
+ 34DE FF         RST  0038,MASK_INT
+ 34DF FF         RST  0038,MASK_INT
+ 34E0 FF         RST  0038,MASK_INT
+ 34E1 FF         RST  0038,MASK_INT
+ 34E2 FF         RST  0038,MASK_INT
+ 34E3 FF         RST  0038,MASK_INT
+ 34E4 FF         RST  0038,MASK_INT
+ 34E5 FF         RST  0038,MASK_INT
+ 34E6 FF         RST  0038,MASK_INT
+ 34E7 FF         RST  0038,MASK_INT
+ 34E8 FF         RST  0038,MASK_INT
+ 34E9 FF         RST  0038,MASK_INT
+ 34EA FF         RST  0038,MASK_INT
+ 34EB FF         RST  0038,MASK_INT
+ 34EC FF         RST  0038,MASK_INT
+ 34ED FF         RST  0038,MASK_INT
+ 34EE FF         RST  0038,MASK_INT
+ 34EF FF         RST  0038,MASK_INT
+ 34F0 FF         RST  0038,MASK_INT
+ 34F1 FF         RST  0038,MASK_INT
+ 34F2 FF         RST  0038,MASK_INT
+ 34F3 FF         RST  0038,MASK_INT
+ 34F4 FF         RST  0038,MASK_INT
+ 34F5 FF         RST  0038,MASK_INT
+ 34F6 FF         RST  0038,MASK_INT
+ 34F7 FF         RST  0038,MASK_INT
+ 34F8 FF         RST  0038,MASK_INT
+ 34F9 FF         RST  0038,MASK_INT
+ 34FA FF         RST  0038,MASK_INT
+ 34FB FF         RST  0038,MASK_INT
+ 34FC FF         RST  0038,MASK_INT
+ 34FD FF         RST  0038,MASK_INT
+ 34FE FF         RST  0038,MASK_INT
+ 34FF FF         RST  0038,MASK_INT
+ 3500 FF         RST  0038,MASK_INT
+ 3501 FF         RST  0038,MASK_INT
+ 3502 FF         RST  0038,MASK_INT
+ 3503 FF         RST  0038,MASK_INT
+ 3504 FF         RST  0038,MASK_INT
+ 3505 FF         RST  0038,MASK_INT
+ 3506 FF         RST  0038,MASK_INT
+ 3507 FF         RST  0038,MASK_INT
+ 3508 FF         RST  0038,MASK_INT
+ 3509 FF         RST  0038,MASK_INT
+ 350A FF         RST  0038,MASK_INT
+ 350B FF         RST  0038,MASK_INT
+ 350C FF         RST  0038,MASK_INT
+ 350D FF         RST  0038,MASK_INT
+ 350E FF         RST  0038,MASK_INT
+ 350F FF         RST  0038,MASK_INT
+ 3510 FF         RST  0038,MASK_INT
+ 3511 FF         RST  0038,MASK_INT
+ 3512 FF         RST  0038,MASK_INT
+ 3513 FF         RST  0038,MASK_INT
+ 3514 FF         RST  0038,MASK_INT
+ 3515 FF         RST  0038,MASK_INT
+ 3516 FF         RST  0038,MASK_INT
+ 3517 FF         RST  0038,MASK_INT
+ 3518 FF         RST  0038,MASK_INT
+ 3519 FF         RST  0038,MASK_INT
+ 351A FF         RST  0038,MASK_INT
+ 351B FF         RST  0038,MASK_INT
+ 351C FF         RST  0038,MASK_INT
+ 351D FF         RST  0038,MASK_INT
+ 351E FF         RST  0038,MASK_INT
+ 351F FF         RST  0038,MASK_INT
+ 3520 FF         RST  0038,MASK_INT
+ 3521 FF         RST  0038,MASK_INT
+ 3522 FF         RST  0038,MASK_INT
+ 3523 FF         RST  0038,MASK_INT
+ 3524 FF         RST  0038,MASK_INT
+ 3525 FF         RST  0038,MASK_INT
+ 3526 FF         RST  0038,MASK_INT
+ 3527 FF         RST  0038,MASK_INT
+ 3528 FF         RST  0038,MASK_INT
+ 3529 FF         RST  0038,MASK_INT
+ 352A FF         RST  0038,MASK_INT
+ 352B FF         RST  0038,MASK_INT
+ 352C FF         RST  0038,MASK_INT
+ 352D FF         RST  0038,MASK_INT
+ 352E FF         RST  0038,MASK_INT
+ 352F FF         RST  0038,MASK_INT
+ 3530 FF         RST  0038,MASK_INT
+ 3531 FF         RST  0038,MASK_INT
+ 3532 FF         RST  0038,MASK_INT
+ 3533 FF         RST  0038,MASK_INT
+ 3534 FF         RST  0038,MASK_INT
+ 3535 FF         RST  0038,MASK_INT
+ 3536 FF         RST  0038,MASK_INT
+ 3537 FF         RST  0038,MASK_INT
+ 3538 FF         RST  0038,MASK_INT
+ 3539 FF         RST  0038,MASK_INT
+ 353A FF         RST  0038,MASK_INT
+ 353B FF         RST  0038,MASK_INT
+ 353C FF         RST  0038,MASK_INT
+ 353D FF         RST  0038,MASK_INT
+ 353E FF         RST  0038,MASK_INT
+ 353F FF         RST  0038,MASK_INT
+ 3540 FF         RST  0038,MASK_INT
+ 3541 FF         RST  0038,MASK_INT
+ 3542 FF         RST  0038,MASK_INT
+ 3543 FF         RST  0038,MASK_INT
+ 3544 FF         RST  0038,MASK_INT
+ 3545 FF         RST  0038,MASK_INT
+ 3546 FF         RST  0038,MASK_INT
+ 3547 FF         RST  0038,MASK_INT
+ 3548 FF         RST  0038,MASK_INT
+ 3549 FF         RST  0038,MASK_INT
+ 354A FF         RST  0038,MASK_INT
+ 354B FF         RST  0038,MASK_INT
+ 354C FF         RST  0038,MASK_INT
+ 354D FF         RST  0038,MASK_INT
+ 354E FF         RST  0038,MASK_INT
+ 354F FF         RST  0038,MASK_INT
+ 3550 FF         RST  0038,MASK_INT
+ 3551 FF         RST  0038,MASK_INT
+ 3552 FF         RST  0038,MASK_INT
+ 3553 FF         RST  0038,MASK_INT
+ 3554 FF         RST  0038,MASK_INT
+ 3555 FF         RST  0038,MASK_INT
+ 3556 FF         RST  0038,MASK_INT
+ 3557 FF         RST  0038,MASK_INT
+ 3558 FF         RST  0038,MASK_INT
+ 3559 FF         RST  0038,MASK_INT
+ 355A FF         RST  0038,MASK_INT
+ 355B FF         RST  0038,MASK_INT
+ 355C FF         RST  0038,MASK_INT
+ 355D FF         RST  0038,MASK_INT
+ 355E FF         RST  0038,MASK_INT
+ 355F FF         RST  0038,MASK_INT
+ 3560 FF         RST  0038,MASK_INT
+ 3561 FF         RST  0038,MASK_INT
+ 3562 FF         RST  0038,MASK_INT
+ 3563 FF         RST  0038,MASK_INT
+ 3564 FF         RST  0038,MASK_INT
+ 3565 FF         RST  0038,MASK_INT
+ 3566 FF         RST  0038,MASK_INT
+ 3567 FF         RST  0038,MASK_INT
+ 3568 FF         RST  0038,MASK_INT
+ 3569 FF         RST  0038,MASK_INT
+ 356A FF         RST  0038,MASK_INT
+ 356B FF         RST  0038,MASK_INT
+ 356C FF         RST  0038,MASK_INT
+ 356D FF         RST  0038,MASK_INT
+ 356E FF         RST  0038,MASK_INT
+ 356F FF         RST  0038,MASK_INT
+ 3570 FF         RST  0038,MASK_INT
+ 3571 FF         RST  0038,MASK_INT
+ 3572 FF         RST  0038,MASK_INT
+ 3573 FF         RST  0038,MASK_INT
+ 3574 FF         RST  0038,MASK_INT
+ 3575 FF         RST  0038,MASK_INT
+ 3576 FF         RST  0038,MASK_INT
+ 3577 FF         RST  0038,MASK_INT
+ 3578 FF         RST  0038,MASK_INT
+ 3579 FF         RST  0038,MASK_INT
+ 357A FF         RST  0038,MASK_INT
+ 357B FF         RST  0038,MASK_INT
+ 357C FF         RST  0038,MASK_INT
+ 357D FF         RST  0038,MASK_INT
+ 357E FF         RST  0038,MASK_INT
+ 357F FF         RST  0038,MASK_INT
+ 3580 FF         RST  0038,MASK_INT
+ 3581 FF         RST  0038,MASK_INT
+ 3582 FF         RST  0038,MASK_INT
+ 3583 FF         RST  0038,MASK_INT
+ 3584 FF         RST  0038,MASK_INT
+ 3585 FF         RST  0038,MASK_INT
+ 3586 FF         RST  0038,MASK_INT
+ 3587 FF         RST  0038,MASK_INT
+ 3588 FF         RST  0038,MASK_INT
+ 3589 FF         RST  0038,MASK_INT
+ 358A FF         RST  0038,MASK_INT
+ 358B FF         RST  0038,MASK_INT
+ 358C FF         RST  0038,MASK_INT
+ 358D FF         RST  0038,MASK_INT
+ 358E FF         RST  0038,MASK_INT
+ 358F FF         RST  0038,MASK_INT
+ 3590 FF         RST  0038,MASK_INT
+ 3591 FF         RST  0038,MASK_INT
+ 3592 FF         RST  0038,MASK_INT
+ 3593 FF         RST  0038,MASK_INT
+ 3594 FF         RST  0038,MASK_INT
+ 3595 FF         RST  0038,MASK_INT
+ 3596 FF         RST  0038,MASK_INT
+ 3597 FF         RST  0038,MASK_INT
+ 3598 FF         RST  0038,MASK_INT
+ 3599 FF         RST  0038,MASK_INT
+ 359A FF         RST  0038,MASK_INT
+ 359B FF         RST  0038,MASK_INT
+ 359C FF         RST  0038,MASK_INT
+ 359D FF         RST  0038,MASK_INT
+ 359E FF         RST  0038,MASK_INT
+ 359F FF         RST  0038,MASK_INT
+ 35A0 FF         RST  0038,MASK_INT
+ 35A1 FF         RST  0038,MASK_INT
+ 35A2 FF         RST  0038,MASK_INT
+ 35A3 FF         RST  0038,MASK_INT
+ 35A4 FF         RST  0038,MASK_INT
+ 35A5 FF         RST  0038,MASK_INT
+ 35A6 FF         RST  0038,MASK_INT
+ 35A7 FF         RST  0038,MASK_INT
+ 35A8 FF         RST  0038,MASK_INT
+ 35A9 FF         RST  0038,MASK_INT
+ 35AA FF         RST  0038,MASK_INT
+ 35AB FF         RST  0038,MASK_INT
+ 35AC FF         RST  0038,MASK_INT
+ 35AD FF         RST  0038,MASK_INT
+ 35AE FF         RST  0038,MASK_INT
+ 35AF FF         RST  0038,MASK_INT
+ 35B0 FF         RST  0038,MASK_INT
+ 35B1 FF         RST  0038,MASK_INT
+ 35B2 FF         RST  0038,MASK_INT
+ 35B3 FF         RST  0038,MASK_INT
+ 35B4 FF         RST  0038,MASK_INT
+ 35B5 FF         RST  0038,MASK_INT
+ 35B6 FF         RST  0038,MASK_INT
+ 35B7 FF         RST  0038,MASK_INT
+ 35B8 FF         RST  0038,MASK_INT
+ 35B9 FF         RST  0038,MASK_INT
+ 35BA FF         RST  0038,MASK_INT
+ 35BB FF         RST  0038,MASK_INT
+ 35BC FF         RST  0038,MASK_INT
+ 35BD FF         RST  0038,MASK_INT
+ 35BE FF         RST  0038,MASK_INT
+ 35BF FF         RST  0038,MASK_INT
+ 35C0 FF         RST  0038,MASK_INT
+ 35C1 FF         RST  0038,MASK_INT
+ 35C2 FF         RST  0038,MASK_INT
+ 35C3 FF         RST  0038,MASK_INT
+ 35C4 FF         RST  0038,MASK_INT
+ 35C5 FF         RST  0038,MASK_INT
+ 35C6 FF         RST  0038,MASK_INT
+ 35C7 FF         RST  0038,MASK_INT
+ 35C8 FF         RST  0038,MASK_INT
+ 35C9 FF         RST  0038,MASK_INT
+ 35CA FF         RST  0038,MASK_INT
+ 35CB FF         RST  0038,MASK_INT
+ 35CC FF         RST  0038,MASK_INT
+ 35CD FF         RST  0038,MASK_INT
+ 35CE FF         RST  0038,MASK_INT
+ 35CF FF         RST  0038,MASK_INT
+ 35D0 FF         RST  0038,MASK_INT
+ 35D1 FF         RST  0038,MASK_INT
+ 35D2 FF         RST  0038,MASK_INT
+ 35D3 FF         RST  0038,MASK_INT
+ 35D4 FF         RST  0038,MASK_INT
+ 35D5 FF         RST  0038,MASK_INT
+ 35D6 FF         RST  0038,MASK_INT
+ 35D7 FF         RST  0038,MASK_INT
+ 35D8 FF         RST  0038,MASK_INT
+ 35D9 FF         RST  0038,MASK_INT
+ 35DA FF         RST  0038,MASK_INT
+ 35DB FF         RST  0038,MASK_INT
+ 35DC FF         RST  0038,MASK_INT
+ 35DD FF         RST  0038,MASK_INT
+ 35DE FF         RST  0038,MASK_INT
+ 35DF FF         RST  0038,MASK_INT
+ 35E0 FF         RST  0038,MASK_INT
+ 35E1 FF         RST  0038,MASK_INT
+ 35E2 FF         RST  0038,MASK_INT
+ 35E3 FF         RST  0038,MASK_INT
+ 35E4 FF         RST  0038,MASK_INT
+ 35E5 FF         RST  0038,MASK_INT
+ 35E6 FF         RST  0038,MASK_INT
+ 35E7 FF         RST  0038,MASK_INT
+ 35E8 FF         RST  0038,MASK_INT
+ 35E9 FF         RST  0038,MASK_INT
+ 35EA FF         RST  0038,MASK_INT
+ 35EB FF         RST  0038,MASK_INT
+ 35EC FF         RST  0038,MASK_INT
+ 35ED FF         RST  0038,MASK_INT
+ 35EE FF         RST  0038,MASK_INT
+ 35EF FF         RST  0038,MASK_INT
+ 35F0 FF         RST  0038,MASK_INT
+ 35F1 FF         RST  0038,MASK_INT
+ 35F2 FF         RST  0038,MASK_INT
+ 35F3 FF         RST  0038,MASK_INT
+ 35F4 FF         RST  0038,MASK_INT
+ 35F5 FF         RST  0038,MASK_INT
+ 35F6 FF         RST  0038,MASK_INT
+ 35F7 FF         RST  0038,MASK_INT
+ 35F8 FF         RST  0038,MASK_INT
+ 35F9 FF         RST  0038,MASK_INT
+ 35FA FF         RST  0038,MASK_INT
+ 35FB FF         RST  0038,MASK_INT
+ 35FC FF         RST  0038,MASK_INT
+ 35FD FF         RST  0038,MASK_INT
+ 35FE FF         RST  0038,MASK_INT
+ 35FF FF         RST  0038,MASK_INT
+ 3600 FF         RST  0038,MASK_INT
+ 3601 FF         RST  0038,MASK_INT
+ 3602 FF         RST  0038,MASK_INT
+ 3603 FF         RST  0038,MASK_INT
+ 3604 FF         RST  0038,MASK_INT
+ 3605 FF         RST  0038,MASK_INT
+ 3606 FF         RST  0038,MASK_INT
+ 3607 FF         RST  0038,MASK_INT
+ 3608 FF         RST  0038,MASK_INT
+ 3609 FF         RST  0038,MASK_INT
+ 360A FF         RST  0038,MASK_INT
+ 360B FF         RST  0038,MASK_INT
+ 360C FF         RST  0038,MASK_INT
+ 360D FF         RST  0038,MASK_INT
+ 360E FF         RST  0038,MASK_INT
+ 360F FF         RST  0038,MASK_INT
+ 3610 FF         RST  0038,MASK_INT
+ 3611 FF         RST  0038,MASK_INT
+ 3612 FF         RST  0038,MASK_INT
+ 3613 FF         RST  0038,MASK_INT
+ 3614 FF         RST  0038,MASK_INT
+ 3615 FF         RST  0038,MASK_INT
+ 3616 FF         RST  0038,MASK_INT
+ 3617 FF         RST  0038,MASK_INT
+ 3618 FF         RST  0038,MASK_INT
+ 3619 FF         RST  0038,MASK_INT
+ 361A FF         RST  0038,MASK_INT
+ 361B FF         RST  0038,MASK_INT
+ 361C FF         RST  0038,MASK_INT
+ 361D FF         RST  0038,MASK_INT
+ 361E FF         RST  0038,MASK_INT
+ 361F FF         RST  0038,MASK_INT
+ 3620 FF         RST  0038,MASK_INT
+ 3621 FF         RST  0038,MASK_INT
+ 3622 FF         RST  0038,MASK_INT
+ 3623 FF         RST  0038,MASK_INT
+ 3624 FF         RST  0038,MASK_INT
+ 3625 FF         RST  0038,MASK_INT
+ 3626 FF         RST  0038,MASK_INT
+ 3627 FF         RST  0038,MASK_INT
+ 3628 FF         RST  0038,MASK_INT
+ 3629 FF         RST  0038,MASK_INT
+ 362A FF         RST  0038,MASK_INT
+ 362B FF         RST  0038,MASK_INT
+ 362C FF         RST  0038,MASK_INT
+ 362D FF         RST  0038,MASK_INT
+ 362E FF         RST  0038,MASK_INT
+ 362F FF         RST  0038,MASK_INT
+ 3630 FF         RST  0038,MASK_INT
+ 3631 FF         RST  0038,MASK_INT
+ 3632 FF         RST  0038,MASK_INT
+ 3633 FF         RST  0038,MASK_INT
+ 3634 FF         RST  0038,MASK_INT
+ 3635 FF         RST  0038,MASK_INT
+ 3636 FF         RST  0038,MASK_INT
+ 3637 FF         RST  0038,MASK_INT
+ 3638 FF         RST  0038,MASK_INT
+ 3639 FF         RST  0038,MASK_INT
+ 363A FF         RST  0038,MASK_INT
+ 363B FF         RST  0038,MASK_INT
+ 363C FF         RST  0038,MASK_INT
+ 363D FF         RST  0038,MASK_INT
+ 363E FF         RST  0038,MASK_INT
+ 363F FF         RST  0038,MASK_INT
+ 3640 FF         RST  0038,MASK_INT
+ 3641 FF         RST  0038,MASK_INT
+ 3642 FF         RST  0038,MASK_INT
+ 3643 FF         RST  0038,MASK_INT
+ 3644 FF         RST  0038,MASK_INT
+ 3645 FF         RST  0038,MASK_INT
+ 3646 FF         RST  0038,MASK_INT
+ 3647 FF         RST  0038,MASK_INT
+ 3648 FF         RST  0038,MASK_INT
+ 3649 FF         RST  0038,MASK_INT
+ 364A FF         RST  0038,MASK_INT
+ 364B FF         RST  0038,MASK_INT
+ 364C FF         RST  0038,MASK_INT
+ 364D FF         RST  0038,MASK_INT
+ 364E FF         RST  0038,MASK_INT
+ 364F FF         RST  0038,MASK_INT
+ 3650 FF         RST  0038,MASK_INT
+ 3651 FF         RST  0038,MASK_INT
+ 3652 FF         RST  0038,MASK_INT
+ 3653 FF         RST  0038,MASK_INT
+ 3654 FF         RST  0038,MASK_INT
+ 3655 FF         RST  0038,MASK_INT
+ 3656 FF         RST  0038,MASK_INT
+ 3657 FF         RST  0038,MASK_INT
+ 3658 FF         RST  0038,MASK_INT
+ 3659 FF         RST  0038,MASK_INT
+ 365A FF         RST  0038,MASK_INT
+ 365B FF         RST  0038,MASK_INT
+ 365C FF         RST  0038,MASK_INT
+ 365D FF         RST  0038,MASK_INT
+ 365E FF         RST  0038,MASK_INT
+ 365F FF         RST  0038,MASK_INT
+ 3660 FF         RST  0038,MASK_INT
+ 3661 FF         RST  0038,MASK_INT
+ 3662 FF         RST  0038,MASK_INT
+ 3663 FF         RST  0038,MASK_INT
+ 3664 FF         RST  0038,MASK_INT
+ 3665 FF         RST  0038,MASK_INT
+ 3666 FF         RST  0038,MASK_INT
+ 3667 FF         RST  0038,MASK_INT
+ 3668 FF         RST  0038,MASK_INT
+ 3669 FF         RST  0038,MASK_INT
+ 366A FF         RST  0038,MASK_INT
+ 366B FF         RST  0038,MASK_INT
+ 366C FF         RST  0038,MASK_INT
+ 366D FF         RST  0038,MASK_INT
+ 366E FF         RST  0038,MASK_INT
+ 366F FF         RST  0038,MASK_INT
+ 3670 FF         RST  0038,MASK_INT
+ 3671 FF         RST  0038,MASK_INT
+ 3672 FF         RST  0038,MASK_INT
+ 3673 FF         RST  0038,MASK_INT
+ 3674 FF         RST  0038,MASK_INT
+ 3675 FF         RST  0038,MASK_INT
+ 3676 FF         RST  0038,MASK_INT
+ 3677 FF         RST  0038,MASK_INT
+ 3678 FF         RST  0038,MASK_INT
+ 3679 FF         RST  0038,MASK_INT
+ 367A FF         RST  0038,MASK_INT
+ 367B FF         RST  0038,MASK_INT
+ 367C FF         RST  0038,MASK_INT
+ 367D FF         RST  0038,MASK_INT
+ 367E FF         RST  0038,MASK_INT
+ 367F FF         RST  0038,MASK_INT
+ 3680 FF         RST  0038,MASK_INT
+ 3681 FF         RST  0038,MASK_INT
+ 3682 FF         RST  0038,MASK_INT
+ 3683 FF         RST  0038,MASK_INT
+ 3684 FF         RST  0038,MASK_INT
+ 3685 FF         RST  0038,MASK_INT
+ 3686 FF         RST  0038,MASK_INT
+ 3687 FF         RST  0038,MASK_INT
+ 3688 FF         RST  0038,MASK_INT
+ 3689 FF         RST  0038,MASK_INT
+ 368A FF         RST  0038,MASK_INT
+ 368B FF         RST  0038,MASK_INT
+ 368C FF         RST  0038,MASK_INT
+ 368D FF         RST  0038,MASK_INT
+ 368E FF         RST  0038,MASK_INT
+ 368F FF         RST  0038,MASK_INT
+ 3690 FF         RST  0038,MASK_INT
+ 3691 FF         RST  0038,MASK_INT
+ 3692 FF         RST  0038,MASK_INT
+ 3693 FF         RST  0038,MASK_INT
+ 3694 FF         RST  0038,MASK_INT
+ 3695 FF         RST  0038,MASK_INT
+ 3696 FF         RST  0038,MASK_INT
+ 3697 FF         RST  0038,MASK_INT
+ 3698 FF         RST  0038,MASK_INT
+ 3699 FF         RST  0038,MASK_INT
+ 369A FF         RST  0038,MASK_INT
+ 369B FF         RST  0038,MASK_INT
+ 369C FF         RST  0038,MASK_INT
+ 369D FF         RST  0038,MASK_INT
+ 369E FF         RST  0038,MASK_INT
+ 369F FF         RST  0038,MASK_INT
+ 36A0 FF         RST  0038,MASK_INT
+ 36A1 FF         RST  0038,MASK_INT
+ 36A2 FF         RST  0038,MASK_INT
+ 36A3 FF         RST  0038,MASK_INT
+ 36A4 FF         RST  0038,MASK_INT
+ 36A5 FF         RST  0038,MASK_INT
+ 36A6 FF         RST  0038,MASK_INT
+ 36A7 FF         RST  0038,MASK_INT
+ 36A8 FF         RST  0038,MASK_INT
+ 36A9 FF         RST  0038,MASK_INT
+ 36AA FF         RST  0038,MASK_INT
+ 36AB FF         RST  0038,MASK_INT
+ 36AC FF         RST  0038,MASK_INT
+ 36AD FF         RST  0038,MASK_INT
+ 36AE FF         RST  0038,MASK_INT
+ 36AF FF         RST  0038,MASK_INT
+ 36B0 FF         RST  0038,MASK_INT
+ 36B1 FF         RST  0038,MASK_INT
+ 36B2 FF         RST  0038,MASK_INT
+ 36B3 FF         RST  0038,MASK_INT
+ 36B4 FF         RST  0038,MASK_INT
+ 36B5 FF         RST  0038,MASK_INT
+ 36B6 FF         RST  0038,MASK_INT
+ 36B7 FF         RST  0038,MASK_INT
+ 36B8 FF         RST  0038,MASK_INT
+ 36B9 FF         RST  0038,MASK_INT
+ 36BA FF         RST  0038,MASK_INT
+ 36BB FF         RST  0038,MASK_INT
+ 36BC FF         RST  0038,MASK_INT
+ 36BD FF         RST  0038,MASK_INT
+ 36BE FF         RST  0038,MASK_INT
+ 36BF FF         RST  0038,MASK_INT
+ 36C0 FF         RST  0038,MASK_INT
+ 36C1 FF         RST  0038,MASK_INT
+ 36C2 FF         RST  0038,MASK_INT
+ 36C3 FF         RST  0038,MASK_INT
+ 36C4 FF         RST  0038,MASK_INT
+ 36C5 FF         RST  0038,MASK_INT
+ 36C6 FF         RST  0038,MASK_INT
+ 36C7 FF         RST  0038,MASK_INT
+ 36C8 FF         RST  0038,MASK_INT
+ 36C9 FF         RST  0038,MASK_INT
+ 36CA FF         RST  0038,MASK_INT
+ 36CB FF         RST  0038,MASK_INT
+ 36CC FF         RST  0038,MASK_INT
+ 36CD FF         RST  0038,MASK_INT
+ 36CE FF         RST  0038,MASK_INT
+ 36CF FF         RST  0038,MASK_INT
+ 36D0 FF         RST  0038,MASK_INT
+ 36D1 FF         RST  0038,MASK_INT
+ 36D2 FF         RST  0038,MASK_INT
+ 36D3 FF         RST  0038,MASK_INT
+ 36D4 FF         RST  0038,MASK_INT
+ 36D5 FF         RST  0038,MASK_INT
+ 36D6 FF         RST  0038,MASK_INT
+ 36D7 FF         RST  0038,MASK_INT
+ 36D8 FF         RST  0038,MASK_INT
+ 36D9 FF         RST  0038,MASK_INT
+ 36DA FF         RST  0038,MASK_INT
+ 36DB FF         RST  0038,MASK_INT
+ 36DC FF         RST  0038,MASK_INT
+ 36DD FF         RST  0038,MASK_INT
+ 36DE FF         RST  0038,MASK_INT
+ 36DF FF         RST  0038,MASK_INT
+ 36E0 FF         RST  0038,MASK_INT
+ 36E1 FF         RST  0038,MASK_INT
+ 36E2 FF         RST  0038,MASK_INT
+ 36E3 FF         RST  0038,MASK_INT
+ 36E4 FF         RST  0038,MASK_INT
+ 36E5 FF         RST  0038,MASK_INT
+ 36E6 FF         RST  0038,MASK_INT
+ 36E7 FF         RST  0038,MASK_INT
+ 36E8 FF         RST  0038,MASK_INT
+ 36E9 FF         RST  0038,MASK_INT
+ 36EA FF         RST  0038,MASK_INT
+ 36EB FF         RST  0038,MASK_INT
+ 36EC FF         RST  0038,MASK_INT
+ 36ED FF         RST  0038,MASK_INT
+ 36EE FF         RST  0038,MASK_INT
+ 36EF FF         RST  0038,MASK_INT
+ 36F0 FF         RST  0038,MASK_INT
+ 36F1 FF         RST  0038,MASK_INT
+ 36F2 FF         RST  0038,MASK_INT
+ 36F3 FF         RST  0038,MASK_INT
+ 36F4 FF         RST  0038,MASK_INT
+ 36F5 FF         RST  0038,MASK_INT
+ 36F6 FF         RST  0038,MASK_INT
+ 36F7 FF         RST  0038,MASK_INT
+ 36F8 FF         RST  0038,MASK_INT
+ 36F9 FF         RST  0038,MASK_INT
+ 36FA FF         RST  0038,MASK_INT
+ 36FB FF         RST  0038,MASK_INT
+ 36FC FF         RST  0038,MASK_INT
+ 36FD FF         RST  0038,MASK_INT
+ 36FE FF         RST  0038,MASK_INT
+ 36FF FF         RST  0038,MASK_INT
+ 3700 FF         RST  0038,MASK_INT
+ 3701 FF         RST  0038,MASK_INT
+ 3702 FF         RST  0038,MASK_INT
+ 3703 FF         RST  0038,MASK_INT
+ 3704 FF         RST  0038,MASK_INT
+ 3705 FF         RST  0038,MASK_INT
+ 3706 FF         RST  0038,MASK_INT
+ 3707 FF         RST  0038,MASK_INT
+ 3708 FF         RST  0038,MASK_INT
+ 3709 FF         RST  0038,MASK_INT
+ 370A FF         RST  0038,MASK_INT
+ 370B FF         RST  0038,MASK_INT
+ 370C FF         RST  0038,MASK_INT
+ 370D FF         RST  0038,MASK_INT
+ 370E FF         RST  0038,MASK_INT
+ 370F FF         RST  0038,MASK_INT
+ 3710 FF         RST  0038,MASK_INT
+ 3711 FF         RST  0038,MASK_INT
+ 3712 FF         RST  0038,MASK_INT
+ 3713 FF         RST  0038,MASK_INT
+ 3714 FF         RST  0038,MASK_INT
+ 3715 FF         RST  0038,MASK_INT
+ 3716 FF         RST  0038,MASK_INT
+ 3717 FF         RST  0038,MASK_INT
+ 3718 FF         RST  0038,MASK_INT
+ 3719 FF         RST  0038,MASK_INT
+ 371A FF         RST  0038,MASK_INT
+ 371B FF         RST  0038,MASK_INT
+ 371C FF         RST  0038,MASK_INT
+ 371D FF         RST  0038,MASK_INT
+ 371E FF         RST  0038,MASK_INT
+ 371F FF         RST  0038,MASK_INT
+ 3720 FF         RST  0038,MASK_INT
+ 3721 FF         RST  0038,MASK_INT
+ 3722 FF         RST  0038,MASK_INT
+ 3723 FF         RST  0038,MASK_INT
+ 3724 FF         RST  0038,MASK_INT
+ 3725 FF         RST  0038,MASK_INT
+ 3726 FF         RST  0038,MASK_INT
+ 3727 FF         RST  0038,MASK_INT
+ 3728 FF         RST  0038,MASK_INT
+ 3729 FF         RST  0038,MASK_INT
+ 372A FF         RST  0038,MASK_INT
+ 372B FF         RST  0038,MASK_INT
+ 372C FF         RST  0038,MASK_INT
+ 372D FF         RST  0038,MASK_INT
+ 372E FF         RST  0038,MASK_INT
+ 372F FF         RST  0038,MASK_INT
+ 3730 FF         RST  0038,MASK_INT
+ 3731 FF         RST  0038,MASK_INT
+ 3732 FF         RST  0038,MASK_INT
+ 3733 FF         RST  0038,MASK_INT
+ 3734 FF         RST  0038,MASK_INT
+ 3735 FF         RST  0038,MASK_INT
+ 3736 FF         RST  0038,MASK_INT
+ 3737 FF         RST  0038,MASK_INT
+ 3738 FF         RST  0038,MASK_INT
+ 3739 FF         RST  0038,MASK_INT
+ 373A FF         RST  0038,MASK_INT
+ 373B FF         RST  0038,MASK_INT
+ 373C FF         RST  0038,MASK_INT
+ 373D FF         RST  0038,MASK_INT
+ 373E FF         RST  0038,MASK_INT
+ 373F FF         RST  0038,MASK_INT
+ 3740 FF         RST  0038,MASK_INT
+ 3741 FF         RST  0038,MASK_INT
+ 3742 FF         RST  0038,MASK_INT
+ 3743 FF         RST  0038,MASK_INT
+ 3744 FF         RST  0038,MASK_INT
+ 3745 FF         RST  0038,MASK_INT
+ 3746 FF         RST  0038,MASK_INT
+ 3747 FF         RST  0038,MASK_INT
+ 3748 FF         RST  0038,MASK_INT
+ 3749 FF         RST  0038,MASK_INT
+ 374A FF         RST  0038,MASK_INT
+ 374B FF         RST  0038,MASK_INT
+ 374C FF         RST  0038,MASK_INT
+ 374D FF         RST  0038,MASK_INT
+ 374E FF         RST  0038,MASK_INT
+ 374F FF         RST  0038,MASK_INT
+ 3750 FF         RST  0038,MASK_INT
+ 3751 FF         RST  0038,MASK_INT
+ 3752 FF         RST  0038,MASK_INT
+ 3753 FF         RST  0038,MASK_INT
+ 3754 FF         RST  0038,MASK_INT
+ 3755 FF         RST  0038,MASK_INT
+ 3756 FF         RST  0038,MASK_INT
+ 3757 FF         RST  0038,MASK_INT
+ 3758 FF         RST  0038,MASK_INT
+ 3759 FF         RST  0038,MASK_INT
+ 375A FF         RST  0038,MASK_INT
+ 375B FF         RST  0038,MASK_INT
+ 375C FF         RST  0038,MASK_INT
+ 375D FF         RST  0038,MASK_INT
+ 375E FF         RST  0038,MASK_INT
+ 375F FF         RST  0038,MASK_INT
+ 3760 FF         RST  0038,MASK_INT
+ 3761 FF         RST  0038,MASK_INT
+ 3762 FF         RST  0038,MASK_INT
+ 3763 FF         RST  0038,MASK_INT
+ 3764 FF         RST  0038,MASK_INT
+ 3765 FF         RST  0038,MASK_INT
+ 3766 FF         RST  0038,MASK_INT
+ 3767 FF         RST  0038,MASK_INT
+ 3768 FF         RST  0038,MASK_INT
+ 3769 FF         RST  0038,MASK_INT
+ 376A FF         RST  0038,MASK_INT
+ 376B FF         RST  0038,MASK_INT
+ 376C FF         RST  0038,MASK_INT
+ 376D FF         RST  0038,MASK_INT
+ 376E FF         RST  0038,MASK_INT
+ 376F FF         RST  0038,MASK_INT
+ 3770 FF         RST  0038,MASK_INT
+ 3771 FF         RST  0038,MASK_INT
+ 3772 FF         RST  0038,MASK_INT
+ 3773 FF         RST  0038,MASK_INT
+ 3774 FF         RST  0038,MASK_INT
+ 3775 FF         RST  0038,MASK_INT
+ 3776 FF         RST  0038,MASK_INT
+ 3777 FF         RST  0038,MASK_INT
+ 3778 FF         RST  0038,MASK_INT
+ 3779 FF         RST  0038,MASK_INT
+ 377A FF         RST  0038,MASK_INT
+ 377B FF         RST  0038,MASK_INT
+ 377C FF         RST  0038,MASK_INT
+ 377D FF         RST  0038,MASK_INT
+ 377E FF         RST  0038,MASK_INT
+ 377F FF         RST  0038,MASK_INT
+ 3780 FF         RST  0038,MASK_INT
+ 3781 FF         RST  0038,MASK_INT
+ 3782 FF         RST  0038,MASK_INT
+ 3783 FF         RST  0038,MASK_INT
+ 3784 FF         RST  0038,MASK_INT
+ 3785 FF         RST  0038,MASK_INT
+ 3786 FF         RST  0038,MASK_INT
+ 3787 FF         RST  0038,MASK_INT
+ 3788 FF         RST  0038,MASK_INT
+ 3789 FF         RST  0038,MASK_INT
+ 378A FF         RST  0038,MASK_INT
+ 378B FF         RST  0038,MASK_INT
+ 378C FF         RST  0038,MASK_INT
+ 378D FF         RST  0038,MASK_INT
+ 378E FF         RST  0038,MASK_INT
+ 378F FF         RST  0038,MASK_INT
+ 3790 FF         RST  0038,MASK_INT
+ 3791 FF         RST  0038,MASK_INT
+ 3792 FF         RST  0038,MASK_INT
+ 3793 FF         RST  0038,MASK_INT
+ 3794 FF         RST  0038,MASK_INT
+ 3795 FF         RST  0038,MASK_INT
+ 3796 FF         RST  0038,MASK_INT
+ 3797 FF         RST  0038,MASK_INT
+ 3798 FF         RST  0038,MASK_INT
+ 3799 FF         RST  0038,MASK_INT
+ 379A FF         RST  0038,MASK_INT
+ 379B FF         RST  0038,MASK_INT
+ 379C FF         RST  0038,MASK_INT
+ 379D FF         RST  0038,MASK_INT
+ 379E FF         RST  0038,MASK_INT
+ 379F FF         RST  0038,MASK_INT
+ 37A0 FF         RST  0038,MASK_INT
+ 37A1 FF         RST  0038,MASK_INT
+ 37A2 FF         RST  0038,MASK_INT
+ 37A3 FF         RST  0038,MASK_INT
+ 37A4 FF         RST  0038,MASK_INT
+ 37A5 FF         RST  0038,MASK_INT
+ 37A6 FF         RST  0038,MASK_INT
+ 37A7 FF         RST  0038,MASK_INT
+ 37A8 FF         RST  0038,MASK_INT
+ 37A9 FF         RST  0038,MASK_INT
+ 37AA FF         RST  0038,MASK_INT
+ 37AB FF         RST  0038,MASK_INT
+ 37AC FF         RST  0038,MASK_INT
+ 37AD FF         RST  0038,MASK_INT
+ 37AE FF         RST  0038,MASK_INT
+ 37AF FF         RST  0038,MASK_INT
+ 37B0 FF         RST  0038,MASK_INT
+ 37B1 FF         RST  0038,MASK_INT
+ 37B2 FF         RST  0038,MASK_INT
+ 37B3 FF         RST  0038,MASK_INT
+ 37B4 FF         RST  0038,MASK_INT
+ 37B5 FF         RST  0038,MASK_INT
+ 37B6 FF         RST  0038,MASK_INT
+ 37B7 FF         RST  0038,MASK_INT
+ 37B8 FF         RST  0038,MASK_INT
+ 37B9 FF         RST  0038,MASK_INT
+ 37BA FF         RST  0038,MASK_INT
+ 37BB FF         RST  0038,MASK_INT
+ 37BC FF         RST  0038,MASK_INT
+ 37BD FF         RST  0038,MASK_INT
+ 37BE FF         RST  0038,MASK_INT
+ 37BF FF         RST  0038,MASK_INT
+ 37C0 FF         RST  0038,MASK_INT
+ 37C1 FF         RST  0038,MASK_INT
+ 37C2 FF         RST  0038,MASK_INT
+ 37C3 FF         RST  0038,MASK_INT
+ 37C4 FF         RST  0038,MASK_INT
+ 37C5 FF         RST  0038,MASK_INT
+ 37C6 FF         RST  0038,MASK_INT
+ 37C7 FF         RST  0038,MASK_INT
+ 37C8 FF         RST  0038,MASK_INT
+ 37C9 FF         RST  0038,MASK_INT
+ 37CA FF         RST  0038,MASK_INT
+ 37CB FF         RST  0038,MASK_INT
+ 37CC FF         RST  0038,MASK_INT
+ 37CD FF         RST  0038,MASK_INT
+ 37CE FF         RST  0038,MASK_INT
+ 37CF FF         RST  0038,MASK_INT
+ 37D0 FF         RST  0038,MASK_INT
+ 37D1 FF         RST  0038,MASK_INT
+ 37D2 FF         RST  0038,MASK_INT
+ 37D3 FF         RST  0038,MASK_INT
+ 37D4 FF         RST  0038,MASK_INT
+ 37D5 FF         RST  0038,MASK_INT
+ 37D6 FF         RST  0038,MASK_INT
+ 37D7 FF         RST  0038,MASK_INT
+ 37D8 FF         RST  0038,MASK_INT
+ 37D9 FF         RST  0038,MASK_INT
+ 37DA FF         RST  0038,MASK_INT
+ 37DB FF         RST  0038,MASK_INT
+ 37DC FF         RST  0038,MASK_INT
+ 37DD FF         RST  0038,MASK_INT
+ 37DE FF         RST  0038,MASK_INT
+ 37DF FF         RST  0038,MASK_INT
+ 37E0 FF         RST  0038,MASK_INT
+ 37E1 FF         RST  0038,MASK_INT
+ 37E2 FF         RST  0038,MASK_INT
+ 37E3 FF         RST  0038,MASK_INT
+ 37E4 FF         RST  0038,MASK_INT
+ 37E5 FF         RST  0038,MASK_INT
+ 37E6 FF         RST  0038,MASK_INT
+ 37E7 FF         RST  0038,MASK_INT
+ 37E8 FF         RST  0038,MASK_INT
+ 37E9 FF         RST  0038,MASK_INT
+ 37EA FF         RST  0038,MASK_INT
+ 37EB FF         RST  0038,MASK_INT
+ 37EC FF         RST  0038,MASK_INT
+ 37ED FF         RST  0038,MASK_INT
+ 37EE FF         RST  0038,MASK_INT
+ 37EF FF         RST  0038,MASK_INT
+ 37F0 FF         RST  0038,MASK_INT
+ 37F1 FF         RST  0038,MASK_INT
+ 37F2 FF         RST  0038,MASK_INT
+ 37F3 FF         RST  0038,MASK_INT
+ 37F4 FF         RST  0038,MASK_INT
+ 37F5 FF         RST  0038,MASK_INT
+ 37F6 FF         RST  0038,MASK_INT
+ 37F7 FF         RST  0038,MASK_INT
+ 37F8 FF         RST  0038,MASK_INT
+ 37F9 FF         RST  0038,MASK_INT
+ 37FA FF         RST  0038,MASK_INT
+ 37FB FF         RST  0038,MASK_INT
+ 37FC FF         RST  0038,MASK_INT
+ 37FD FF         RST  0038,MASK_INT
+ 37FE FF         RST  0038,MASK_INT
+ 37FF FF         RST  0038,MASK_INT
+ 3800 08         EX   AF,AF'
+ 3801 00         NOP
+ 3802 08         EX   AF,AF'
+ 3803 00         NOP
+ 3804 C4190F     CALL NZ,0F19
+ 3807 F5         PUSH AF
+ 3808 0B         DEC  BC
+ 3809 320100     LD   (0001),A
+ 380C 01726F     LD   BC,+6F72
+ 380F 6D         LD   L,L
+ 3810 73         LD   (HL),E
+ 3811 61         LD   H,C
+ 3812 76         HALT
+ 3813 65         LD   H,L
+ 3814 33         INC  SP
+ 3815 2020       JR   NZ,3837
+ 3817 2000       JR   NZ,3819
+ 3819 00         NOP
+ 381A 80         ADD  A,B
+ 381B 0F         RRCA
+ 381C 1800       JR   381E
+ 381E 00         NOP
+ 381F 00         NOP
+ 3820 00         NOP
+ 3821 00         NOP
+ 3822 00         NOP
+ 3823 00         NOP
+ 3824 00         NOP
+ 3825 00         NOP
+ 3826 00         NOP
+ 3827 00         NOP
+ 3828 00         NOP
+ 3829 00         NOP
+ 382A 00         NOP
+ 382B 00         NOP
+ 382C 1000       DJNZ 382E
+ 382E 00         NOP
+ 382F 00         NOP
+ 3830 00         NOP
+ 3831 00         NOP
+ 3832 00         NOP
+ 3833 00         NOP
+ 3834 00         NOP
+ 3835 00         NOP
+ 3836 00         NOP
+ 3837 00         NOP
+ 3838 00         NOP
+ 3839 00         NOP
+ 383A 00         NOP
+ 383B 00         NOP
+ 383C 00         NOP
+ 383D 00         NOP
+ 383E 00         NOP
+ 383F 00         NOP
+ 3840 00         NOP
+ 3841 00         NOP
+ 3842 00         NOP
+ 3843 00         NOP
+ 3844 00         NOP
+ 3845 00         NOP
+ 3846 00         NOP
+ 3847 00         NOP
+ 3848 00         NOP
+ 3849 00         NOP
+ 384A 00         NOP
+ 384B 00         NOP
+ 384C 00         NOP
+ 384D 00         NOP
+ 384E 00         NOP
+ 384F 00         NOP
+ 3850 00         NOP
+ 3851 1A         LD   A,(DE)
+ 3852 1A         LD   A,(DE)
+ 3853 1A         LD   A,(DE)
+ 3854 1A         LD   A,(DE)
+ 3855 1A         LD   A,(DE)
+ 3856 1A         LD   A,(DE)
+ 3857 1A         LD   A,(DE)
+ 3858 1A         LD   A,(DE)
+ 3859 1A         LD   A,(DE)
+ 385A 1A         LD   A,(DE)
+ 385B 1A         LD   A,(DE)
+ 385C 1A         LD   A,(DE)
+ 385D 1A         LD   A,(DE)
+ 385E 1A         LD   A,(DE)
+ 385F 1A         LD   A,(DE)
+ 3860 1A         LD   A,(DE)
+ 3861 1A         LD   A,(DE)
+ 3862 1A         LD   A,(DE)
+ 3863 1A         LD   A,(DE)
+ 3864 1A         LD   A,(DE)
+ 3865 1A         LD   A,(DE)
+ 3866 1A         LD   A,(DE)
+ 3867 1A         LD   A,(DE)
+ 3868 1A         LD   A,(DE)
+ 3869 1A         LD   A,(DE)
+ 386A 1A         LD   A,(DE)
+ 386B 1A         LD   A,(DE)
+ 386C 1A         LD   A,(DE)
+ 386D 1A         LD   A,(DE)
+ 386E 1A         LD   A,(DE)
+ 386F 1A         LD   A,(DE)
+ 3870 1A         LD   A,(DE)
+ 3871 1A         LD   A,(DE)
+ 3872 1A         LD   A,(DE)
+ 3873 1A         LD   A,(DE)
+ 3874 1A         LD   A,(DE)
+ 3875 1A         LD   A,(DE)
+ 3876 1A         LD   A,(DE)
+ 3877 1A         LD   A,(DE)
+ 3878 1A         LD   A,(DE)
+ 3879 1A         LD   A,(DE)
+ 387A 1A         LD   A,(DE)
+ 387B 1A         LD   A,(DE)
+ 387C 1A         LD   A,(DE)
+ 387D 1A         LD   A,(DE)
+ 387E 1A         LD   A,(DE)
+ 387F 1A         LD   A,(DE)
+ 3880 1A         LD   A,(DE)
+ 3881 1A         LD   A,(DE)
+ 3882 1A         LD   A,(DE)
+ 3883 1A         LD   A,(DE)
+ 3884 1A         LD   A,(DE)
+ 3885 1A         LD   A,(DE)
+ 3886 1A         LD   A,(DE)
+ 3887 1A         LD   A,(DE)
+ 3888 1A         LD   A,(DE)
+ 3889 1A         LD   A,(DE)
+ 388A 1A         LD   A,(DE)
+ 388B 1A         LD   A,(DE)
+ 388C 1A         LD   A,(DE)
+ 388D 1A         LD   A,(DE)
+ 388E 1A         LD   A,(DE)
+ 388F 1A         LD   A,(DE)
+ 3890 1A         LD   A,(DE)
+ 3891 1A         LD   A,(DE)
+ 3892 1A         LD   A,(DE)
+ 3893 1A         LD   A,(DE)
+ 3894 1A         LD   A,(DE)
+ 3895 1A         LD   A,(DE)
+ 3896 1A         LD   A,(DE)
+ 3897 1A         LD   A,(DE)
+ 3898 1A         LD   A,(DE)
+ 3899 1A         LD   A,(DE)
+ 389A 1A         LD   A,(DE)
+ 389B 1A         LD   A,(DE)
+ 389C 1A         LD   A,(DE)
+ 389D 1A         LD   A,(DE)
+ 389E 1A         LD   A,(DE)
+ 389F 1A         LD   A,(DE)
+ 38A0 1A         LD   A,(DE)
+ 38A1 1A         LD   A,(DE)
+ 38A2 1A         LD   A,(DE)
+ 38A3 1A         LD   A,(DE)
+ 38A4 1A         LD   A,(DE)
+ 38A5 1A         LD   A,(DE)
+ 38A6 1A         LD   A,(DE)
+ 38A7 1A         LD   A,(DE)
+ 38A8 1A         LD   A,(DE)
+ 38A9 1A         LD   A,(DE)
+ 38AA 1A         LD   A,(DE)
+ 38AB 1A         LD   A,(DE)
+ 38AC 1A         LD   A,(DE)
+ 38AD 1A         LD   A,(DE)
+ 38AE 1A         LD   A,(DE)
+ 38AF 1A         LD   A,(DE)
+ 38B0 1A         LD   A,(DE)
+ 38B1 1A         LD   A,(DE)
+ 38B2 1A         LD   A,(DE)
+ 38B3 1A         LD   A,(DE)
+ 38B4 1A         LD   A,(DE)
+ 38B5 1A         LD   A,(DE)
+ 38B6 1A         LD   A,(DE)
+ 38B7 1A         LD   A,(DE)
+ 38B8 1A         LD   A,(DE)
+ 38B9 1A         LD   A,(DE)
+ 38BA 1A         LD   A,(DE)
+ 38BB 1A         LD   A,(DE)
+ 38BC 1A         LD   A,(DE)
+ 38BD 1A         LD   A,(DE)
+ 38BE 1A         LD   A,(DE)
+ 38BF 1A         LD   A,(DE)
+ 38C0 1A         LD   A,(DE)
+ 38C1 1A         LD   A,(DE)
+ 38C2 1A         LD   A,(DE)
+ 38C3 1A         LD   A,(DE)
+ 38C4 1A         LD   A,(DE)
+ 38C5 1A         LD   A,(DE)
+ 38C6 1A         LD   A,(DE)
+ 38C7 1A         LD   A,(DE)
+ 38C8 1A         LD   A,(DE)
+ 38C9 1A         LD   A,(DE)
+ 38CA 1A         LD   A,(DE)
+ 38CB 1A         LD   A,(DE)
+ 38CC 1A         LD   A,(DE)
+ 38CD 1A         LD   A,(DE)
+ 38CE 1A         LD   A,(DE)
+ 38CF 1A         LD   A,(DE)
+ 38D0 1A         LD   A,(DE)
+ 38D1 1A         LD   A,(DE)
+ 38D2 1A         LD   A,(DE)
+ 38D3 1A         LD   A,(DE)
+ 38D4 1A         LD   A,(DE)
+ 38D5 1A         LD   A,(DE)
+ 38D6 1A         LD   A,(DE)
+ 38D7 1A         LD   A,(DE)
+ 38D8 1A         LD   A,(DE)
+ 38D9 1A         LD   A,(DE)
+ 38DA 1A         LD   A,(DE)
+ 38DB 1A         LD   A,(DE)
+ 38DC 1A         LD   A,(DE)
+ 38DD 1A         LD   A,(DE)
+ 38DE 1A         LD   A,(DE)
+ 38DF 1A         LD   A,(DE)
+ 38E0 1A         LD   A,(DE)
+ 38E1 1A         LD   A,(DE)
+ 38E2 1A         LD   A,(DE)
+ 38E3 1A         LD   A,(DE)
+ 38E4 1A         LD   A,(DE)
+ 38E5 1A         LD   A,(DE)
+ 38E6 1A         LD   A,(DE)
+ 38E7 1A         LD   A,(DE)
+ 38E8 1A         LD   A,(DE)
+ 38E9 1A         LD   A,(DE)
+ 38EA 1A         LD   A,(DE)
+ 38EB 1A         LD   A,(DE)
+ 38EC 1A         LD   A,(DE)
+ 38ED 1A         LD   A,(DE)
+ 38EE 1A         LD   A,(DE)
+ 38EF 1A         LD   A,(DE)
+ 38F0 1A         LD   A,(DE)
+ 38F1 1A         LD   A,(DE)
+ 38F2 1A         LD   A,(DE)
+ 38F3 1A         LD   A,(DE)
+ 38F4 1A         LD   A,(DE)
+ 38F5 1A         LD   A,(DE)
+ 38F6 1A         LD   A,(DE)
+ 38F7 1A         LD   A,(DE)
+ 38F8 1A         LD   A,(DE)
+ 38F9 1A         LD   A,(DE)
+ 38FA 1A         LD   A,(DE)
+ 38FB 1A         LD   A,(DE)
+ 38FC 1A         LD   A,(DE)
+ 38FD 1A         LD   A,(DE)
+ 38FE 1A         LD   A,(DE)
+ 38FF 1A         LD   A,(DE)
+ 3900 1A         LD   A,(DE)
+ 3901 1A         LD   A,(DE)
+ 3902 1A         LD   A,(DE)
+ 3903 1A         LD   A,(DE)
+ 3904 1A         LD   A,(DE)
+ 3905 1A         LD   A,(DE)
+ 3906 1A         LD   A,(DE)
+ 3907 1A         LD   A,(DE)
+ 3908 1A         LD   A,(DE)
+ 3909 1A         LD   A,(DE)
+ 390A 1A         LD   A,(DE)
+ 390B 1A         LD   A,(DE)
+ 390C 1A         LD   A,(DE)
+ 390D 1A         LD   A,(DE)
+ 390E 1A         LD   A,(DE)
+ 390F 1A         LD   A,(DE)
+ 3910 1A         LD   A,(DE)
+ 3911 1A         LD   A,(DE)
+ 3912 1A         LD   A,(DE)
+ 3913 1A         LD   A,(DE)
+ 3914 1A         LD   A,(DE)
+ 3915 1A         LD   A,(DE)
+ 3916 1A         LD   A,(DE)
+ 3917 1A         LD   A,(DE)
+ 3918 1A         LD   A,(DE)
+ 3919 1A         LD   A,(DE)
+ 391A 1A         LD   A,(DE)
+ 391B 1A         LD   A,(DE)
+ 391C 1A         LD   A,(DE)
+ 391D 1A         LD   A,(DE)
+ 391E 1A         LD   A,(DE)
+ 391F 1A         LD   A,(DE)
+ 3920 1A         LD   A,(DE)
+ 3921 1A         LD   A,(DE)
+ 3922 1A         LD   A,(DE)
+ 3923 1A         LD   A,(DE)
+ 3924 1A         LD   A,(DE)
+ 3925 1A         LD   A,(DE)
+ 3926 1A         LD   A,(DE)
+ 3927 1A         LD   A,(DE)
+ 3928 1A         LD   A,(DE)
+ 3929 1A         LD   A,(DE)
+ 392A 1A         LD   A,(DE)
+ 392B 1A         LD   A,(DE)
+ 392C 1A         LD   A,(DE)
+ 392D 1A         LD   A,(DE)
+ 392E 1A         LD   A,(DE)
+ 392F 1A         LD   A,(DE)
+ 3930 1A         LD   A,(DE)
+ 3931 1A         LD   A,(DE)
+ 3932 00         NOP
+ 3933 00         NOP
+ 3934 00         NOP
+ 3935 00         NOP
+ 3936 00         NOP
+ 3937 00         NOP
+ 3938 00         NOP
+ 3939 00         NOP
+ 393A 00         NOP
+ 393B 00         NOP
+ 393C 00         NOP
+ 393D 00         NOP
+ 393E 00         NOP
+ 393F 00         NOP
+ 3940 00         NOP
+ 3941 00         NOP
+ 3942 00         NOP
+ 3943 00         NOP
+ 3944 00         NOP
+ 3945 00         NOP
+ 3946 00         NOP
+ 3947 00         NOP
+ 3948 00         NOP
+ 3949 00         NOP
+ 394A 00         NOP
+ 394B 00         NOP
+ 394C 00         NOP
+ 394D 00         NOP
+ 394E 00         NOP
+ 394F 00         NOP
+ 3950 00         NOP
+ 3951 00         NOP
+ 3952 00         NOP
+ 3953 00         NOP
+ 3954 00         NOP
+ 3955 00         NOP
+ 3956 00         NOP
+ 3957 00         NOP
+ 3958 00         NOP
+ 3959 00         NOP
+ 395A 00         NOP
+ 395B 00         NOP
+ 395C 00         NOP
+ 395D 00         NOP
+ 395E 00         NOP
+ 395F 00         NOP
+ 3960 00         NOP
+ 3961 00         NOP
+ 3962 00         NOP
+ 3963 00         NOP
+ 3964 00         NOP
+ 3965 00         NOP
+ 3966 00         NOP
+ 3967 00         NOP
+ 3968 00         NOP
+ 3969 00         NOP
+ 396A 00         NOP
+ 396B 00         NOP
+ 396C 00         NOP
+ 396D 00         NOP
+ 396E 00         NOP
+ 396F 00         NOP
+ 3970 00         NOP
+ 3971 00         NOP
+ 3972 00         NOP
+ 3973 0600       LD   B,+00
+ 3975 0F         RRCA
+ 3976 01100E     LD   BC,+0E10
+ 3979 FF         RST  0038,MASK_INT
+ 397A 00         NOP
+ 397B 00         NOP
+ 397C 00         NOP
+ 397D 0600       LD   B,+00
+ 397F 1001       DJNZ 3982
+ 3981 0600       LD   B,+00
+ 3983 8A         ADC  A,D
+ 3984 61         LD   H,C
+ 3985 00         NOP
+ 3986 00         NOP
+ 3987 00         NOP
+ 3988 E5         PUSH HL
+ 3989 00         NOP
+ 398A 013228     LD   BC,+2832
+ 398D 322800     LD   (0028),A
+ 3990 FF         RST  0038,MASK_INT
+ 3991 00         NOP
+ 3992 02         LD   (BC),A
+ 3993 00         NOP
+ 3994 00         NOP
+ 3995 0F         RRCA
+ 3996 0C         INC  C
+ 3997 2800       JR   Z,3999
+ 3999 00         NOP
+ 399A 00         NOP
+ 399B 010F0E     LD   BC,+0E0F
+ 399E 00         NOP
+ 399F 8E         ADC  A,(HL)
+ 39A0 018001     LD   BC,+0180
+ 39A3 A0         AND  B
+ 39A4 05         DEC  B
+ 39A5 00         NOP
+ 39A6 00         NOP
+ 39A7 B2         OR   D
+ 39A8 29         ADD  HL,HL
+ 39A9 DB29       IN   A,(+29)
+ 39AB FF         RST  0038,MASK_INT
+ 39AC AE         XOR  (HL)
+ 39AD 29         ADD  HL,HL
+ 39AE B2         OR   D
+ 39AF 29         ADD  HL,HL
+ 39B0 EE29       XOR  +29
+ 39B2 07         RLCA
+ 39B3 FF         RST  0038,MASK_INT
+ 39B4 FF         RST  0038,MASK_INT
+ 39B5 FF         RST  0038,MASK_INT
+ 39B6 80         ADD  A,B
+ 39B7 00         NOP
+ 39B8 00         NOP
+ 39B9 00         NOP
+ 39BA 00         NOP
+ 39BB 00         NOP
+ 39BC 00         NOP
+ 39BD 00         NOP
+ 39BE 00         NOP
+ 39BF 00         NOP
+ 39C0 00         NOP
+ 39C1 00         NOP
+ 39C2 00         NOP
+ 39C3 00         NOP
+ 39C4 00         NOP
+ 39C5 00         NOP
+ 39C6 00         NOP
+ 39C7 00         NOP
+ 39C8 00         NOP
+ 39C9 00         NOP
+ 39CA 00         NOP
+ 39CB 00         NOP
+ 39CC 00         NOP
+ 39CD 00         NOP
+ 39CE 00         NOP
+ 39CF 00         NOP
+ 39D0 00         NOP
+ 39D1 00         NOP
+ 39D2 00         NOP
+ 39D3 00         NOP
+ 39D4 00         NOP
+ 39D5 00         NOP
+ 39D6 00         NOP
+ 39D7 00         NOP
+ 39D8 00         NOP
+ 39D9 00         NOP
+ 39DA 00         NOP
+ 39DB 62         LD   H,D
+ 39DC E4E4E4     CALL PO,E4E4
+ 39DF E4E4E4     CALL PO,E4E4
+ 39E2 E4E4E4     CALL PO,E4E4
+ 39E5 E4E4E4     CALL PO,E4E4
+ 39E8 E4E4E4     CALL PO,E4E4
+ 39EB 00         NOP
+ 39EC 00         NOP
+ 39ED 00         NOP
+ 39EE 00         NOP
+ 39EF 00         NOP
+ 39F0 00         NOP
+ 39F1 00         NOP
+ 39F2 00         NOP
+ 39F3 00         NOP
+ 39F4 00         NOP
+ 39F5 00         NOP
+ 39F6 00         NOP
+ 39F7 00         NOP
+ 39F8 00         NOP
+ 39F9 00         NOP
+ 39FA 00         NOP
+ 39FB 00         NOP
+ 39FC 00         NOP
+ 39FD 00         NOP
+ 39FE 00         NOP
+ 39FF 00         NOP
+ 3A00 00         NOP
+ 3A01 00         NOP
+ 3A02 00         NOP
+ 3A03 00         NOP
+ 3A04 00         NOP
+ 3A05 00         NOP
+ 3A06 00         NOP
+ 3A07 00         NOP
+ 3A08 00         NOP
+ 3A09 00         NOP
+ 3A0A 00         NOP
+ 3A0B 00         NOP
+ 3A0C 00         NOP
+ 3A0D 00         NOP
+ 3A0E 00         NOP
+ 3A0F 00         NOP
+ 3A10 00         NOP
+ 3A11 00         NOP
+ 3A12 00         NOP
+ 3A13 00         NOP
+ 3A14 00         NOP
+ 3A15 00         NOP
+ 3A16 00         NOP
+ 3A17 00         NOP
+ 3A18 00         NOP
+ 3A19 00         NOP
+ 3A1A 00         NOP
+ 3A1B 00         NOP
+ 3A1C 00         NOP
+ 3A1D 00         NOP
+ 3A1E 00         NOP
+ 3A1F 00         NOP
+ 3A20 00         NOP
+ 3A21 00         NOP
+ 3A22 00         NOP
+ 3A23 00         NOP
+ 3A24 00         NOP
+ 3A25 00         NOP
+ 3A26 00         NOP
+ 3A27 00         NOP
+ 3A28 00         NOP
+ 3A29 00         NOP
+ 3A2A 00         NOP
+ 3A2B 00         NOP
+ 3A2C 00         NOP
+ 3A2D 0607       LD   B,+07
+ 3A2F 322800     LD   (0028),A
+ 3A32 00         NOP
+ 3A33 2A1F01     LD   HL,(011F)
+ 3A36 00         NOP
+ 3A37 00         NOP
+ 3A38 00         NOP
+ 3A39 00         NOP
+ 3A3A 02         LD   (BC),A
+ 3A3B 04         INC  B
+ 3A3C 00         NOP
+ 3A3D 00         NOP
+ 3A3E 00         NOP
+ 3A3F 00         NOP
+ 3A40 00         NOP
+ 3A41 00         NOP
+ 3A42 00         NOP
+ 3A43 00         NOP
+ 3A44 00         NOP
+ 3A45 00         NOP
+ 3A46 00         NOP
+ 3A47 00         NOP
+ 3A48 00         NOP
+ 3A49 00         NOP
+ 3A4A 00         NOP
+ 3A4B 00         NOP
+ 3A4C 00         NOP
+ 3A4D 00         NOP
+ 3A4E 00         NOP
+ 3A4F 00         NOP
+ 3A50 00         NOP
+ 3A51 00         NOP
+ 3A52 00         NOP
+ 3A53 00         NOP
+ 3A54 00         NOP
+ 3A55 00         NOP
+ 3A56 00         NOP
+ 3A57 00         NOP
+ 3A58 00         NOP
+ 3A59 00         NOP
+ 3A5A 00         NOP
+ 3A5B 00         NOP
+ 3A5C 00         NOP
+ 3A5D 00         NOP
+ 3A5E 00         NOP
+ 3A5F 00         NOP
+ 3A60 00         NOP
+ 3A61 00         NOP
+ 3A62 00         NOP
+ 3A63 00         NOP
+ 3A64 00         NOP
+ 3A65 00         NOP
+ 3A66 00         NOP
+ 3A67 00         NOP
+ 3A68 00         NOP
+ 3A69 00         NOP
+ 3A6A 00         NOP
+ 3A6B 00         NOP
+ 3A6C 00         NOP
+ 3A6D 00         NOP
+ 3A6E 00         NOP
+ 3A6F 00         NOP
+ 3A70 00         NOP
+ 3A71 00         NOP
+ 3A72 00         NOP
+ 3A73 00         NOP
+ 3A74 00         NOP
+ 3A75 00         NOP
+ 3A76 00         NOP
+ 3A77 00         NOP
+ 3A78 00         NOP
+ 3A79 00         NOP
+ 3A7A 00         NOP
+ 3A7B 00         NOP
+ 3A7C 00         NOP
+ 3A7D 00         NOP
+ 3A7E 00         NOP
+ 3A7F 00         NOP
+ 3A80 00         NOP
+ 3A81 00         NOP
+ 3A82 00         NOP
+ 3A83 00         NOP
+ 3A84 00         NOP
+ 3A85 00         NOP
+ 3A86 00         NOP
+ 3A87 00         NOP
+ 3A88 00         NOP
+ 3A89 00         NOP
+ 3A8A 00         NOP
+ 3A8B 00         NOP
+ 3A8C 00         NOP
+ 3A8D 00         NOP
+ 3A8E 00         NOP
+ 3A8F 00         NOP
+ 3A90 00         NOP
+ 3A91 00         NOP
+ 3A92 00         NOP
+ 3A93 00         NOP
+ 3A94 00         NOP
+ 3A95 00         NOP
+ 3A96 00         NOP
+ 3A97 00         NOP
+ 3A98 00         NOP
+ 3A99 00         NOP
+ 3A9A 00         NOP
+ 3A9B 00         NOP
+ 3A9C 00         NOP
+ 3A9D 00         NOP
+ 3A9E 00         NOP
+ 3A9F 00         NOP
+ 3AA0 00         NOP
+ 3AA1 00         NOP
+ 3AA2 00         NOP
+ 3AA3 00         NOP
+ 3AA4 00         NOP
+ 3AA5 00         NOP
+ 3AA6 00         NOP
+ 3AA7 00         NOP
+ 3AA8 00         NOP
+ 3AA9 00         NOP
+ 3AAA 00         NOP
+ 3AAB 00         NOP
+ 3AAC 00         NOP
+ 3AAD 00         NOP
+ 3AAE 00         NOP
+ 3AAF 00         NOP
+ 3AB0 00         NOP
+ 3AB1 00         NOP
+ 3AB2 00         NOP
+ 3AB3 00         NOP
+ 3AB4 00         NOP
+ 3AB5 00         NOP
+ 3AB6 00         NOP
+ 3AB7 00         NOP
+ 3AB8 00         NOP
+ 3AB9 00         NOP
+ 3ABA 00         NOP
+ 3ABB 00         NOP
+ 3ABC 00         NOP
+ 3ABD 00         NOP
+ 3ABE 00         NOP
+ 3ABF 00         NOP
+ 3AC0 00         NOP
+ 3AC1 00         NOP
+ 3AC2 00         NOP
+ 3AC3 00         NOP
+ 3AC4 00         NOP
+ 3AC5 00         NOP
+ 3AC6 00         NOP
+ 3AC7 00         NOP
+ 3AC8 00         NOP
+ 3AC9 00         NOP
+ 3ACA 00         NOP
+ 3ACB 00         NOP
+ 3ACC 00         NOP
+ 3ACD 00         NOP
+ 3ACE 00         NOP
+ 3ACF 00         NOP
+ 3AD0 00         NOP
+ 3AD1 00         NOP
+ 3AD2 00         NOP
+ 3AD3 00         NOP
+ 3AD4 00         NOP
+ 3AD5 00         NOP
+ 3AD6 00         NOP
+ 3AD7 00         NOP
+ 3AD8 00         NOP
+ 3AD9 00         NOP
+ 3ADA 00         NOP
+ 3ADB 00         NOP
+ 3ADC 00         NOP
+ 3ADD 00         NOP
+ 3ADE 00         NOP
+ 3ADF 00         NOP
+ 3AE0 00         NOP
+ 3AE1 00         NOP
+ 3AE2 00         NOP
+ 3AE3 00         NOP
+ 3AE4 00         NOP
+ 3AE5 00         NOP
+ 3AE6 00         NOP
+ 3AE7 00         NOP
+ 3AE8 00         NOP
+ 3AE9 00         NOP
+ 3AEA 00         NOP
+ 3AEB 00         NOP
+ 3AEC 00         NOP
+ 3AED 00         NOP
+ 3AEE 00         NOP
+ 3AEF 00         NOP
+ 3AF0 00         NOP
+ 3AF1 00         NOP
+ 3AF2 00         NOP
+ 3AF3 00         NOP
+ 3AF4 00         NOP
+ 3AF5 00         NOP
+ 3AF6 00         NOP
+ 3AF7 00         NOP
+ 3AF8 00         NOP
+ 3AF9 00         NOP
+ 3AFA 00         NOP
+ 3AFB 00         NOP
+ 3AFC 00         NOP
+ 3AFD 00         NOP
+ 3AFE 00         NOP
+ 3AFF 00         NOP
+ 3B00 00         NOP
+ 3B01 00         NOP
+ 3B02 00         NOP
+ 3B03 00         NOP
+ 3B04 00         NOP
+ 3B05 00         NOP
+ 3B06 00         NOP
+ 3B07 00         NOP
+ 3B08 00         NOP
+ 3B09 00         NOP
+ 3B0A 00         NOP
+ 3B0B 00         NOP
+ 3B0C 00         NOP
+ 3B0D 00         NOP
+ 3B0E 00         NOP
+ 3B0F 00         NOP
+ 3B10 00         NOP
+ 3B11 00         NOP
+ 3B12 00         NOP
+ 3B13 00         NOP
+ 3B14 00         NOP
+ 3B15 00         NOP
+ 3B16 00         NOP
+ 3B17 00         NOP
+ 3B18 00         NOP
+ 3B19 00         NOP
+ 3B1A 00         NOP
+ 3B1B 00         NOP
+ 3B1C 00         NOP
+ 3B1D 00         NOP
+ 3B1E 00         NOP
+ 3B1F 00         NOP
+ 3B20 00         NOP
+ 3B21 00         NOP
+ 3B22 00         NOP
+ 3B23 00         NOP
+ 3B24 00         NOP
+ 3B25 00         NOP
+ 3B26 00         NOP
+ 3B27 00         NOP
+ 3B28 00         NOP
+ 3B29 00         NOP
+ 3B2A 00         NOP
+ 3B2B 00         NOP
+ 3B2C 00         NOP
+ 3B2D 00         NOP
+ 3B2E 00         NOP
+ 3B2F 00         NOP
+ 3B30 00         NOP
+ 3B31 00         NOP
+ 3B32 00         NOP
+ 3B33 00         NOP
+ 3B34 00         NOP
+ 3B35 00         NOP
+ 3B36 00         NOP
+ 3B37 00         NOP
+ 3B38 00         NOP
+ 3B39 00         NOP
+ 3B3A 00         NOP
+ 3B3B 00         NOP
+ 3B3C 00         NOP
+ 3B3D 00         NOP
+ 3B3E 00         NOP
+ 3B3F 00         NOP
+ 3B40 00         NOP
+ 3B41 00         NOP
+ 3B42 00         NOP
+ 3B43 00         NOP
+ 3B44 00         NOP
+ 3B45 00         NOP
+ 3B46 00         NOP
+ 3B47 00         NOP
+ 3B48 00         NOP
+ 3B49 00         NOP
+ 3B4A 00         NOP
+ 3B4B 00         NOP
+ 3B4C 00         NOP
+ 3B4D 00         NOP
+ 3B4E 00         NOP
+ 3B4F 00         NOP
+ 3B50 00         NOP
+ 3B51 00         NOP
+ 3B52 00         NOP
+ 3B53 00         NOP
+ 3B54 00         NOP
+ 3B55 00         NOP
+ 3B56 00         NOP
+ 3B57 00         NOP
+ 3B58 00         NOP
+ 3B59 00         NOP
+ 3B5A 00         NOP
+ 3B5B 00         NOP
+ 3B5C 00         NOP
+ 3B5D 00         NOP
+ 3B5E 00         NOP
+ 3B5F 00         NOP
+ 3B60 00         NOP
+ 3B61 00         NOP
+ 3B62 00         NOP
+ 3B63 00         NOP
+ 3B64 00         NOP
+ 3B65 00         NOP
+ 3B66 00         NOP
+ 3B67 00         NOP
+ 3B68 00         NOP
+ 3B69 00         NOP
+ 3B6A 00         NOP
+ 3B6B 00         NOP
+ 3B6C 00         NOP
+ 3B6D 00         NOP
+ 3B6E 00         NOP
+ 3B6F 00         NOP
+ 3B70 00         NOP
+ 3B71 00         NOP
+ 3B72 00         NOP
+ 3B73 00         NOP
+ 3B74 00         NOP
+ 3B75 00         NOP
+ 3B76 00         NOP
+ 3B77 00         NOP
+ 3B78 00         NOP
+ 3B79 00         NOP
+ 3B7A 00         NOP
+ 3B7B 00         NOP
+ 3B7C 00         NOP
+ 3B7D 00         NOP
+ 3B7E 00         NOP
+ 3B7F 00         NOP
+ 3B80 00         NOP
+ 3B81 00         NOP
+ 3B82 00         NOP
+ 3B83 00         NOP
+ 3B84 00         NOP
+ 3B85 00         NOP
+ 3B86 00         NOP
+ 3B87 00         NOP
+ 3B88 00         NOP
+ 3B89 00         NOP
+ 3B8A 00         NOP
+ 3B8B 00         NOP
+ 3B8C 00         NOP
+ 3B8D 00         NOP
+ 3B8E 00         NOP
+ 3B8F 00         NOP
+ 3B90 00         NOP
+ 3B91 00         NOP
+ 3B92 00         NOP
+ 3B93 00         NOP
+ 3B94 00         NOP
+ 3B95 00         NOP
+ 3B96 00         NOP
+ 3B97 00         NOP
+ 3B98 00         NOP
+ 3B99 00         NOP
+ 3B9A 00         NOP
+ 3B9B 00         NOP
+ 3B9C 00         NOP
+ 3B9D 00         NOP
+ 3B9E 00         NOP
+ 3B9F 00         NOP
+ 3BA0 00         NOP
+ 3BA1 00         NOP
+ 3BA2 00         NOP
+ 3BA3 00         NOP
+ 3BA4 00         NOP
+ 3BA5 00         NOP
+ 3BA6 00         NOP
+ 3BA7 00         NOP
+ 3BA8 00         NOP
+ 3BA9 00         NOP
+ 3BAA 00         NOP
+ 3BAB 00         NOP
+ 3BAC 00         NOP
+ 3BAD 00         NOP
+ 3BAE 00         NOP
+ 3BAF 00         NOP
+ 3BB0 00         NOP
+ 3BB1 00         NOP
+ 3BB2 00         NOP
+ 3BB3 00         NOP
+ 3BB4 00         NOP
+ 3BB5 00         NOP
+ 3BB6 00         NOP
+ 3BB7 00         NOP
+ 3BB8 00         NOP
+ 3BB9 00         NOP
+ 3BBA 00         NOP
+ 3BBB 00         NOP
+ 3BBC 00         NOP
+ 3BBD 00         NOP
+ 3BBE 00         NOP
+ 3BBF 00         NOP
+ 3BC0 00         NOP
+ 3BC1 00         NOP
+ 3BC2 00         NOP
+ 3BC3 00         NOP
+ 3BC4 00         NOP
+ 3BC5 00         NOP
+ 3BC6 00         NOP
+ 3BC7 00         NOP
+ 3BC8 00         NOP
+ 3BC9 00         NOP
+ 3BCA 00         NOP
+ 3BCB 00         NOP
+ 3BCC 00         NOP
+ 3BCD 00         NOP
+ 3BCE 00         NOP
+ 3BCF 00         NOP
+ 3BD0 00         NOP
+ 3BD1 00         NOP
+ 3BD2 00         NOP
+ 3BD3 00         NOP
+ 3BD4 00         NOP
+ 3BD5 00         NOP
+ 3BD6 00         NOP
+ 3BD7 00         NOP
+ 3BD8 00         NOP
+ 3BD9 00         NOP
+ 3BDA 00         NOP
+ 3BDB 00         NOP
+ 3BDC 00         NOP
+ 3BDD 00         NOP
+ 3BDE 00         NOP
+ 3BDF 00         NOP
+ 3BE0 00         NOP
+ 3BE1 00         NOP
+ 3BE2 00         NOP
+ 3BE3 00         NOP
+ 3BE4 00         NOP
+ 3BE5 00         NOP
+ 3BE6 00         NOP
+ 3BE7 00         NOP
+ 3BE8 00         NOP
+ 3BE9 00         NOP
+ 3BEA 00         NOP
+ 3BEB 00         NOP
+ 3BEC 00         NOP
+ 3BED 00         NOP
+ 3BEE 00         NOP
+ 3BEF 00         NOP
+ 3BF0 00         NOP
+ 3BF1 00         NOP
+ 3BF2 00         NOP
+ 3BF3 00         NOP
+ 3BF4 00         NOP
+ 3BF5 00         NOP
+ 3BF6 A1         AND  C
+ 3BF7 12         LD   (DE),A
+ 3BF8 A1         AND  C
+ 3BF9 12         LD   (DE),A
+ 3BFA 44         LD   B,H
+ 3BFB 00         NOP
+ 3BFC 3A5C0C     LD   A,(0C5C)
+ 3BFF 2808       JR   Z,3C09
+ 3C01 00         NOP
+ 3C02 08         EX   AF,AF'
+ 3C03 00         NOP
+ 3C04 C4190F     CALL NZ,0F19
+ 3C07 F5         PUSH AF
+ 3C08 0B         DEC  BC
+ 3C09 320100     LD   (0001),A
+ 3C0C 01726F     LD   BC,+6F72
+ 3C0F 6D         LD   L,L
+ 3C10 73         LD   (HL),E
+ 3C11 61         LD   H,C
+ 3C12 76         HALT
+ 3C13 65         LD   H,L
+ 3C14 33         INC  SP
+ 3C15 2020       JR   NZ,3C37
+ 3C17 2000       JR   NZ,3C19
+ 3C19 00         NOP
+ 3C1A 80         ADD  A,B
+ 3C1B 0F         RRCA
+ 3C1C 1800       JR   3C1E
+ 3C1E 00         NOP
+ 3C1F 00         NOP
+ 3C20 00         NOP
+ 3C21 00         NOP
+ 3C22 00         NOP
+ 3C23 00         NOP
+ 3C24 00         NOP
+ 3C25 00         NOP
+ 3C26 00         NOP
+ 3C27 00         NOP
+ 3C28 00         NOP
+ 3C29 00         NOP
+ 3C2A 00         NOP
+ 3C2B 00         NOP
+ 3C2C 1000       DJNZ 3C2E
+ 3C2E 00         NOP
+ 3C2F 00         NOP
+ 3C30 00         NOP
+ 3C31 00         NOP
+ 3C32 00         NOP
+ 3C33 00         NOP
+ 3C34 00         NOP
+ 3C35 00         NOP
+ 3C36 00         NOP
+ 3C37 00         NOP
+ 3C38 00         NOP
+ 3C39 00         NOP
+ 3C3A 00         NOP
+ 3C3B 00         NOP
+ 3C3C 00         NOP
+ 3C3D 00         NOP
+ 3C3E 00         NOP
+ 3C3F 00         NOP
+ 3C40 00         NOP
+ 3C41 00         NOP
+ 3C42 00         NOP
+ 3C43 00         NOP
+ 3C44 00         NOP
+ 3C45 00         NOP
+ 3C46 00         NOP
+ 3C47 00         NOP
+ 3C48 00         NOP
+ 3C49 00         NOP
+ 3C4A 00         NOP
+ 3C4B 00         NOP
+ 3C4C 00         NOP
+ 3C4D 00         NOP
+ 3C4E 00         NOP
+ 3C4F 00         NOP
+ 3C50 00         NOP
+ 3C51 1A         LD   A,(DE)
+ 3C52 1A         LD   A,(DE)
+ 3C53 1A         LD   A,(DE)
+ 3C54 1A         LD   A,(DE)
+ 3C55 1A         LD   A,(DE)
+ 3C56 1A         LD   A,(DE)
+ 3C57 1A         LD   A,(DE)
+ 3C58 1A         LD   A,(DE)
+ 3C59 1A         LD   A,(DE)
+ 3C5A 1A         LD   A,(DE)
+ 3C5B 1A         LD   A,(DE)
+ 3C5C 1A         LD   A,(DE)
+ 3C5D 1A         LD   A,(DE)
+ 3C5E 1A         LD   A,(DE)
+ 3C5F 1A         LD   A,(DE)
+ 3C60 1A         LD   A,(DE)
+ 3C61 1A         LD   A,(DE)
+ 3C62 1A         LD   A,(DE)
+ 3C63 1A         LD   A,(DE)
+ 3C64 1A         LD   A,(DE)
+ 3C65 1A         LD   A,(DE)
+ 3C66 1A         LD   A,(DE)
+ 3C67 1A         LD   A,(DE)
+ 3C68 1A         LD   A,(DE)
+ 3C69 1A         LD   A,(DE)
+ 3C6A 1A         LD   A,(DE)
+ 3C6B 1A         LD   A,(DE)
+ 3C6C 1A         LD   A,(DE)
+ 3C6D 1A         LD   A,(DE)
+ 3C6E 1A         LD   A,(DE)
+ 3C6F 1A         LD   A,(DE)
+ 3C70 1A         LD   A,(DE)
+ 3C71 1A         LD   A,(DE)
+ 3C72 1A         LD   A,(DE)
+ 3C73 1A         LD   A,(DE)
+ 3C74 1A         LD   A,(DE)
+ 3C75 1A         LD   A,(DE)
+ 3C76 1A         LD   A,(DE)
+ 3C77 1A         LD   A,(DE)
+ 3C78 1A         LD   A,(DE)
+ 3C79 1A         LD   A,(DE)
+ 3C7A 1A         LD   A,(DE)
+ 3C7B 1A         LD   A,(DE)
+ 3C7C 1A         LD   A,(DE)
+ 3C7D 1A         LD   A,(DE)
+ 3C7E 1A         LD   A,(DE)
+ 3C7F 1A         LD   A,(DE)
+ 3C80 1A         LD   A,(DE)
+ 3C81 1A         LD   A,(DE)
+ 3C82 1A         LD   A,(DE)
+ 3C83 1A         LD   A,(DE)
+ 3C84 1A         LD   A,(DE)
+ 3C85 1A         LD   A,(DE)
+ 3C86 1A         LD   A,(DE)
+ 3C87 1A         LD   A,(DE)
+ 3C88 1A         LD   A,(DE)
+ 3C89 1A         LD   A,(DE)
+ 3C8A 1A         LD   A,(DE)
+ 3C8B 1A         LD   A,(DE)
+ 3C8C 1A         LD   A,(DE)
+ 3C8D 1A         LD   A,(DE)
+ 3C8E 1A         LD   A,(DE)
+ 3C8F 1A         LD   A,(DE)
+ 3C90 1A         LD   A,(DE)
+ 3C91 1A         LD   A,(DE)
+ 3C92 1A         LD   A,(DE)
+ 3C93 1A         LD   A,(DE)
+ 3C94 1A         LD   A,(DE)
+ 3C95 1A         LD   A,(DE)
+ 3C96 1A         LD   A,(DE)
+ 3C97 1A         LD   A,(DE)
+ 3C98 1A         LD   A,(DE)
+ 3C99 1A         LD   A,(DE)
+ 3C9A 1A         LD   A,(DE)
+ 3C9B 1A         LD   A,(DE)
+ 3C9C 1A         LD   A,(DE)
+ 3C9D 1A         LD   A,(DE)
+ 3C9E 1A         LD   A,(DE)
+ 3C9F 1A         LD   A,(DE)
+ 3CA0 1A         LD   A,(DE)
+ 3CA1 1A         LD   A,(DE)
+ 3CA2 1A         LD   A,(DE)
+ 3CA3 1A         LD   A,(DE)
+ 3CA4 1A         LD   A,(DE)
+ 3CA5 1A         LD   A,(DE)
+ 3CA6 1A         LD   A,(DE)
+ 3CA7 1A         LD   A,(DE)
+ 3CA8 1A         LD   A,(DE)
+ 3CA9 1A         LD   A,(DE)
+ 3CAA 1A         LD   A,(DE)
+ 3CAB 1A         LD   A,(DE)
+ 3CAC 1A         LD   A,(DE)
+ 3CAD 1A         LD   A,(DE)
+ 3CAE 1A         LD   A,(DE)
+ 3CAF 1A         LD   A,(DE)
+ 3CB0 1A         LD   A,(DE)
+ 3CB1 1A         LD   A,(DE)
+ 3CB2 1A         LD   A,(DE)
+ 3CB3 1A         LD   A,(DE)
+ 3CB4 1A         LD   A,(DE)
+ 3CB5 1A         LD   A,(DE)
+ 3CB6 1A         LD   A,(DE)
+ 3CB7 1A         LD   A,(DE)
+ 3CB8 1A         LD   A,(DE)
+ 3CB9 1A         LD   A,(DE)
+ 3CBA 1A         LD   A,(DE)
+ 3CBB 1A         LD   A,(DE)
+ 3CBC 1A         LD   A,(DE)
+ 3CBD 1A         LD   A,(DE)
+ 3CBE 1A         LD   A,(DE)
+ 3CBF 1A         LD   A,(DE)
+ 3CC0 1A         LD   A,(DE)
+ 3CC1 1A         LD   A,(DE)
+ 3CC2 1A         LD   A,(DE)
+ 3CC3 1A         LD   A,(DE)
+ 3CC4 1A         LD   A,(DE)
+ 3CC5 1A         LD   A,(DE)
+ 3CC6 1A         LD   A,(DE)
+ 3CC7 1A         LD   A,(DE)
+ 3CC8 1A         LD   A,(DE)
+ 3CC9 1A         LD   A,(DE)
+ 3CCA 1A         LD   A,(DE)
+ 3CCB 1A         LD   A,(DE)
+ 3CCC 1A         LD   A,(DE)
+ 3CCD 1A         LD   A,(DE)
+ 3CCE 1A         LD   A,(DE)
+ 3CCF 1A         LD   A,(DE)
+ 3CD0 1A         LD   A,(DE)
+ 3CD1 1A         LD   A,(DE)
+ 3CD2 1A         LD   A,(DE)
+ 3CD3 1A         LD   A,(DE)
+ 3CD4 1A         LD   A,(DE)
+ 3CD5 1A         LD   A,(DE)
+ 3CD6 1A         LD   A,(DE)
+ 3CD7 1A         LD   A,(DE)
+ 3CD8 1A         LD   A,(DE)
+ 3CD9 1A         LD   A,(DE)
+ 3CDA 1A         LD   A,(DE)
+ 3CDB 1A         LD   A,(DE)
+ 3CDC 1A         LD   A,(DE)
+ 3CDD 1A         LD   A,(DE)
+ 3CDE 1A         LD   A,(DE)
+ 3CDF 1A         LD   A,(DE)
+ 3CE0 1A         LD   A,(DE)
+ 3CE1 1A         LD   A,(DE)
+ 3CE2 1A         LD   A,(DE)
+ 3CE3 1A         LD   A,(DE)
+ 3CE4 1A         LD   A,(DE)
+ 3CE5 1A         LD   A,(DE)
+ 3CE6 1A         LD   A,(DE)
+ 3CE7 1A         LD   A,(DE)
+ 3CE8 1A         LD   A,(DE)
+ 3CE9 1A         LD   A,(DE)
+ 3CEA 1A         LD   A,(DE)
+ 3CEB 1A         LD   A,(DE)
+ 3CEC 1A         LD   A,(DE)
+ 3CED 1A         LD   A,(DE)
+ 3CEE 1A         LD   A,(DE)
+ 3CEF 1A         LD   A,(DE)
+ 3CF0 1A         LD   A,(DE)
+ 3CF1 1A         LD   A,(DE)
+ 3CF2 1A         LD   A,(DE)
+ 3CF3 1A         LD   A,(DE)
+ 3CF4 1A         LD   A,(DE)
+ 3CF5 1A         LD   A,(DE)
+ 3CF6 1A         LD   A,(DE)
+ 3CF7 1A         LD   A,(DE)
+ 3CF8 1A         LD   A,(DE)
+ 3CF9 1A         LD   A,(DE)
+ 3CFA 1A         LD   A,(DE)
+ 3CFB 1A         LD   A,(DE)
+ 3CFC 1A         LD   A,(DE)
+ 3CFD 1A         LD   A,(DE)
+ 3CFE 1A         LD   A,(DE)
+ 3CFF 1A         LD   A,(DE)
+ 3D00 1A         LD   A,(DE)
+ 3D01 1A         LD   A,(DE)
+ 3D02 1A         LD   A,(DE)
+ 3D03 1A         LD   A,(DE)
+ 3D04 1A         LD   A,(DE)
+ 3D05 1A         LD   A,(DE)
+ 3D06 1A         LD   A,(DE)
+ 3D07 1A         LD   A,(DE)
+ 3D08 1A         LD   A,(DE)
+ 3D09 1A         LD   A,(DE)
+ 3D0A 1A         LD   A,(DE)
+ 3D0B 1A         LD   A,(DE)
+ 3D0C 1A         LD   A,(DE)
+ 3D0D 1A         LD   A,(DE)
+ 3D0E 1A         LD   A,(DE)
+ 3D0F 1A         LD   A,(DE)
+ 3D10 1A         LD   A,(DE)
+ 3D11 1A         LD   A,(DE)
+ 3D12 1A         LD   A,(DE)
+ 3D13 1A         LD   A,(DE)
+ 3D14 1A         LD   A,(DE)
+ 3D15 1A         LD   A,(DE)
+ 3D16 1A         LD   A,(DE)
+ 3D17 1A         LD   A,(DE)
+ 3D18 1A         LD   A,(DE)
+ 3D19 1A         LD   A,(DE)
+ 3D1A 1A         LD   A,(DE)
+ 3D1B 1A         LD   A,(DE)
+ 3D1C 1A         LD   A,(DE)
+ 3D1D 1A         LD   A,(DE)
+ 3D1E 1A         LD   A,(DE)
+ 3D1F 1A         LD   A,(DE)
+ 3D20 1A         LD   A,(DE)
+ 3D21 1A         LD   A,(DE)
+ 3D22 1A         LD   A,(DE)
+ 3D23 1A         LD   A,(DE)
+ 3D24 1A         LD   A,(DE)
+ 3D25 1A         LD   A,(DE)
+ 3D26 1A         LD   A,(DE)
+ 3D27 1A         LD   A,(DE)
+ 3D28 1A         LD   A,(DE)
+ 3D29 1A         LD   A,(DE)
+ 3D2A 1A         LD   A,(DE)
+ 3D2B 1A         LD   A,(DE)
+ 3D2C 1A         LD   A,(DE)
+ 3D2D 1A         LD   A,(DE)
+ 3D2E 1A         LD   A,(DE)
+ 3D2F 1A         LD   A,(DE)
+ 3D30 1A         LD   A,(DE)
+ 3D31 1A         LD   A,(DE)
+ 3D32 00         NOP
+ 3D33 00         NOP
+ 3D34 00         NOP
+ 3D35 00         NOP
+ 3D36 00         NOP
+ 3D37 00         NOP
+ 3D38 00         NOP
+ 3D39 00         NOP
+ 3D3A 00         NOP
+ 3D3B 00         NOP
+ 3D3C 00         NOP
+ 3D3D 00         NOP
+ 3D3E 00         NOP
+ 3D3F 00         NOP
+ 3D40 00         NOP
+ 3D41 00         NOP
+ 3D42 00         NOP
+ 3D43 00         NOP
+ 3D44 00         NOP
+ 3D45 00         NOP
+ 3D46 00         NOP
+ 3D47 00         NOP
+ 3D48 00         NOP
+ 3D49 00         NOP
+ 3D4A 00         NOP
+ 3D4B 00         NOP
+ 3D4C 00         NOP
+ 3D4D 00         NOP
+ 3D4E 00         NOP
+ 3D4F 00         NOP
+ 3D50 00         NOP
+ 3D51 00         NOP
+ 3D52 00         NOP
+ 3D53 00         NOP
+ 3D54 00         NOP
+ 3D55 00         NOP
+ 3D56 00         NOP
+ 3D57 00         NOP
+ 3D58 00         NOP
+ 3D59 00         NOP
+ 3D5A 00         NOP
+ 3D5B 00         NOP
+ 3D5C 00         NOP
+ 3D5D 00         NOP
+ 3D5E 00         NOP
+ 3D5F 00         NOP
+ 3D60 00         NOP
+ 3D61 00         NOP
+ 3D62 00         NOP
+ 3D63 00         NOP
+ 3D64 00         NOP
+ 3D65 00         NOP
+ 3D66 00         NOP
+ 3D67 00         NOP
+ 3D68 00         NOP
+ 3D69 00         NOP
+ 3D6A 00         NOP
+ 3D6B 00         NOP
+ 3D6C 00         NOP
+ 3D6D 00         NOP
+ 3D6E 00         NOP
+ 3D6F 00         NOP
+ 3D70 00         NOP
+ 3D71 00         NOP
+ 3D72 00         NOP
+ 3D73 0600       LD   B,+00
+ 3D75 0F         RRCA
+ 3D76 01100E     LD   BC,+0E10
+ 3D79 FF         RST  0038,MASK_INT
+ 3D7A 00         NOP
+ 3D7B 00         NOP
+ 3D7C 00         NOP
+ 3D7D 0600       LD   B,+00
+ 3D7F 1001       DJNZ 3D82
+ 3D81 0600       LD   B,+00
+ 3D83 8A         ADC  A,D
+ 3D84 61         LD   H,C
+ 3D85 00         NOP
+ 3D86 00         NOP
+ 3D87 00         NOP
+ 3D88 E5         PUSH HL
+ 3D89 00         NOP
+ 3D8A 013228     LD   BC,+2832
+ 3D8D 322800     LD   (0028),A
+ 3D90 FF         RST  0038,MASK_INT
+ 3D91 00         NOP
+ 3D92 02         LD   (BC),A
+ 3D93 00         NOP
+ 3D94 00         NOP
+ 3D95 0F         RRCA
+ 3D96 0C         INC  C
+ 3D97 2800       JR   Z,3D99
+ 3D99 00         NOP
+ 3D9A 00         NOP
+ 3D9B 010F0E     LD   BC,+0E0F
+ 3D9E 00         NOP
+ 3D9F 8E         ADC  A,(HL)
+ 3DA0 018001     LD   BC,+0180
+ 3DA3 A0         AND  B
+ 3DA4 05         DEC  B
+ 3DA5 00         NOP
+ 3DA6 00         NOP
+ 3DA7 B2         OR   D
+ 3DA8 29         ADD  HL,HL
+ 3DA9 DB29       IN   A,(+29)
+ 3DAB FF         RST  0038,MASK_INT
+ 3DAC AE         XOR  (HL)
+ 3DAD 29         ADD  HL,HL
+ 3DAE B2         OR   D
+ 3DAF 29         ADD  HL,HL
+ 3DB0 EE29       XOR  +29
+ 3DB2 07         RLCA
+ 3DB3 FF         RST  0038,MASK_INT
+ 3DB4 FF         RST  0038,MASK_INT
+ 3DB5 FF         RST  0038,MASK_INT
+ 3DB6 80         ADD  A,B
+ 3DB7 00         NOP
+ 3DB8 00         NOP
+ 3DB9 00         NOP
+ 3DBA 00         NOP
+ 3DBB 00         NOP
+ 3DBC 00         NOP
+ 3DBD 00         NOP
+ 3DBE 00         NOP
+ 3DBF 00         NOP
+ 3DC0 00         NOP
+ 3DC1 00         NOP
+ 3DC2 00         NOP
+ 3DC3 00         NOP
+ 3DC4 00         NOP
+ 3DC5 00         NOP
+ 3DC6 00         NOP
+ 3DC7 00         NOP
+ 3DC8 00         NOP
+ 3DC9 00         NOP
+ 3DCA 00         NOP
+ 3DCB 00         NOP
+ 3DCC 00         NOP
+ 3DCD 00         NOP
+ 3DCE 00         NOP
+ 3DCF 00         NOP
+ 3DD0 00         NOP
+ 3DD1 00         NOP
+ 3DD2 00         NOP
+ 3DD3 00         NOP
+ 3DD4 00         NOP
+ 3DD5 00         NOP
+ 3DD6 00         NOP
+ 3DD7 00         NOP
+ 3DD8 00         NOP
+ 3DD9 00         NOP
+ 3DDA 00         NOP
+ 3DDB 62         LD   H,D
+ 3DDC E4E4E4     CALL PO,E4E4
+ 3DDF E4E4E4     CALL PO,E4E4
+ 3DE2 E4E4E4     CALL PO,E4E4
+ 3DE5 E4E4E4     CALL PO,E4E4
+ 3DE8 E4E4E4     CALL PO,E4E4
+ 3DEB 00         NOP
+ 3DEC 00         NOP
+ 3DED 00         NOP
+ 3DEE 00         NOP
+ 3DEF 00         NOP
+ 3DF0 00         NOP
+ 3DF1 00         NOP
+ 3DF2 00         NOP
+ 3DF3 00         NOP
+ 3DF4 00         NOP
+ 3DF5 00         NOP
+ 3DF6 00         NOP
+ 3DF7 00         NOP
+ 3DF8 00         NOP
+ 3DF9 00         NOP
+ 3DFA 00         NOP
+ 3DFB 00         NOP
+ 3DFC 00         NOP
+ 3DFD 00         NOP
+ 3DFE 00         NOP
+ 3DFF 00         NOP
+ 3E00 00         NOP
+ 3E01 00         NOP
+ 3E02 00         NOP
+ 3E03 00         NOP
+ 3E04 00         NOP
+ 3E05 00         NOP
+ 3E06 00         NOP
+ 3E07 00         NOP
+ 3E08 00         NOP
+ 3E09 00         NOP
+ 3E0A 00         NOP
+ 3E0B 00         NOP
+ 3E0C 00         NOP
+ 3E0D 00         NOP
+ 3E0E 00         NOP
+ 3E0F 00         NOP
+ 3E10 00         NOP
+ 3E11 00         NOP
+ 3E12 00         NOP
+ 3E13 00         NOP
+ 3E14 00         NOP
+ 3E15 00         NOP
+ 3E16 00         NOP
+ 3E17 00         NOP
+ 3E18 00         NOP
+ 3E19 00         NOP
+ 3E1A 00         NOP
+ 3E1B 00         NOP
+ 3E1C 00         NOP
+ 3E1D 00         NOP
+ 3E1E 00         NOP
+ 3E1F 00         NOP
+ 3E20 00         NOP
+ 3E21 00         NOP
+ 3E22 00         NOP
+ 3E23 00         NOP
+ 3E24 00         NOP
+ 3E25 00         NOP
+ 3E26 00         NOP
+ 3E27 00         NOP
+ 3E28 00         NOP
+ 3E29 00         NOP
+ 3E2A 00         NOP
+ 3E2B 00         NOP
+ 3E2C 00         NOP
+ 3E2D 0607       LD   B,+07
+ 3E2F 322800     LD   (0028),A
+ 3E32 00         NOP
+ 3E33 2A1F01     LD   HL,(011F)
+ 3E36 00         NOP
+ 3E37 00         NOP
+ 3E38 00         NOP
+ 3E39 00         NOP
+ 3E3A 02         LD   (BC),A
+ 3E3B 04         INC  B
+ 3E3C 00         NOP
+ 3E3D 00         NOP
+ 3E3E 00         NOP
+ 3E3F 00         NOP
+ 3E40 00         NOP
+ 3E41 00         NOP
+ 3E42 00         NOP
+ 3E43 00         NOP
+ 3E44 00         NOP
+ 3E45 00         NOP
+ 3E46 00         NOP
+ 3E47 00         NOP
+ 3E48 00         NOP
+ 3E49 00         NOP
+ 3E4A 00         NOP
+ 3E4B 00         NOP
+ 3E4C 00         NOP
+ 3E4D 00         NOP
+ 3E4E 00         NOP
+ 3E4F 00         NOP
+ 3E50 00         NOP
+ 3E51 00         NOP
+ 3E52 00         NOP
+ 3E53 00         NOP
+ 3E54 00         NOP
+ 3E55 00         NOP
+ 3E56 00         NOP
+ 3E57 00         NOP
+ 3E58 00         NOP
+ 3E59 00         NOP
+ 3E5A 00         NOP
+ 3E5B 00         NOP
+ 3E5C 00         NOP
+ 3E5D 00         NOP
+ 3E5E 00         NOP
+ 3E5F 00         NOP
+ 3E60 00         NOP
+ 3E61 00         NOP
+ 3E62 00         NOP
+ 3E63 00         NOP
+ 3E64 00         NOP
+ 3E65 00         NOP
+ 3E66 00         NOP
+ 3E67 00         NOP
+ 3E68 00         NOP
+ 3E69 00         NOP
+ 3E6A 00         NOP
+ 3E6B 00         NOP
+ 3E6C 00         NOP
+ 3E6D 00         NOP
+ 3E6E 00         NOP
+ 3E6F 00         NOP
+ 3E70 00         NOP
+ 3E71 00         NOP
+ 3E72 00         NOP
+ 3E73 00         NOP
+ 3E74 00         NOP
+ 3E75 00         NOP
+ 3E76 00         NOP
+ 3E77 00         NOP
+ 3E78 00         NOP
+ 3E79 00         NOP
+ 3E7A 00         NOP
+ 3E7B 00         NOP
+ 3E7C 00         NOP
+ 3E7D 00         NOP
+ 3E7E 00         NOP
+ 3E7F 00         NOP
+ 3E80 00         NOP
+ 3E81 00         NOP
+ 3E82 00         NOP
+ 3E83 00         NOP
+ 3E84 00         NOP
+ 3E85 00         NOP
+ 3E86 00         NOP
+ 3E87 00         NOP
+ 3E88 00         NOP
+ 3E89 00         NOP
+ 3E8A 00         NOP
+ 3E8B 00         NOP
+ 3E8C 00         NOP
+ 3E8D 00         NOP
+ 3E8E 00         NOP
+ 3E8F 00         NOP
+ 3E90 00         NOP
+ 3E91 00         NOP
+ 3E92 00         NOP
+ 3E93 00         NOP
+ 3E94 00         NOP
+ 3E95 00         NOP
+ 3E96 00         NOP
+ 3E97 00         NOP
+ 3E98 00         NOP
+ 3E99 00         NOP
+ 3E9A 00         NOP
+ 3E9B 00         NOP
+ 3E9C 00         NOP
+ 3E9D 00         NOP
+ 3E9E 00         NOP
+ 3E9F 00         NOP
+ 3EA0 00         NOP
+ 3EA1 00         NOP
+ 3EA2 00         NOP
+ 3EA3 00         NOP
+ 3EA4 00         NOP
+ 3EA5 00         NOP
+ 3EA6 00         NOP
+ 3EA7 00         NOP
+ 3EA8 00         NOP
+ 3EA9 00         NOP
+ 3EAA 00         NOP
+ 3EAB 00         NOP
+ 3EAC 00         NOP
+ 3EAD 00         NOP
+ 3EAE 00         NOP
+ 3EAF 00         NOP
+ 3EB0 00         NOP
+ 3EB1 00         NOP
+ 3EB2 00         NOP
+ 3EB3 00         NOP
+ 3EB4 00         NOP
+ 3EB5 00         NOP
+ 3EB6 00         NOP
+ 3EB7 00         NOP
+ 3EB8 00         NOP
+ 3EB9 00         NOP
+ 3EBA 00         NOP
+ 3EBB 00         NOP
+ 3EBC 00         NOP
+ 3EBD 00         NOP
+ 3EBE 00         NOP
+ 3EBF 00         NOP
+ 3EC0 00         NOP
+ 3EC1 00         NOP
+ 3EC2 00         NOP
+ 3EC3 00         NOP
+ 3EC4 00         NOP
+ 3EC5 00         NOP
+ 3EC6 00         NOP
+ 3EC7 00         NOP
+ 3EC8 00         NOP
+ 3EC9 00         NOP
+ 3ECA 00         NOP
+ 3ECB 00         NOP
+ 3ECC 00         NOP
+ 3ECD 00         NOP
+ 3ECE 00         NOP
+ 3ECF 00         NOP
+ 3ED0 00         NOP
+ 3ED1 00         NOP
+ 3ED2 00         NOP
+ 3ED3 00         NOP
+ 3ED4 00         NOP
+ 3ED5 00         NOP
+ 3ED6 00         NOP
+ 3ED7 00         NOP
+ 3ED8 00         NOP
+ 3ED9 00         NOP
+ 3EDA 00         NOP
+ 3EDB 00         NOP
+ 3EDC 00         NOP
+ 3EDD 00         NOP
+ 3EDE 00         NOP
+ 3EDF 00         NOP
+ 3EE0 00         NOP
+ 3EE1 00         NOP
+ 3EE2 00         NOP
+ 3EE3 00         NOP
+ 3EE4 00         NOP
+ 3EE5 00         NOP
+ 3EE6 00         NOP
+ 3EE7 00         NOP
+ 3EE8 00         NOP
+ 3EE9 00         NOP
+ 3EEA 00         NOP
+ 3EEB 00         NOP
+ 3EEC 00         NOP
+ 3EED 00         NOP
+ 3EEE 00         NOP
+ 3EEF 00         NOP
+ 3EF0 00         NOP
+ 3EF1 00         NOP
+ 3EF2 00         NOP
+ 3EF3 00         NOP
+ 3EF4 00         NOP
+ 3EF5 00         NOP
+ 3EF6 00         NOP
+ 3EF7 00         NOP
+ 3EF8 00         NOP
+ 3EF9 00         NOP
+ 3EFA 00         NOP
+ 3EFB 00         NOP
+ 3EFC 00         NOP
+ 3EFD 00         NOP
+ 3EFE 00         NOP
+ 3EFF 00         NOP
+ 3F00 00         NOP
+ 3F01 00         NOP
+ 3F02 00         NOP
+ 3F03 00         NOP
+ 3F04 00         NOP
+ 3F05 00         NOP
+ 3F06 00         NOP
+ 3F07 00         NOP
+ 3F08 00         NOP
+ 3F09 00         NOP
+ 3F0A 00         NOP
+ 3F0B 00         NOP
+ 3F0C 00         NOP
+ 3F0D 00         NOP
+ 3F0E 00         NOP
+ 3F0F 00         NOP
+ 3F10 00         NOP
+ 3F11 00         NOP
+ 3F12 00         NOP
+ 3F13 00         NOP
+ 3F14 00         NOP
+ 3F15 00         NOP
+ 3F16 00         NOP
+ 3F17 00         NOP
+ 3F18 00         NOP
+ 3F19 00         NOP
+ 3F1A 00         NOP
+ 3F1B 00         NOP
+ 3F1C 00         NOP
+ 3F1D 00         NOP
+ 3F1E 00         NOP
+ 3F1F 00         NOP
+ 3F20 00         NOP
+ 3F21 00         NOP
+ 3F22 00         NOP
+ 3F23 00         NOP
+ 3F24 00         NOP
+ 3F25 00         NOP
+ 3F26 00         NOP
+ 3F27 00         NOP
+ 3F28 00         NOP
+ 3F29 00         NOP
+ 3F2A 00         NOP
+ 3F2B 00         NOP
+ 3F2C 00         NOP
+ 3F2D 00         NOP
+ 3F2E 00         NOP
+ 3F2F 00         NOP
+ 3F30 00         NOP
+ 3F31 00         NOP
+ 3F32 00         NOP
+ 3F33 00         NOP
+ 3F34 00         NOP
+ 3F35 00         NOP
+ 3F36 00         NOP
+ 3F37 00         NOP
+ 3F38 00         NOP
+ 3F39 00         NOP
+ 3F3A 00         NOP
+ 3F3B 00         NOP
+ 3F3C 00         NOP
+ 3F3D 00         NOP
+ 3F3E 00         NOP
+ 3F3F 00         NOP
+ 3F40 00         NOP
+ 3F41 00         NOP
+ 3F42 00         NOP
+ 3F43 00         NOP
+ 3F44 00         NOP
+ 3F45 00         NOP
+ 3F46 00         NOP
+ 3F47 00         NOP
+ 3F48 00         NOP
+ 3F49 00         NOP
+ 3F4A 00         NOP
+ 3F4B 00         NOP
+ 3F4C 00         NOP
+ 3F4D 00         NOP
+ 3F4E 00         NOP
+ 3F4F 00         NOP
+ 3F50 00         NOP
+ 3F51 00         NOP
+ 3F52 00         NOP
+ 3F53 00         NOP
+ 3F54 00         NOP
+ 3F55 00         NOP
+ 3F56 00         NOP
+ 3F57 00         NOP
+ 3F58 00         NOP
+ 3F59 00         NOP
+ 3F5A 00         NOP
+ 3F5B 00         NOP
+ 3F5C 00         NOP
+ 3F5D 00         NOP
+ 3F5E 00         NOP
+ 3F5F 00         NOP
+ 3F60 00         NOP
+ 3F61 00         NOP
+ 3F62 00         NOP
+ 3F63 00         NOP
+ 3F64 00         NOP
+ 3F65 00         NOP
+ 3F66 00         NOP
+ 3F67 00         NOP
+ 3F68 00         NOP
+ 3F69 00         NOP
+ 3F6A 00         NOP
+ 3F6B 00         NOP
+ 3F6C 00         NOP
+ 3F6D 00         NOP
+ 3F6E 00         NOP
+ 3F6F 00         NOP
+ 3F70 00         NOP
+ 3F71 00         NOP
+ 3F72 00         NOP
+ 3F73 00         NOP
+ 3F74 00         NOP
+ 3F75 00         NOP
+ 3F76 00         NOP
+ 3F77 00         NOP
+ 3F78 00         NOP
+ 3F79 00         NOP
+ 3F7A 00         NOP
+ 3F7B 00         NOP
+ 3F7C 00         NOP
+ 3F7D 00         NOP
+ 3F7E 00         NOP
+ 3F7F 00         NOP
+ 3F80 00         NOP
+ 3F81 00         NOP
+ 3F82 00         NOP
+ 3F83 00         NOP
+ 3F84 00         NOP
+ 3F85 00         NOP
+ 3F86 00         NOP
+ 3F87 00         NOP
+ 3F88 00         NOP
+ 3F89 00         NOP
+ 3F8A 00         NOP
+ 3F8B 00         NOP
+ 3F8C 00         NOP
+ 3F8D 00         NOP
+ 3F8E 00         NOP
+ 3F8F 00         NOP
+ 3F90 00         NOP
+ 3F91 00         NOP
+ 3F92 00         NOP
+ 3F93 00         NOP
+ 3F94 00         NOP
+ 3F95 00         NOP
+ 3F96 00         NOP
+ 3F97 00         NOP
+ 3F98 00         NOP
+ 3F99 00         NOP
+ 3F9A 00         NOP
+ 3F9B 00         NOP
+ 3F9C 00         NOP
+ 3F9D 00         NOP
+ 3F9E 00         NOP
+ 3F9F 00         NOP
+ 3FA0 00         NOP
+ 3FA1 00         NOP
+ 3FA2 00         NOP
+ 3FA3 00         NOP
+ 3FA4 00         NOP
+ 3FA5 00         NOP
+ 3FA6 00         NOP
+ 3FA7 00         NOP
+ 3FA8 00         NOP
+ 3FA9 00         NOP
+ 3FAA 00         NOP
+ 3FAB 00         NOP
+ 3FAC 00         NOP
+ 3FAD 00         NOP
+ 3FAE 00         NOP
+ 3FAF 00         NOP
+ 3FB0 00         NOP
+ 3FB1 00         NOP
+ 3FB2 00         NOP
+ 3FB3 00         NOP
+ 3FB4 00         NOP
+ 3FB5 00         NOP
+ 3FB6 00         NOP
+ 3FB7 00         NOP
+ 3FB8 00         NOP
+ 3FB9 00         NOP
+ 3FBA 00         NOP
+ 3FBB 00         NOP
+ 3FBC 00         NOP
+ 3FBD 00         NOP
+ 3FBE 00         NOP
+ 3FBF 00         NOP
+ 3FC0 00         NOP
+ 3FC1 00         NOP
+ 3FC2 00         NOP
+ 3FC3 00         NOP
+ 3FC4 00         NOP
+ 3FC5 00         NOP
+ 3FC6 00         NOP
+ 3FC7 00         NOP
+ 3FC8 00         NOP
+ 3FC9 00         NOP
+ 3FCA 00         NOP
+ 3FCB 00         NOP
+ 3FCC 00         NOP
+ 3FCD 00         NOP
+ 3FCE 00         NOP
+ 3FCF 00         NOP
+ 3FD0 00         NOP
+ 3FD1 00         NOP
+ 3FD2 00         NOP
+ 3FD3 00         NOP
+ 3FD4 00         NOP
+ 3FD5 00         NOP
+ 3FD6 00         NOP
+ 3FD7 00         NOP
+ 3FD8 00         NOP
+ 3FD9 00         NOP
+ 3FDA 00         NOP
+ 3FDB 00         NOP
+ 3FDC 00         NOP
+ 3FDD 00         NOP
+ 3FDE 00         NOP
+ 3FDF 00         NOP
+ 3FE0 00         NOP
+ 3FE1 00         NOP
+ 3FE2 00         NOP
+ 3FE3 00         NOP
+ 3FE4 00         NOP
+ 3FE5 00         NOP
+ 3FE6 00         NOP
+ 3FE7 00         NOP
+ 3FE8 00         NOP
+ 3FE9 00         NOP
+ 3FEA 00         NOP
+ 3FEB 00         NOP
+ 3FEC 00         NOP
+ 3FED 00         NOP
+ 3FEE 00         NOP
+ 3FEF 00         NOP
+ 3FF0 00         NOP
+ 3FF1 00         NOP
+ 3FF2 00         NOP
+ 3FF3 00         NOP
+ 3FF4 00         NOP
+ 3FF5 00         NOP
+ 3FF6 A1         AND  C
+ 3FF7 12         LD   (DE),A
+ 3FF8 A1         AND  C
+ 3FF9 12         LD   (DE),A
+ 3FFA 44         LD   B,H
+ 3FFB 00         NOP
+ 3FFC 3A5C0C     LD   A,(0C5C)
+ 3FFF 2800       JR   Z,4001

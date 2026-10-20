@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!-- Installed mode builds only test code; never traverse product projects. -->
+    <EnableDefaultCompileItems Condition="'$(InstalledHddValidation)' == 'true'">false</EnableDefaultCompileItems>
+    <DefineConstants Condition="'$(InstalledHddValidation)' == 'true'">$(DefineConstants);INSTALLED_HDD_VALIDATION</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(InstalledHddValidation)' != 'true'">
+    <ProjectReference Include="..\..\src\Hc2000.App\Hc2000.App.csproj" />
+    <ProjectReference Include="..\..\src\Hc2000.Asm\Hc2000.Asm.csproj" />
+    <ProjectReference Include="..\..\src\Hc2000.Machine\Hc2000.Machine.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(InstalledHddValidation)' == 'true'">
+    <Compile Include="HddPortTests.cs" />
+    <Compile Include="InstalledHddBindingTests.cs" />
+    <Reference Include="Hc2000.Machine">
+      <HintPath>$(InstalledHddRoot)/bin/Hc2000.Machine.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="Hc2000.Z80">
+      <HintPath>$(InstalledHddRoot)/bin/Hc2000.Z80.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <AssemblyMetadata Include="InstalledHddRoot" Value="$(InstalledHddRoot)" />
+    <AssemblyMetadata Include="InstalledHddSourceTree" Value="$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../..'))" />
+  </ItemGroup>
+  <Target Name="RequireInstalledHddReferences" BeforeTargets="ResolveReferences"
+          Condition="'$(InstalledHddValidation)' == 'true'">
+    <Error Condition="'$(InstalledHddRoot)' == ''" Text="Installed HDD validation requires a verified registered .84 root." />
+    <Error Condition="!Exists('$(InstalledHddRoot)/bin/Hc2000.Machine.dll') Or !Exists('$(InstalledHddRoot)/bin/Hc2000.Z80.dll')"
+           Text="Missing registered Machine/Z80 assemblies; product rebuild is forbidden." />
+    <Error Condition="'@(ProjectReference)' != ''" Text="Installed HDD validation must not reference source product projects." />
+  </Target>
+</Project>

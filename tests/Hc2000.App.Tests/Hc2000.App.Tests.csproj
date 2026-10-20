@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!-- xunit v3 (via Avalonia.Headless.XUnit 12) adds xUnit1051 (pass TestContext cancellation tokens); the
+         suite keeps its v2 timeouts unchanged rather than rewrite every await. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Hc2000.App/Hc2000.App.csproj" />
+    <None Update="Fixtures/Tape/*.tap" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

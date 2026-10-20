@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>hc</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hc2000.Z80\Hc2000.Z80.csproj" />
+    <ProjectReference Include="..\Hc2000.Asm\Hc2000.Asm.csproj" />
+    <ProjectReference Include="..\Hc2000.Disasm\Hc2000.Disasm.csproj" />
+    <ProjectReference Include="..\Hc2000.Machine\Hc2000.Machine.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Hc2000.Tools.Tests" />
+    <InternalsVisibleTo Include="Hc2000.ImageAdmissionProbe" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../HostShared/NativeImageAdmission.cs" Link="HostShared/NativeImageAdmission.cs" />
+    <Compile Include="../HostShared/LinuxImageAdmissionNative.cs" Link="HostShared/LinuxImageAdmissionNative.cs" />
+    <Compile Include="../HostShared/ImageAdmissionRecord.cs" Link="HostShared/ImageAdmissionRecord.cs" />
+  </ItemGroup>
+</Project>

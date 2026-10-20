@@ -1,0 +1,7 @@
+# sha256 pins for vendored binaries (repo is the source of truth; downloads.sh verifies before use)
+# SDL2.dll is the official SDL 2.32.10 Windows x64 release binary, unmodified:
+#   https://github.com/libsdl-org/SDL/releases/download/release-2.32.10/SDL2-2.32.10-win32-x64.zip
+#   zip sha256 6cf9706eefd0a4a06dc764007934d428afaf029fabdd408a9e646048c91e18fb
+# It replaced a hand cross-compiled build (sha256 9cc5c6dc...) that crashed with a stack overflow
+# (0xc00000fd in SDL2.dll) on the owner's Windows 11 at launch of 0.1.97, 2026-10-14.
+b37740a72a7a9706216df9f0134894bb7a850b356fd149398c67d874cbcfacb4  deploy/emu/sdl2/SDL2.dll

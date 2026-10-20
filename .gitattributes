@@ -1,0 +1,15 @@
+*.pdf -text
+*.zip -text
+*.rar -text
+*.doc -text
+*.rtf -text
+*.dsk -text
+*.DSK -text
+*.rom binary
+*.bin binary
+*.tap binary
+tests/assets/z80/singlestep/v1/*.json -text
+tests/assets/z80/fuse/tests.in -text
+tests/assets/z80/fuse/tests.expected -text
+tests/assets/z80/zex/*.com -text
+deploy/emu/sdl2/*.dll -text

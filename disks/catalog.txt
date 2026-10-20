@@ -1,0 +1,3205 @@
+
+ALBA8.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 4.00		---	Program	    1	 2380
+  2	0	champ       	 2.00		---	Program	    5	  273
+  3	0	champ   c1    	40.00		---	Bytes	25000	40536
+  4	0	champ   c2    	 8.00		---	Bytes	16384	 6912
+  5	0	lpuff       	 2.00		---	Program	    5	  273
+  6	0	lpuff   c1    	40.00		---	Bytes	25000	40536
+  7	0	lpuff   c2    	 8.00		---	Bytes	16384	 6912
+  8	0	orbix       	 2.00		---	Program	    5	  273
+  9	0	orbix   c1    	40.00		---	Bytes	25000	40536
+ 10	0	orbix   c2    	 8.00		---	Bytes	16384	 6912
+ 11	0	swalk       	 2.00		---	Program	    5	  273
+ 12	0	swalk   c1    	40.00		---	Bytes	25000	40536
+ 13	0	swalk   c2    	 8.00		---	Bytes	16384	 6912
+ 14	0	k off       	 2.00		---	Program	    5	  273
+ 15	0	k off   c1    	40.00		---	Bytes	25000	40536
+ 16	0	k off   c2    	 8.00		---	Bytes	16384	 6912
+ 17	0	storm       	 2.00		---	Program	    5	  273
+ 18	0	storm   c1    	40.00		---	Bytes	25000	40536
+ 19	0	storm   c2    	 8.00		---	Bytes	16384	 6912
+ 20	0	jackn       	 2.00		---	Program	    5	  273
+ 21	0	jackn   c1    	40.00		---	Bytes	25000	40536
+ 22	0	jackn   c2    	 8.00		---	Bytes	16384	 6912
+ 23	0	doc d       	 2.00		---	Program	    5	  273
+ 24	0	doc d   c1    	40.00		---	Bytes	25000	40536
+ 25	0	doc d   c2    	 8.00		---	Bytes	16384	 6912
+ 26	0	wally       	 2.00		---	Program	    5	  273
+ 27	0	wally   c1    	40.00		---	Bytes	25000	40536
+ 28	0	wally   c2    	 8.00		---	Bytes	16384	 6912
+ 29	0	fred2       	 2.00		---	Program	    5	  273
+ 30	0	fred2   c1    	40.00		---	Bytes	25000	40536
+ 31	0	fred2   c2    	 8.00		---	Bytes	16384	 6912
+ 32	0	robok       	 2.00		---	Program	    5	  273
+ 33	0	robok   c1    	40.00		---	Bytes	25000	40536
+ 34	0	robok   c2    	 8.00		---	Bytes	16384	 6912
+ 35	0	mach3       	 2.00		---	Program	    5	  273
+ 36	0	mach3   c1    	40.00		---	Bytes	25000	40536
+ 37	0	mach3   c2    	 8.00		---	Bytes	16384	 6912
+ 38	0	INFO        	10.00		---	Program	    1	 9844
+Space free/filled/total	: 022/618/640 KB
+
+ALEO-GAMES1.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	DIZZY1      	 2.00		---	Program	   10	  671
+  2	0	DIZZY2      	 2.00		---	Program	   10	  201
+  3	0	DIZZY3      	 2.00		---	Program	   10	  260
+  4	0	DIZZY4      	 2.00		---	Program	   10	  397
+  5	0	DIZZY5      	 2.00		---	Program	   10	  400
+  6	0	DIZZY6      	 2.00		---	Program	   10	  169
+  7	0	run         	 2.00		---	Program	   10	 1652
+  8	0	bound   scr    	 8.00		---	Bytes	16384	 6912
+  9	0	magic   cod    	 2.00		---	Bytes	40000	  512
+ 10	0	prince  cod    	 2.00		---	Bytes	25558	  150
+ 11	0	treasurecod    	 2.00		---	Bytes	40000	  256
+ 12	0	bound   gam    	40.00		---	Bytes	25000	40536
+ 13	0	cartoon gam    	40.00		---	Bytes	25000	40536
+ 14	0	treasuregam    	42.00		---	Bytes	24500	40960
+ 15	0	cartoon scr    	 8.00		---	Bytes	49152	 6912
+ 16	0	fantasy scr    	 8.00		---	Bytes	49152	 6912
+ 17	0	magic   scr    	 8.00		---	Bytes	49152	 6912
+ 18	0	prince  scr    	 8.00		---	Bytes	49152	 6912
+ 19	0	treasurescr    	 8.00		---	Bytes	49152	 6912
+ 20	0	bound   cod    	 2.00		---	Bytes	40000	  808
+ 21	0	cartoon cod    	 2.00		---	Bytes	18432	 1270
+ 22	0	fantasy cod    	 2.00		---	Bytes	40000	  256
+ 23	0	fantasy gam    	42.00		---	Bytes	24500	40960
+ 24	0	magic   gam    	42.00		---	Bytes	24500	41020
+ 25	0	prince  gam    	36.00		---	Bytes	25705	35930
+Space free/filled/total	: 320/320/640 KB
+
+ALEO-UTILS.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	a2option    	 2.00		---	Program	   97	  972
+  2	0	artcode     	40.00		---	Bytes	25632	39903
+  3	0	artist2     	 2.00		---	Program	    1	  359
+  4	0	asm         	 2.00		---	Program	   10	  130
+  5	0	betabas     	 2.00		---	Program	    2	  946
+  6	0	com2code    	 2.00		---	Bytes	28000	  650
+  7	0	fpcomp      	 2.00		---	Program	   10	  920
+  8	0	gens        	 2.00		---	Program	   20	 1799
+  9	0	gens4       	12.00		---	Bytes	24500	11392
+ 10	0	handscr     	 8.00		---	Bytes	16384	 6912
+ 11	0	hibasic     	 2.00		---	Program	    0	  364
+ 12	0	hipas17     	22.00		---	Bytes	24598	22000
+ 13	0	hisoftc     	 2.00		---	Program	   10	  329
+ 14	0	scrcomp2    	 2.00		---	Program	 9900	 1458
+ 15	0	sinteza     	10.00		---	Bytes	55996	 9540
+ 16	0	speech      	 4.00		---	Program	    5	 2426
+ 17	0	tapediag    	 8.00		---	Program	 9000	 6804
+ 18	0	tasword2    	 8.00		---	Program	   15	 7171
+ 19	0	testprog    	 2.00		---	Program	   10	  258
+ 20	0	toolkit     	 2.00		---	Program	    1	  279
+ 21	0	vmons       	 2.00		---	Program	   10	   93
+ 22	0	tutor   z80    	 2.00		---	Program	   10	  143
+ 23	0	wham5   bas    	 6.00		---	Program	    1	 5359
+ 24	0	asm     cod    	10.00		---	Bytes	56064	 9471
+ 25	0	betabas cod    	20.00		---	Bytes	46960	18577
+ 26	0	ccomp   cod    	26.00		---	Bytes	25200	25600
+ 27	0	diag    cod    	 2.00		---	Bytes	32000	  256
+ 28	0	test    cod    	 6.00		---	Bytes	27392	 4800
+ 29	0	tutor   cod    	18.00		---	Bytes	47104	16640
+ 30	0	vmons   cod    	 6.00		---	Bytes	30000	 4633
+ 31	0	vsim    cod    	 2.00		---	Bytes	60000	  801
+ 32	0	vu3d    cod    	32.00		---	Bytes	31501	32183
+ 33	0	wham2   cod    	 2.00		---	Bytes	65300	  235
+ 34	0	tutor4  les    	24.00		---	Bytes	24064	22528
+ 35	0	ccomp   scr    	 4.00		---	Bytes	40054	 2541
+ 36	0	logo    scr    	 8.00		---	Bytes	16384	 6912
+ 37	0	spcd    scr    	 8.00		---	Bytes	16384	 6912
+ 38	0	tutor   scr    	 8.00		---	Bytes	49152	 6912
+ 39	0	vu3d    scr    	 8.00		---	Bytes	16384	 6912
+ 40	0	dip         	 2.00		---	Program	   10	  765
+ 41	0	dipcd       	 4.00		---	Bytes	24832	 2816
+ 42	0	distron     	 2.00		---	Program	   10	  194
+ 43	0	dlan48cd    	16.00		---	Bytes	50392	14976
+ 44	0	dlan48k     	 4.00		---	Program	 9996	 2767
+ 45	0	du          	 2.00		---	Program	   20	  184
+ 46	0	ducode      	 6.00		---	Bytes	49152	 4608
+ 47	0	eprom       	 2.00		---	Program	   30	 1952
+ 48	0	logo        	 2.00		---	Program	    2	  172
+ 49	0	logoctrl    	 2.00		---	Program	   10	  191
+ 50	0	mon48cd     	 4.00		---	Bytes	61186	 4048
+ 51	0	mons        	 6.00		---	Bytes	30000	 5800
+ 52	0	netware2    	 2.00		---	Program	   10	 1338
+ 53	0	nortoncd    	 2.00		---	Bytes	46848	 1820
+ 54	0	pascal      	 2.00		---	Program	   10	  355
+ 55	0	run         	 2.00		---	Program	   10	 1030
+ 56	0	voicesim    	 2.00		---	Program	  200	  848
+ 57	0	vu3d        	 8.00		---	Program	 5100	 6919
+ 58	0	wham        	 2.00		---	Program	   10	  284
+ 59	0	zeus        	 2.00		---	Program	    1	 1134
+ 60	0	monitor 48k    	 2.00		---	Program	   10	  224
+ 61	0	spcd    bas    	30.00		---	Program	    0	28887
+ 62	0	tutor   bas    	 2.00		---	Program	   10	   78
+ 63	0	distron cod    	 4.00		---	Bytes	60000	 3474
+ 64	0	eprom   cod    	 2.00		---	Bytes	49152	  388
+ 65	0	fpcomp  cod    	 6.00		---	Bytes	59300	 6050
+ 66	0	gens    cod    	10.00		---	Bytes	26000	10034
+ 67	0	logo    cod    	26.00		---	Bytes	32768	25000
+ 68	0	spcd    cod    	12.00		---	Bytes	53590	11946
+ 69	0	tasword cod    	12.00		---	Bytes	54784	10751
+ 70	0	wham3   cod    	16.00		---	Bytes	30000	15000
+ 71	0	wham4   cod    	 8.00		---	Bytes	50000	 7000
+ 72	0	zeus    cod    	 8.00		---	Bytes	57344	 7000
+ 73	0	tutor1  les    	24.00		---	Bytes	24064	22528
+ 74	0	tutor2  les    	24.00		---	Bytes	24064	22528
+ 75	0	tutor3  les    	24.00		---	Bytes	24064	22528
+ 76	0	wham1   scr    	 8.00		---	Bytes	30000	 6912
+ 77	0	hibas   cd1    	 2.00		---	Bytes	60000	   77
+ 78	0	hibas   cd2    	12.00		---	Bytes	30000	11865
+Space free/filled/total	: 000/640/640 KB
+
+ANDREI1.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1122
+  2	0	alien       	 2.00		R--	Program	    1	  182
+  3	0	ALIEN       	26.00		RS-	Bytes	40000	25536
+  4	0	arcadia     	 2.00		R--	Program	   10	  245
+  5	0	TIMEX       	 8.00		RS-	Bytes	16384	 6912
+  6	0	ARCADIA0    	10.00		RS-	Bytes	24576	 8192
+  7	0	ARCADIA1    	 2.00		RS-	Bytes	23728	    1
+  8	0	ARCADIA2    	 2.00		RS-	Bytes	23672	    3
+  9	0	astrolog    	40.00		R--	Program	   90	40918
+ 10	0	inst.bio    	10.00		R--	Program	    1	 8344
+ 11	0	biorhytm    	 8.00		R--	Program	    1	 7546
+ 12	0	bridge1     	40.00		R--	Program	 9995	39195
+ 13	0	beach       	 2.00		R--	Program	   10	   54
+ 14	0	BEACH       	40.00		RS-	Bytes	24736	40794
+ 15	0	blade       	 2.00		R--	Program	    5	  229
+ 16	0	BLADE$      	 8.00		RS-	Bytes	32000	 6912
+ 17	0	BLADEC      	28.00		RS-	Bytes	30840	28260
+ 18	0	BLADEU      	 2.00		RS-	Bytes	65368	  104
+ 19	0	BLADEV      	 2.00		RS-	Bytes	64560	   45
+ 20	0	black       	 2.00		R--	Program	   10	  125
+ 21	0	BLACKH$     	 8.00		RS-	Bytes	16384	 6912
+ 22	0	BLACKHC     	30.00		RS-	Bytes	27392	30000
+ 23	0	BG$         	 8.00		RS-	Bytes	24000	 6912
+ 24	0	BG1         	 2.00		RS-	Bytes	23296	  250
+ 25	0	BG2         	10.00		RS-	Bytes	24000	 8767
+ 26	0	backgammon    	 2.00		R--	Program	   10	   96
+Space free/filled/total	: 018/302/320 KB
+
+ANDREI10.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	ik+         	 2.00		R--	Program	   10	  135
+  2	0	thunder 1    	 2.00		---	Program	    5	  467
+  3	0	t1      c1    	40.00		RS-	Bytes	25000	40536
+  4	0	t1      c2    	 8.00		RS-	Bytes	16384	 6912
+  5	0	thunder 2    	 2.00		---	Program	    5	  467
+  6	0	t2      c1    	40.00		RS-	Bytes	25000	40536
+  7	0	t2      c2    	 8.00		RS-	Bytes	16384	 6912
+  8	0	thunder 3    	 2.00		---	Program	    5	  467
+  9	0	t3      c1    	40.00		RS-	Bytes	25000	40536
+ 10	0	t3      c2    	 8.00		RS-	Bytes	16384	 6912
+ 11	0	thunder 4    	 2.00		---	Program	    5	  467
+ 12	0	t4      c1    	40.00		RS-	Bytes	25000	40536
+ 13	0	t4      c2    	 8.00		RS-	Bytes	16384	 6912
+ 14	0	CORAL       	 2.00		RS-	Bytes	65368	  168
+ 15	0	COBRA$      	 8.00		RS-	Bytes	16384	 7168
+ 16	0	COBRAC      	40.00		RS-	Bytes	25000	40536
+ 17	0	sfcobra     	 2.00		R--	Program	    1	  136
+ 18	0	scr         	 8.00		RS-	Bytes	40000	 6912
+ 19	0	run         	 2.00		RS-	Program	    1	 1052
+ 20	0	IKARATE+SCR    	 6.00		RS-	Bytes	40000	 4760
+ 21	0	IKARATE+C    	36.00		RS-	Bytes	25000	34881
+Space free/filled/total	: 010/310/320 KB
+
+ANDREI11.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	el$         	 8.00		RS-	Bytes	25000	 6912
+  2	0	el2         	 2.00		RS-	Bytes	25000	 1704
+  3	0	el1         	40.00		RS-	Bytes	25000	40536
+  4	0	elite       	 2.00		R--	Program	    0	  335
+  5	0	fastlegs31    	40.00		RS-	Bytes	25000	40536
+  6	0	1c1         	40.00		RS-	Bytes	25000	40536
+  7	0	2c1         	40.00		RS-	Bytes	25000	40536
+  8	0	2c2         	 8.00		RS-	Bytes	16384	 6912
+  9	0	3c1         	40.00		RS-	Bytes	25000	40536
+ 10	0	3c2         	 8.00		RS-	Bytes	16384	 6912
+ 11	0	fastlegs32    	 8.00		RS-	Bytes	16384	 6912
+ 12	0	4c1         	40.00		RS-	Bytes	25000	40536
+ 13	0	4c2         	 8.00		RS-	Bytes	16384	 6912
+ 14	0	fastlegs3    	 2.00		R--	Program	    0	  101
+ 15	0	renegade-3    	 2.00		R--	Program	    0	  564
+ 16	0	1c2         	 8.00		RS-	Bytes	16384	 6912
+ 17	0	run         	 2.00		RS-	Program	    1	 1122
+Space free/filled/total	: 018/302/320 KB
+
+ANDREI12.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1122
+  2	0	s$1         	 8.00		RS-	Bytes	25000	 6912
+  3	0	s12         	 2.00		RS-	Bytes	25000	 1704
+  4	0	s11         	40.00		RS-	Bytes	25000	40536
+  5	0	shinobi     	 2.00		R--	Program	    0	  913
+  6	0	s$6         	 8.00		RS-	Bytes	25000	 6912
+  7	0	s62         	 2.00		RS-	Bytes	25000	 1704
+  8	0	s61         	40.00		RS-	Bytes	25000	40536
+  9	0	s$2         	 8.00		RS-	Bytes	25000	 6912
+ 10	0	s22         	 2.00		RS-	Bytes	25000	 1704
+ 11	0	s21         	40.00		RS-	Bytes	25000	40536
+ 12	0	s$3         	 8.00		RS-	Bytes	25000	 6912
+ 13	0	s32         	 2.00		RS-	Bytes	25000	 1704
+ 14	0	s31         	40.00		RS-	Bytes	25000	40536
+ 15	0	s$4         	 8.00		RS-	Bytes	25000	 6912
+ 16	0	s42         	 2.00		RS-	Bytes	25000	 1704
+ 17	0	s41         	40.00		RS-	Bytes	25000	40536
+ 18	0	s$5         	 8.00		RS-	Bytes	25000	 6912
+ 19	0	s52         	 2.00		RS-	Bytes	25000	 1704
+ 20	0	s51         	40.00		RS-	Bytes	25000	40536
+Space free/filled/total	: 012/308/320 KB
+
+ANDREI13.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1121
+  2	0	IMPACT      	 2.00		R--	Program	    5	  273
+  3	0	IMQ     c1    	40.00		RS-	Bytes	25000	40536
+  4	0	IMQ     c2    	 8.00		RS-	Bytes	16384	 6912
+  5	0	ICE-PALACE    	 2.00		---	Program	    5	  273
+  6	0	ICE     c1    	40.00		RS-	Bytes	25000	40536
+  7	0	ICE     c2    	 8.00		RS-	Bytes	16384	 6912
+  8	0	SHUTTLE     	 2.00		R--	Program	    5	  273
+  9	0	SPT     c1    	40.00		RS-	Bytes	25000	40536
+ 10	0	SPT     c2    	 8.00		RS-	Bytes	16384	 6912
+ 11	0	TETRIS-2    	 2.00		R--	Program	    5	  273
+ 12	0	UEU     c1    	40.00		RS-	Bytes	25000	40536
+ 13	0	UEU     c2    	 8.00		RS-	Bytes	16384	 6912
+ 14	0	SHOOT-OUT    	 2.00		R--	Program	    5	  273
+ 15	0	RHP     c1    	40.00		RS-	Bytes	25000	40536
+ 16	0	RHP     c2    	 8.00		RS-	Bytes	16384	 6912
+ 17	0	PROHIBITION    	 2.00		R--	Program	    5	  273
+ 18	0	BB      c1    	40.00		RS-	Bytes	25000	40536
+ 19	0	BB      c2    	 8.00		RS-	Bytes	16384	 6912
+Space free/filled/total	: 014/306/320 KB
+
+ANDREI14.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		---	Program	    1	 1121
+  2	0	ya3         	34.00		RS-	Bytes	25048	32883
+  3	0	ya2         	 4.00		RS-	Bytes	30000	 3253
+  4	0	ya1         	 4.00		RS-	Bytes	30000	 2352
+  5	0	yamaha      	 2.00		R--	Program	    5	  177
+  6	0	bf22        	 8.00		RS-	Bytes	32768	 6912
+  7	0	bf23        	34.00		RS-	Bytes	32768	32767
+  8	0	backf2      	 2.00		R--	Program	   10	  118
+  9	0	river-raid    	 2.00		R--	Program	    1	  314
+ 10	0	RR2         	 2.00		RS-	Bytes	23296	  255
+ 11	0	RR1         	34.00		RS-	Bytes	30720	32768
+ 12	0	RR_END      	 8.00		RS-	Program	    4	 6869
+ 13	0	RR3         	 2.00		RS-	Bytes	63488	   17
+ 14	0	inst        	 2.00		---	Program	    1	 1896
+ 15	0	satan1      	 2.00		R--	Program	    1	  203
+ 16	0	s1c         	32.00		RS-	Bytes	25000	32356
+ 17	0	sanxion     	 2.00		R--	Program	    1	  179
+ 18	0	sanxc       	16.00		RS-	Bytes	25000	15890
+ 19	0	cybernoid2    	 2.00		R--	Program	   10	  182
+ 20	0	cyber21     	 2.00		RS-	Bytes	65088	  447
+ 21	0	cyber22     	40.00		RS-	Bytes	25348	39675
+ 22	0	savage3     	 2.00		R--	Program	   10	  449
+ 23	0	savage32    	40.00		RS-	Bytes	25048	40488
+ 24	0	savage33    	 8.00		RS-	Bytes	30000	 6912
+ 25	0	savage34    	 4.00		RS-	Bytes	30000	 2410
+Space free/filled/total	: 026/294/320 KB
+
+ANDREI15.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1119
+  2	0	patrol2     	 2.00		R--	Program	    1	   85
+  3	0	patrolII2    	 2.00		RS-	Bytes	61440	  256
+  4	0	patrolII1    	26.00		RS-	Bytes	26624	24576
+  5	0	 spo1       	 6.00		RS-	Bytes	28350	 4302
+  6	0	 spo2       	30.00		RS-	Bytes	34976	30309
+  7	0	 spo3       	12.00		RS-	Program	  230	10506
+  8	0	samurai     	 2.00		R--	Program	    0	  238
+  9	0	 sam1       	30.00		RS-	Bytes	24792	30000
+ 10	0	 sam2       	10.00		RS-	Bytes	54792	 8994
+ 11	0	 sam3       	 2.00		RS-	Bytes	16464	 1968
+ 12	0	sport king    	 2.00		R--	Program	    1	  203
+ 13	0	SHs         	 8.00		RS-	Bytes	32768	 6912
+ 14	0	SHc         	40.00		RS-	Bytes	24832	40703
+ 15	0	sport hero    	 2.00		R--	Program	    1	   87
+ 16	0	express     	 2.00		R--	Program	   10	   43
+ 17	0	EXPRESS     	16.00		RS-	Bytes	32722	15392
+ 18	0	elisa       	 8.00		R--	Program	    1	 6442
+ 19	0	stackup     	 2.00		R--	Program	    5	   91
+ 20	0	STACKUP1    	40.00		RS-	Bytes	25000	40536
+ 21	0	STACKUP2    	 8.00		RS-	Bytes	16384	 6912
+ 22	0	puzznic     	 2.00		R--	Program	    0	  195
+ 23	0	puzznic 1    	 4.00		RS-	Bytes	32768	 2285
+ 24	0	puzznic 2    	26.00		RS-	Bytes	25088	26368
+ 25	0	puzznic 3    	 4.00		RS-	Bytes	52000	 3930
+Space free/filled/total	: 028/292/320 KB
+
+ANDREI16.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1122
+  2	0	$           	 8.00		RS-	Bytes	16384	 6912
+  3	0	A           	 4.00		RS-	Bytes	28350	 2884
+  4	0	B           	 4.00		RS-	Bytes	28350	 2734
+  5	0	C           	 4.00		RS-	Bytes	28350	 2882
+  6	0	D           	 4.00		RS-	Bytes	28350	 2768
+  7	0	E           	 4.00		RS-	Bytes	28350	 2857
+  8	0	1           	40.00		RS-	Bytes	25000	40536
+  9	0	cabal       	 2.00		R--	Program	    0	  566
+ 10	0	2           	40.00		RS-	Bytes	25000	40536
+ 11	0	airforce$    	 4.00		RS-	Bytes	28350	 2352
+ 12	0	airforce    	40.00		RS-	Bytes	25000	40536
+ 13	0	3           	40.00		RS-	Bytes	25000	40536
+ 14	0	4           	40.00		RS-	Bytes	25000	40536
+ 15	0	airforce2    	 2.00		R--	Program	    0	  116
+ 16	0	5           	40.00		RS-	Bytes	25000	40536
+ 17	0	el$         	 8.00		RS-	Bytes	25000	 6912
+ 18	0	el2         	 2.00		RS-	Bytes	25000	 1704
+Space free/filled/total	: 028/292/320 KB
+
+ANDREI17.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		---	Program	    1	 1273
+  2	0	read me     	 2.00		---	Program	    1	   73
+  3	0	conv temp    	 2.00		---	Program	    1	 1439
+  4	0	greec abc    	 4.00		---	Program	    1	 2421
+  5	0	drawer      	 4.00		---	Program	    1	 3070
+  6	0	sigla       	 2.00		---	Program	    1	 1487
+  7	0	ec grad2    	 6.00		---	Program	    1	 4373
+Space free/filled/total	: 294/026/320 KB
+
+ANDREI2.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1122
+  2	0	chronos     	 2.00		R--	Program	   10	  125
+  3	0	CHRONOS1    	38.00		RS-	Bytes	24792	38652
+  4	0	CHRONOS2    	 2.00		RS-	Bytes	16384	  759
+  5	0	CHRONOS3    	 2.00		RS-	Bytes	16464	 1968
+  6	0	empire      	 2.00		R--	Program	   10	   77
+  7	0	EMP$        	 8.00		RS-	Bytes	28500	 6912
+  8	0	EMPCOD      	32.00		RS-	Bytes	28500	31000
+  9	0	EAGLEC      	34.00		RS-	Bytes	32768	32768
+ 10	0	eagle       	 2.00		R--	Program	   10	  129
+ 11	0	EAGLE$      	 4.00		RS-	Bytes	40000	 3499
+ 12	0	ENDURO$     	 6.00		RS-	Bytes	40000	 4528
+ 13	0	ENDUROC     	40.00		RS-	Bytes	25000	40127
+ 14	0	enduro      	 2.00		R--	Program	   10	  148
+ 15	0	exolon      	 2.00		R--	Program	    1	  174
+ 16	0	EXOLONSOFT    	 8.00		RS-	Bytes	24320	 6912
+ 17	0	EXNICK KING    	40.00		RS-	Bytes	26000	39536
+ 18	0	fist        	 2.00		R--	Program	   10	  244
+ 19	0	FIST$       	 8.00		RS-	Bytes	32768	 6912
+ 20	0	FISTC       	40.00		RS-	Bytes	24576	38912
+ 21	0	flipi       	 2.00		R--	Program	   10	   42
+ 22	0	FLIPIC      	12.00		RS-	Bytes	40960	11408
+ 23	0	frog        	 2.00		R--	Program	   10	  847
+ 24	0	FROGC       	 4.00		RS-	Bytes	27000	 3750
+Space free/filled/total	: 020/300/320 KB
+
+ANDREI3.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1086
+  2	0	fernandez    	 2.00		---	Program	    1	  257
+  3	0	FERNA       	 2.00		RS-	Bytes	65315	   32
+  4	0	FERNANDEZS    	 8.00		RS-	Bytes	16384	 6912
+  5	0	FERNANDEZC    	40.00		RS-	Bytes	25088	39936
+  6	0	flag        	 2.00		R--	Program	   10	  102
+  7	0	FLAG$       	 8.00		RS-	Bytes	40000	 6912
+  8	0	FLAGC       	38.00		RS-	Bytes	24000	38400
+  9	0	gladiator    	 2.00		---	Program	    0	  387
+ 10	0	GLAD$       	 8.00		RS-	Bytes	43008	 6912
+ 11	0	GLADC       	38.00		RS-	Bytes	27360	37920
+ 12	0	golf        	38.00		R--	Program	    1	38618
+ 13	0	GRAPHICS    	 2.00		RS-	Bytes	63520	 2016
+ 14	0	GUAZ2       	24.00		RS-	Bytes	38403	22781
+ 15	0	gun         	 2.00		R--	Program	   10	  157
+ 16	0	GUS         	 8.00		RS-	Bytes	32768	 7080
+ 17	0	GUC         	34.00		RS-	Bytes	24576	32768
+ 18	0	guaz        	 2.00		R--	Program	   10	   77
+ 19	0	GUAZ1       	10.00		RS-	Bytes	25001	 9381
+ 20	0	G-MAN       	38.00		RS-	Bytes	28000	37536
+ 21	0	g-man       	 2.00		R--	Program	    1	  108
+Space free/filled/total	: 006/314/320 KB
+
+ANDREI4.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1086
+  2	0	guy fawkes    	 8.00		R--	Program	    1	 6592
+  3	0	hyperbowl    	 2.00		R--	Program	   10	   87
+  4	0	HYPERBOWL$    	 8.00		RS-	Bytes	16384	 6912
+  5	0	HYPERBOWLC    	22.00		RS-	Bytes	32768	21104
+  6	0	harrier     	 2.00		R--	Program	  100	  233
+  7	0	HCOD        	 8.00		RS-	Bytes	32000	 6912
+  8	0	ACOD        	 8.00		RS-	Bytes	24576	 6385
+  9	0	HARV.HEX    	40.00		RS-	Bytes	26000	39344
+ 10	0	HARV.SCR    	 8.00		RS-	Bytes	32768	 6912
+ 11	0	harvey      	 2.00		R--	Program	   10	  170
+ 12	0	hyperact    	 2.00		R--	Program	    1	  195
+ 13	0	HYPERACT$    	 8.00		RS-	Bytes	16384	 6912
+ 14	0	HYPERACT1    	18.00		RS-	Bytes	26840	18164
+ 15	0	HYPERACT2    	 4.00		RS-	Bytes	49152	 3072
+ 16	0	HYPERACT3    	 4.00		RS-	Bytes	62720	 2048
+ 17	0	high noon    	 2.00		R--	Program	    1	 1346
+ 18	0	HIGH NOON    	 6.00		RS-	Bytes	26000	 5000
+ 19	0	horace      	 2.00		R--	Program	   10	  125
+ 20	0	HORACE$     	 8.00		RS-	Bytes	16384	 6912
+ 21	0	HORACEC     	 8.00		RS-	Bytes	24576	 8110
+ 22	0	invaders    	 2.00		R--	Program	   10	  185
+ 23	0	INV0        	 8.00		RS-	Bytes	24576	 7640
+ 24	0	INV1        	 2.00		RS-	Bytes	32768	    1
+ 25	0	INV2        	 2.00		RS-	Bytes	32768	    1
+ 26	0	INV3        	 2.00		RS-	Bytes	32768	    1
+ 27	0	INV4        	 2.00		RS-	Bytes	32768	    3
+ 28	0	jetpac      	 2.00		R--	Program	   10	  243
+ 29	0	JPSP        	 8.00		RS-	Bytes	16384	 6912
+ 30	0	JPC0        	10.00		RS-	Bytes	24576	 8192
+ 31	0	JPC1        	 2.00		RS-	Bytes	23424	   15
+ 32	0	JPC2        	 2.00		RS-	Bytes	23728	    1
+ 33	0	JPC3        	 2.00		RS-	Bytes	23672	    2
+ 34	0	jetman      	 2.00		R--	Program	    1	  390
+ 35	0	JET$        	 8.00		RS-	Bytes	16384	 6912
+ 36	0	JET1        	32.00		RS-	Bytes	32767	31745
+ 37	0	JET2        	 2.00		RS-	Bytes	23424	   18
+ 38	0	jack        	 2.00		R--	Program	   10	  114
+ 39	0	JACK        	10.00		RS-	Bytes	32768	 8818
+ 40	0	jngl trbl    	 2.00		R--	Program	   10	   99
+ 41	0	JNGL        	 8.00		RS-	Bytes	16384	 7168
+ 42	0	TCOD        	10.00		RS-	Bytes	24036	 8732
+ 43	0	kubis       	 2.00		R--	Program	   10	  179
+ 44	0	KUBIS       	20.00		RS-	Bytes	46000	19535
+Space free/filled/total	: 002/318/320 KB
+
+ANDREI5.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	PENT$       	 8.00		RS-	Bytes	16384	 6912
+  2	0	PENTC       	32.00		RS-	Bytes	24064	31390
+  3	0	pentagram    	 2.00		R--	Program	    1	   86
+  4	0	PRTC        	40.00		RS-	Bytes	24600	40678
+  5	0	PRT$        	 8.00		RS-	Bytes	16384	 6912
+  6	0	protector    	 2.00		R--	Program	    1	  104
+  7	0	BPC         	34.00		RS-	Bytes	30976	34305
+  8	0	BP$         	 8.00		RS-	Bytes	16384	 6912
+  9	0	bpanic      	 2.00		R--	Program	    1	  100
+ 10	0	CS$         	 8.00		RS-	Bytes	16384	 6912
+ 11	0	CSL         	 4.00		RS-	Bytes	63488	 2047
+ 12	0	CSC         	40.00		RS-	Bytes	24340	39148
+ 13	0	combat      	 2.00		R--	Program	    1	  144
+ 14	0	INFD        	 2.00		RS-	Bytes	16384	   80
+ 15	0	INF1        	40.00		RS-	Bytes	25000	40537
+ 16	0	INF2        	 2.00		RS-	Bytes	18432	 1706
+ 17	0	infiltrator    	 2.00		R--	Program	    2	  193
+ 18	0	GV$         	 8.00		RS-	Bytes	16384	 6912
+ 19	0	GV1         	40.00		RS-	Bytes	25000	40536
+ 20	0	GV2         	 2.00		RS-	Bytes	20480	 2000
+ 21	0	galvan      	 2.00		R--	Program	    2	  146
+ 22	0	run         	 2.00		RS-	Program	    1	 1052
+Space free/filled/total	: 026/294/320 KB
+
+ANDREI6.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1122
+  2	0	river       	 2.00		R--	Program	    3	   79
+  3	0	river$      	 8.00		RS-	Bytes	16384	 6912
+  4	0	riverC      	10.00		RS-	Bytes	32768	 8192
+  5	0	atari       	 2.00		R--	Program	   10	  120
+  6	0	atari$      	 8.00		RS-	Bytes	32768	 6912
+  7	0	atariC      	40.00		RS-	Bytes	24000	39936
+  8	0	green beret    	 2.00		R--	Program	   10	  129
+  9	0	atvC        	40.00		RS-	Bytes	25400	40000
+ 10	0	atv         	 2.00		R--	Program	   10	   78
+ 11	0	atv$        	 8.00		RS-	Bytes	16384	 6912
+ 12	0	M.Miner C    	34.00		RS-	Bytes	32768	32768
+ 13	0	manic miner    	 2.00		R--	Program	   10	   78
+ 14	0	army moves3    	34.00		RS-	Bytes	24792	33773
+ 15	0	army moves    	 2.00		R--	Program	   10	  152
+ 16	0	army moves2    	 4.00		RS-	Bytes	16384	 3886
+ 17	0	army moves1    	 2.00		RS-	Bytes	16464	 1968
+ 18	0	G.Beret 3    	38.00		RS-	Bytes	24752	38248
+ 19	0	G.Beret 2    	 6.00		RS-	Bytes	16384	 6002
+ 20	0	G.Beret 1    	 2.00		RS-	Bytes	16464	 1906
+ 21	0	BOMBJACK2    	38.00		RS-	Bytes	28440	37095
+ 22	0	BOMBJACK3    	 2.00		RS-	Bytes	16384	 1375
+ 23	0	BOMBJACK1    	 8.00		RS-	Bytes	32768	 6912
+ 24	0	bombjack    	 2.00		R--	Program	   10	  128
+Space free/filled/total	: 018/302/320 KB
+
+ANDREI7.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1121
+  2	0	zaxxon      	 2.00		R--	Program	    1	  206
+  3	0	ZAXXONC     	40.00		RS-	Bytes	25197	39850
+  4	0	escape      	 2.00		R--	Program	    2	 1385
+  5	0	ESCAPEMC    	 8.00		RS-	Bytes	26068	 6700
+  6	0	fruit1      	14.00		R--	Program	 9100	12602
+  7	0	FRUIT1MC    	 4.00		RS-	Bytes	53248	 2820
+  8	0	snooker     	 2.00		R--	Program	    1	  412
+  9	0	SNOOKERC    	 6.00		RS-	Bytes	26624	 4100
+ 10	0	spectsound    	10.00		R--	Program	    1	 8624
+ 11	0	navy2       	 2.00		---	Program	    0	  365
+ 12	0	NAV2L       	 2.00		RS-	Bytes	65024	  511
+ 13	0	NAV2        	28.00		RS-	Bytes	26215	26740
+ 14	0	SKI$        	 8.00		RS-	Bytes	16384	 6912
+ 15	0	SKI1        	40.00		RS-	Bytes	25000	40081
+ 16	0	SKI2        	 2.00		RS-	Bytes	16384	 1704
+ 17	0	prof ski    	 2.00		---	Program	    2	  160
+ 18	0	nipper      	 2.00		R--	Program	    1	   97
+ 19	0	NIP         	42.00		RS-	Bytes	24576	40959
+ 20	0	turbo       	 2.00		R--	Program	    1	  100
+ 21	0	TE$         	 8.00		RS-	Bytes	16384	 7168
+ 22	0	TE1         	38.00		RS-	Bytes	26731	38351
+ 23	0	invaders    	 2.00		R--	Program	   10	  185
+ 24	0	INV0        	 8.00		RS-	Bytes	24576	 7640
+ 25	0	INV1        	 2.00		RS-	Bytes	32768	    1
+ 26	0	INV2        	 2.00		RS-	Bytes	32768	    1
+ 27	0	INV3        	 2.00		RS-	Bytes	32768	    1
+ 28	0	INV4        	 2.00		RS-	Bytes	32768	    3
+Space free/filled/total	: 032/288/320 KB
+
+ANDREI8.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	robocop     	 2.00		R--	Program	    0	  102
+  2	0	RBC0        	14.00		RS-	Bytes	32767	14000
+  3	0	RBC$        	 8.00		RS-	Bytes	16384	 6912
+  4	0	RBC1        	18.00		RS-	Bytes	43608	18088
+  5	0	RBC2        	22.00		RS-	Bytes	43608	21928
+  6	0	RBC3        	18.00		RS-	Bytes	43608	18088
+  7	0	RBC4        	16.00		RS-	Bytes	43608	14336
+  8	0	RBL         	 2.00		RS-	Bytes	60000	  290
+  9	0	YF$         	 8.00		RS-	Bytes	16384	 7168
+ 10	0	YFA         	40.00		RS-	Bytes	24707	40829
+ 11	0	YFB         	 2.00		RS-	Bytes	16384	 1448
+ 12	0	yabba       	 2.00		R--	Program	   10	   85
+ 13	0	run         	 2.00		RS-	Program	    1	 1119
+ 14	0	REN$        	 8.00		RS-	Bytes	16384	 6912
+ 15	0	RNG0        	30.00		RS-	Bytes	34816	29460
+ 16	0	renegade    	 2.00		R--	Program	    0	   86
+ 17	0	RNG1        	16.00		RS-	Bytes	25600	15104
+ 18	0	RNG2        	16.00		RS-	Bytes	32768	15104
+ 19	0	RNG3        	16.00		RS-	Bytes	32768	15104
+ 20	0	RNG4        	16.00		RS-	Bytes	32768	15104
+ 21	0	RNG5        	16.00		RS-	Bytes	32768	15104
+ 22	0	RNL         	 2.00		RS-	Bytes	60000	  290
+ 23	0	bloody      	 2.00		R--	Program	    1	  102
+ 24	0	BUG$        	 8.00		RS-	Bytes	16384	 6912
+ 25	0	BUG1        	20.00		RS-	Bytes	42200	20160
+Space free/filled/total	: 010/310/320 KB
+
+ANDREI9.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1117
+  2	0	knight lr    	 2.00		R--	Program	    0	  254
+  3	0	KNIGHT   y    	 8.00		RS-	Bytes	16384	 6912
+  4	0	KNIGHT LRy    	32.00		RS-	Bytes	24832	30720
+  5	0	STAIN$      	 8.00		RS-	Bytes	16384	 6912
+  6	0	STAINC      	40.00		RS-	Bytes	24900	40635
+  7	0	stainless    	 2.00		R--	Program	    1	  136
+  8	0	XEVIOUS$    	 6.00		RS-	Bytes	28350	 4140
+  9	0	XEVIOUS2    	 4.00		RS-	Bytes	16384	 3356
+ 10	0	XEVIOUS1    	 2.00		RS-	Bytes	25264	 1968
+ 11	0	XEV3        	20.00		RS-	Bytes	24792	20383
+ 12	0	xevious     	 2.00		R--	Program	    1	  187
+ 13	0	TURTLES$1    	 8.00		RS-	Bytes	16384	 6912
+ 14	0	TURTLESC    	40.00		RS-	Bytes	25000	40536
+ 15	0	TURTLES$2    	 8.00		RS-	Bytes	16384	 6912
+ 16	0	turtle      	 2.00		R--	Program	    1	  227
+ 17	0	PCS         	 2.00		RS-	Bytes	65000	   75
+ 18	0	PC$         	 8.00		RS-	Bytes	16384	 6912
+ 19	0	PCC         	40.00		RS-	Bytes	24700	40250
+ 20	0	pcm         	 2.00		R--	Program	    2	  134
+ 21	0	ROBIN$      	 8.00		RS-	Bytes	16384	 6912
+ 22	0	ROBINC      	42.00		RS-	Bytes	24576	40960
+ 23	0	robin       	 2.00		R--	Program	    1	   87
+Space free/filled/total	: 026/294/320 KB
+
+BASDEMO35.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	hardware    	 6.00		---	Program	 9100	 4350
+  2	0	HARD        	 2.00		---	Bytes	32256	  300
+  3	0	ROMSCR      	 8.00		---	Bytes	16384	 6912
+  4	0	lectia 1    	 8.00		---	Program	 9100	 8153
+  5	0	MCODE1      	 2.00		---	Bytes	65024	  340
+  6	0	lectia 2    	 8.00		---	Program	 9100	 7762
+  7	0	MCODE2      	 2.00		---	Bytes	32256	  340
+  8	0	lectia 3    	 8.00		---	Program	 9100	 8106
+  9	0	lectia 4    	 8.00		---	Program	 9100	 7820
+ 10	0	run         	 2.00		---	Program	   10	   29
+Space free/filled/total	: 582/058/640 KB
+
+BASDEMO525.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1121
+  2	0	hardware    	 6.00		R--	Program	 9100	 4350
+  3	0	HARD        	 2.00		RS-	Bytes	32256	  300
+  4	0	lectia 1    	10.00		R--	Program	 9100	 8492
+  5	0	MCODE1      	 2.00		RS-	Bytes	65024	  340
+  6	0	ROMSCR      	 8.00		RS-	Bytes	32000	 6912
+  7	0	lectia 2    	 8.00		R--	Program	 9100	 7762
+  8	0	MCODE2      	 2.00		RS-	Bytes	32256	  340
+  9	0	lectia 3    	 8.00		R--	Program	 9100	 8106
+ 10	0	lectia 4    	 8.00		R--	Program	 9100	 7820
+ 11	0	dip         	 2.00		R--	Program	   10	  730
+ 12	0	DIPC        	 4.00		RS-	Bytes	24832	 2816
+ 13	0	pen         	 4.00		R--	Program	 9998	 3521
+ 14	0	PENC        	16.00		RS-	Bytes	51000	14536
+ 15	0	tasword     	 8.00		R--	Program	   15	 7088
+ 16	0	TASWORD     	12.00		RS-	Bytes	54784	10751
+ 17	0	artstudio    	 2.00		R--	Program	   10	  264
+ 18	0	ARTSTUDIO3    	36.00		RS-	Bytes	24752	35250
+ 19	0	ARTSTUDIO2    	 4.00		RS-	Bytes	16384	 3742
+ 20	0	ARTSTUDIO1    	 2.00		RS-	Bytes	25202	 1906
+ 21	0	HP17        	22.00		RS-	Bytes	24598	22000
+ 22	0	pascal      	 2.00		R--	Program	   10	   77
+ 23	0	express     	 2.00		R--	Program	   10	   43
+ 24	0	EXPRESS     	16.00		RS-	Bytes	32722	15392
+ 25	0	beta 3.1    	 2.00		R--	Program	    2	  984
+ 26	0	C.BETA 3.1    	20.00		RS-	Bytes	46960	18577
+ 27	0	_tasw txt    	12.00		---	Bytes	32000	12032
+ 28	0	_bb1 txt    	 8.00		---	Bytes	32000	 7232
+ 29	0	_bb2 txt    	20.00		---	Bytes	32000	20416
+ 30	0	_bb3 txt    	16.00		---	Bytes	32000	15488
+ 31	0	_pasc txt    	14.00		---	Bytes	32000	13056
+ 32	0	screen      	 2.00		R--	Program	   10	 1614
+ 33	0	COPYSCR     	 2.00		RS-	Bytes	65000	  512
+ 34	0	du          	 2.00		R--	Program	   20	  157
+ 35	0	DUCODE      	 6.00		RS-	Bytes	49152	 4608
+ 36	0	MON48C      	 4.00		RS-	Bytes	61186	 4048
+ 37	0	mon48       	 2.00		R--	Program	   10	   77
+Space free/filled/total	: 018/302/320 KB
+
+BASIC10.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	little-puff    	 2.00		R--	Program	    1	  237
+  2	0	puffcode    	28.00		RS-	Bytes	25000	27765
+  3	0	edd-duck    	 2.00		R--	Program	    1	  279
+  4	0	eddduckcode    	26.00		RS-	Bytes	25000	24992
+  5	0	cj-antics    	 2.00		R--	Program	    1	  253
+  6	0	cj'antics    	34.00		RS-	Bytes	28416	33498
+  7	0	cj-usa      	 2.00		R--	Program	    1	  266
+  8	0	cj'usa      	36.00		RS-	Bytes	24576	36359
+  9	0	miami$      	 6.00		RS-	Bytes	28350	 4855
+ 10	0	miami2      	 8.00		RS-	Bytes	16384	 6912
+ 11	0	miami1      	42.00		RS-	Bytes	24536	41000
+ 12	0	miami3      	 2.00		RS-	Bytes	30000	 1240
+ 13	0	miami-gt    	 2.00		R--	Program	   10	  345
+ 14	0	run         	 2.00		RS-	Program	    1	 1119
+ 15	0	savage1     	 2.00		R--	Program	   10	  499
+ 16	0	savage13    	 4.00		RS-	Bytes	30000	 2410
+ 17	0	mig29       	 2.00		R--	Program	    5	  401
+ 18	0	MIG29s      	 8.00		RS-	Bytes	30000	 6912
+ 19	0	MIG291      	40.00		RS-	Bytes	24500	40000
+ 20	0	savage11    	40.00		RS-	Bytes	25000	40488
+ 21	0	savage12    	 8.00		RS-	Bytes	25000	 6912
+ 22	0	MIG292      	 4.00		RS-	Bytes	30000	 2204
+ 23	0	zaxxon      	 2.00		R--	Program	    1	  206
+ 24	0	ZAXXONC     	40.00		RS-	Bytes	25197	39850
+ 25	0	escape      	 2.00		R--	Program	    2	 1385
+ 26	0	ESCAPEMC    	 8.00		RS-	Bytes	26068	 6700
+ 27	0	fruit1      	14.00		R--	Program	 9100	12602
+ 28	0	FRUIT1MC    	 4.00		RS-	Bytes	53248	 2820
+ 29	0	snooker     	 2.00		R--	Program	    1	  412
+ 30	0	SNOOKERC    	 6.00		RS-	Bytes	26624	 4100
+ 31	0	spectsound    	10.00		R--	Program	    1	 8624
+ 32	0	navy2       	 2.00		R--	Program	    0	  365
+ 33	0	NAV2L       	 2.00		RS-	Bytes	65024	  511
+ 34	0	NAV2        	28.00		RS-	Bytes	26215	26740
+ 35	0	SKI$        	 8.00		RS-	Bytes	16384	 6912
+ 36	0	SKI1        	40.00		RS-	Bytes	25000	40081
+ 37	0	SKI2        	 2.00		RS-	Bytes	16384	 1704
+ 38	0	prof ski    	 2.00		R--	Program	    2	  160
+ 39	0	nipper      	 2.00		R--	Program	    1	   97
+ 40	0	NIP         	42.00		RS-	Bytes	24576	40959
+ 41	0	turbo       	 2.00		R--	Program	    1	  100
+ 42	0	TE$         	 8.00		RS-	Bytes	16384	 7168
+ 43	0	TE1         	38.00		RS-	Bytes	26731	38351
+ 44	0	invaders    	 2.00		R--	Program	   10	  185
+ 45	0	INV0        	 8.00		RS-	Bytes	24576	 7640
+ 46	0	INV1        	 2.00		RS-	Bytes	32768	    1
+ 47	0	INV2        	 2.00		RS-	Bytes	32768	    1
+ 48	0	INV3        	 2.00		RS-	Bytes	32768	    1
+ 49	0	INV4        	 2.00		RS-	Bytes	32768	    3
+ 50	0	ROBIN2$     	 6.00		RS-	Bytes	28350	 4724
+ 51	0	ROBIN2C     	40.00		RS-	Bytes	24444	40577
+ 52	0	robin2      	 2.00		R--	Program	   10	  154
+Space free/filled/total	: 004/636/640 KB
+
+BASIC2.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1083
+  2	0	chuckie     	 2.00		R--	Program	   10	  159
+  3	0	CHUCKIE     	20.00		RS-	Bytes	33300	18900
+  4	0	colosus     	 2.00		R--	Program	    1	  833
+  5	0	S.CH        	 8.00		RS-	Bytes	32768	 6912
+  6	0	B.CH        	 8.00		RS-	Bytes	58560	 6208
+  7	0	F.CH        	 2.00		RS-	Bytes	57808	  752
+  8	0	C.CH        	28.00		RS-	Bytes	29184	28624
+  9	0	decathlon    	 2.00		---	Program	    2	  148
+ 10	0	DEC$        	 8.00		RS-	Bytes	16384	 6912
+ 11	0	DEC1        	40.00		RS-	Bytes	25000	40000
+ 12	0	DEC#        	 2.00		RS-	Untyped	     	     
+ 13	0	dan dare    	 2.00		R--	Untyped	     	     
+ 14	0	DAN DARE1    	36.00		RS-	Untyped	     	     
+ 15	0	DAN DARE2    	 4.00		RS-	Bytes	16384	 3263
+ 16	0	DAN DARE3    	 2.00		RS-	Bytes	16464	 1906
+ 17	0	dambusters    	 2.00		---	Program	    1	   53
+ 18	0	DAMC        	40.00		RS-	Bytes	24576	39424
+ 19	0	dnpg        	30.00		R--	Program	    1	30458
+ 20	0	GRAPHICS    	 2.00		RS-	Bytes	65368	  168
+ 21	0	deaths      	 4.00		R--	Program	   10	 3407
+ 22	0	KEYCODE     	 2.00		RS-	Bytes	50000	   60
+ 23	0	GAME        	10.00		RS-	Bytes	32768	 8196
+ 24	0	derby       	38.00		R--	Program	    1	36977
+ 25	0	empire      	 2.00		R--	Program	   10	   77
+ 26	0	EMP$        	 8.00		RS-	Bytes	28500	 6912
+ 27	0	EMPCOD      	32.00		RS-	Bytes	28500	31000
+ 28	0	EAGLEC      	34.00		RS-	Bytes	32768	32768
+ 29	0	eagle       	 2.00		R--	Program	   10	  129
+ 30	0	EAGLE$      	 4.00		RS-	Bytes	40000	 3499
+ 31	0	ENDURO$     	 6.00		RS-	Bytes	40000	 4528
+ 32	0	ENDUROC     	40.00		RS-	Bytes	25000	40127
+ 33	0	enduro      	 2.00		R--	Program	   10	  148
+ 34	0	exolon      	 2.00		R--	Program	    1	  174
+ 35	0	EXOLONSOFT    	 8.00		RS-	Bytes	24320	 6912
+ 36	0	EXNICK KING    	40.00		RS-	Bytes	26000	39536
+ 37	0	fist        	 2.00		R--	Program	   10	  244
+ 38	0	FIST$       	 8.00		RS-	Bytes	32768	 6912
+ 39	0	FISTC       	40.00		RS-	Bytes	24576	38912
+ 40	0	flipi       	 2.00		R--	Program	   10	   42
+ 41	0	FLIPIC      	12.00		RS-	Bytes	40960	11408
+ 42	0	fernandez    	 2.00		---	Program	    1	  257
+ 43	0	FERNA       	 2.00		RS-	Bytes	65315	   32
+ 44	0	FERNANDEZS    	 8.00		RS-	Bytes	16384	 6912
+ 45	0	FERNANDEZC    	40.00		RS-	Bytes	25088	39936
+ 46	0	frog        	 2.00		R--	Program	   10	  847
+ 47	0	FROGC       	 4.00		RS-	Bytes	27000	 3750
+Space free/filled/total	: 038/602/640 KB
+
+CPM-VERDE.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	TURBO   .COM	28.00		R--
+  2	0	TURBO   .OVR	 2.00		R--
+  3	0	TURBOMSG.OVR	 2.00		R--
+  4	0	POWER   .COM	16.00		R--
+  5	0	MAXIM3  .COM	 8.00		---
+Space free/filled/total	: 292/058/350 KB
+
+CPM1.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	BW      .COM	 2.00		R--
+  2	0	CLS     .COM	 2.00		R--
+  3	0	CPM91   .TXT	12.00		R--
+  4	0	D       .COM	 6.00		R--
+  5	0	DIP     .COM	 4.00		R--
+  6	0	DU      .COM	 6.00		R--
+  7	0	FORMAT  .COM	 2.00		R--
+  8	0	HELLO   .PAS	 2.00		R--
+  9	0	LINK    .COM	12.00		R--
+ 10	0	LOAD    .COM	 2.00		R--
+ 11	0	M80     .COM	20.00		R--
+ 12	0	MAC     .COM	12.00		R--
+ 13	0	MAILMRGE.OVR	 8.00		R--
+ 14	0	MBASIC  .COM	24.00		R--
+ 15	0	PIP     .COM	 8.00		R--
+ 16	0	POWER   .COM	16.00		R--
+ 17	0	STAT    .COM	 6.00		R--
+ 18	0	SYSGEN  .COM	 2.00		R--
+ 19	0	TLIST   .COM	16.00		R--
+ 20	0	TURBO   .COM	28.00		R--
+ 21	0	TURBO   .OVR	 2.00		R--
+ 22	0	TURBOMSG.OVR	 2.00		R--
+ 23	0	WB      .COM	 2.00		R--
+ 24	0	WS      .COM	16.00		R--
+ 25	0	WSMSGS3 .OVR	28.00		R--
+ 26	0	WSOVLY13.OVR	34.00		R--
+ 27	0	ZSID    .COM	10.00		R--
+ 28	0	L80     .COM	 8.00		R--
+Space free/filled/total	: 056/294/350 KB
+
+CPM2.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	DBASE   .COM	20.00		R--
+  2	0	MP      .COM	18.00		R--
+  3	0	STAT    .COM	 6.00		R--
+  4	0	ZIP     .COM	30.00		R--
+  5	0	DBASEMSG.TXT	54.00		RS-
+  6	0	DBASEOVR.COM	40.00		RS-
+  7	0	DBINST  .COM	14.00		RS-
+  8	0	MP      .HLP	40.00		RS-
+  9	0	MP      .OVR	44.00		RS-
+ 10	0	MP40        	 8.00		RS-
+ 11	0	ZIPIN   .COM	28.00		RS-
+Space free/filled/total	: 046/304/350 KB
+
+CPM22-HC.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 3.5"
+2. Spectrum +3 BASIC 3" 720K
+3. Spectrum +3 CP/M DSDD
+Select FS (empty for cancel): File system is: CP/M 2.2 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	BW      .COM	 2.00		R--
+  2	0	CLS     .COM	 2.00		R--
+  3	0	FORMAT  .COM	 2.00		R--
+  4	0	D       .COM	 6.00		R--
+  5	0	DIP     .COM	 4.00		R--
+  6	0	DU      .COM	 6.00		R--
+  7	0	HELLO   .PAS	 2.00		R--
+  8	0	LINK    .COM	12.00		R--
+  9	0	LOAD    .COM	 2.00		R--
+ 10	0	M80     .COM	20.00		R--
+ 11	0	MAC     .COM	12.00		R--
+ 12	0	MBASIC  .COM	24.00		R--
+ 13	0	PIP     .COM	 8.00		R--
+ 14	0	POWER   .COM	16.00		R--
+ 15	0	STAT    .COM	 6.00		R--
+ 16	0	SYSGEN  .COM	 2.00		R--
+ 17	0	TLIST   .COM	16.00		R--
+ 18	0	TURBO   .COM	28.00		R--
+ 19	0	WB      .COM	 2.00		R--
+ 20	0	WS      .COM	16.00		R--
+ 21	0	ZSID    .COM	10.00		R--
+ 22	0	MAILMRGE.OVR	 8.00		RS-
+ 23	0	TURBO   .OVR	 2.00		RS-
+ 24	0	TURBOMSG.OVR	 2.00		RS-
+ 25	0	WSMSGS3 .OVR	28.00		RS-
+ 26	0	WSOVLY13.OVR	34.00		RS-
+ 27	0	DBASE   .COM	20.00		R--
+ 28	0	MP      .COM	18.00		R--
+ 29	0	ZIP     .COM	30.00		R--
+ 30	0	DBASEMSG.TXT	54.00		RS-
+ 31	0	DBASEOVR.COM	40.00		RS-
+ 32	0	DBINST  .COM	14.00		RS-
+ 33	0	MP      .HLP	40.00		RS-
+ 34	0	MP      .OVR	44.00		RS-
+ 35	0	MP40        	 8.00		RS-
+ 36	0	ZIPIN   .COM	28.00		RS-
+ 37	0	CPM92   .TXT	12.00		R--
+ 38	0	WBS     .COM	 2.00		R--
+ 39	0	GRAF    .MP 	 4.00		R--
+ 40	0	SQR     .BAS	 2.00		R--
+ 41	0	GRAF    .TXT	 2.00		R--
+ 42	0	SUBMIT  .COM	 2.00		R--
+ 43	0	XSUB    .COM	 2.00		R--
+ 44	0	BAUD    .COM	 2.00		---
+Space free/filled/total	: 102/600/702 KB
+
+CPM3.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	ALLOC   .C  	 2.00		---
+  2	0	ALLOC   .REL	 2.00		---
+  3	0	C       .SUB	 2.00		---
+  4	0	C2      .COM	38.00		---
+  5	0	C2      .RH 	10.00		---
+  6	0	C2      .RT 	 2.00		---
+  7	0	C2RT    .REL	 2.00		---
+  8	0	CC      .COM	38.00		---
+  9	0	COD     .DOC	 6.00		---
+ 10	0	COD8080 .ASM	38.00		---
+ 11	0	COD8080 .COM	 8.00		---
+ 12	0	CODZ80  .ASM	50.00		---
+ 13	0	CODZ80  .COM	10.00		---
+ 14	0	CRUNT2  .C  	 6.00		---
+ 15	0	CRUNT2  .REL	 4.00		---
+ 16	0	FORMATIO.C  	14.00		---
+ 17	0	FORMATIO.REL	 8.00		---
+ 18	0	FUNC    .C  	 6.00		---
+ 19	0	FUNC    .REL	 4.00		---
+ 20	0	L80     .COM	 8.00		---
+ 21	0	M80     .COM	18.00		---
+ 22	0	SAMP1   .C  	 2.00		---
+ 23	0	SAMP2   .C  	 2.00		---
+ 24	0	SAMP3   .C  	 2.00		---
+ 25	0	SAMP4   .C  	 2.00		---
+ 26	0	SAMP5   .C  	 2.00		---
+ 27	0	SAMP6   .C  	 2.00		---
+ 28	0	SAMP7   .C  	 4.00		---
+ 29	0	STDIO   .C  	18.00		---
+ 30	0	STDIO   .H  	 4.00		---
+ 31	0	STDIO   .REL	12.00		---
+ 32	0	SUBMIT  .COM	 2.00		---
+Space free/filled/total	: 020/330/350 KB
+
+CPM4.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	C0      .TXT	 4.00		---
+  2	0	C1      .TXT	46.00		---
+  3	0	C2      .TXT	54.00		---
+  4	0	C3      .TXT	30.00		---
+  5	0	C4      .TXT	40.00		---
+  6	0	C5      .TXT	26.00		---
+  7	0	C6      .TXT	44.00		---
+  8	0	C7      .TXT	44.00		---
+  9	0	CA1     .TXT	 6.00		---
+ 10	0	CA2     .TXT	 4.00		---
+ 11	0	CA3     .TXT	 2.00		---
+ 12	0	CCMSG   .TXT	 4.00		---
+Space free/filled/total	: 044/306/350 KB
+
+CPM5.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	BASIC   .M1 	30.00		---
+  2	0	BASIC   .M2 	88.00		---
+  3	0	BASIC   .M3 	104.00		---
+  4	0	BASIC   .M4 	54.00		---
+  5	0	GRAF    .TXT	14.00		---
+  6	0	POWER   .COM	16.00		R--
+Space free/filled/total	: 042/308/350 KB
+
+CPM6.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	PASCAL  .M10	24.00		---
+  2	0	PASCAL  .M11	30.00		---
+  3	0	PASCAL  .M12	20.00		---
+  4	0	PASCAL  .M13	22.00		---
+  5	0	PASCAL  .M14	24.00		---
+  6	0	PASCAL  .M15	26.00		---
+  7	0	PASCAL  .M16	 0.00		---
+  8	0	PASCAL  .MT1	20.00		---
+  9	0	PASCAL  .MT2	22.00		---
+ 10	0	PASCAL  .MT3	26.00		---
+ 11	0	PASCAL  .MT4	22.00		---
+ 12	0	PASCAL  .MT5	18.00		---
+ 13	0	PASCAL  .MT6	20.00		---
+ 14	0	PASCAL  .MT7	24.00		---
+ 15	0	PASCAL  .MT8	22.00		---
+ 16	0	PASCAL  .MT9	20.00		---
+Space free/filled/total	: 008/342/350 KB
+
+CPM7.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	ANEXA1      	12.00		---
+  2	0	ASM     .CUP	 2.00		---
+  3	0	ASM     .TXT	20.00		---
+  4	0	CPM     .1  	 8.00		---
+  5	0	CPM     .2  	12.00		---
+  6	0	CPM     .3  	 8.00		---
+  7	0	CPM     .4  	18.00		---
+  8	0	CPM     .5  	 6.00		---
+  9	0	CPM     .6  	10.00		---
+ 10	0	CPM     .7  	24.00		---
+ 11	0	CPM     .8  	 6.00		---
+ 12	0	CPM     .CUP	 2.00		---
+ 13	0	CPMINT  .0  	46.00		---
+ 14	0	CPMINT  .1  	22.00		---
+ 15	0	CPMINT  .2  	12.00		---
+ 16	0	CPMINT  .3  	 8.00		---
+ 17	0	DDT     .CUP	 2.00		---
+ 18	0	DDT     .TXT	24.00		---
+ 19	0	ED      .CUP	 2.00		---
+ 20	0	ED      .TXT	36.00		---
+ 21	0	L18         	16.00		---
+ 22	0	M18         	50.00		---
+Space free/filled/total	: 002/348/350 KB
+
+CPM91.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	BW      .COM	 2.00		R--
+  2	0	CLS     .COM	 2.00		R--
+  3	0	CPM91   .TXT	12.00		R--
+  4	0	D       .COM	 6.00		R--
+  5	0	DIP     .COM	 4.00		R--
+  6	0	DU      .COM	 6.00		R--
+  7	0	FORMAT  .COM	 2.00		R--
+  8	0	HELLO   .PAS	 2.00		R--
+  9	0	LINK    .COM	12.00		R--
+ 10	0	LOAD    .COM	 2.00		R--
+ 11	0	M80     .COM	20.00		R--
+ 12	0	MAC     .COM	12.00		R--
+ 13	0	MAILMRGE.OVR	 8.00		R--
+ 14	0	MBASIC  .COM	24.00		R--
+ 15	0	PIP     .COM	 8.00		R--
+ 16	0	POWER   .COM	16.00		R--
+ 17	0	STAT    .COM	 6.00		R--
+ 18	0	SYSGEN  .COM	 2.00		R--
+ 19	0	TLIST   .COM	16.00		R--
+ 20	0	TURBO   .COM	28.00		R--
+ 21	0	TURBO   .OVR	 2.00		R--
+ 22	0	TURBOMSG.OVR	 2.00		R--
+ 23	0	WB      .COM	 2.00		R--
+ 24	0	WS      .COM	16.00		R--
+ 25	0	WSMSGS3 .OVR	28.00		R--
+ 26	0	WSOVLY13.OVR	34.00		R--
+ 27	0	ZSID    .COM	10.00		R--
+ 28	0	L80     .COM	 8.00		R--
+Space free/filled/total	: 056/294/350 KB
+
+CPM91_1.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 5.25"
+2. Spectrum +3 BASIC PCW
+Select FS (empty for cancel): File system is: CP/M 2.2 5.25".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	BW      .COM	 2.00		R--
+  2	0	CLS     .COM	 2.00		R--
+  3	0	D       .COM	 6.00		R--
+  4	0	DIP     .COM	 4.00		R--
+  5	0	DU      .COM	 6.00		R--
+  6	0	FORMAT  .COM	 2.00		R--
+  7	0	HELLO   .PAS	 2.00		R--
+  8	0	LINK    .COM	12.00		R--
+  9	0	LOAD    .COM	 2.00		R--
+ 10	0	M80     .COM	20.00		R--
+ 11	0	MAC     .COM	12.00		R--
+ 12	0	PIP     .COM	 8.00		R--
+ 13	0	POWER   .COM	16.00		R--
+ 14	0	STAT    .COM	 6.00		R--
+ 15	0	SYSGEN  .COM	 2.00		R--
+ 16	0	TLIST   .COM	16.00		R--
+ 17	0	TURBO   .COM	28.00		R--
+ 18	0	WB      .COM	 2.00		R--
+ 19	0	WS      .COM	16.00		R--
+ 20	0	ZSID    .COM	10.00		R--
+ 21	0	MAILMRGE.OVR	 8.00		R--
+ 22	0	TURBO   .OVR	 2.00		R--
+ 23	0	TURBOMSG.OVR	 2.00		R--
+ 24	0	WSMSGS3 .OVR	28.00		R--
+ 25	0	WSOVLY13.OVR	34.00		R--
+ 26	0	MBASIC  .COM	24.00		R--
+ 27	0	CPM91   .TXT	12.00		---
+Space free/filled/total	: 064/286/350 KB
+
+CPMZ80.DSK  
+
+Storage format is: EDSK. Select file system.
+1. CP/M 2.2 3.5"
+2. Spectrum +3 BASIC 3" 720K
+3. Spectrum +3 CP/M DSDD
+Select FS (empty for cancel): File system is: CP/M 2.2 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr
+------------------------------------------------------------------------------
+  1	0	MP40        	 8.00		---
+  2	0	ALLOC   .COM	 2.00		---
+  3	0	ARK     .COM	10.00		---
+  4	0	ASM     .COM	 8.00		---
+  5	0	ASM48   .COM	 8.00		---
+  6	0	BAUD    .COM	 2.00		---
+  7	0	BW      .COM	 2.00		---
+  8	0	CODZ80  .COM	10.00		---
+  9	0	CRU     .COM	 6.00		---
+ 10	0	D       .COM	 6.00		---
+ 11	0	DDT     .COM	 6.00		---
+ 12	0	DELBR   .COM	14.00		---
+ 13	0	DIP     .COM	 4.00		---
+ 14	0	DIS48   .COM	12.00		---
+ 15	0	DIS51   .COM	 4.00		---
+ 16	0	DU      .COM	 8.00		---
+ 17	0	ENSOFT  .COM	 8.00		---
+ 18	0	FBAD    .COM	 4.00		---
+ 19	0	FORMAT  .COM	 2.00		---
+ 20	0	FREST   .COM	 4.00		---
+ 21	0	GETSYS  .COM	 2.00		---
+ 22	0	LIB     .COM	 8.00		---
+ 23	0	LINK    .COM	12.00		---
+ 24	0	LOAD    .COM	 2.00		---
+ 25	0	LRUN    .COM	 2.00		---
+ 26	0	LU      .COM	20.00		---
+ 27	0	LZH     .COM	 8.00		---
+ 28	0	M80     .COM	20.00		---
+ 29	0	MAC     .COM	12.00		---
+ 30	0	MBASIC  .COM	24.00		---
+ 31	0	MLOAD   .COM	 4.00		---
+ 32	0	MOVHEX  .COM	10.00		---
+ 33	0	MP      .COM	18.00		---
+ 34	0	NSWEEP  .COM	12.00		---
+ 35	0	NULU    .COM	16.00		---
+ 36	0	PIORD   .COM	 2.00		---
+ 37	0	PIOWR   .COM	 2.00		---
+ 38	0	PIP     .COM	 8.00		---
+ 39	0	PMARC   .COM	12.00		---
+ 40	0	PMCAT   .COM	 8.00		---
+ 41	0	PMEXE   .COM	 2.00		---
+ 42	0	PMEXT   .COM	14.00		---
+ 43	0	PMSET   .COM	 4.00		---
+ 44	0	PMSFX   .COM	 4.00		---
+ 45	0	POWER   .COM	16.00		---
+ 46	0	PROBE   .COM	18.00		---
+ 47	0	PUTSYS  .COM	 2.00		---
+ 48	0	REST    .COM	 6.00		---
+ 49	0	RMAC    .COM	14.00		---
+ 50	0	SQ      .COM	16.00		---
+ 51	0	STAT    .COM	 6.00		---
+ 52	0	SUBMIT  .COM	 2.00		---
+ 53	0	SYSGEN  .COM	 2.00		---
+ 54	0	TURBO   .COM	28.00		---
+ 55	0	UNARC   .COM	 6.00		---
+ 56	0	UNCRU   .COM	 6.00		---
+ 57	0	UNLZH   .COM	10.00		---
+ 58	0	UNSOFT  .COM	 6.00		---
+ 59	0	UNSQ    .COM	 2.00		---
+ 60	0	WB      .COM	 2.00		---
+ 61	0	WBS     .COM	 2.00		---
+ 62	0	WS      .COM	16.00		---
+ 63	0	XIZ     .COM	 6.00		---
+ 64	0	XSUB    .COM	 2.00		---
+ 65	0	XZI     .COM	 8.00		---
+ 66	0	ZSID    .COM	10.00		---
+ 67	0	MP      .HLP	40.00		---
+ 68	0	MAILMRGE.OVR	 8.00		---
+ 69	0	MP      .OVR	44.00		---
+ 70	0	TURBO   .OVR	 2.00		---
+ 71	0	TURBOMSG.OVR	 2.00		---
+ 72	0	WSMSGS3 .OVR	28.00		---
+ 73	0	WSOVLY13.OVR	34.00		---
+Space free/filled/total	: 000/702/702 KB
+
+CRISTIG1.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 4.00		---	Program	    1	 2844
+  2	0	disk 07     	 8.00		---	Bytes	16384	 6912
+  3	0	beep        	 2.00		---	Program	    5	 1596
+  4	0	top10       	 8.00		---	Program	    5	 7837
+  5	0	room ten    	 2.00		---	Program	    1	  196
+  6	0	roomt   c1    	40.00		---	Bytes	25000	40536
+  7	0	roomt   c2    	 8.00		---	Bytes	16384	 6912
+  8	0	grafica     	 2.00		---	Program	    1	  595
+  9	0	test        	10.00		---	Program	    1	 8753
+ 10	0	discsscr    	 8.00		-S-	Bytes	16384	 6912
+ 11	0	death       	22.00		-S-	Bytes	26000	21201
+ 12	0	tvs         	10.00		---	Program	    6	 8974
+ 13	0	telefon     	 4.00		---	Program	    5	 2107
+ 14	0	culori      	 2.00		---	Program	   11	  337
+ 15	0	pippo$      	 8.00		---	Bytes	16384	 6912
+ 16	0	yabba doo    	 2.00		---	Program	    1	  196
+ 17	0	yabba   c1    	40.00		---	Bytes	25000	40536
+ 18	0	yabba   c2    	 8.00		---	Bytes	16384	 6912
+ 19	0	buck rogers    	 2.00		---	Program	    1	  196
+ 20	0	buckr   c1    	40.00		---	Bytes	25000	40536
+ 21	0	buckr   c2    	 8.00		---	Bytes	16384	 6912
+ 22	0	barb1$      	 8.00		---	Bytes	16384	 6912
+ 23	0	poker$      	 8.00		---	Bytes	16384	 6912
+ 24	0	test$2      	 8.00		---	Bytes	16384	 6912
+ 25	0	attack      	 8.00		-S-	Bytes	26624	 6144
+ 26	0	cruisecod    	 8.00		-S-	Bytes	32768	 7000
+ 27	0	night   c1    	40.00		---	Bytes	25000	40536
+ 28	0	night   c2    	 8.00		---	Bytes	16384	 6912
+ 29	0	night rally    	 2.00		---	Program	    1	  196
+ 30	0	paper boy    	 2.00		---	Program	    1	  196
+ 31	0	paper   c1    	40.00		---	Bytes	25000	40536
+ 32	0	paper   c2    	 8.00		---	Bytes	16384	 6912
+Space free/filled/total	: 258/382/640 KB
+
+CRISTIG2.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 4.00		---	Program	    1	 2380
+  2	0	champ       	 2.00		---	Program	    5	  273
+  3	0	champ   c1    	40.00		---	Bytes	25000	40536
+  4	0	champ   c2    	 8.00		---	Bytes	16384	 6912
+  5	0	lpuff       	 2.00		---	Program	    5	  273
+  6	0	lpuff   c1    	40.00		---	Bytes	25000	40536
+  7	0	lpuff   c2    	 8.00		---	Bytes	16384	 6912
+  8	0	orbix       	 2.00		---	Program	    5	  273
+  9	0	orbix   c1    	40.00		---	Bytes	25000	40536
+ 10	0	orbix   c2    	 8.00		---	Bytes	16384	 6912
+ 11	0	swalk       	 2.00		---	Program	    5	  273
+ 12	0	swalk   c1    	40.00		---	Bytes	25000	40536
+ 13	0	swalk   c2    	 8.00		---	Bytes	16384	 6912
+ 14	0	k off       	 2.00		---	Program	    5	  273
+ 15	0	k off   c1    	40.00		---	Bytes	25000	40536
+ 16	0	k off   c2    	 8.00		---	Bytes	16384	 6912
+ 17	0	storm       	 2.00		---	Program	    5	  273
+ 18	0	storm   c1    	40.00		---	Bytes	25000	40536
+ 19	0	storm   c2    	 8.00		---	Bytes	16384	 6912
+ 20	0	jackn       	 2.00		---	Program	    5	  273
+ 21	0	jackn   c1    	40.00		---	Bytes	25000	40536
+ 22	0	jackn   c2    	 8.00		---	Bytes	16384	 6912
+ 23	0	doc d       	 2.00		---	Program	    5	  273
+ 24	0	doc d   c1    	40.00		---	Bytes	25000	40536
+ 25	0	doc d   c2    	 8.00		---	Bytes	16384	 6912
+ 26	0	wally       	 2.00		---	Program	    5	  273
+ 27	0	wally   c1    	40.00		---	Bytes	25000	40536
+ 28	0	wally   c2    	 8.00		---	Bytes	16384	 6912
+ 29	0	fred2       	 2.00		---	Program	    5	  273
+ 30	0	fred2   c1    	40.00		---	Bytes	25000	40536
+ 31	0	fred2   c2    	 8.00		---	Bytes	16384	 6912
+ 32	0	robok       	 2.00		---	Program	    5	  273
+ 33	0	robok   c1    	40.00		---	Bytes	25000	40536
+ 34	0	robok   c2    	 8.00		---	Bytes	16384	 6912
+ 35	0	mach3       	 2.00		---	Program	    5	  273
+ 36	0	mach3   c1    	40.00		---	Bytes	25000	40536
+ 37	0	mach3   c2    	 8.00		---	Bytes	16384	 6912
+ 38	0	INFO        	10.00		---	Program	    1	 9844
+Space free/filled/total	: 022/618/640 KB
+
+CRISTIG3.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	little-puff    	 2.00		R--	Program	    1	  237
+  2	0	puffcode    	28.00		RS-	Bytes	25000	27765
+  3	0	edd-duck    	 2.00		R--	Program	    1	  279
+  4	0	eddduckcode    	26.00		RS-	Bytes	25000	24992
+  5	0	cj-antics    	 2.00		R--	Program	    1	  253
+  6	0	cj'antics    	34.00		RS-	Bytes	28416	33498
+  7	0	cj-usa      	 2.00		R--	Program	    1	  266
+  8	0	cj'usa      	36.00		RS-	Bytes	24576	36359
+  9	0	miami$      	 6.00		RS-	Bytes	28350	 4855
+ 10	0	miami2      	 8.00		RS-	Bytes	16384	 6912
+ 11	0	miami1      	42.00		RS-	Bytes	24536	41000
+ 12	0	miami3      	 2.00		RS-	Bytes	30000	 1240
+ 13	0	miami-gt    	 2.00		R--	Program	   10	  345
+ 14	0	run         	 2.00		RS-	Program	    1	 1119
+ 15	0	savage1     	 2.00		R--	Program	   10	  499
+ 16	0	savage13    	 4.00		RS-	Bytes	30000	 2410
+ 17	0	mig29       	 2.00		R--	Program	    5	  401
+ 18	0	MIG29s      	 8.00		RS-	Bytes	30000	 6912
+ 19	0	MIG291      	40.00		RS-	Bytes	24500	40000
+ 20	0	savage11    	40.00		RS-	Bytes	25000	40488
+ 21	0	savage12    	 8.00		RS-	Bytes	25000	 6912
+ 22	0	MIG292      	 4.00		RS-	Bytes	30000	 2204
+ 23	0	zaxxon      	 2.00		R--	Program	    1	  206
+ 24	0	ZAXXONC     	40.00		RS-	Bytes	25197	39850
+ 25	0	escape      	 2.00		R--	Program	    2	 1385
+ 26	0	ESCAPEMC    	 8.00		RS-	Bytes	26068	 6700
+ 27	0	fruit1      	14.00		R--	Program	 9100	12602
+ 28	0	FRUIT1MC    	 4.00		RS-	Bytes	53248	 2820
+ 29	0	snooker     	 2.00		R--	Program	    1	  412
+ 30	0	SNOOKERC    	 6.00		RS-	Bytes	26624	 4100
+ 31	0	spectsound    	10.00		R--	Program	    1	 8624
+ 32	0	navy2       	 2.00		R--	Program	    0	  365
+ 33	0	NAV2L       	 2.00		RS-	Bytes	65024	  511
+ 34	0	NAV2        	28.00		RS-	Bytes	26215	26740
+ 35	0	SKI$        	 8.00		RS-	Bytes	16384	 6912
+ 36	0	SKI1        	40.00		RS-	Bytes	25000	40081
+ 37	0	SKI2        	 2.00		RS-	Bytes	16384	 1704
+ 38	0	prof ski    	 2.00		R--	Program	    2	  160
+ 39	0	nipper      	 2.00		R--	Program	    1	   97
+ 40	0	NIP         	42.00		RS-	Bytes	24576	40959
+ 41	0	turbo       	 2.00		R--	Program	    1	  100
+ 42	0	TE$         	 8.00		RS-	Bytes	16384	 7168
+ 43	0	TE1         	38.00		RS-	Bytes	26731	38351
+ 44	0	invaders    	 2.00		R--	Program	   10	  185
+ 45	0	INV0        	 8.00		RS-	Bytes	24576	 7640
+ 46	0	INV1        	 2.00		RS-	Bytes	32768	    1
+ 47	0	INV2        	 2.00		RS-	Bytes	32768	    1
+ 48	0	INV3        	 2.00		RS-	Bytes	32768	    1
+ 49	0	INV4        	 2.00		RS-	Bytes	32768	    3
+ 50	0	ROBIN2$     	 6.00		RS-	Bytes	28350	 4724
+ 51	0	ROBIN2C     	40.00		RS-	Bytes	24444	40577
+ 52	0	robin2      	 2.00		R--	Program	   10	  154
+Space free/filled/total	: 004/636/640 KB
+
+CRISTIG4.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1083
+  2	0	chuckie     	 2.00		R--	Program	   10	  159
+  3	0	CHUCKIE     	20.00		RS-	Bytes	33300	18900
+  4	0	colosus     	 2.00		R--	Program	    1	  833
+  5	0	S.CH        	 8.00		RS-	Bytes	32768	 6912
+  6	0	B.CH        	 8.00		RS-	Bytes	58560	 6208
+  7	0	F.CH        	 2.00		RS-	Bytes	57808	  752
+  8	0	C.CH        	28.00		RS-	Bytes	29184	28624
+  9	0	decathlon    	 2.00		---	Program	    2	  148
+ 10	0	DEC$        	 8.00		RS-	Bytes	16384	 6912
+ 11	0	DEC1        	40.00		RS-	Bytes	25000	40000
+ 12	0	DEC#        	 2.00		RS-	Untyped	     	     
+ 13	0	dan dare    	 2.00		R--	Untyped	     	     
+ 14	0	DAN DARE1    	36.00		RS-	Untyped	     	     
+ 15	0	DAN DARE2    	 4.00		RS-	Bytes	16384	 3263
+ 16	0	DAN DARE3    	 2.00		RS-	Bytes	16464	 1906
+ 17	0	dambusters    	 2.00		---	Program	    1	   53
+ 18	0	DAMC        	40.00		RS-	Bytes	24576	39424
+ 19	0	dnpg        	30.00		R--	Program	    1	30458
+ 20	0	GRAPHICS    	 2.00		RS-	Bytes	65368	  168
+ 21	0	deaths      	 4.00		R--	Program	   10	 3407
+ 22	0	KEYCODE     	 2.00		RS-	Bytes	50000	   60
+ 23	0	GAME        	10.00		RS-	Bytes	32768	 8196
+ 24	0	derby       	38.00		R--	Program	    1	36977
+ 25	0	empire      	 2.00		R--	Program	   10	   77
+ 26	0	EMP$        	 8.00		RS-	Bytes	28500	 6912
+ 27	0	EMPCOD      	32.00		RS-	Bytes	28500	31000
+ 28	0	EAGLEC      	34.00		RS-	Bytes	32768	32768
+ 29	0	eagle       	 2.00		R--	Program	   10	  129
+ 30	0	EAGLE$      	 4.00		RS-	Bytes	40000	 3499
+ 31	0	ENDURO$     	 6.00		RS-	Bytes	40000	 4528
+ 32	0	ENDUROC     	40.00		RS-	Bytes	25000	40127
+ 33	0	enduro      	 2.00		R--	Program	   10	  148
+ 34	0	exolon      	 2.00		R--	Program	    1	  174
+ 35	0	EXOLONSOFT    	 8.00		RS-	Bytes	24320	 6912
+ 36	0	EXNICK KING    	40.00		RS-	Bytes	26000	39536
+ 37	0	fist        	 2.00		R--	Program	   10	  244
+ 38	0	FIST$       	 8.00		RS-	Bytes	32768	 6912
+ 39	0	FISTC       	40.00		RS-	Bytes	24576	38912
+ 40	0	flipi       	 2.00		R--	Program	   10	   42
+ 41	0	FLIPIC      	12.00		RS-	Bytes	40960	11408
+ 42	0	fernandez    	 2.00		---	Program	    1	  257
+ 43	0	FERNA       	 2.00		RS-	Bytes	65315	   32
+ 44	0	FERNANDEZS    	 8.00		RS-	Bytes	16384	 6912
+ 45	0	FERNANDEZC    	40.00		RS-	Bytes	25088	39936
+ 46	0	frog        	 2.00		R--	Program	   10	  847
+ 47	0	FROGC       	 4.00		RS-	Bytes	27000	 3750
+Space free/filled/total	: 038/602/640 KB
+
+CRISTIORANGE1.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 4.00		---	Program	    1	 2844
+  2	0	disk 07     	 8.00		---	Bytes	16384	 6912
+  3	0	beep        	 2.00		---	Program	    5	 1596
+  4	0	top10       	 8.00		---	Program	    5	 7837
+  5	0	room ten    	 2.00		---	Program	    1	  196
+  6	0	roomt   c1    	40.00		---	Bytes	25000	40536
+  7	0	roomt   c2    	 8.00		---	Bytes	16384	 6912
+  8	0	grafica     	 2.00		---	Program	    1	  595
+  9	0	test        	10.00		---	Program	    1	 8753
+ 10	0	discsscr    	 8.00		-S-	Bytes	16384	 6912
+ 11	0	death       	22.00		-S-	Bytes	26000	21201
+ 12	0	tvs         	10.00		---	Program	    6	 8974
+ 13	0	telefon     	 4.00		---	Program	    5	 2107
+ 14	0	culori      	 2.00		---	Program	   11	  337
+ 15	0	pippo$      	 8.00		---	Bytes	16384	 6912
+ 16	0	yabba doo    	 2.00		---	Program	    1	  196
+ 17	0	yabba   c1    	40.00		---	Bytes	25000	40536
+ 18	0	yabba   c2    	 8.00		---	Bytes	16384	 6912
+ 19	0	buck rogers    	 2.00		---	Program	    1	  196
+ 20	0	buckr   c1    	40.00		---	Bytes	25000	40536
+ 21	0	buckr   c2    	 8.00		---	Bytes	16384	 6912
+ 22	0	barb1$      	 8.00		---	Bytes	16384	 6912
+ 23	0	poker$      	 8.00		---	Bytes	16384	 6912
+ 24	0	test$2      	 8.00		---	Bytes	16384	 6912
+ 25	0	attack      	 8.00		-S-	Bytes	26624	 6144
+ 26	0	cruisecod    	 8.00		-S-	Bytes	32768	 7000
+ 27	0	night   c1    	40.00		---	Bytes	25000	40536
+ 28	0	night   c2    	 8.00		---	Bytes	16384	 6912
+ 29	0	night rally    	 2.00		---	Program	    1	  196
+ 30	0	paper boy    	 2.00		---	Program	    1	  196
+ 31	0	paper   c1    	40.00		---	Bytes	25000	40536
+ 32	0	paper   c2    	 8.00		---	Bytes	16384	 6912
+Space free/filled/total	: 258/382/640 KB
+
+CRISTIORANGE2.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	joc10       	12.00		---	Program	     	11535
+  2	0	bisc$       	 8.00		---	Bytes	16384	 6912
+  3	0	numai       	 8.00		---	Program	    5	 7562
+  4	0	run         	 4.00		---	Program	    1	 2845
+  5	0	_olimp      	12.00		---	Bytes	32000	11200
+  6	0	bisc$2      	 8.00		---	Bytes	32768	 6912
+  7	0	_sat a      	 8.00		---	Bytes	32000	 6400
+  8	0	_smoon      	 8.00		---	Bytes	32000	 7936
+  9	0	engleza     	26.00		---	Program	    5	26323
+ 10	0	gameo       	 2.00		---	Program	    5	  273
+ 11	0	gameo   c1    	40.00		---	Bytes	25000	40536
+ 12	0	gameo   c2    	 8.00		---	Bytes	16384	 6912
+ 13	0	raidm       	 2.00		---	Program	    5	  273
+ 14	0	raidm   c1    	40.00		---	Bytes	25000	40536
+ 15	0	raidm   c2    	 8.00		---	Bytes	16384	 6912
+ 16	0	parad       	 2.00		---	Program	    5	  273
+ 17	0	parad   c1    	40.00		---	Bytes	25000	40536
+ 18	0	parad   c2    	 8.00		---	Bytes	16384	 6912
+ 19	0	atari       	 2.00		---	Program	    5	  273
+ 20	0	atari   c1    	40.00		---	Bytes	25000	40536
+ 21	0	atari   c2    	 8.00		---	Bytes	16384	 6912
+ 22	0	bombj       	 2.00		---	Program	    5	  273
+ 23	0	bombj   c1    	40.00		---	Bytes	25000	40536
+ 24	0	bombj   c2    	 8.00		---	Bytes	16384	 6912
+ 25	0	k2          	 2.00		---	Program	    5	  273
+ 26	0	k2      c1    	40.00		---	Bytes	25000	40536
+ 27	0	k2      c2    	 8.00		---	Bytes	16384	 6912
+ 28	0	barb2       	 2.00		---	Program	    5	  273
+ 29	0	barb2   c1    	40.00		---	Bytes	25000	40536
+ 30	0	barb2   c2    	 8.00		---	Bytes	16384	 6912
+ 31	0	POKER       	 2.00		---	Program	    5	  273
+ 32	0	POKER   c1    	40.00		---	Bytes	25000	40536
+ 33	0	POKER   c2    	 8.00		---	Bytes	16384	 6912
+ 34	0	rockm       	 2.00		---	Program	    5	  273
+ 35	0	rockm   c1    	40.00		---	Bytes	25000	40536
+ 36	0	rockm   c2    	 8.00		---	Bytes	16384	 6912
+ 37	0	dreptunghi    	 2.00		---	Program	     	  100
+ 38	0	delta       	 4.00		---	Program	     	 3205
+ 39	0	cmmmc       	 2.00		---	Program	    4	  308
+ 40	0	culori      	 2.00		---	Program	   40	  301
+ 41	0	proage      	 2.00		---	Program	    5	  514
+ 42	0	_scrabble    	 2.00		---	Bytes	32000	 1856
+ 43	0	protv$2     	 8.00		---	Bytes	16384	 6912
+ 44	0	disk 03     	 8.00		---	Bytes	16384	 6912
+ 45	0	run2        	 2.00		---	Program	    1	 1140
+ 46	0	            	 2.00		---	Bytes	32000	 1152
+Space free/filled/total	: 058/582/640 KB
+
+CRISTIORANGE3.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	captain pla    	 2.00		---	Program	    1	  196
+  2	0	cpt p   c1    	40.00		---	Bytes	25000	40536
+  3	0	cpt p   c2    	 8.00		---	Bytes	16384	 6912
+  4	0	run         	 4.00		---	Program	    1	 2845
+  5	0	disk 10     	 8.00		---	Bytes	16384	 6912
+  6	0	jupiter     	 2.00		---	Program	    1	  196
+  7	0	jupit   c1    	40.00		---	Bytes	25000	40536
+  8	0	jupit   c2    	 8.00		---	Bytes	16384	 6912
+  9	0	gun ship    	 2.00		---	Program	    1	  196
+ 10	0	gun s   c1    	40.00		---	Bytes	25000	40536
+ 11	0	gun s   c2    	 8.00		---	Bytes	16384	 6912
+ 12	0	ninja fight    	 2.00		---	Program	    1	  196
+ 13	0	ninja   c1    	40.00		---	Bytes	25000	40536
+ 14	0	ninja   c2    	 8.00		---	Bytes	16384	 6912
+ 15	0	venom       	 2.00		---	Program	    1	  196
+ 16	0	venom   c1    	40.00		---	Bytes	25000	40536
+ 17	0	venom   c2    	 8.00		---	Bytes	16384	 6912
+ 18	0	killing     	 2.00		---	Program	    1	  196
+ 19	0	kilin   c1    	40.00		---	Bytes	25000	40536
+ 20	0	kilin   c2    	 8.00		---	Bytes	16384	 6912
+ 21	0	shuriken    	 2.00		---	Program	    1	  196
+ 22	0	shuri   c1    	40.00		---	Bytes	25000	40536
+ 23	0	shuri   c2    	 8.00		---	Bytes	16384	 6912
+ 24	0	vikings     	 2.00		---	Program	    1	  196
+ 25	0	vikin   c1    	40.00		---	Bytes	25000	40536
+ 26	0	vikin   c2    	 8.00		---	Bytes	16384	 6912
+ 27	0	west bank 2    	 2.00		---	Program	    1	  196
+ 28	0	west2   c1    	40.00		---	Bytes	25000	40536
+ 29	0	west2   c2    	 8.00		---	Bytes	16384	 6912
+ 30	0	snare       	 2.00		---	Program	    1	  196
+ 31	0	snarr   c1    	40.00		---	Bytes	25000	40536
+ 32	0	snarr   c2    	 8.00		---	Bytes	16384	 6912
+Space free/filled/total	: 124/516/640 KB
+
+CRISTIORANGE4.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 4.00		---	Program	    1	 2844
+  2	0	disk 04     	 8.00		---	Bytes	16384	 6912
+  3	0	cad1        	 2.00		-S-	Bytes	30001	  200
+  4	0	cad2        	 6.00		-S-	Bytes	49680	 4325
+  5	0	demo        	 2.00		-S-	Bytes	32976	  143
+  6	0	tvs         	 8.00		---	Program	    6	 7966
+  7	0	sc2_scr     	 8.00		-S-	Bytes	16384	 6912
+  8	0	sc2cod      	12.00		-S-	Bytes	53590	11946
+  9	0	sc2_1       	30.00		-S-	Program	    0	28889
+ 10	0	animator1    	 2.00		---	Program	    4	  221
+ 11	0	anim1   c1    	40.00		---	Bytes	25000	40536
+ 12	0	anim1   c2    	 8.00		---	Bytes	16384	 6912
+ 13	0	snail logo    	26.00		---	Program	 6320	25434
+ 14	0	paint box    	 2.00		---	Program	    4	  221
+ 15	0	paint   c1    	40.00		---	Bytes	25000	40536
+ 16	0	paint   c2    	 8.00		---	Bytes	16384	 6912
+ 17	0	the fill    	18.00		---	Program	   10	18212
+ 18	0	fillcode    	 4.00		-S-	Bytes	56559	 2660
+ 19	0	vu3doc      	10.00		---	Program	    1	 9620
+ 20	0	sbcode      	10.00		-S-	Bytes	55791	 9577
+ 21	0	sbscr       	 6.00		-S-	Bytes	45000	 4096
+ 22	0	mdraw       	 2.00		---	Program	    1	 1877
+ 23	0	mdrawcode    	 8.00		-S-	Bytes	40960	 6551
+ 24	0	vu3d        	 8.00		---	Program	 5100	 6856
+ 25	0	gens        	10.00		-S-	Bytes	26000	10034
+ 26	0	vu3dscr     	 8.00		-S-	Bytes	16384	 6912
+ 27	0	mons        	 6.00		-S-	Bytes	26000	 6068
+ 28	0	tvsatelit    	 8.00		---	Program	    6	 7916
+ 29	0	vu3dc       	32.00		-S-	Bytes	31501	32183
+ 30	0	screen      	 8.00		-S-	Bytes	16384	 6912
+ 31	0	mcode       	 2.00		-S-	Bytes	32256	  299
+ 32	0	pbox        	 4.00		---	Program	    0	 3604
+ 33	0	mcodee      	 2.00		-S-	Bytes	32000	  299
+ 34	0	bits        	 2.00		-S-	Bytes	65368	   32
+ 35	0	draw        	 6.00		---	Program	 8000	 4856
+ 36	0	cdraw       	 2.00		-S-	Bytes	32256	  300
+ 37	0	pmonte      	 2.00		-S-	Bytes	32196	  300
+ 38	0	charcod     	 2.00		-S-	Bytes	32256	  300
+ 39	0	demopart1    	 6.00		---	Program	    1	 5053
+ 40	0	demopart2    	 6.00		---	Program	    1	 5399
+ 41	0	hbc1        	 2.00		-S-	Bytes	60000	   77
+ 42	0	hbc2        	12.00		-S-	Bytes	23792	11807
+ 43	0	LD&SV       	 2.00		-S-	Bytes	50000	   71
+ 44	0	PUZZNIC     	 2.00		R--	Program	    1	  192
+ 45	0	_Puzznic0    	 4.00		-S-	Bytes	32768	 2285
+ 46	0	_Puzznic1    	26.00		-S-	Bytes	25088	26368
+ 47	0	_Puzznic2    	 4.00		-S-	Bytes	52000	 3930
+Space free/filled/total	: 206/434/640 KB
+
+CRISTIORANGE5.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 4.00		---	Program	    1	 2844
+  2	0	seso$       	 8.00		---	Bytes	16384	 6912
+  3	0	skatec$     	 8.00		---	Bytes	16384	 6912
+  4	0	discs$      	 8.00		---	Bytes	16384	 6912
+  5	0	disk 09     	 8.00		---	Bytes	16384	 6912
+  6	0	box         	 2.00		---	Program	    5	  273
+  7	0	box     c1    	40.00		---	Bytes	25000	40536
+  8	0	box     c2    	 8.00		---	Bytes	16384	 6912
+  9	0	PoKeR       	 2.00		---	Program	    5	  273
+ 10	0	PoKeR   c1    	40.00		---	Bytes	25000	40536
+ 11	0	PoKeR   c2    	 8.00		---	Bytes	16384	 6912
+ 12	0	alien$      	 8.00		---	Bytes	16384	 6912
+ 13	0	magic$      	 8.00		---	Bytes	16384	 6912
+ 14	0	culori$     	 8.00		---	Bytes	16384	 6912
+ 15	0	videopoker$    	 8.00		---	Bytes	16384	 6912
+ 16	0	wizball$    	 8.00		---	Bytes	16384	 6912
+ 17	0	run2        	 2.00		---	Program	    1	 1147
+ 18	0	pope        	 2.00		---	Program	    5	  273
+ 19	0	pope    c1    	40.00		---	Bytes	25000	40536
+ 20	0	pope    c2    	 8.00		---	Bytes	16384	 6912
+ 21	0	pack-rat$    	 8.00		---	Bytes	16384	 6912
+ 22	0	tarz$       	 8.00		---	Bytes	16384	 6912
+ 23	0	sai c       	 2.00		---	Program	    5	  273
+ 24	0	sai c   c1    	40.00		---	Bytes	25000	40536
+ 25	0	sai c   c2    	 8.00		---	Bytes	16384	 6912
+ 26	0	xarq        	 2.00		---	Program	    5	  273
+ 27	0	xarq    c1    	40.00		---	Bytes	25000	40536
+ 28	0	xarq    c2    	 8.00		---	Bytes	16384	 6912
+ 29	0	spy h       	 2.00		---	Program	    5	  273
+ 30	0	spy h   c1    	40.00		---	Bytes	25000	40536
+ 31	0	spy h   c2    	 8.00		---	Bytes	16384	 6912
+ 32	0	turbo       	 2.00		---	Program	    5	  273
+ 33	0	turbo   c1    	40.00		---	Bytes	25000	40536
+ 34	0	turbo   c2    	 8.00		---	Bytes	16384	 6912
+ 35	0	robac       	 6.00		---	Program	    1	 5336
+ 36	0	domino      	 4.00		---	Program	    1	 3323
+ 37	0	pestera     	12.00		---	Program	    1	11319
+Space free/filled/total	: 170/470/640 KB
+
+CRISTIORANGE6.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	PIPE        	 2.00		RS-	Program	   10	   40
+  2	0	pippo       	 2.00		R--	Program	   10	   38
+  3	0	PIPA        	 2.00		RS-	Program	   10	   47
+  4	0	PIPS        	 8.00		RS-	Bytes	16384	 6912
+  5	0	PIPD        	 2.00		RS-	Program	   10	   47
+  6	0	PIPB        	 2.00		RS-	Bytes	23296	  256
+  7	0	PIPC        	42.00		RS-	Bytes	24000	41536
+  8	0	pan joe     	 4.00		R--	Program	   10	 3366
+  9	0	PANCODE     	 2.00		RS-	Bytes	50000	   60
+ 10	0	PANGAME     	10.00		RS-	Bytes	32768	10000
+ 11	0	pyjamarama    	 2.00		R--	Program	   10	  215
+ 12	0	PYJAMA$     	 8.00		RS-	Bytes	32000	 6913
+ 13	0	PYJAMAC     	32.00		RS-	Bytes	33280	31392
+ 14	0	painter     	10.00		R--	Program	    1	 9364
+ 15	0	PAINTR1     	24.00		RS-	Bytes	34269	23600
+ 16	0	PAINTER2    	 2.00		RS-	Bytes	23300	   25
+ 17	0	piramid     	 2.00		R--	Program	  260	   89
+ 18	0	PIRAMID     	30.00		RS-	Bytes	26624	29440
+ 19	0	poker       	14.00		R--	Program	   10	12549
+ 20	0	raiders     	 2.00		R--	Program	   10	  110
+ 21	0	RAIDERS$    	 8.00		RS-	Bytes	16384	 6912
+ 22	0	RAIDERSC    	 8.00		RS-	Bytes	24576	 7860
+ 23	0	ratos       	 2.00		R--	Program	    1	  228
+ 24	0	RATSCR      	 8.00		RS-	Bytes	16384	 6912
+ 25	0	RATCOD1     	 4.00		RS-	Bytes	19968	 3328
+ 26	0	RATCOD2     	 8.00		RS-	Bytes	25000	 7768
+ 27	0	RATCOD3     	 2.00		RS-	Bytes	23728	    1
+ 28	0	serpenti    	 2.00		R--	Program	   10	  196
+ 29	0	SERPC       	26.00		RS-	Bytes	32768	25000
+ 30	0	scramble    	 2.00		R--	Program	    1	  127
+ 31	0	SCRAMBLE    	10.00		RS-	Bytes	24152	 8616
+ 32	0	spectiped    	 2.00		R--	Program	   10	  173
+ 33	0	SPECTIPED$    	 6.00		RS-	Bytes	40000	 4361
+ 34	0	SPECTIPEDC    	 8.00		RS-	Bytes	25300	 7400
+ 35	0	skatec      	 2.00		R--	Program	    1	  148
+ 36	0	SKATE$      	 6.00		RS-	Bytes	40000	 5713
+ 37	0	SKATEC      	40.00		RS-	Bytes	25600	39649
+ 38	0	shockway    	 2.00		R--	Program	    1	  184
+ 39	0	SHOCKWAY1    	36.00		RS-	Bytes	24792	35735
+ 40	0	SHOCKWAY2    	 6.00		RS-	Bytes	16384	 6052
+ 41	0	SHOCKWAY3    	 2.00		RS-	Bytes	16464	 1968
+ 42	0	sex         	 2.00		R--	Program	   10	  236
+ 43	0	ZAMBRINI    	 8.00		RS-	Bytes	32768	 6912
+ 44	0	PIRATA      	26.00		RS-	Bytes	38142	24892
+ 45	0	ZAMBRO      	12.00		RS-	Program	   10	11157
+ 46	0	run         	 4.00		---	Program	    1	 2844
+ 47	0	1994        	 2.00		R--	Program	    1	   92
+ 48	0	basball     	 2.00		R--	Program	    1	   76
+ 49	0	1994CODE    	22.00		RS-	Bytes	25000	21000
+ 50	0	ALIEN HW    	 8.00		RS-	Bytes	16384	 6912
+ 51	0	BAS         	40.00		RS-	Bytes	24000	40864
+ 52	0	ALIEN HW2    	 4.00		RS-	Bytes	18432	 2048
+ 53	0	alien hw    	 2.00		R--	Program	   10	  289
+ 54	0	ALIEN HW1    	40.00		RS-	Bytes	25000	39385
+ 55	0	magic       	 2.00		R--	Program	    1	  323
+ 56	0	MAGIC$      	 8.00		RS-	Bytes	16384	 6912
+ 57	0	MAGICC      	 8.00		RS-	Bytes	24570	 7686
+ 58	0	bugs        	 2.00		R--	Program	   10	  265
+ 59	0	BUGS        	36.00		RS-	Bytes	30000	35536
+ 60	0	disk 06     	 8.00		---	Bytes	16384	 6912
+Space free/filled/total	: 008/632/640 KB
+
+CRISTIORANGE7.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	wizball     	 2.00		R--	Program	    1	  214
+  2	0	WIZBALL$    	 8.00		RS-	Bytes	40000	 6162
+  3	0	WIZBALLC    	40.00		RS-	Bytes	25000	40536
+  4	0	MISSION1    	20.00		RS-	Bytes	40960	20000
+  5	0	MISSION2    	22.00		RS-	Bytes	40960	20536
+  6	0	MISSION3    	 2.00		RS-	Bytes	40960	 1742
+  7	0	mision      	 2.00		R--	Program	   10	  225
+  8	0	MISCREEN    	 8.00		RS-	Bytes	40960	 6916
+  9	0	xor         	 2.00		R--	Program	   10	  137
+ 10	0	XOR3        	28.00		RS-	Bytes	24792	27910
+ 11	0	XOR2        	 6.00		RS-	Bytes	16384	 4179
+ 12	0	XOR0        	 2.00		RS-	Bytes	16464	 1968
+ 13	0	PCS         	 2.00		RS-	Bytes	65000	   75
+ 14	0	PC$         	 8.00		RS-	Bytes	16384	 6912
+ 15	0	PCC         	40.00		RS-	Bytes	24700	40250
+ 16	0	pcm         	 2.00		R--	Program	    2	  134
+ 17	0	arkanoid_    	 0.00		R--	Untyped	     	     
+ 18	0	disk 08     	 8.00		---	Bytes	16384	 6912
+ 19	0	video-poker    	 2.00		R--	Program	    0	  135
+ 20	0	POKER$      	 8.00		RS-	Bytes	30000	 6912
+ 21	0	POKER       	24.00		RS-	Bytes	26000	23000
+ 22	0	BARBARIAN$    	 8.00		RS-	Bytes	16384	 6912
+ 23	0	BARBARIANC    	40.00		RS-	Bytes	26000	39536
+ 24	0	barbarian1    	 2.00		R--	Program	    0	  331
+ 25	0	MILK$       	 8.00		RS-	Bytes	16384	 6912
+ 26	0	MILK1       	34.00		RS-	Bytes	25000	34136
+ 27	0	MILK2       	 2.00		RS-	Bytes	61100	 1704
+ 28	0	milk        	 2.00		R--	Program	    2	  170
+ 29	0	silk1       	34.00		RS-	Bytes	24792	32993
+ 30	0	silk2       	 4.00		RS-	Bytes	16384	 3855
+ 31	0	silk3       	 2.00		RS-	Bytes	16464	 1968
+ 32	0	silkworm    	 2.00		R--	Program	   10	  206
+ 33	0	BOMB        	 8.00		RS-	Bytes	32768	 8000
+ 34	0	bomber      	 2.00		R--	Program	    1	  119
+ 35	0	 ama1       	 4.00		RS-	Bytes	28350	 3417
+ 36	0	 ama2       	22.00		RS-	Bytes	24500	20519
+ 37	0	 ama3       	22.00		RS-	Bytes	45018	20518
+ 38	0	pack-rat    	 2.00		R--	Program	    0	  138
+ 39	0	pratcod1    	 6.00		RS-	Bytes	29184	 5080
+ 40	0	pratcod2    	42.00		RS-	Bytes	24576	40960
+ 41	0	 ama4       	 2.00		RS-	Bytes	23296	  255
+ 42	0	 ama5       	 8.00		RS-	Bytes	32768	 6912
+ 43	0	amazon      	 2.00		R--	Program	    0	  309
+ 44	0	WD3         	 2.00		RS-	Bytes	18000	 1704
+ 45	0	wdw         	 2.00		R--	Program	    2	  199
+ 46	0	WD$         	 8.00		RS-	Bytes	16384	 6912
+ 47	0	WD1         	20.00		RS-	Bytes	25000	20000
+ 48	0	WD2         	22.00		RS-	Bytes	45000	20536
+ 49	0	WD#         	 8.00		RS-	Bytes	16384	 6916
+ 50	0	arkanoid    	 2.00		R--	Program	    1	  135
+ 51	0	ARKANOID_    	 8.00		RS-	Bytes	43008	 6912
+ 52	0	ARKANOIDC    	34.00		RS-	Bytes	32495	33640
+ 53	0	tranz am    	 2.00		R--	Program	    1	  372
+ 54	0	TA$         	 8.00		RS-	Bytes	16384	 6912
+ 55	0	TA1         	10.00		RS-	Bytes	24320	 8448
+ 56	0	TA2         	 2.00		RS-	Bytes	23424	   15
+ 57	0	TA3         	 2.00		RS-	Bytes	23728	    1
+ 58	0	TA4         	 2.00		RS-	Bytes	23672	    2
+ 59	0	ARKANOIDC_    	 2.00		-S-	Untyped	     	     
+ 60	0	ARKANOID#_    	 2.00		-S-	Untyped	     	     
+ 61	0	run         	 4.00		---	Program	    1	 2844
+Space free/filled/total	: 002/638/640 KB
+
+GEOCODEMASTERS.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	arobhood    	26.00		---	Program	    0	26276
+  2	0	atv         	22.00		---	Program	    0	21414
+  3	0	bignose     	18.00		---	Program	    0	17500
+  4	0	BronxStCop    	20.00		---	Program	    0	19182
+  5	0	capdin      	22.00		---	Program	    0	21521
+  6	0	cje1        	22.00		---	Program	    0	21720
+  7	0	cje2        	26.00		---	Program	    0	25435
+  8	0	puf         	18.00		---	Program	    0	17788
+  9	0	MurrayM     	20.00		---	Program	    0	19518
+ 10	0	seym1       	20.00		---	Program	    0	20058
+ 11	0	Seym2       	36.00		---	Program	    0	36151
+ 12	0	Seym3       	34.00		---	Program	    0	34388
+ 13	0	Seym4       	24.00		---	Program	    0	22932
+ 14	0	Seym5       	20.00		---	Program	    0	19255
+ 15	0	Seym6       	28.00		---	Program	    0	28056
+ 16	0	slightly    	26.00		---	Program	    0	26113
+ 17	0	SpikeTr     	24.00		---	Program	    0	22978
+ 18	0	c:_DOX_Spe    	26.00		---	Program	    0	26267
+ 19	0	Steg        	22.00		---	Program	    0	20949
+ 20	0	Stryker     	30.00		---	Program	    0	29268
+ 21	0	tarzan      	24.00		---	Program	    0	24467
+ 22	0	Tilt        	10.00		---	Program	    0	 9654
+ 23	0	WizWilly    	22.00		---	Program	    0	22274
+Space free/filled/total	: 096/544/640 KB
+
+GEODIZZY.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	Dizzy1      	30.00		---	Program	    0	30512
+  2	0	Dizzy1Crsh    	30.00		---	Program	    0	30507
+  3	0	Dizzy2      	30.00		---	Program	    0	30182
+  4	0	Dizzy2Crsh    	30.00		---	Program	    0	30511
+  5	0	Dizzy3      	32.00		---	Program	    0	32591
+  6	0	Dizzy35     	18.00		---	Program	    0	17139
+  7	0	Dizzy4      	36.00		---	Program	    0	36241
+  8	0	Dizzy5      	36.00		---	Program	    0	36219
+  9	0	Dizzy6      	30.00		---	Program	    0	29371
+ 10	0	Dizzy7      	28.00		---	Program	    0	27169
+ 11	0	Dizzy8      	20.00		---	Program	    0	19573
+ 12	0	Dizzy9      	26.00		---	Program	    0	25617
+ 13	0	DizzyBubbl    	22.00		---	Program	    0	20535
+ 14	0	DizzyFFood    	22.00		---	Program	    0	22300
+ 15	0	DizzyHomeI    	32.00		---	Program	    0	31659
+ 16	0	DizzyKwikS    	22.00		---	Program	    0	20877
+ 17	0	DizzyNew    	28.00		---	Program	    0	28533
+ 18	0	DizzyPanic    	14.00		---	Program	    0	13864
+ 19	0	DizzyRapid    	18.00		---	Program	    0	17167
+ 20	0	DizzyRetML    	26.00		---	Program	    0	25600
+ 21	0	DizzyX      	32.00		---	Program	    0	32519
+ 22	0	DizzyY      	32.00		---	Program	    0	32345
+Space free/filled/total	: 042/598/640 KB
+
+GEOLATEST.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	3Weeks      	28.00		---	Program	    0	26677
+  2	0	ActReflex    	16.00		---	Program	    0	14837
+  3	0	Blinky      	26.00		---	Program	    0	24803
+  4	0	BobBearing    	26.00		---	Program	    0	25424
+  5	0	Bombjack    	22.00		---	Program	    0	20824
+  6	0	CastleMast    	28.00		---	Program	    0	26631
+  7	0	DarkSide    	24.00		---	Program	    0	24061
+  8	0	Deflektor    	18.00		---	Program	    0	17677
+  9	0	Driller     	26.00		---	Program	    0	25033
+ 10	0	Enduro      	26.00		---	Program	    0	26516
+ 11	0	FairLight    	26.00		---	Program	    0	25824
+ 12	0	FrostByte    	16.00		---	Program	    0	14854
+ 13	0	Gyroscope    	12.00		---	Program	    0	12261
+ 14	0	HighWayEnc    	18.00		---	Program	    0	18320
+ 15	0	HOH         	34.00		---	Program	    0	32879
+ 16	0	Hundra      	26.00		---	Program	    0	25711
+ 17	0	LopEars     	20.00		---	Program	    0	18913
+ 18	0	MiamiChase    	14.00		---	Program	    0	14301
+ 19	0	Nebulus     	20.00		---	Program	    0	18968
+ 20	0	OlliLissa1    	20.00		---	Program	    0	19749
+ 21	0	OlliLissa2    	26.00		---	Program	    0	26275
+ 22	0	OlliLissa3    	30.00		---	Program	    0	28911
+ 23	0	Rebel       	18.00		---	Program	    0	17183
+ 24	0	Renegade    	28.00		---	Program	    0	27238
+ 25	0	Rex1        	26.00		---	Program	    0	25233
+ 26	0	Rex2        	24.00		---	Program	    0	23787
+ 27	0	Sigma7      	26.00		---	Program	    0	24713
+Space free/filled/total	: 012/628/640 KB
+
+GEOOLDIES.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	Alien8      	20.00		---	Program	    0	19065
+  2	0	Arkanoid1    	18.00		---	Program	    0	18234
+  3	0	Arkanoid2    	18.00		---	Program	    0	16917
+  4	0	AticAtac    	20.00		---	Program	    0	19199
+  5	0	Batty       	14.00		---	Program	    0	13739
+  6	0	Bomberman    	 6.00		---	Program	    0	 5485
+  7	0	Chronos     	20.00		---	Program	    0	20404
+  8	0	Chuckie     	10.00		---	Program	    0	 9109
+  9	0	DeathChase    	 6.00		---	Program	    0	 4921
+ 10	0	Fist        	24.00		---	Program	    0	23774
+ 11	0	GunFright    	20.00		---	Program	    0	19137
+ 12	0	JetPack     	 8.00		---	Program	    0	 6341
+ 13	0	JetSetWill    	18.00		---	Program	    0	16472
+ 14	0	JumpJack    	 6.00		---	Program	    0	 4973
+ 15	0	Knightlore    	20.00		---	Program	    0	18874
+ 16	0	Lancelot    	 6.00		---	Program	    0	 6021
+ 17	0	LodeRun     	18.00		---	Program	    0	17675
+ 18	0	ManicMiner    	14.00		---	Program	    0	12312
+ 19	0	Motos       	16.00		---	Program	    0	16196
+ 20	0	NightShade    	20.00		---	Program	    0	20060
+ 21	0	Pentagram    	20.00		---	Program	    0	18806
+ 22	0	Pheenix     	 6.00		---	Program	    0	 5961
+ 23	0	Popeye      	18.00		---	Program	    0	17531
+ 24	0	SabreWulf    	24.00		---	Program	    0	24406
+ 25	0	SkoolDaze    	26.00		---	Program	    0	25614
+ 26	0	Starquake    	30.00		---	Program	    0	28669
+ 27	0	StopExpres    	10.00		---	Program	    0	 8665
+ 28	0	Thrust      	18.00		---	Program	    0	18171
+ 29	0	TrashMan    	14.00		---	Program	    0	12756
+ 30	0	UnderWurld    	24.00		---	Program	    0	24433
+ 31	0	Wriggler    	24.00		---	Program	    0	23766
+Space free/filled/total	: 120/520/640 KB
+
+HRISTENCO1.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	Saboteur2    	 2.00		---	Program	   10	  176
+  2	0	sab2scr     	 8.00		---	Bytes	40000	 6912
+  3	0	sab2code    	40.00		---	Bytes	25100	40436
+  4	0	sab1scr     	 8.00		---	Bytes	40000	 6912
+  5	0	Saboteur1    	 2.00		---	Program	   10	  157
+  6	0	Serpenti    	 2.00		---	Program	   10	   94
+  7	0	sab1code    	40.00		---	Bytes	25200	40336
+  8	0	serpcode    	26.00		---	Bytes	32768	25000
+  9	0	Turtles     	 2.00		---	Program	   10	  188
+ 10	0	turt_scr    	 8.00		---	Bytes	40000	 6912
+ 11	0	turt_c1     	40.00		---	Bytes	25000	40535
+ 12	0	turt_c2     	 8.00		---	Bytes	40000	 6912
+ 13	0	TurboEspr.    	 2.00		---	Program	   10	  203
+ 14	0	te1         	 8.00		---	Bytes	40000	 7168
+ 15	0	te2         	38.00		---	Bytes	26731	38351
+ 16	0	Video Pool    	 2.00		---	Program	   10	  116
+ 17	0	vp_code     	26.00		---	Bytes	32768	25000
+ 18	0	run         	 2.00		---	Program	    1	  775
+ 19	0	zx_test     	 2.00		---	Program	   10	   68
+ 20	0	zxtestcode    	 6.00		---	Bytes	40000	 4800
+ 21	0	Harrier     	 2.00		---	Program	    1	  254
+ 22	0	har_scr     	 8.00		---	Bytes	30000	 6912
+ 23	0	har_code    	 8.00		---	Bytes	40000	 6385
+ 24	0	manic1.p    	 2.00		---	Program	   10	  166
+ 25	0	manic1_1.c    	 2.00		---	Bytes	32768	  256
+ 26	0	manic1_2.c    	34.00		---	Bytes	32768	32767
+ 27	0	manic2.p    	 2.00		---	Program	   10	   76
+ 28	0	manic2.c    	34.00		---	Bytes	32000	33536
+ 29	0	manic3.p    	 2.00		---	Program	   10	  237
+ 30	0	manic3.$    	 4.00		---	Bytes	30000	 4022
+ 31	0	manic3.c    	20.00		---	Bytes	32768	18943
+ 32	0	manic4.p    	 2.00		---	Program	   10	  191
+ 33	0	manic4.c    	18.00		---	Bytes	32768	16628
+ 34	0	intro.p     	 2.00		---	Program	 8000	  695
+ 35	0	catalog.1    	 2.00		---	Chr.Arr	    F	  236
+ 36	0	intro1.$    	 8.00		---	Bytes	40000	 6912
+ 37	0	intro2.$    	 8.00		---	Bytes	50000	 6912
+ 38	0	intro.c     	 2.00		---	Bytes	65000	  536
+ 39	0	mons4.c     	 8.00		---	Bytes	32768	 6528
+ 40	0	gens4.c     	12.00		---	Bytes	32768	10880
+ 41	0	service.p    	 2.00		---	Program	    1	 1880
+ 42	0	gens4.p     	 2.00		---	Program	   10	   71
+ 43	0	mons4.p     	 2.00		---	Program	    1	   71
+ 44	0	chuckie.p    	 2.00		---	Program	   10	  161
+ 45	0	chuckie.c    	20.00		---	Bytes	33300	18900
+ 46	0	loderun.p    	 2.00		---	Program	   10	  101
+ 47	0	loderun.$    	 8.00		---	Bytes	32768	 6912
+ 48	0	loderun.c    	42.00		---	Bytes	24576	40959
+ 49	0	bignose.p    	 2.00		---	Program	    1	  107
+ 50	0	bignose.$    	 8.00		---	Bytes	32768	 6912
+ 51	0	bignose.c    	40.00		---	Bytes	25344	40192
+ 52	0	dip.p       	 2.00		---	Program	   10	  721
+ 53	0	dip.c       	 4.00		---	Bytes	24832	 2816
+ 54	0	ed.p        	 2.00		---	Program	    1	 1094
+ 55	0	du.p        	 2.00		---	Program	   10	  179
+ 56	0	du.c        	 6.00		---	Bytes	49152	 4706
+ 57	0	t2d.p       	 2.00		---	Program	   10	  202
+ 58	0	t2d.c       	 2.00		---	Bytes	16384	 1568
+ 59	0	voice.p     	 2.00		---	Program	 8000	  928
+ 60	0	voice.c     	 2.00		---	Bytes	60000	  801
+ 61	0	menu.old    	 4.00		---	Program	     	 2753
+ 62	0	catalog.2    	 2.00		---	Chr.Arr	    N	  446
+ 63	0	menu.p      	 4.00		---	Program	    1	 2457
+Space free/filled/total	: 020/620/640 KB
+
+HRISTENCO2.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	atv.p       	 2.00		---	Program	   10	   80
+  2	0	atv.$       	 8.00		---	Bytes	25400	 6912
+  3	0	atv.c       	40.00		---	Bytes	25400	40000
+  4	0	chronos.p    	 2.00		---	Program	   10	  153
+  5	0	chronos1.c    	38.00		---	Bytes	24792	38652
+  6	0	chronos2.c    	 2.00		---	Bytes	32768	  759
+  7	0	chronos3.c    	 2.00		---	Bytes	32768	 1968
+  8	0	dizzy1.p    	 2.00		---	Program	    1	  185
+  9	0	dizzy1.$    	 8.00		---	Bytes	25000	 6977
+ 10	0	dizzy1.c    	40.00		---	Bytes	24984	40552
+ 11	0	dizzy2.p    	 2.00		---	Program	   10	  212
+ 12	0	dizzy2.$    	 8.00		---	Bytes	25000	 6912
+ 13	0	dizzy2.c    	42.00		---	Bytes	24576	40959
+ 14	0	dizzy3.p    	 2.00		---	Program	   10	  199
+ 15	0	dizzy3.$    	 8.00		---	Bytes	25000	 6912
+ 16	0	dizzy3-1.c    	 2.00		---	Bytes	25000	  256
+ 17	0	dizzy3-2.c    	42.00		---	Bytes	24576	40959
+ 18	0	eagle.p     	 2.00		---	Program	   10	  153
+ 19	0	eagle.$     	 4.00		---	Bytes	40000	 3499
+ 20	0	eagle.c     	34.00		---	Bytes	32768	32768
+ 21	0	roc.p       	 2.00		---	Program	    1	  104
+ 22	0	roc.$       	 8.00		---	Bytes	25000	 6912
+ 23	0	roc.c       	34.00		---	Bytes	24600	33983
+ 24	0	cjusa.c     	36.00		---	Bytes	24576	36539
+ 25	0	dizzy35.p    	 2.00		---	Program	   10	  134
+ 26	0	dizzy35.$    	 8.00		---	Bytes	32768	 6912
+ 27	0	dizzy35.c    	24.00		---	Bytes	27695	22710
+ 28	0	dizzy5.p    	 2.00		---	Program	   10	  132
+ 29	0	dizzy5.$    	 8.00		---	Bytes	32768	 6912
+ 30	0	dizzy5.c    	42.00		---	Bytes	24272	41263
+ 31	0	cjantics.p    	 2.00		---	Program	    1	  235
+ 32	0	cjantics.c    	34.00		---	Bytes	28416	33498
+ 33	0	cjusa.p     	 2.00		---	Program	    1	  248
+ 34	0	ice.p       	 2.00		---	Program	    1	   81
+ 35	0	ice.c       	40.00		---	Bytes	24832	39168
+ 36	0	menu.p      	 4.00		---	Program	    1	 2524
+ 37	0	dizzy4.p    	 2.00		---	Program	    1	  187
+ 38	0	dizzy4.$    	 8.00		---	Bytes	32768	 6984
+ 39	0	dizzy4.c    	40.00		---	Bytes	24973	40563
+ 40	0	run         	 2.00		---	Program	    1	  638
+ 41	0	intro.p     	 2.00		---	Program	   10	   92
+ 42	0	intro.$     	 8.00		---	Bytes	32768	 6912
+Space free/filled/total	: 034/606/640 KB
+
+HRISTENCO3.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	EXPRESS     	16.00		---	Bytes	32722	15392
+  2	0	express     	 2.00		R--	Program	   10	   43
+  3	0	cybernoid2    	 2.00		R--	Program	   10	  182
+  4	0	cyber21     	 2.00		---	Bytes	65088	  447
+  5	0	cyber22     	40.00		---	Bytes	25348	39675
+  6	0	dip         	 2.00		---	Program	   10	  730
+  7	0	DIPC        	 4.00		RS-	Bytes	24832	 2816
+  8	0	Little Puff    	 2.00		---	Program	    1	  237
+  9	0	puffcode    	28.00		---	Bytes	25000	27765
+ 10	0	SAVAGE 1    	 2.00		---	Program	   10	  499
+ 11	0	savage13    	 4.00		---	Bytes	30000	 2410
+ 12	0	savage11    	40.00		---	Bytes	25000	40488
+ 13	0	savage12    	 8.00		---	Bytes	25000	 6912
+ 14	0	bombjack    	 2.00		R--	Program	   10	  128
+ 15	0	BOMBJACK2    	38.00		RS-	Bytes	28440	37095
+ 16	0	BOMBJACK3    	 2.00		RS-	Bytes	16384	 1375
+ 17	0	BOMBJACK1    	 8.00		RS-	Bytes	32768	 6912
+ 18	0	booty       	 2.00		---	Program	    1	  182
+ 19	0	BOOTY$      	 8.00		---	Bytes	32768	 6912
+ 20	0	BOOTY       	38.00		---	Bytes	26880	38656
+ 21	0	fist        	 2.00		---	Program	   10	  244
+ 22	0	FIST$       	 8.00		---	Bytes	32768	 6912
+ 23	0	FISTC       	40.00		---	Bytes	24576	38912
+ 24	0	menu.p      	 4.00		---	Program	    1	 2470
+ 25	0	PING$       	 8.00		RS-	Bytes	16384	 6912
+ 26	0	PING:       	 2.00		RS-	Program	    3	  566
+ 27	0	run         	 2.00		---	Program	    1	   28
+ 28	0	gameovr1.p    	 2.00		---	Program	    1	  109
+ 29	0	gameovr1.$    	 8.00		---	Bytes	32768	 6912
+ 30	0	gameovr1.c    	34.00		---	Bytes	31620	33833
+ 31	0	gameovr2.p    	 2.00		---	Program	    1	  109
+ 32	0	gameovr2.$    	 8.00		---	Bytes	32768	 6912
+ 33	0	gameovr2.c    	34.00		---	Bytes	31620	33833
+ 34	0	casino.p    	 2.00		---	Program	   10	  146
+ 35	0	casino.$    	 8.00		---	Bytes	32768	 6912
+ 36	0	casino-1.c    	26.00		---	Bytes	25600	25900
+ 37	0	casino-2.c    	12.00		---	Bytes	55060	10476
+ 38	0	rick2.p     	 2.00		---	Program	    1	  167
+ 39	0	rick2.$     	 8.00		---	Bytes	32768	 6912
+ 40	0	rick2.c     	40.00		---	Bytes	24576	40702
+ 41	0	rick.p      	 2.00		---	Program	    1	   66
+ 42	0	rick.c      	42.00		---	Bytes	24064	41246
+ 43	0	intro.p     	 2.00		---	Program	    1	   92
+ 44	0	intro.$     	 8.00		---	Bytes	32768	 6912
+ 45	0	lop.p       	 2.00		---	Program	    1	  135
+ 46	0	lop.$       	 8.00		---	Bytes	32768	 6912
+ 47	0	lop1.c      	42.00		---	Bytes	24576	40960
+ 48	0	lop2.c      	 8.00		---	Bytes	32768	 6144
+Space free/filled/total	: 020/620/640 KB
+
+HRISTENCO4.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	dip         	 2.00		---	Program	   10	  730
+  2	0	DIPC        	 4.00		-S-	Bytes	24832	 2816
+  3	0	ping        	 2.00		---	Program	    1	   49
+  4	0	PING$       	 8.00		---	Bytes	16384	 6912
+  5	0	PING:       	 2.00		---	Program	    3	  566
+  6	0	PING2       	38.00		---	Bytes	25000	37890
+  7	0	PING3       	 2.00		RS-	Bytes	18432	 1868
+  8	0	VIDEO POKER    	 2.00		R--	Program	    0	  135
+  9	0	POKER$      	 8.00		RS-	Bytes	30000	 6912
+ 10	0	POKER       	24.00		RS-	Bytes	26000	23000
+ 11	0	frog        	 2.00		R--	Program	   10	  847
+ 12	0	FROGC       	 4.00		RS-	Bytes	27000	 3750
+ 13	0	sc3         	 2.00		R--	Program	   10	   98
+ 14	0	SC3$        	 8.00		RS-	Bytes	32768	 6912
+ 15	0	SC3C        	42.00		RS-	Bytes	24512	41023
+ 16	0	RIVER-RAID    	 2.00		R--	Program	    1	  319
+ 17	0	rr2         	 2.00		RS-	Bytes	23296	  255
+ 18	0	rr1         	34.00		RS-	Bytes	30720	32768
+ 19	0	rr_end      	 8.00		RS-	Program	    4	 6869
+ 20	0	SAI-COMBAT    	 2.00		R--	Program	    2	  113
+ 21	0	COM$        	 8.00		RS-	Bytes	16384	 6912
+ 22	0	COM1        	 2.00		RS-	Bytes	24000	  256
+ 23	0	COM2        	40.00		RS-	Bytes	24612	40673
+ 24	0	menu.p      	 4.00		---	Program	    1	 2438
+ 25	0	run         	 2.00		---	Program	    1	   28
+ 26	0	intro.p     	 2.00		---	Program	    1	   92
+ 27	0	intro.$     	 8.00		---	Bytes	32768	 6912
+ 28	0	tr.p        	 2.00		---	Program	    1	   97
+ 29	0	tr.$        	 8.00		---	Bytes	32768	 6912
+ 30	0	tr.c        	38.00		---	Bytes	28672	36864
+ 31	0	scuba.p     	 2.00		---	Program	    1	  270
+ 32	0	scuba.$     	 8.00		---	Bytes	32768	 7150
+ 33	0	scuba1.c    	26.00		---	Bytes	24576	25856
+ 34	0	scuba2.c    	 8.00		---	Bytes	55552	 6144
+ 35	0	scuba.sc    	 2.00		---	Bytes	59866	  160
+ 36	0	showjump.p    	 2.00		---	Program	    1	   98
+ 37	0	showjump.$    	 8.00		---	Bytes	32768	 6912
+ 38	0	showjump.c    	42.00		---	Bytes	24400	41130
+ 39	0	freddy1.p    	 2.00		---	Program	    1	  117
+ 40	0	freddy11.c    	40.00		---	Bytes	25000	40536
+ 41	0	freddy12.c    	 8.00		---	Bytes	25000	 6912
+ 42	0	freddy2.p    	 2.00		---	Program	    1	  117
+ 43	0	freddy21.c    	40.00		---	Bytes	25000	40536
+ 44	0	freddy22.c    	 8.00		---	Bytes	25000	 6912
+ 45	0	bloody.p    	 2.00		---	Program	    1	  132
+ 46	0	bloody.$    	 8.00		---	Bytes	32768	 6912
+ 47	0	bloody.c    	20.00		---	Bytes	32768	20160
+Space free/filled/total	: 096/544/640 KB
+
+MARIAN1.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	chars       	 2.00		---	Bytes	25600	  768
+  2	0	code        	38.00		---	Bytes	27000	38535
+  3	0	BUBBLER     	 2.00		---	Program	    1	  115
+  4	0	 bpAscr$    	 8.00		---	Bytes	32768	 6912
+  5	0	 bpBcode    	30.00		---	Bytes	35727	29809
+  6	0	FLICS       	16.00		---	Bytes	32760	15000
+  7	0	SCREEN      	 8.00		---	Bytes	26000	 6912
+  8	0	Menu        	 4.00		---	Program	    0	 3494
+  9	0	GRID-RUN    	24.00		---	Bytes	40000	23500
+ 10	0	screen$     	 8.00		---	Bytes	32768	 6912
+ 11	0	FILEM2_2    	32.00		---	Bytes	30000	32162
+ 12	0	imp         	40.00		---	Bytes	25000	40536
+ 13	0	1           	 2.00		---	Bytes	23728	    2
+ 14	0	rid         	 8.00		---	Bytes	32768	 6912
+ 15	0	run         	 6.00		---	Program	    1	 5815
+ 16	0	end         	12.00		---	Bytes	53100	11900
+ 17	0	STAR-FOX    	 2.00		---	Program	    1	  246
+ 18	0	sf          	40.00		---	Bytes	25000	39928
+ 19	0	MYTICAL     	 2.00		---	Program	    1	  124
+ 20	0	PINK-PANTER    	 2.00		---	Program	   10	  525
+ 21	0	PI1         	38.00		---	Bytes	28424	37112
+ 22	0	PI2         	 4.00		---	Bytes	18432	 2048
+ 23	0	LEE ENFIELD    	 2.00		---	Program	   10	  219
+ 24	0	LEc         	 2.00		---	Program	  100	  753
+ 25	0	BRIDE OF FR    	 2.00		---	Program	    1	  232
+ 26	0	rid code    	38.00		---	Bytes	27322	37004
+ 27	0	Obstacole 2    	 2.00		---	Program	   10	  182
+ 28	0	0           	38.00		---	Bytes	24576	36900
+ 29	0	bubblerc    	38.00		---	Bytes	24064	36888
+ 30	0	obs comp    	34.00		---	Bytes	31000	34535
+ 31	0	RIDDLERS    	 2.00		---	Program	    1	  236
+ 32	0	army        	22.00		---	Bytes	26000	21500
+ 33	0	FILEM_$     	 4.00		---	Bytes	50000	 3442
+ 34	0	IMPLOSION_    	 2.00		---	Program	   10	  221
+ 35	0	ZIP ZAP     	 2.00		---	Program	    1	  221
+ 36	0	LE          	34.00		---	Bytes	24831	34768
+ 37	0	GRID RUN    	 2.00		---	Program	    1	  171
+ 38	0	MORTADELO2    	 2.00		---	Program	   10	  228
+ 39	0	BLOODY P-2    	 2.00		---	Program	    1	  184
+ 40	0	PIPE LINE 2    	 2.00		---	Program	   10	  194
+ 41	0	ARNHEM STR.    	 2.00		---	Program	   10	  308
+ 42	0	les flic    	 8.00		---	Bytes	16384	 6912
+ 43	0	LE$         	 8.00		---	Bytes	32768	 6912
+ 44	0	myticalc    	24.00		---	Bytes	25000	22874
+ 45	0	rid end     	 2.00		---	Bytes	30140	  255
+ 46	0	bride       	 6.00		---	Bytes	29184	 4295
+ 47	0	imp$        	 6.00		---	Bytes	40000	 5140
+ 48	0	2           	 2.00		---	Bytes	23672	    3
+ 49	0	bubblers    	 6.00		---	Bytes	32768	 4545
+ 50	0	a           	 2.00		---	Program	     	 1522
+ 51	0	myticals    	 6.00		---	Bytes	40000	 5869
+ 52	0	PINK-PANTE    	 0.00		---	Untyped	     	     
+Space free/filled/total	: 006/634/640 KB
+
+MARIAN2.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	SHERLOCK H.    	 2.00		R--	Program	    1	  389
+  2	0	SPIN DIZZY    	 2.00		R--	Program	    1	  389
+  3	0	M.CHESS2000    	 2.00		R--	Program	    1	  389
+  4	0	MEGAPHOENIX    	 2.00		R--	Program	    1	  389
+  5	0	STRONG MAN    	 2.00		R--	Program	    1	  389
+  6	0	PROJECT F    	 2.00		R--	Program	    1	  389
+  7	0	ani         	 8.00		RS-	Bytes	16384	 6912
+  8	0	dub         	40.00		RS-	Bytes	25000	40536
+  9	0	vur         	 8.00		RS-	Bytes	16384	 6912
+ 10	0	naj         	40.00		RS-	Bytes	25000	40536
+ 11	0	ard         	 8.00		RS-	Bytes	16384	 6912
+ 12	0	gaz         	40.00		RS-	Bytes	25000	40536
+ 13	0	tir         	 8.00		RS-	Bytes	16384	 6912
+ 14	0	ham         	40.00		RS-	Bytes	25000	40536
+ 15	0	tot         	 8.00		RS-	Bytes	16384	 6912
+ 16	0	flu         	40.00		RS-	Bytes	25000	40536
+ 17	0	rug         	 8.00		RS-	Bytes	16384	 6912
+ 18	0	cim         	40.00		RS-	Bytes	25000	40536
+ 19	0	dyw         	14.00		RS-	Program	     	14100
+ 20	0	run         	 6.00		---	Program	    1	 5535
+ 21	0	juy         	14.00		RS-	Program	     	14100
+ 22	0	dut         	 8.00		RS-	Bytes	16384	 6912
+ 23	0	glo         	40.00		RS-	Bytes	25000	40536
+ 24	0	nov         	 8.00		RS-	Bytes	16384	 6912
+ 25	0	muc         	40.00		RS-	Bytes	25000	40536
+ 26	0	lef         	 8.00		RS-	Bytes	16384	 6912
+ 27	0	odi         	40.00		RS-	Bytes	25000	40536
+ 28	0	lov         	 8.00		RS-	Bytes	16384	 6912
+ 29	0	coz         	40.00		RS-	Bytes	25000	40536
+ 30	0	mtv         	 8.00		RS-	Bytes	16384	 6912
+ 31	0	fom         	40.00		RS-	Bytes	25000	40536
+ 32	0	alt         	 8.00		RS-	Bytes	16384	 6912
+ 33	0	xop         	40.00		RS-	Bytes	25000	40536
+ 34	0	AGENTORANGE    	 2.00		R--	Program	    1	  389
+ 35	0	SHURIKEN 1    	 2.00		R--	Program	    1	  389
+ 36	0	SHURIKEN 2    	 2.00		R--	Program	    1	  532
+ 37	0	JAIL BREAK    	 2.00		R--	Program	    1	  389
+ 38	0	RAIDER MINE    	 2.00		R--	Program	    1	  389
+ 39	0	SURFACE T.    	 2.00		R--	Program	    1	  389
+Space free/filled/total	: 002/638/640 KB
+
+MARIAN4.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 6.00		---	Program	    1	 5611
+  2	0	SABOTEUR 1    	 2.00		---	Program	   10	  701
+  3	0	SAB1     B    	 8.00		-S-	Bytes	16384	 6912
+  4	0	SAB2     B    	40.00		-S-	Bytes	25200	40336
+  5	0	SABOTEUR 2    	 2.00		---	Program	   10	  159
+  6	0	sab1     B    	 8.00		-S-	Bytes	16384	 6912
+  7	0	sab2     B    	40.00		-S-	Bytes	25100	40436
+  8	0	rix         	40.00		RS-	Bytes	25000	40536
+  9	0	qzb         	40.00		RS-	Bytes	25000	40536
+ 10	0	wrb         	 8.00		RS-	Bytes	16384	 6912
+ 11	0	hkj         	 8.00		RS-	Bytes	16384	 6912
+ 12	0	GO BEAR!    	 2.00		---	Program	    1	  137
+ 13	0	THE CRYPT    	 2.00		---	Program	    1	  137
+ 14	0	BOOTY       	 2.00		---	Program	    1	  220
+ 15	0	BOOTY$      	 8.00		RS-	Bytes	16384	 6912
+ 16	0	BOOTYC      	38.00		RS-	Bytes	26880	38656
+ 17	0	savage1     	 2.00		R--	Program	   10	  499
+ 18	0	savage13    	 4.00		RS-	Bytes	30000	 2410
+ 19	0	savage11    	40.00		RS-	Bytes	25000	40488
+ 20	0	savage12    	 8.00		RS-	Bytes	25000	 6912
+ 21	0	navy2       	 2.00		R--	Program	    0	  365
+ 22	0	NAV2L       	 2.00		RS-	Bytes	65024	  511
+ 23	0	NAV2        	28.00		RS-	Bytes	26215	26740
+ 24	0	nipper      	 2.00		R--	Program	    1	   97
+ 25	0	NIP         	42.00		RS-	Bytes	24576	40959
+ 26	0	spikecode    	40.00		RS-	Bytes	24576	39992
+ 27	0	SPIKE       	 2.00		---	Program	    1	  253
+ 28	0	little-puff    	 2.00		R--	Program	    1	  237
+ 29	0	puffcode    	28.00		RS-	Bytes	25000	27765
+ 30	0	cj-usa      	 2.00		R--	Program	    1	  266
+ 31	0	cj'usa      	36.00		RS-	Bytes	24576	36359
+ 32	0	fist        	 2.00		R--	Program	   10	  244
+ 33	0	FIST$       	 8.00		RS-	Bytes	32768	 6912
+ 34	0	FISTC       	40.00		RS-	Bytes	24576	38912
+ 35	0	sai-combat    	 2.00		R--	Program	    2	  113
+ 36	0	COM$        	 8.00		RS-	Bytes	16384	 6912
+ 37	0	COM1        	 2.00		RS-	Bytes	24000	  256
+ 38	0	COM2        	40.00		RS-	Bytes	24612	40673
+Space free/filled/total	: 040/600/640 KB
+
+MARIAN5.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	R-TYPE LEV1    	 2.00		R--	Program	    1	  389
+  2	0	R-TYPE LEV2    	 2.00		R--	Program	    1	  389
+  3	0	R-TYPE LEV3    	 2.00		R--	Program	    1	  389
+  4	0	R-TYPE LEV4    	 2.00		R--	Program	    1	  389
+  5	0	R-TYPE LEV5    	 2.00		R--	Program	    1	  389
+  6	0	R-TYPE LEV6    	 2.00		R--	Program	    1	  389
+  7	0	coz         	 8.00		RS-	Bytes	16384	 6912
+  8	0	rad         	40.00		RS-	Bytes	25000	40536
+  9	0	rca         	 8.00		RS-	Bytes	16384	 6912
+ 10	0	ion         	40.00		RS-	Bytes	25000	40536
+ 11	0	urs         	 8.00		RS-	Bytes	16384	 6912
+ 12	0	age         	40.00		RS-	Bytes	25000	40536
+ 13	0	rlb         	 8.00		RS-	Bytes	16384	 6912
+ 14	0	zug         	40.00		RS-	Bytes	25000	40536
+ 15	0	lor         	 8.00		RS-	Bytes	16384	 6912
+ 16	0	woa         	40.00		RS-	Bytes	25000	40536
+ 17	0	rhs         	 8.00		RS-	Bytes	16384	 6912
+ 18	0	umb         	40.00		RS-	Bytes	25000	40536
+ 19	0	duf         	14.00		RS-	Program	     	14100
+ 20	0	run         	 6.00		---	Program	    1	 5611
+ 21	0	jhj         	14.00		RS-	Program	     	14100
+ 22	0	ran         	 8.00		RS-	Bytes	16384	 6912
+ 23	0	old         	40.00		RS-	Bytes	25000	40536
+ 24	0	pul         	 8.00		RS-	Bytes	16384	 6912
+ 25	0	lov         	40.00		RS-	Bytes	25000	40536
+ 26	0	xas         	 8.00		RS-	Bytes	16384	 6912
+ 27	0	mar         	40.00		RS-	Bytes	25000	40536
+ 28	0	pri         	 8.00		RS-	Bytes	16384	 6912
+ 29	0	ter         	40.00		RS-	Bytes	25000	40536
+ 30	0	nel         	 8.00		RS-	Bytes	16384	 6912
+ 31	0	adp         	40.00		RS-	Bytes	25000	40536
+ 32	0	rqv         	 8.00		RS-	Bytes	16384	 6912
+ 33	0	qui         	40.00		RS-	Bytes	25000	40536
+ 34	0	R-TYPE LEV7    	 2.00		R--	Program	    1	  389
+ 35	0	R-TYPE LEV8    	 2.00		R--	Program	    1	  389
+ 36	0	TITANIC 1    	 2.00		R--	Program	    1	  389
+ 37	0	TITANIC 2    	 2.00		R--	Program	    1	  389
+ 38	0	BMX 2.1     	 2.00		R--	Program	    1	  389
+ 39	0	BMX 2.2     	 2.00		R--	Program	    1	  389
+Space free/filled/total	: 002/638/640 KB
+
+MARIAN6.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1121
+  2	0	IMPACT      	 2.00		R--	Program	    5	  273
+  3	0	IMQ     c1    	40.00		RS-	Bytes	25000	40536
+  4	0	IMQ     c2    	 8.00		RS-	Bytes	16384	 6912
+  5	0	ICE-PALACE    	 2.00		---	Program	    5	  273
+  6	0	ICE     c1    	40.00		RS-	Bytes	25000	40536
+  7	0	ICE     c2    	 8.00		RS-	Bytes	16384	 6912
+  8	0	SHUTTLE     	 2.00		R--	Program	    5	  273
+  9	0	SPT     c1    	40.00		RS-	Bytes	25000	40536
+ 10	0	SPT     c2    	 8.00		RS-	Bytes	16384	 6912
+ 11	0	TETRIS-2    	 2.00		R--	Program	    5	  273
+ 12	0	UEU     c1    	40.00		RS-	Bytes	25000	40536
+ 13	0	UEU     c2    	 8.00		RS-	Bytes	16384	 6912
+ 14	0	SHOOT-OUT    	 2.00		R--	Program	    5	  273
+ 15	0	RHP     c1    	40.00		RS-	Bytes	25000	40536
+ 16	0	RHP     c2    	 8.00		RS-	Bytes	16384	 6912
+ 17	0	PROHIBITION    	 2.00		R--	Program	    5	  273
+ 18	0	BB      c1    	40.00		RS-	Bytes	25000	40536
+ 19	0	BB      c2    	 8.00		RS-	Bytes	16384	 6912
+ 20	0	GUNSHIP     	 2.00		R--	Program	    5	  273
+ 21	0	GUM     c1    	40.00		RS-	Bytes	25000	40536
+ 22	0	GUM     c2    	 8.00		RS-	Bytes	16384	 6912
+ 23	0	SAMANTHA    	 2.00		R--	Program	    5	  273
+ 24	0	SAM     c1    	40.00		RS-	Bytes	25000	40536
+ 25	0	SAM     c2    	 8.00		RS-	Bytes	16384	 6912
+ 26	0	DEATH-STAR    	 2.00		R--	Program	    5	  273
+ 27	0	DEA     c1    	40.00		RS-	Bytes	25000	40536
+ 28	0	DEA     c2    	 8.00		RS-	Bytes	16384	 6912
+ 29	0	4_8         	 8.00		R--	Program	    0	 6529
+ 30	0	PING-PONG    	 2.00		R--	Program	    5	  273
+ 31	0	QIN     c1    	40.00		RS-	Bytes	25000	40536
+ 32	0	QIN     c2    	 8.00		RS-	Bytes	16384	 6912
+ 33	0	MANTRONIX    	 2.00		R--	Program	    5	  273
+ 34	0	MTX     c1    	40.00		RS-	Bytes	25000	40536
+ 35	0	MTX     c2    	 8.00		RS-	Bytes	16384	 6912
+ 36	0	MICRONAUT-1    	 2.00		R--	Program	    5	  273
+ 37	0	MICRO   c1    	40.00		RS-	Bytes	25000	40536
+ 38	0	MICRO   c2    	 8.00		RS-	Bytes	16384	 6912
+Space free/filled/total	: 026/614/640 KB
+
+MARIAN7.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	dor         	 8.00		RS-	Bytes	16384	 6912
+  2	0	gol         	 8.00		RS-	Bytes	32768	 6912
+  3	0	kma         	 8.00		RS-	Bytes	16384	 6912
+  4	0	ura         	 8.00		RS-	Bytes	16384	 6912
+  5	0	erg         	 4.00		RS-	Bytes	16384	 3942
+  6	0	but         	36.00		RS-	Bytes	25000	35002
+  7	0	por         	 8.00		RS-	Bytes	16384	 6912
+  8	0	rom         	36.00		RS-	Bytes	24576	36352
+  9	0	run         	 2.00		RS-	Program	    1	 1099
+ 10	0	vuv         	40.00		RS-	Bytes	25000	40536
+ 11	0	toc         	 8.00		RS-	Bytes	16384	 6912
+ 12	0	rup         	40.00		RS-	Bytes	25000	40536
+ 13	0	fel         	 6.00		RS-	Bytes	32768	 4096
+ 14	0	fpn         	42.00		RS-	Bytes	24576	40959
+ 15	0	caz         	40.00		RS-	Bytes	25000	40536
+ 16	0	tet         	42.00		RS-	Bytes	24448	41087
+ 17	0	lob         	38.00		RS-	Bytes	24792	38759
+ 18	0	tum         	 2.00		RS-	Bytes	16464	 1968
+ 19	0	nai         	 2.00		RS-	Bytes	24456	  544
+ 20	0	dif         	36.00		RS-	Bytes	28000	35738
+ 21	0	sol         	40.00		RS-	Bytes	25000	40536
+ 22	0	alb         	 8.00		RS-	Bytes	16384	 6912
+ 23	0	lan         	42.00		RS-	Bytes	24576	40959
+ 24	0	arc         	40.00		RS-	Bytes	25000	40535
+ 25	0	wad         	 8.00		RS-	Bytes	16384	 6912
+ 26	0	cor         	40.00		RS-	Bytes	25000	40536
+ 27	0	pop         	 6.00		RS-	Bytes	28350	 5923
+ 28	0	org         	 6.00		RS-	Bytes	40000	 5045
+ 29	0	DIZZY-2     	 2.00		R--	Program	    1	  416
+ 30	0	IRONSOLDIER    	 2.00		R--	Program	    1	  389
+ 31	0	ZYNAPS      	 2.00		R--	Program	    1	  407
+ 32	0	LODE RUNNER    	 2.00		R--	Program	    1	  400
+ 33	0	SLIGHTLY M    	 2.00		R--	Program	    1	  389
+ 34	0	MARAUDER    	 2.00		R--	Program	    1	  389
+ 35	0	SEYMOUR ATM    	 2.00		R--	Program	   10	  387
+ 36	0	KINETIK     	 2.00		R--	Program	   10	  566
+ 37	0	TRACER CMDO    	 2.00		R--	Program	    5	  280
+ 38	0	DIZZY-8     	 2.00		R--	Program	   10	  412
+ 39	0	HUMPTY ITG    	 2.00		R--	Program	    1	  389
+ 40	0	WEST COWBOY    	 2.00		R--	Program	   10	  494
+ 41	0	DIZZY-4     	 2.00		R--	Program	    1	  389
+Space free/filled/total	: 006/634/640 KB
+
+RARESCABAL.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		---	Program	    0	  130
+  2	0	cabalscr    	 8.00		---	Bytes	16384	 6912
+  3	0	driver      	 2.00		---	Bytes	32768	 1747
+  4	0	cabalcode    	30.00		---	Bytes	30464	29440
+  5	0	cblevel1a    	 8.00		---	Bytes	23440	 7080
+  6	0	cblevel1b    	 4.00		---	Bytes	56832	 2304
+  7	0	cblevel2a    	 8.00		---	Bytes	23440	 7080
+  8	0	cblevel2b    	 4.00		---	Bytes	56832	 2304
+  9	0	cblevel3a    	 8.00		---	Bytes	23440	 7080
+ 10	0	cblevel3b    	 4.00		---	Bytes	56832	 2304
+ 11	0	cblevel4a    	 8.00		---	Bytes	23440	 7080
+ 12	0	cblevel4b    	 4.00		---	Bytes	56832	 2304
+ 13	0	cblevel5a    	 8.00		---	Bytes	23440	 7080
+ 14	0	cblevel5b    	 4.00		---	Bytes	56832	 2304
+Space free/filled/total	: 534/106/640 KB
+
+RARESCHASEHQ.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		---	Program	    0	  135
+  2	0	chqscreen    	 8.00		---	Bytes	16384	 6912
+  3	0	driver      	 2.00		---	Bytes	32768	 1747
+  4	0	chqmcode1    	20.00		---	Bytes	25000	19072
+  5	0	chqmcode2    	16.00		---	Bytes	49152	16143
+  6	0	chqlevel1    	 8.00		---	Bytes	23552	 6896
+  7	0	chqlevel2    	 8.00		---	Bytes	23552	 6896
+  8	0	chqlevel3    	 8.00		---	Bytes	23552	 6896
+  9	0	chqlevel4    	 8.00		---	Bytes	23552	 6896
+ 10	0	chqlevel5    	 8.00		---	Bytes	23552	 6896
+ 11	0	chqlevel6    	 8.00		---	Bytes	23552	 6896
+Space free/filled/total	: 540/100/640 KB
+
+RARESEXO.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	basic-b     	 2.00		---	Program	    0	  451
+  2	0	atv         	22.00		---	Program	    0	22408
+  3	0	bravestarr    	24.00		---	Program	    0	23398
+  4	0	chuckie     	12.00		---	Program	    0	10875
+  5	0	chuckie2    	26.00		---	Program	    0	26074
+  6	0	core        	26.00		---	Program	    0	26100
+  7	0	deathpit    	22.00		---	Program	    0	22457
+  8	0	duct        	26.00		---	Program	    0	26295
+  9	0	dustin      	30.00		---	Program	    0	29145
+ 10	0	dynadan     	30.00		---	Program	    0	29484
+ 11	0	express     	10.00		---	Program	    0	 9608
+ 12	0	galaxians    	 8.00		---	Program	    0	 7715
+ 13	0	heman       	24.00		---	Program	    0	22649
+ 14	0	hundra      	28.00		---	Program	    0	27354
+ 15	0	icepallace    	24.00		---	Program	    0	23853
+ 16	0	jknipper2    	26.00		---	Program	    0	25295
+ 17	0	kokotoni    	22.00		---	Program	    0	21982
+ 18	0	magictok    	20.00		---	Program	    0	19671
+ 19	0	ntrearth    	22.00		---	Program	    0	20948
+ 20	0	pacman      	 8.00		---	Program	    0	 7423
+ 21	0	paperboy2    	24.00		---	Program	    0	22852
+ 22	0	plotting    	18.00		---	Program	    0	18210
+ 23	0	quackshot    	18.00		---	Program	    0	16974
+ 24	0	rapede      	 6.00		---	Program	    0	 5405
+ 25	0	saboteur2    	26.00		---	Program	    0	26221
+ 26	0	snakywaky    	26.00		---	Program	    0	25691
+ 27	0	sokoban     	14.00		---	Program	    0	14081
+ 28	0	spyhunter    	24.00		---	Program	    0	23022
+ 29	0	thundbirds    	28.00		---	Program	    0	27990
+ 30	0	typerope    	14.00		---	Program	    0	13312
+ 31	0	uridium     	18.00		---	Program	    0	18187
+ 32	0	zxsudoku    	 4.00		---	Program	    0	 2239
+Space free/filled/total	: 004/636/640 KB
+
+RARESGOLDENAXE.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	goldenaxe    	 2.00		---	Program	    1	  177
+  2	0	axe$        	 8.00		---	Bytes	16384	 6912
+  3	0	driver      	 2.00		---	Bytes	32768	 1747
+  4	0	axec0       	36.00		---	Bytes	28264	36248
+  5	0	axedi       	 2.00		---	Bytes	64768	  139
+  6	0	axe-A       	26.00		---	Bytes	38400	26112
+  7	0	axe-B       	16.00		---	Bytes	24064	14336
+  8	0	axe-D       	16.00		---	Bytes	24064	14336
+  9	0	axe-F       	16.00		---	Bytes	24064	14336
+ 10	0	axe-H       	16.00		---	Bytes	24064	14336
+ 11	0	axe-J       	16.00		---	Bytes	24064	14336
+ 12	0	axe-L       	16.00		---	Bytes	24064	14336
+ 13	0	axe-N       	38.00		---	Bytes	24064	36864
+ 14	0	run         	 2.00		---	Program	    1	   30
+Space free/filled/total	: 424/216/640 KB
+
+RARESIndiana Jones and the Temple of Doom.dsk  
+
+
+RARESINDIANA is not a recognized disk/file system.
+Failed.
+Failed.
+
+RARESPLATOON.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		---	Program	    1	   28
+  2	0	platoon     	 2.00		---	Program	    1	  197
+  3	0	driver      	 2.00		---	Bytes	32768	 1747
+  4	0	platscr     	 8.00		---	Bytes	16384	 6912
+  5	0	platdpl     	 8.00		---	Bytes	40000	 7882
+  6	0	part0       	30.00		---	Bytes	28928	30077
+  7	0	part1       	30.00		---	Bytes	28928	30077
+  8	0	part2       	30.00		---	Bytes	28928	29901
+Space free/filled/total	: 524/116/640 KB
+
+RARESRTYPE.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	rtype       	 2.00		---	Program	    0	  111
+  2	0	scr         	 8.00		---	Bytes	    0	 6912
+  3	0	mcode       	36.00		---	Bytes	    0	36769
+  4	0	lev1        	14.00		---	Bytes	    0	13228
+  5	0	lev2        	14.00		---	Bytes	    0	12856
+  6	0	lev3        	14.00		---	Bytes	    0	13074
+  7	0	lev4        	14.00		---	Bytes	    0	12998
+  8	0	lev5        	10.00		---	Bytes	    0	 8904
+  9	0	lev6        	10.00		---	Bytes	    0	 8849
+ 10	0	lev7        	14.00		---	Bytes	    0	12997
+ 11	0	lev8        	12.00		---	Bytes	    0	11980
+Space free/filled/total	: 488/152/640 KB
+
+RARESSHADOW_DANCER.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		---	Program	    0	  110
+  2	0	shd-scr     	 8.00		---	Bytes	16384	 6912
+  3	0	shd-B       	 6.00		---	Bytes	52877	 4916
+  4	0	shd-C       	 8.00		---	Bytes	52877	 6609
+  5	0	shd-D       	 8.00		---	Bytes	52877	 6590
+  6	0	shd-E       	 6.00		---	Bytes	52877	 5527
+  7	0	shd-F       	 8.00		---	Bytes	52877	 6655
+  8	0	shd-G       	 8.00		---	Bytes	52877	 6655
+  9	0	shd-P       	 6.00		---	Bytes	52877	 5475
+ 10	0	driver      	 2.00		---	Bytes	32768	 1747
+ 11	0	shd-code    	42.00		---	Bytes	24500	41036
+ 12	0	shd-H       	 6.00		---	Bytes	52877	 6091
+ 13	0	shd-I       	 8.00		---	Bytes	52877	 6327
+ 14	0	shd-J       	 6.00		---	Bytes	52877	 5831
+ 15	0	shd-K       	 6.00		---	Bytes	52877	 5075
+ 16	0	shd-L       	 8.00		---	Bytes	52877	 6155
+ 17	0	shd-M       	 8.00		---	Bytes	52877	 6563
+ 18	0	shd-N       	 6.00		---	Bytes	52877	 5756
+ 19	0	shd-O       	 6.00		---	Bytes	52877	 5895
+Space free/filled/total	: 478/162/640 KB
+
+VASILIU1.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1118
+  2	0	express     	 2.00		R--	Program	   10	   43
+  3	0	EXPRESS     	16.00		RS-	Bytes	32722	15392
+  4	0	GAMES       	 8.00		RS-	Program	 9800	 7838
+  5	0	GAMESC      	12.00		RS-	Bytes	54000	11536
+  6	0	_           	 8.00		RS-	Bytes	16384	 6912
+  7	0	spectrum+    	 2.00		R--	Program	   10	  228
+  8	0	batty       	 2.00		R--	Program	   10	  167
+  9	0	DUNL        	 2.00		RS-	Bytes	23296	  255
+ 10	0	DUNL1       	40.00		RS-	Bytes	25000	40536
+ 11	0	warrior     	 2.00		R--	Program	    1	  144
+ 12	0	BATTYC      	24.00		RS-	Bytes	26624	23156
+ 13	0	BATTY$      	 8.00		RS-	Bytes	16384	 6912
+ 14	0	dunlop      	 2.00		R--	Program	   10	  129
+ 15	0	WARC        	40.00		RS-	Bytes	26600	38936
+ 16	0	samantha    	 2.00		R--	Program	    2	  209
+ 17	0	SAM#        	 8.00		RS-	Bytes	16384	 6912
+ 18	0	SAM$        	 8.00		RS-	Bytes	16384	 6912
+ 19	0	SAM1        	20.00		RS-	Bytes	25000	20000
+ 20	0	SAM2        	22.00		RS-	Bytes	45000	20536
+ 21	0	SAM3        	 2.00		RS-	Bytes	16384	 1704
+ 22	0	nodes       	 2.00		R--	Program	    1	  139
+ 23	0	NOD#        	 8.00		RS-	Bytes	16384	 6912
+ 24	0	NOD$        	 8.00		RS-	Bytes	16384	 6912
+ 25	0	NOD1        	38.00		RS-	Bytes	25000	38135
+ 26	0	NOD2        	 4.00		RS-	Bytes	18432	 2048
+ 27	0	combat      	 2.00		R--	Program	    2	  113
+ 28	0	1994        	 2.00		R--	Program	    1	   92
+ 29	0	COM$        	 8.00		RS-	Bytes	16384	 6912
+ 30	0	COM1        	 2.00		RS-	Bytes	24000	  256
+ 31	0	COM2        	40.00		RS-	Bytes	24612	40673
+ 32	0	basball     	 2.00		R--	Program	    1	   76
+ 33	0	1994CODE    	22.00		RS-	Bytes	25000	21000
+ 34	0	ALIEN HW    	 8.00		RS-	Bytes	16384	 6912
+ 35	0	tranz am    	 2.00		R--	Program	    1	  372
+ 36	0	TA$         	 8.00		RS-	Bytes	16384	 6912
+ 37	0	TA1         	10.00		RS-	Bytes	24320	 8448
+ 38	0	TA2         	 2.00		RS-	Bytes	23424	   15
+ 39	0	TA3         	 2.00		RS-	Bytes	23728	    1
+ 40	0	TA4         	 2.00		RS-	Bytes	23672	    2
+ 41	0	magic       	 2.00		R--	Program	    1	  323
+ 42	0	MAGIC$      	 8.00		RS-	Bytes	16384	 6912
+ 43	0	MAGICC      	 8.00		RS-	Bytes	24570	 7686
+ 44	0	locomotion    	 2.00		R--	Program	    1	  110
+ 45	0	LOC$        	 8.00		RS-	Bytes	32768	 6912
+ 46	0	LOCC        	28.00		RS-	Bytes	32768	27285
+ 47	0	BAS         	40.00		RS-	Bytes	24000	40864
+ 48	0	arkanoid    	 2.00		R--	Program	    1	  135
+ 49	0	ARKANOID_    	 8.00		RS-	Bytes	43008	 6912
+ 50	0	ARKANOIDC    	34.00		RS-	Bytes	32495	33640
+ 51	0	ALIEN HW1    	40.00		RS-	Bytes	25000	39385
+ 52	0	ALIEN HW2    	 4.00		RS-	Bytes	18432	 2048
+ 53	0	alien hw    	 2.00		R--	Program	   10	  289
+ 54	0	bugs        	 2.00		R--	Program	   10	  265
+ 55	0	BUGS        	36.00		RS-	Bytes	30000	35536
+Space free/filled/total	: 008/632/640 KB
+
+VASILIU2.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1118
+  2	0	wizball     	 2.00		R--	Program	    1	  214
+  3	0	WIZBALL$    	 8.00		RS-	Bytes	40000	 6162
+  4	0	WIZBALLC    	40.00		RS-	Bytes	25000	40536
+  5	0	xor         	 2.00		R--	Program	   10	  137
+  6	0	XOR3        	28.00		RS-	Bytes	24792	27910
+  7	0	XOR2        	 6.00		RS-	Bytes	16384	 4179
+  8	0	XOR0        	 2.00		RS-	Bytes	16464	 1968
+  9	0	xarq        	 2.00		R--	Program	   10	   88
+ 10	0	XARQX       	 8.00		RS-	Bytes	32768	 6912
+ 11	0	XARQ1       	40.00		RS-	Bytes	25000	40536
+ 12	0	zynaps      	 2.00		R--	Program	   10	   95
+ 13	0	ZYNAPS$     	 6.00		RS-	Bytes	32768	 4096
+ 14	0	ZYNAPSC     	40.00		RS-	Bytes	25000	40535
+ 15	0	zaxxon      	 2.00		R--	Program	    1	  206
+ 16	0	ZAXXONC     	40.00		RS-	Bytes	25197	39850
+ 17	0	escape      	 2.00		R--	Program	    2	 1385
+ 18	0	ESCAPEMC    	 8.00		RS-	Bytes	26068	 6700
+ 19	0	fruit1      	14.00		R--	Program	 9100	12602
+ 20	0	FRUIT1MC    	 4.00		RS-	Bytes	53248	 2820
+ 21	0	snooker     	 2.00		R--	Program	    1	  412
+ 22	0	SNOOKERC    	 6.00		RS-	Bytes	26624	 4100
+ 23	0	spectsound    	10.00		R--	Program	    1	 8624
+ 24	0	MISCREEN    	 8.00		RS-	Bytes	40960	 6916
+ 25	0	MISSION1    	20.00		RS-	Bytes	40960	20000
+ 26	0	MISSION2    	22.00		RS-	Bytes	40960	20536
+ 27	0	MISSION3    	 2.00		RS-	Bytes	40960	 1742
+ 28	0	mision      	 2.00		R--	Program	   10	  225
+ 29	0	BG$         	 8.00		RS-	Bytes	24000	 6912
+ 30	0	BG1         	 2.00		RS-	Bytes	23296	  250
+ 31	0	BG2         	10.00		RS-	Bytes	24000	 8767
+ 32	0	backgammon    	 2.00		R--	Program	   10	   96
+ 33	0	BLADER$     	 8.00		RS-	Bytes	16384	 6916
+ 34	0	BLADE1      	20.00		RS-	Bytes	25000	20000
+ 35	0	BLADE2      	22.00		RS-	Bytes	45000	20536
+ 36	0	BLADE3      	 2.00		RS-	Bytes	16384	 1704
+ 37	0	blader      	 2.00		R--	Program	    1	  217
+ 38	0	PCS         	 2.00		RS-	Bytes	65000	   75
+ 39	0	PC$         	 8.00		RS-	Bytes	16384	 6912
+ 40	0	PCC         	40.00		RS-	Bytes	24700	40250
+ 41	0	pcm         	 2.00		R--	Program	    2	  134
+ 42	0	TURTLES$1    	 8.00		RS-	Bytes	16384	 6912
+ 43	0	TURTLESC    	40.00		RS-	Bytes	25000	40536
+ 44	0	TURTLES$2    	 8.00		RS-	Bytes	16384	 6912
+ 45	0	turtles     	 2.00		R--	Program	    1	  227
+ 46	0	samantha    	 2.00		R--	Program	    2	  209
+ 47	0	SAM#        	 8.00		RS-	Bytes	16384	 6912
+ 48	0	SAM$        	 8.00		RS-	Bytes	16384	 6912
+ 49	0	SAM1        	20.00		RS-	Bytes	25000	20000
+ 50	0	dan dare 3    	 2.00		R--	Program	    1	  247
+ 51	0	DANDARE3.1    	38.00		RS-	Bytes	25000	37603
+ 52	0	DANDARE3.2    	 4.00		RS-	Bytes	25000	 2488
+ 53	0	DANDARE3.3    	 4.00		RS-	Bytes	25000	 2406
+ 54	0	SAM2        	22.00		RS-	Bytes	45000	20536
+ 55	0	SAM3        	 2.00		RS-	Bytes	16384	 1704
+Space free/filled/total	: 010/630/640 KB
+
+VASILIU3.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1118
+  2	0	alien       	 2.00		R--	Program	    1	  182
+  3	0	ALIEN       	26.00		RS-	Bytes	40000	25536
+  4	0	arcadia     	 2.00		R--	Program	   10	  245
+  5	0	TIMEX       	 8.00		RS-	Bytes	16384	 6912
+  6	0	ARCADIA0    	10.00		RS-	Bytes	24576	 8192
+  7	0	ARCADIA1    	 2.00		RS-	Bytes	23728	    1
+  8	0	ARCADIA2    	 2.00		RS-	Bytes	23672	    3
+  9	0	astrolog    	40.00		R--	Program	   90	40918
+ 10	0	inst.bio    	10.00		R--	Program	    1	 8344
+ 11	0	biorhytm    	 8.00		R--	Program	    1	 7546
+ 12	0	bridge1     	40.00		R--	Program	 9995	39195
+ 13	0	beach       	 2.00		R--	Program	   10	   54
+ 14	0	BEACH       	40.00		RS-	Bytes	24736	40794
+ 15	0	blade       	 2.00		R--	Program	    5	  229
+ 16	0	BLADE$      	 8.00		RS-	Bytes	32000	 6912
+ 17	0	BLADEC      	28.00		RS-	Bytes	30840	28260
+ 18	0	BLADEU      	 2.00		RS-	Bytes	65368	  104
+ 19	0	BLADEV      	 2.00		RS-	Bytes	64560	   45
+ 20	0	black       	 2.00		R--	Program	   10	  125
+ 21	0	BLACKH$     	 8.00		RS-	Bytes	16384	 6912
+ 22	0	BLACKHC     	30.00		RS-	Bytes	27392	30000
+ 23	0	bhill       	 2.00		R--	Program	    5	  173
+ 24	0	BH1         	 8.00		RS-	Bytes	40960	 6916
+ 25	0	BH2         	20.00		RS-	Bytes	25000	20000
+ 26	0	BH3         	22.00		RS-	Bytes	45000	20536
+ 27	0	BH4         	 2.00		RS-	Bytes	40960	 1704
+ 28	0	bobby       	 2.00		R--	Program	   20	   64
+ 29	0	BH6         	 2.00		RS-	Bytes	45056	   32
+ 30	0	BOBBY1      	40.00		RS-	Bytes	25000	40536
+ 31	0	bill        	 2.00		R--	Program	    5	  448
+ 32	0	BILL$       	 4.00		RS-	Bytes	32000	 2048
+ 33	0	BILLC       	38.00		RS-	Bytes	25856	37480
+ 34	0	bridge3     	 2.00		R--	Program	    0	  441
+ 35	0	BRIDGE3.2    	 2.00		RS-	Bytes	63744	 1808
+ 36	0	BRIDGE3.3    	 8.00		RS-	Bytes	32768	 6912
+ 37	0	BRIDGE3.4    	38.00		RS-	Program	 9300	36943
+ 38	0	booty       	 2.00		R--	Program	   10	  183
+ 39	0	BOOTY$      	 8.00		RS-	Bytes	16384	 6912
+ 40	0	BOOTYC      	38.00		RS-	Bytes	26880	38656
+ 41	0	cavelon     	 2.00		R--	Program	   10	   82
+ 42	0	CAVCODE     	28.00		RS-	Bytes	30800	27000
+ 43	0	chess       	 2.00		R--	Program	   10	  138
+ 44	0	SC2$        	 2.00		RS-	Bytes	32000	  400
+ 45	0	SC2C        	38.00		RS-	Bytes	27000	38000
+ 46	0	chronos     	 2.00		R--	Program	   10	  125
+ 47	0	CHRONOS1    	38.00		RS-	Bytes	24792	38652
+ 48	0	CHRONOS2    	 2.00		RS-	Bytes	16384	  759
+ 49	0	CHRONOS3    	 2.00		RS-	Bytes	16464	 1968
+ 50	0	Bridge3.3    	 0.00		---	Untyped	     	     
+Space free/filled/total	: 004/636/640 KB
+
+VASILIU4.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	ping-pong    	 2.00		R--	Program	    1	   49
+  2	0	PING$       	 8.00		RS-	Bytes	16384	 6912
+  3	0	PING:       	 2.00		RS-	Program	    3	  566
+  4	0	PING2       	38.00		RS-	Bytes	25000	37890
+  5	0	PING3       	 2.00		RS-	Bytes	18432	 1868
+  6	0	run         	 2.00		RS-	Program	    1	 1118
+  7	0	video-poker    	 2.00		R--	Program	    0	  135
+  8	0	POKER$      	 8.00		RS-	Bytes	30000	 6912
+  9	0	POKER       	24.00		RS-	Bytes	26000	23000
+ 10	0	BARBARIAN$    	 8.00		RS-	Bytes	16384	 6912
+ 11	0	BARBARIANC    	40.00		RS-	Bytes	26000	39536
+ 12	0	barbarian1    	 2.00		R--	Program	    0	  331
+ 13	0	MILK$       	 8.00		RS-	Bytes	16384	 6912
+ 14	0	MILK1       	34.00		RS-	Bytes	25000	34136
+ 15	0	MILK2       	 2.00		RS-	Bytes	61100	 1704
+ 16	0	milk        	 2.00		R--	Program	    2	  170
+ 17	0	spike       	 2.00		R--	Program	    1	  253
+ 18	0	spikecode    	40.00		RS-	Bytes	24576	39992
+ 19	0	silk1       	34.00		RS-	Bytes	24792	32993
+ 20	0	silk2       	 4.00		RS-	Bytes	16384	 3855
+ 21	0	silk3       	 2.00		RS-	Bytes	16464	 1968
+ 22	0	silkworm    	 2.00		R--	Program	   10	  206
+ 23	0	BOMB        	 8.00		RS-	Bytes	32768	 8000
+ 24	0	bomber      	 2.00		R--	Program	    1	  119
+ 25	0	batty       	 2.00		R--	Program	    2	  113
+ 26	0	BAT$        	 8.00		RS-	Bytes	16384	 6912
+ 27	0	BAT1        	24.00		RS-	Bytes	25000	23156
+ 28	0	ice-palace    	 2.00		R--	Program	    0	   80
+ 29	0	 ama1       	 4.00		RS-	Bytes	28350	 3417
+ 30	0	 ama2       	22.00		RS-	Bytes	24500	20519
+ 31	0	 ama3       	22.00		RS-	Bytes	45018	20518
+ 32	0	pack-rat    	 2.00		R--	Program	    0	  138
+ 33	0	pratcod1    	 6.00		RS-	Bytes	29184	 5080
+ 34	0	pratcod2    	42.00		RS-	Bytes	24576	40960
+ 35	0	 ama4       	 2.00		RS-	Bytes	23296	  255
+ 36	0	 ama5       	 8.00		RS-	Bytes	32768	 6912
+ 37	0	amazon      	 2.00		R--	Program	    0	  309
+ 38	0	river-raid    	 2.00		R--	Program	    1	  319
+ 39	0	rr2         	 2.00		RS-	Bytes	23296	  255
+ 40	0	rr1         	34.00		RS-	Bytes	30720	32768
+ 41	0	rr_end      	 8.00		RS-	Program	    4	 6869
+ 42	0	sai-combat    	 2.00		R--	Program	    2	  113
+ 43	0	COM$        	 8.00		RS-	Bytes	16384	 6912
+ 44	0	COM1        	 2.00		RS-	Bytes	24000	  256
+ 45	0	COM2        	40.00		RS-	Bytes	24612	40673
+ 46	0	dezactiv    	 2.00		RS-	Bytes	63488	   17
+ 47	0	WD3         	 2.00		RS-	Bytes	18000	 1704
+ 48	0	wdw         	 2.00		R--	Program	    2	  199
+ 49	0	WD$         	 8.00		RS-	Bytes	16384	 6912
+ 50	0	WD1         	20.00		RS-	Bytes	25000	20000
+ 51	0	WD2         	22.00		RS-	Bytes	45000	20536
+ 52	0	WD#         	 8.00		RS-	Bytes	16384	 6916
+ 53	0	icec        	40.00		RS-	Bytes	24832	39168
+Space free/filled/total	: 010/630/640 KB
+
+VASILIU5.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1118
+  2	0	flag        	 2.00		R--	Program	   10	  102
+  3	0	FLAG$       	 8.00		RS-	Bytes	40000	 6912
+  4	0	FLAGC       	38.00		RS-	Bytes	24000	38400
+  5	0	gladiator    	 2.00		---	Program	    0	  387
+  6	0	GLAD$       	 8.00		RS-	Bytes	43008	 6912
+  7	0	GLADC       	38.00		RS-	Bytes	27360	37920
+  8	0	golf        	38.00		R--	Program	    1	38618
+  9	0	GRAPHICS    	 2.00		RS-	Bytes	63520	 2016
+ 10	0	GUAZ2       	24.00		RS-	Bytes	38403	22781
+ 11	0	gun         	 2.00		R--	Program	   10	  157
+ 12	0	GUS         	 8.00		RS-	Bytes	32768	 7080
+ 13	0	GUC         	34.00		RS-	Bytes	24576	32768
+ 14	0	guaz        	 2.00		R--	Program	   10	   77
+ 15	0	GUAZ1       	10.00		RS-	Bytes	25001	 9381
+ 16	0	G-MAN       	38.00		RS-	Bytes	28000	37536
+ 17	0	g-man       	 2.00		R--	Program	    1	  108
+ 18	0	guy fawkes    	 8.00		R--	Program	    1	 6592
+ 19	0	hyperbowl    	 2.00		R--	Program	   10	   87
+ 20	0	HYPERBOWL$    	 8.00		RS-	Bytes	16384	 6912
+ 21	0	HYPERBOWLC    	22.00		RS-	Bytes	32768	21104
+ 22	0	harrier     	 2.00		R--	Program	  100	  233
+ 23	0	HCOD        	 8.00		RS-	Bytes	32000	 6912
+ 24	0	ACOD        	 8.00		RS-	Bytes	24576	 6385
+ 25	0	HARV.HEX    	40.00		RS-	Bytes	26000	39344
+ 26	0	HARV.SCR    	 8.00		RS-	Bytes	32768	 6912
+ 27	0	harvey      	 2.00		R--	Program	   10	  170
+ 28	0	hyperact    	 2.00		R--	Program	    1	  195
+ 29	0	HYPERACT$    	 8.00		RS-	Bytes	16384	 6912
+ 30	0	HYPERACT1    	18.00		RS-	Bytes	26840	18164
+ 31	0	HYPERACT2    	 4.00		RS-	Bytes	49152	 3072
+ 32	0	HYPERACT3    	 4.00		RS-	Bytes	62720	 2048
+ 33	0	high noon    	 2.00		R--	Program	    1	 1346
+ 34	0	HIGH NOON    	 6.00		RS-	Bytes	26000	 5000
+ 35	0	horace      	 2.00		R--	Program	   10	  125
+ 36	0	HORACE$     	 8.00		RS-	Bytes	16384	 6912
+ 37	0	HORACEC     	 8.00		RS-	Bytes	24576	 8110
+ 38	0	invaders    	 2.00		R--	Program	   10	  185
+ 39	0	INV0        	 8.00		RS-	Bytes	24576	 7640
+ 40	0	INV1        	 2.00		RS-	Bytes	32768	    1
+ 41	0	INV2        	 2.00		RS-	Bytes	32768	    1
+ 42	0	INV3        	 2.00		RS-	Bytes	32768	    1
+ 43	0	INV4        	 2.00		RS-	Bytes	32768	    3
+ 44	0	jetpac      	 2.00		R--	Program	   10	  243
+ 45	0	JPSP        	 8.00		RS-	Bytes	16384	 6912
+ 46	0	JPC0        	10.00		RS-	Bytes	24576	 8192
+ 47	0	JPC1        	 2.00		RS-	Bytes	23424	   15
+ 48	0	JPC2        	 2.00		RS-	Bytes	23728	    1
+ 49	0	JPC3        	 2.00		RS-	Bytes	23672	    2
+ 50	0	jetman      	 2.00		R--	Program	    1	  390
+ 51	0	JET$        	 8.00		RS-	Bytes	16384	 6912
+ 52	0	JET1        	32.00		RS-	Bytes	32767	31745
+ 53	0	JET2        	 2.00		RS-	Bytes	23424	   18
+ 54	0	jack        	 2.00		R--	Program	   10	  114
+ 55	0	JACK        	10.00		RS-	Bytes	32768	 8818
+ 56	0	jngl trbl    	 2.00		R--	Program	   10	   99
+ 57	0	JNGL        	 8.00		RS-	Bytes	16384	 7168
+ 58	0	TCOD        	10.00		RS-	Bytes	24036	 8732
+ 59	0	kubis       	 2.00		R--	Program	   10	  179
+ 60	0	KUBIS       	20.00		RS-	Bytes	46000	19535
+ 61	0	kinetik     	 2.00		R--	Program	   10	  161
+ 62	0	KINETIK1    	38.00		RS-	Bytes	24792	38759
+ 63	0	KINETIK2    	 4.00		RS-	Bytes	16384	 3942
+ 64	0	KINETIK3    	 2.00		RS-	Bytes	16464	 1968
+Space free/filled/total	: 020/620/640 KB
+
+VASILIU6.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1118
+  2	0	PIPE        	 2.00		RS-	Program	   10	   40
+  3	0	pippo       	 2.00		R--	Program	   10	   38
+  4	0	PIPA        	 2.00		RS-	Program	   10	   47
+  5	0	PIPS        	 8.00		RS-	Bytes	16384	 6912
+  6	0	PIPD        	 2.00		RS-	Program	   10	   47
+  7	0	PIPB        	 2.00		RS-	Bytes	23296	  256
+  8	0	PIPC        	42.00		RS-	Bytes	24000	41536
+  9	0	popeye      	 2.00		R--	Program	   10	  118
+ 10	0	POS         	 8.00		RS-	Bytes	32768	 6912
+ 11	0	POC         	28.00		RS-	Bytes	26000	27135
+ 12	0	pan joe     	 4.00		R--	Program	   10	 3366
+ 13	0	PANCODE     	 2.00		RS-	Bytes	50000	   60
+ 14	0	PANGAME     	10.00		RS-	Bytes	32768	10000
+ 15	0	pyjamarama    	 2.00		R--	Program	   10	  215
+ 16	0	PYJAMA$     	 8.00		RS-	Bytes	32000	 6913
+ 17	0	PYJAMAC     	32.00		RS-	Bytes	33280	31392
+ 18	0	painter     	10.00		R--	Program	    1	 9364
+ 19	0	PAINTR1     	24.00		RS-	Bytes	34269	23600
+ 20	0	PAINTER2    	 2.00		RS-	Bytes	23300	   25
+ 21	0	piramid     	 2.00		R--	Program	  260	   89
+ 22	0	PIRAMID     	30.00		RS-	Bytes	26624	29440
+ 23	0	poker       	14.00		R--	Program	   10	12549
+ 24	0	rockman     	 2.00		R--	Program	    1	  321
+ 25	0	ROCKSCR     	 8.00		RS-	Bytes	16384	 6912
+ 26	0	ROCKMANcod    	40.00		RS-	Bytes	25000	40534
+ 27	0	raiders     	 2.00		R--	Program	   10	  110
+ 28	0	RAIDERS$    	 8.00		RS-	Bytes	16384	 6912
+ 29	0	RAIDERSC    	 8.00		RS-	Bytes	24576	 7860
+ 30	0	ratos       	 2.00		R--	Program	    1	  228
+ 31	0	RATSCR      	 8.00		RS-	Bytes	16384	 6912
+ 32	0	RATCOD1     	 4.00		RS-	Bytes	19968	 3328
+ 33	0	RATCOD2     	 8.00		RS-	Bytes	25000	 7768
+ 34	0	RATCOD3     	 2.00		RS-	Bytes	23728	    1
+ 35	0	serpenti    	 2.00		R--	Program	   10	  196
+ 36	0	SERPC       	26.00		RS-	Bytes	32768	25000
+ 37	0	scramble    	 2.00		R--	Program	    1	  127
+ 38	0	SCRAMBLE    	10.00		RS-	Bytes	24152	 8616
+ 39	0	SH1         	40.00		RS-	Bytes	25000	40535
+ 40	0	show        	 2.00		R--	Program	    5	  215
+ 41	0	SH2         	 4.00		RS-	Bytes	30000	 2048
+ 42	0	saboteur    	 2.00		R--	Program	   10	  160
+ 43	0	SABOTEUR$    	 8.00		RS-	Bytes	32768	 6912
+ 44	0	SABOTEURC    	40.00		RS-	Bytes	25200	40336
+ 45	0	spectiped    	 2.00		R--	Program	   10	  173
+ 46	0	SPECTIPED$    	 6.00		RS-	Bytes	40000	 4361
+ 47	0	SPECTIPEDC    	 8.00		RS-	Bytes	25300	 7400
+ 48	0	skatec      	 2.00		R--	Program	    1	  148
+ 49	0	SKATE$      	 6.00		RS-	Bytes	40000	 5713
+ 50	0	SKATEC      	40.00		RS-	Bytes	25600	39649
+ 51	0	shockway    	 2.00		R--	Program	    1	  184
+ 52	0	SHOCKWAY1    	36.00		RS-	Bytes	24792	35735
+ 53	0	SHOCKWAY2    	 6.00		RS-	Bytes	16384	 6052
+ 54	0	SHOCKWAY3    	 2.00		RS-	Bytes	16464	 1968
+ 55	0	sex         	 2.00		R--	Program	   10	  236
+ 56	0	ZAMBRINI    	 8.00		RS-	Bytes	32768	 6912
+ 57	0	PIRATA      	26.00		RS-	Bytes	38142	24892
+ 58	0	ZAMBRO      	12.00		RS-	Program	   10	11157
+Space free/filled/total	: 010/630/640 KB
+
+VASILIU7.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1118
+  2	0	kong        	 2.00		R--	Program	    1	  697
+  3	0	KONG$       	 8.00		RS-	Bytes	16384	 6912
+  4	0	KONGC       	38.00		RS-	Bytes	25000	38000
+  5	0	l&r         	 2.00		R--	Program	   10	   91
+  6	0	L&R$        	 8.00		RS-	Bytes	32768	 6912
+  7	0	L&RC        	42.00		RS-	Bytes	24576	40959
+  8	0	match       	 2.00		R--	Program	   10	   95
+  9	0	MATCH       	40.00		RS-	Bytes	25001	40534
+ 10	0	G.A.TENSCAR    	 8.00		RS-	Bytes	16384	 6912
+ 11	0	monte carlo    	 2.00		R--	Program	   10	  169
+ 12	0	MCC         	 2.00		RS-	Bytes	24998	  103
+ 13	0	MC$         	 8.00		RS-	Bytes	32768	 6912
+ 14	0	MCD         	 4.00		RS-	Bytes	36400	 2700
+ 15	0	MC1         	32.00		RS-	Bytes	25600	32000
+ 16	0	minermaniac    	 2.00		R--	Program	   10	  394
+ 17	0	MM2         	34.00		RS-	Bytes	32768	32768
+ 18	0	monopoli    	 2.00		R--	Program	    1	  927
+ 19	0	MON1        	 2.00		RS-	Bytes	65368	  168
+ 20	0	MON3        	 8.00		RS-	Bytes	57580	 7955
+ 21	0	MONB        	28.00		RS-	Program	    5	28074
+ 22	0	MONTYCO     	26.00		RS-	Bytes	32768	25652
+ 23	0	mutant      	 2.00		R--	Program	   10	  143
+ 24	0	maze        	26.00		R--	Program	    1	26409
+ 25	0	nebula      	 2.00		R--	Program	    1	  167
+ 26	0	NEBULA1     	 8.00		RS-	Bytes	16384	 6912
+ 27	0	NEBULA2     	40.00		RS-	Bytes	25088	40448
+ 28	0	navy2       	 2.00		R--	Program	    0	  365
+ 29	0	NAV2L       	 2.00		RS-	Bytes	65024	  511
+ 30	0	NAV2        	28.00		RS-	Bytes	26215	26740
+ 31	0	orion       	 2.00		R--	Program	   10	  186
+ 32	0	ORION       	26.00		RS-	Bytes	30000	25500
+ 33	0	penetrator    	 2.00		R--	Program	    5	  298
+ 34	0	PENEs       	 8.00		RS-	Bytes	32768	 6912
+ 35	0	PENEp       	34.00		RS-	Bytes	32768	32768
+ 36	0	pogo        	 2.00		R--	Program	   10	  158
+ 37	0	POGO$       	 8.00		RS-	Bytes	32000	 6912
+ 38	0	POGOC       	38.00		RS-	Bytes	28000	37535
+ 39	0	POGOS$      	 8.00		RS-	Bytes	32000	 6912
+ 40	0	parabola    	 2.00		R--	Program	   10	  164
+ 41	0	PARABOLA1    	30.00		RS-	Bytes	24792	29268
+ 42	0	PARABOLA2    	 2.00		RS-	Bytes	16384	 1075
+ 43	0	PARABOLA3    	 2.00		RS-	Bytes	16464	 1968
+ 44	0	prohibitie    	 2.00		R--	Program	    1	  172
+ 45	0	PROHIBI1    	34.00		RS-	Bytes	24792	33713
+ 46	0	PROHIBI2    	 6.00		RS-	Bytes	16384	 4570
+ 47	0	PROHIBI3    	 2.00		RS-	Bytes	16464	 1968
+Space free/filled/total	: 016/624/640 KB
+
+VASILIU8.DSK  
+
+Storage format is: EDSK. File system is: HC BASIC 3.5".
+
+IDX	Folder	Name		Size(KB)	Attr	Type	Start	BasLen
+------------------------------------------------------------------------------
+  1	0	run         	 2.00		RS-	Program	    1	 1083
+  2	0	chuckie     	 2.00		R--	Program	   10	  159
+  3	0	CHUCKIE     	20.00		RS-	Bytes	33300	18900
+  4	0	colosus     	 2.00		R--	Program	    1	  833
+  5	0	S.CH        	 8.00		RS-	Bytes	32768	 6912
+  6	0	B.CH        	 8.00		RS-	Bytes	58560	 6208
+  7	0	F.CH        	 2.00		RS-	Bytes	57808	  752
+  8	0	C.CH        	28.00		RS-	Bytes	29184	28624
+  9	0	decathlon    	 2.00		---	Program	    2	  148
+ 10	0	DEC$        	 8.00		RS-	Bytes	16384	 6912
+ 11	0	DEC1        	40.00		RS-	Bytes	25000	40000
+ 12	0	DEC#        	 2.00		RS-	Bytes	16384	 1704
+ 13	0	dan dare    	 2.00		R--	Program	   10	  128
+ 14	0	DAN DARE1    	36.00		RS-	Bytes	24752	36841
+ 15	0	DAN DARE2    	 4.00		RS-	Bytes	16384	 3263
+ 16	0	DAN DARE3    	 2.00		RS-	Bytes	16464	 1906
+ 17	0	dambusters    	 2.00		---	Program	    1	   53
+ 18	0	DAMC        	40.00		RS-	Bytes	24576	39424
+ 19	0	dnpg        	30.00		R--	Program	    1	30458
+ 20	0	GRAPHICS    	 2.00		RS-	Bytes	65368	  168
+ 21	0	deaths      	 4.00		R--	Program	   10	 3407
+ 22	0	KEYCODE     	 2.00		RS-	Bytes	50000	   60
+ 23	0	GAME        	10.00		RS-	Bytes	32768	 8196
+ 24	0	derby       	38.00		R--	Program	    1	36977
+ 25	0	empire      	 2.00		R--	Program	   10	   77
+ 26	0	EMP$        	 8.00		RS-	Bytes	28500	 6912
+ 27	0	EMPCOD      	32.00		RS-	Bytes	28500	31000
+ 28	0	EAGLEC      	34.00		RS-	Bytes	32768	32768
+ 29	0	eagle       	 2.00		R--	Program	   10	  129
+ 30	0	EAGLE$      	 4.00		RS-	Bytes	40000	 3499
+ 31	0	ENDURO$     	 6.00		RS-	Bytes	40000	 4528
+ 32	0	ENDUROC     	40.00		RS-	Bytes	25000	40127
+ 33	0	enduro      	 2.00		R--	Program	   10	  148
+ 34	0	exolon      	 2.00		R--	Program	    1	  174
+ 35	0	EXOLONSOFT    	 8.00		RS-	Bytes	24320	 6912
+ 36	0	EXNICK KING    	40.00		RS-	Bytes	26000	39536
+ 37	0	fist        	 2.00		R--	Program	   10	  244
+ 38	0	FIST$       	 8.00		RS-	Bytes	32768	 6912
+ 39	0	FISTC       	40.00		RS-	Bytes	24576	38912
+ 40	0	flipi       	 2.00		R--	Program	   10	   42
+ 41	0	FLIPIC      	12.00		RS-	Bytes	40960	11408
+ 42	0	fernandez    	 2.00		---	Program	    1	  257
+ 43	0	FERNA       	 2.00		RS-	Bytes	65315	   32
+ 44	0	FERNANDEZS    	 8.00		RS-	Bytes	16384	 6912
+ 45	0	FERNANDEZC    	40.00		RS-	Bytes	25088	39936
+ 46	0	frog        	 2.00		R--	Program	   10	  847
+ 47	0	FROGC       	 4.00		RS-	Bytes	27000	 3750
+Space free/filled/total	: 038/602/640 KB

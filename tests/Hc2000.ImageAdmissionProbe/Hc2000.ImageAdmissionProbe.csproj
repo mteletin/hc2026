@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Hc2000.Tools/Hc2000.Tools.csproj" Aliases="tools" />
+    <ProjectReference Include="../../src/Hc2000.App/Hc2000.App.csproj" Aliases="app" />
+  </ItemGroup>
+</Project>

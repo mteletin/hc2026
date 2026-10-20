@@ -1,0 +1,124 @@
+using System.Runtime.InteropServices;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
+using Hc2000.App.Runtime;
+using Xunit;
+
+namespace Hc2000.App.Tests;
+
+public sealed class AspectRatioViewportTests
+{
+    [AvaloniaTheory]
+    [InlineData(176, 400, 176, 148)]
+    [InlineData(1000, 296, 352, 296)]
+    [InlineData(1408, 1184, 1408, 1184)]
+    [InlineData(0, 0, 0, 0)]
+    public void FitPreservesFullFrameAndCenters(double width, double height, double expectedWidth, double expectedHeight)
+    {
+        using var surface = new VideoSurface();
+        var viewport = new AspectRatioViewport { Surface = surface };
+        Layout(viewport, width, height);
+        var box = Assert.IsType<Viewbox>(viewport.Child);
+        Assert.Equal(new Rect((width - expectedWidth) / 2, (height - expectedHeight) / 2,
+            expectedWidth, expectedHeight), box.Bounds);
+        Assert.Equal(Stretch.Uniform, box.Stretch);
+        Assert.Equal(BitmapInterpolationMode.None, RenderOptions.GetBitmapInterpolationMode(surface));
+        Assert.Equal(2, surface.Scale);
+        Assert.Equal(704, surface.Width);
+        Assert.Equal(592, surface.Height);
+    }
+
+    [AvaloniaFact]
+    public void RequestedIntegerZoomIsRetainedAcrossFitAndSmallWindow()
+    {
+        using var surface = new VideoSurface();
+        var viewport = new AspectRatioViewport { Surface = surface, RequestedScale = 3, FitToWindow = false };
+        Layout(viewport, 1408, 1184);
+        Assert.Equal(new Rect(176, 148, 1056, 888), viewport.Child!.Bounds);
+        Layout(viewport, 176, 148);
+        Assert.Equal(new Size(176, 148), viewport.Child.Bounds.Size);
+        Assert.Equal(3, viewport.RequestedScale);
+        viewport.FitToWindow = true;
+        Layout(viewport, 1408, 1184);
+        Assert.Equal(new Size(1408, 1184), viewport.Child.Bounds.Size);
+        viewport.FitToWindow = false;
+        Layout(viewport, 1408, 1184);
+        Assert.Equal(new Size(1056, 888), viewport.Child.Bounds.Size);
+    }
+
+    [AvaloniaFact]
+    public void UnboundedMeasureUsesFiniteRequestedZoomAndEmptyHostIsSafe()
+    {
+        var viewport = new AspectRatioViewport();
+        viewport.Measure(Size.Infinity);
+        Assert.Equal(default, viewport.DesiredSize);
+        Layout(viewport, 100, 100);
+        using var surface = new VideoSurface();
+        viewport.Surface = surface;
+        viewport.RequestedScale = 4;
+        viewport.Measure(Size.Infinity);
+        Assert.Equal(new Size(1408, 1184), viewport.DesiredSize);
+        Assert.Throws<ArgumentException>(() => viewport.RequestedScale = 0);
+        Assert.Throws<ArgumentException>(() => viewport.RequestedScale = 9);
+    }
+
+    [AvaloniaFact]
+    public void ResizingUsesPublishedFrameDimensionsWithoutChangingPixelsOrTick()
+    {
+        using var surface = new VideoSurface();
+        var viewport = new AspectRatioViewport { Surface = surface };
+        var pixels = Enumerable.Repeat(0xff123456u, 352 * 296).ToArray();
+        pixels[0] = 0xffabcdef;
+        pixels[^1] = 0xff654321;
+        surface.Present(new(42, 352, 296, pixels));
+        var bitmap = Assert.IsType<WriteableBitmap>(surface.Source);
+        Layout(viewport, 176, 148);
+        Layout(viewport, 1408, 1184);
+        Assert.Same(bitmap, surface.Source);
+        using (var buffer = bitmap.Lock())
+        {
+            Assert.Equal(unchecked((int)pixels[0]), Marshal.ReadInt32(buffer.Address));
+            Assert.Equal(unchecked((int)pixels[^1]), Marshal.ReadInt32(buffer.Address + 295 * buffer.RowBytes + 351 * 4));
+        }
+        Assert.Equal(42, surface.PresentedMasterTick);
+        var window = new Window { Content = viewport, Width = 512, Height = 500 };
+        window.Show();
+        surface.Present(new(43, 256, 192, new uint[256 * 192]));
+        window.UpdateLayout();
+        window.Close();
+        Layout(viewport, 512, 500);
+        Assert.Equal(new Rect(0, 58, 512, 384), viewport.Child!.Bounds);
+        var transform = surface.TransformToVisual(viewport)!.Value;
+        var origin = transform.Transform(new Point(0, 0));
+        var end = transform.Transform(new Point(surface.Bounds.Width, surface.Bounds.Height));
+        Assert.Equal(new Point(0, 58), origin);
+        Assert.Equal(new Point(512, 442), end);
+    }
+
+    [AvaloniaFact]
+    public void ReplacementAndRemovalDoNotDisposeOrRetainOldSurface()
+    {
+        using var first = new VideoSurface();
+        using var second = new VideoSurface();
+        var viewport = new AspectRatioViewport { Surface = first };
+        viewport.Surface = second;
+        Assert.Null(first.GetVisualParent());
+        Assert.Same(second, Assert.IsType<Viewbox>(viewport.Child).Child);
+        viewport.Surface = null;
+        Assert.Null(second.GetVisualParent());
+        first.Present(new(1, 1, 1, new uint[1]));
+        second.Present(new(2, 1, 1, new uint[1]));
+        Assert.NotNull(first.Source);
+        Assert.NotNull(second.Source);
+    }
+
+    private static void Layout(AspectRatioViewport viewport, double width, double height)
+    {
+        viewport.Measure(new Size(width, height));
+        viewport.Arrange(new Rect(0, 0, width, height));
+    }
+}

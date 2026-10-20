@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Hc2000.Z80\Hc2000.Z80.csproj" />
+  </ItemGroup>
+</Project>

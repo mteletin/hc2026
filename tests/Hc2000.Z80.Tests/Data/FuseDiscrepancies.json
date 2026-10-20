@@ -1,0 +1,221 @@
+{
+  "fixtureRevision": "bb05647bbf9327c973f1794c48c32b3f569fca04",
+  "inputSha256": "9f36e866f22e72ff1f8bf2100bf70ffbf58edd97b453500aab60acf1f403ebbb",
+  "expectedSha256": "15a6946f4addcf97e137b5bdd1d5fdb08124ff91f1b169f36a8bf4afe4bab6e4",
+  "normativeDecision": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1",
+  "rawCases": 1356,
+  "rawPassed": 1345,
+  "rawFailed": 11,
+  "cases": [
+    {
+      "id": "10",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "UntakenBranchReallyReadsDisplacement",
+      "differences": [
+        {
+          "Kind": "extra-event",
+          "Subject": "event",
+          "Legacy": "absent",
+          "Observed": "131 MR 0002 FD",
+          "normativeValue": "131 MR 0002 FD"
+        }
+      ],
+      "normativeFormula": "Displacement is read even when branch is not taken; unprefixed JR=7T, DJNZ terminal=8T. Preserve address/data and cumulative timestamp.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "20_2",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "UntakenBranchReallyReadsDisplacement",
+      "differences": [
+        {
+          "Kind": "extra-event",
+          "Subject": "event",
+          "Legacy": "absent",
+          "Observed": "7 MR 0001 40",
+          "normativeValue": "7 MR 0001 40"
+        }
+      ],
+      "normativeFormula": "Displacement is read even when branch is not taken; unprefixed JR=7T, DJNZ terminal=8T. Preserve address/data and cumulative timestamp.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "28_1",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "UntakenBranchReallyReadsDisplacement",
+      "differences": [
+        {
+          "Kind": "extra-event",
+          "Subject": "event",
+          "Legacy": "absent",
+          "Observed": "7 MR 0001 8E",
+          "normativeValue": "7 MR 0001 8E"
+        }
+      ],
+      "normativeFormula": "Displacement is read even when branch is not taken; unprefixed JR=7T, DJNZ terminal=8T. Preserve address/data and cumulative timestamp.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "30_2",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "UntakenBranchReallyReadsDisplacement",
+      "differences": [
+        {
+          "Kind": "extra-event",
+          "Subject": "event",
+          "Legacy": "absent",
+          "Observed": "7 MR 0001 50",
+          "normativeValue": "7 MR 0001 50"
+        }
+      ],
+      "normativeFormula": "Displacement is read even when branch is not taken; unprefixed JR=7T, DJNZ terminal=8T. Preserve address/data and cumulative timestamp.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "38_1",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "UntakenBranchReallyReadsDisplacement",
+      "differences": [
+        {
+          "Kind": "extra-event",
+          "Subject": "event",
+          "Legacy": "absent",
+          "Observed": "7 MR 0001 66",
+          "normativeValue": "7 MR 0001 66"
+        }
+      ],
+      "normativeFormula": "Displacement is read even when branch is not taken; unprefixed JR=7T, DJNZ terminal=8T. Preserve address/data and cumulative timestamp.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "76",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "HaltKeepsNextPcAcrossWrapAndInterrupt",
+      "differences": [
+        {
+          "Kind": "state",
+          "Subject": "PC",
+          "Legacy": "0000",
+          "Observed": "0001",
+          "normativeValue": "0001"
+        }
+      ],
+      "normativeFormula": "HALT stores architectural next-byte PC: (0000 + 1) & FFFF; HALT cycles leave it fixed; interrupts stack that next PC.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "edb2_1",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "ReviewedRepeatIoCasesUseModernTakenRepeatFormula",
+      "differences": [
+        {
+          "Kind": "state",
+          "Subject": "F",
+          "Legacy": "0C",
+          "Observed": "00",
+          "normativeValue": "00"
+        },
+        {
+          "Kind": "state",
+          "Subject": "WZ",
+          "Legacy": "0A41",
+          "Observed": "0001",
+          "normativeValue": "0001"
+        }
+      ],
+      "normativeFormula": "Taken repeating IO: WZ=(pcED+1)&FFFF=0001; F3/F5 from pcED high; extra repeat H/PV transform from Banks 2018. Terminal iterations retain ordinary IO flags/WZ.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "edb3_1",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "PinnedRepeatFieldsAreIndependentOfLegacyExpected",
+      "differences": [
+        {
+          "Kind": "state",
+          "Subject": "F",
+          "Legacy": "17",
+          "Observed": "03",
+          "normativeValue": "03"
+        },
+        {
+          "Kind": "state",
+          "Subject": "WZ",
+          "Legacy": "02E1",
+          "Observed": "0001",
+          "normativeValue": "0001"
+        }
+      ],
+      "normativeFormula": "Taken repeating IO: WZ=(pcED+1)&FFFF=0001; F3/F5 from pcED high; extra repeat H/PV transform from Banks 2018. Terminal iterations retain ordinary IO flags/WZ.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "edb9_2",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "PinnedRepeatFieldsAreIndependentOfLegacyExpected",
+      "differences": [
+        {
+          "Kind": "state",
+          "Subject": "F",
+          "Legacy": "A7",
+          "Observed": "AF",
+          "normativeValue": "AF"
+        }
+      ],
+      "normativeFormula": "Taken CPDR F3/F5 from high byte of pcED=7A45: 7A & 28 = 28, not adjusted subtraction result. Other CP flags preserved.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "edba_1",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "ReviewedRepeatIoCasesUseModernTakenRepeatFormula",
+      "differences": [
+        {
+          "Kind": "state",
+          "Subject": "WZ",
+          "Legacy": "069E",
+          "Observed": "0001",
+          "normativeValue": "0001"
+        }
+      ],
+      "normativeFormula": "Taken repeating IO: WZ=(pcED+1)&FFFF=0001; F3/F5 from pcED high; extra repeat H/PV transform from Banks 2018. Terminal iterations retain ordinary IO flags/WZ.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    },
+    {
+      "id": "edbb_1",
+      "disposition": "normative-case-pinned; raw-failure-remains",
+      "normativeSource": "hc2000-z80-oracle-conflicts/adr v2 + case-review-cc0a98c v1; hc2000-z80-repeat-flags/adr",
+      "regression": "ReviewedRepeatIoCasesUseModernTakenRepeatFormula",
+      "differences": [
+        {
+          "Kind": "state",
+          "Subject": "F",
+          "Legacy": "17",
+          "Observed": "03",
+          "normativeValue": "03"
+        },
+        {
+          "Kind": "state",
+          "Subject": "WZ",
+          "Legacy": "033A",
+          "Observed": "0001",
+          "normativeValue": "0001"
+        }
+      ],
+      "normativeFormula": "Taken repeating IO: WZ=(pcED+1)&FFFF=0001; F3/F5 from pcED high; extra repeat H/PV transform from Banks 2018. Terminal iterations retain ordinary IO flags/WZ.",
+      "regressionResult": "PASS in the 14 ledger/normative tests; raw failure remains; SHA-specific execution evidence is filed on wi-111"
+    }
+  ],
+  "adapterVersion": 1,
+  "rawAssertions": "Unmodified legacy final state, halted, total TStates, full RAM and exact MC/MR/MW/PC/PR/PW stream; Q absent from this format."
+}

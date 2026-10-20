@@ -120,6 +120,8 @@ internal static class ExpansionSchema
         var memory = manifest.GetProperty("components").EnumerateArray().Single(c => c.GetProperty("id").GetString() == "memory").GetProperty("state");
         var mainBank = memory.GetProperty("paged").GetProperty("bank").GetUInt16();
         var pages = new HashSet<ushort>();
+        var live = s.Units.Where(u => u.ExchangeOwner != 0).ToArray();
+        if (live.Length > 1) throw Invalid();
         var expected = new Dictionary<int, long> { [ExpansionFrontierDriver.FirstCpuDeviceId] = checked(s.Main.Pending.Value.AtCpuTState * 5) };
         for (var index = 0; index < s.Units.Length; index++)
         {
@@ -127,13 +129,18 @@ internal static class ExpansionSchema
             if (u.Kind != "compute" || grant.UnitId != index + 1 || grant.ResourceEpoch == 0 || grant.MapEpoch == 0 ||
                 u.ExecutionEpoch == 0 || !Enum.IsDefined(u.Lifecycle) || !Enum.IsDefined(u.SavedLifecycle) ||
                 u.SavedLifecycle is ExpansionLifecycle.Paused or ExpansionLifecycle.Faulted ||
-                !Enum.IsDefined(u.RequestedMailboxEffect) || u.ExchangeOwner != 0 || u.HandoverHalt ||
-                u.ExchangePreviousBank != 0 ||
+                !Enum.IsDefined(u.RequestedMailboxEffect) || u.HandoverHalt ||
+                u.ExchangeOwner == 0 && u.ExchangePreviousBank != 0 ||
+                u.ExchangeOwner != 0 && (u.ExchangeOwner != grant.UnitId ||
+                    u.Lifecycle != ExpansionLifecycle.ServiceIdle || u.Cpu.Halted ||
+                    u.Cpu.Registers.PC >= 0xc000 || u.Cpu.Registers.SP > 0xbfff || grant.Pages.Page3 != mainBank) ||
                 u.CpuAnchor < 0 || u.MasterAnchor < 0 || u.Remainder != 0 ||
                 u.CpuAnchor > u.Cpu.TStates || u.LastMasterTick > now ||
                 checked(u.MasterAnchor + checked((u.Cpu.TStates - u.CpuAnchor) * 5)) != u.LastMasterTick) throw Invalid();
             for (var page = 0; page < 4; page++)
-                if (grant.Pages[page] < ExpansionArena.FirstComputePage || grant.Pages[page] == mainBank || !pages.Add(grant.Pages[page])) throw Invalid();
+                if (grant.Pages[page] < ExpansionArena.FirstComputePage ||
+                    grant.Pages[page] == mainBank && !(page == 3 && u.ExchangeOwner == grant.UnitId) ||
+                    !pages.Add(grant.Pages[page])) throw Invalid();
             Cpu.ValidateFrontierState(u.Cpu); ExpansionMailbox.ValidateState(u.Mailbox);
             if (u.RequestedMailboxEffect != ExpansionMailboxEffect.None &&
                 (u.Cpu.Pending is null || u.Lifecycle is not (ExpansionLifecycle.Running or ExpansionLifecycle.Paused))) throw Invalid();
@@ -147,6 +154,7 @@ internal static class ExpansionSchema
                     checked(u.MasterAnchor + checked((u.Cpu.Pending.Value.AtCpuTState - u.CpuAnchor) * 5)));
             }
         }
+        if (live.Length == 1 && pages.Contains(live[0].ExchangePreviousBank)) throw Invalid();
         ValidateRoot(s.Root, s.Units);
         var generationIds = clock.GetProperty("deviceGenerations").EnumerateArray().Select(g => g.GetProperty("id").GetString()).ToHashSet();
         for (var id = 1000; id <= 1016; id++) if (!generationIds.Contains("device-" + id)) throw Invalid();

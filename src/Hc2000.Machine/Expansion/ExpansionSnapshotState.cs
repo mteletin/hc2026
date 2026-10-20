@@ -6,10 +6,8 @@ namespace Hc2000.Machine.Expansion;
 // Detached bounded metadata only: the existing HCS RAM asset owns all mutable RAM bytes.
 internal sealed record ExpansionSnapshotState(int Version, string MainKind, FrontierState Main,
     ExpansionUnitState[] Units, ExpansionRootState Root);
-// ExchangeOwner, HandoverHalt and ExchangePreviousBank are the side-Z80 job-exchange
-// reservation (hc2000-side-z80-job-exchange-v1): the exchange-window ownership byte,
-// the handover-HALT flag and the remembered previous latch bank. All three are zero in
-// this slice and enforced zero by ExpansionSchema.Validate.
+// HandoverHalt remains reserved zero: small units hand over through Idle alone.
+// ExchangeOwner identifies the one live latch flip; bank zero is a legal previous bank.
 internal sealed record ExpansionUnitState(string Kind, ExpansionPageGrant Grant, ulong ExecutionEpoch,
     ExpansionLifecycle Lifecycle, ExpansionLifecycle SavedLifecycle, long CpuAnchor, long MasterAnchor,
     long LastMasterTick, long Remainder, ExpansionMailboxEffect RequestedMailboxEffect,
@@ -49,9 +47,9 @@ public sealed partial class ExpansionMailbox
 
 public sealed partial class ExpansionComputeUnit
 {
-    internal ExpansionUnitState CaptureState(ExpansionPageGrant grant) => new("compute", grant, ExecutionEpoch,
+    internal ExpansionUnitState CaptureState(ExpansionPageGrant grant, byte exchangeOwner, ushort previousBank) => new("compute", grant, ExecutionEpoch,
         Lifecycle, savedLifecycle, cpuAnchor, masterAnchor, LastMasterTick, ClockRemainder,
-        requestedMailboxEffect, core.CaptureFrontier(), Mailbox.CaptureState(), (byte)0, false, (ushort)0);
+        requestedMailboxEffect, core.CaptureFrontier(), Mailbox.CaptureState(), exchangeOwner, false, previousBank);
 
     internal void AdoptState(ExpansionUnitState s, ExpansionMemoryLease lease)
     {
@@ -67,9 +65,12 @@ public sealed partial class ExpansionArena
     internal void AdoptGrants(ExpansionUnitState[] states, ushort restoredMainBank)
     {
         VerifyOwner(); Array.Clear(pageOwners); mainBank = restoredMainBank;
+        exchangeOwner = exchangePreviousBank = 0;
         foreach (var s in states)
         {
             var grant = s.Grant; grants[grant.UnitId - 1] = grant;
+            if (s.ExchangeOwner != 0)
+            { exchangeOwner = s.ExchangeOwner; exchangePreviousBank = s.ExchangePreviousBank; }
             for (var i = 0; i < 4; i++) pageOwners[grant.Pages[i]] = (byte)grant.UnitId;
         }
     }
@@ -80,7 +81,8 @@ public sealed partial class ExpansionController
     internal ExpansionRootState CaptureState() => new(selected, latched, staging.AsSpan(0, stagingCount).ToArray(),
         collecting, overflow, response?.ToArray(), responseCursor, pendingId, pendingOperation, lastResult);
 
-    internal ExpansionUnitState[] CaptureUnits() => units.Select(u => u.CaptureState(arena.GetGrant(u.Id))).ToArray();
+    internal ExpansionUnitState[] CaptureUnits() => units.Select(u => u.CaptureState(arena.GetGrant(u.Id),
+        arena.OwnsExchange(u.Id) ? (byte)u.Id : (byte)0, arena.PreviousExchangeBank(u.Id))).ToArray();
 
     internal void AdoptState(ExpansionSnapshotState s, ushort mainBank)
     {

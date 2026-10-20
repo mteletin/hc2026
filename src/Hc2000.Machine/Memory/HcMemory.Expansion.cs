@@ -17,6 +17,13 @@ public sealed partial class HcMemory
             throw new ArgumentException("Expansion requires its explicit matching machine profile.", nameof(profile));
         if (expansionArena is not null)
             throw new InvalidOperationException("The expansion arena is already composed.");
-        return expansionArena = new(ram, Latches.PagedBank);
+        return expansionArena = new(ram, Latches.PagedBank, SetExpansionBank);
+    }
+
+    private void SetExpansionBank(ushort bank)
+    {
+        var next = Latches with { PagedBank = bank };
+        var pages = MemoryPaging.Build(Profile, next, sessionRange);
+        Latches = next; Pages = pages;
     }
 }

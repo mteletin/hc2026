@@ -26,8 +26,9 @@ public sealed partial class ExpansionArena
     private readonly byte[] pageOwners = new byte[65536];
     private readonly ExpansionPageGrant[] grants = new ExpansionPageGrant[ComputeCount];
     private ushort mainBank;
+    private readonly Action<ushort> setHostBank;
 
-    internal ExpansionArena(byte[] ram, ushort mainBank)
+    internal ExpansionArena(byte[] ram, ushort mainBank, Action<ushort> setHostBank)
     {
         if (ram.Length != Memory.PagedRamPolicy.RamBytes)
             throw new ArgumentException("Expansion requires the existing full paged arena.", nameof(ram));
@@ -35,6 +36,7 @@ public sealed partial class ExpansionArena
             throw new InvalidOperationException("The main latch conflicts with the initial compute roster.");
         this.ram = ram;
         this.mainBank = mainBank;
+        this.setHostBank = setHostBank;
         for (ushort id = 1; id <= ComputeCount; id++)
         {
             var first = (ushort)(FirstComputePage + 4 * (id - 1));
@@ -67,13 +69,16 @@ public sealed partial class ExpansionArena
         for (var i = 0; i < 4; i++)
         {
             var page = pages[i];
-            if (page < FirstComputePage || page == mainBank ||
+            var reservedBank = exchangeOwner == expected.UnitId ? exchangePreviousBank : mainBank;
+            if (page < FirstComputePage || page == reservedBank ||
+                exchangeOwner != 0 && exchangeOwner != expected.UnitId && page == exchangePreviousBank ||
                 pageOwners[page] != 0 && pageOwners[page] != expected.UnitId) return false;
             for (var previous = 0; previous < i; previous++)
                 if (pages[previous] == page) return false;
         }
         var next = new ExpansionPageGrant(expected.UnitId, checked(expected.ResourceEpoch + 1),
             checked(expected.MapEpoch + 1), pages);
+        RevokeExchange(expected.UnitId);
         // No callbacks, allocations or fallible validation inside the publication interval.
         for (var i = 0; i < 4; i++) ram.AsSpan(Physical(pages[i]), PageBytes).Clear();
         for (var i = 0; i < 4; i++) pageOwners[expected.Pages[i]] = 0;
@@ -85,13 +90,19 @@ public sealed partial class ExpansionArena
     internal bool TrySelectMainBank(ushort page)
     {
         VerifyOwner();
+        if (exchangeOwner != 0) return page == mainBank;
         if (pageOwners[page] != 0) return false;
         mainBank = page;
         return true;
     }
 
     internal byte Read(ExpansionPageGrant grant, ushort address) => ram[Resolve(grant, address)];
-    internal void Write(ExpansionPageGrant grant, ushort address, byte value) => ram[Resolve(grant, address)] = value;
+    internal void Write(ExpansionPageGrant grant, ushort address, byte value)
+    {
+        var physical = Resolve(grant, address);
+        if (exchangeOwner == grant.UnitId && address >= 0xc000) return;
+        ram[physical] = value;
+    }
 
     private int Resolve(ExpansionPageGrant grant, ushort address)
     {

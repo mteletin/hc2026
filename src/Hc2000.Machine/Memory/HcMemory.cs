@@ -39,6 +39,7 @@ public sealed partial class HcMemory
     public void WritePagedPort(ushort port, byte value)
     {
         if (!PagedPortsActive) return;
+        if (expansionArena?.ExchangeLive == true && port is 0x7ffd or 0x7efd or 0x7dfd) return;
         if (port == 0x7cfd && PagedRamPolicy.IsMTransfer(Profile.RamPaged!.PolicyId))
         {
             // Escape is independent of the bank lock; invalid writes have no latch/history effect.

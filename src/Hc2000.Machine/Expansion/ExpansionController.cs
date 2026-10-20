@@ -133,22 +133,26 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
         {
             case 2: // RESET: never wait for instruction retirement.
             case 6: // PAUSE acknowledges one cycle-safe frontier, including a partial instruction.
+                if (op == 6 && arena.OwnsExchange(latched))
+                { Emit(ExpansionResult.InvalidState); return; }
                 if (unit.Runnable)
                 {
                     pendingId = latched; pendingOperation = op;
                     lastResult = ExpansionResult.Accepted; // No response until owner acknowledgment.
                     return;
                 }
-                if (op == 2) unit.Reset(tick);
+                if (op == 2) { arena.RevokeExchange(latched); unit.Reset(tick); }
                 else if (unit.Lifecycle is ExpansionLifecycle.Paused or ExpansionLifecycle.Faulted)
                 { Emit(ExpansionResult.InvalidState); return; }
                 else unit.Pause(tick);
                 break;
             case 3:
                 if (unit.Lifecycle != ExpansionLifecycle.ResetStopped) { Emit(ExpansionResult.InvalidState); return; }
+                arena.RevokeExchange(latched);
                 unit.Fill(data[0]); break;
             case 4:
                 if (!unit.MutableImage) { Emit(ExpansionResult.InvalidState); return; }
+                arena.RevokeExchange(latched);
                 unit.ReplaceImage(BinaryPrimitives.ReadUInt16LittleEndian(data), data[8..]); break;
             case 5:
                 if (!unit.Stable || !unit.Retired && unit.Lifecycle != ExpansionLifecycle.Paused)
@@ -161,6 +165,7 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
             case 8:
                 if (unit.Lifecycle is not (ExpansionLifecycle.Paused or ExpansionLifecycle.ServiceIdle))
                 { Emit(ExpansionResult.InvalidState); return; }
+                arena.RevokeExchange(latched);
                 unit.Resume(tick); break;
             case 9:
                 if (!unit.Stable || !unit.Retired && unit.Lifecycle != ExpansionLifecycle.Paused)
@@ -188,7 +193,16 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
                 if (sent == ExpansionResult.Accepted) unit.Wake(tick);
                 Emit(sent); return;
             case 12:
-                var read = unit.Mailbox.ReadOutbox(out var frame); Emit(read, frame); return;
+                var read = unit.Mailbox.ReadOutbox(out var frame);
+                if (read == ExpansionResult.Accepted && unit.Lifecycle == ExpansionLifecycle.ServiceIdle)
+                {
+                    if (arena.ExchangeLive && !arena.OwnsExchange(latched)) { Emit(ExpansionResult.Busy); return; }
+                    var retained = unit.CaptureFrontier();
+                    if (retained.Halted || retained.Registers.PC >= 0xc000 || retained.Registers.SP > 0xbfff)
+                    { Emit(ExpansionResult.InvalidState); return; }
+                    if (!arena.TryInstallExchange(latched)) { Emit(ExpansionResult.Busy); return; }
+                }
+                Emit(read, frame); return;
             case 13:
                 Emit(unit.Mailbox.AcknowledgeOutbox(BinaryPrimitives.ReadUInt64LittleEndian(data))); return;
             default: Emit(ExpansionResult.Unsupported); return;
@@ -203,7 +217,7 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
         if (unit.LastMasterTick != masterTick) throw new InvalidOperationException("Control acknowledgment needs the committed frontier.");
         var op = pendingOperation;
         pendingId = 0; pendingOperation = 0;
-        if (op == 2) unit.Reset(masterTick); else unit.Pause(masterTick);
+        if (op == 2) { arena.RevokeExchange(id); unit.Reset(masterTick); } else unit.Pause(masterTick);
         Emit(ExpansionResult.Accepted);
     }
     private static bool ValidPayload(byte op, ReadOnlySpan<byte> data)
@@ -217,6 +231,7 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
                 var count = BinaryPrimitives.ReadUInt32LittleEndian(data[4..]);
                 var offset = BinaryPrimitives.ReadUInt16LittleEndian(data);
                 return count is > 0 and <= 65536 && count <= 65536u - offset &&
+                    (op != 4 || offset + count <= 0xc000 || offset >= 0xf000) &&
                     data.Length == (op == 4 ? 8 + (int)count : 8);
             case 10: return data.Length == 9 && data[8] == 0;
             case 11: return data.Length == ExpansionMailbox.FrameBytes;

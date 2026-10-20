@@ -122,7 +122,7 @@ public sealed class ExpansionRuntimeTests(ITestOutputHelper output)
     [Fact]
     public void MainGuestLoadsStartsExchangesBothDirectionsAndAcknowledgesTheComputeReply()
     {
-        var reply = Mail(99, 0x43); var auxiliary = new List<byte>();
+        var reply = Mail(99, 0x43); var auxiliary = new List<byte> { 0x31, 0xff, 0xbf }; // LD SP,BFFF: job-private stack.
         Output(auxiliary, 0x74fd, 6); // WAIT retires before suspension, or falls through if RX is already full.
         auxiliary.AddRange(new byte[] { 1, 0xfd, 0x75, 0xed, 0x78, 0x32, 0, 0x80 });
         Output(auxiliary, 0x74fd, 5); Output(auxiliary, 0x74fd, 1);
@@ -305,6 +305,43 @@ public sealed class ExpansionRuntimeTests(ITestOutputHelper output)
             Assert.Equal(message, Enumerable.Range(0, 73).Select(_ => local.Read(0x75fd, r.Scheduler.Now)).ToArray());
         }
         Assert.Equal(a.Scheduler.PendingEvents, restored.Scheduler.PendingEvents);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(0x1234)]
+    public void HcsRestoresLiveExchangeAfterAckAndResumeRestoresRememberedLatch(int previousBank)
+    {
+        var original = new Rig(); var first = SnapshotMachine(original);
+        original.Memory.WritePagedPort(0x7efd, (byte)previousBank);
+        original.Memory.WritePagedPort(0x7dfd, (byte)(previousBank >> 8));
+        Assert.Equal(0, original.Send(1, 4, Image([0x31, 0xff, 0xbf, 1, 0xfd, 0x74, 0x3e, 7, 0xed, 0x79, 0xc3, 6, 0]))[1]);
+        Assert.Equal(0, original.Send(1, 7, execution: 2)[1]); original.Scheduler.AdvanceTo(1000);
+        Assert.Equal(ExpansionLifecycle.ServiceIdle, original.Root.GetUnit(1).Lifecycle);
+        var local = original.Ports.CreateView(new(1, 2, CpuPortRole.Compute));
+        local.Write(0x74fd, 1, original.Scheduler.Now);
+        foreach (var b in Mail(7, 0x42)) local.Write(0x75fd, b, original.Scheduler.Now);
+        local.Write(0x74fd, 2, original.Scheduler.Now);
+        original.Root.GetUnit(1).WriteMemory(0xf000, 0x6e);
+        Assert.Equal(0, original.Send(1, 12, execution: 2)[1]);
+        var ack = new byte[8]; BinaryPrimitives.WriteUInt64LittleEndian(ack, 7);
+        Assert.Equal(0, original.Send(1, 13, ack, execution: 2)[1]);
+        Assert.Equal((ushort)515, original.Memory.Latches.PagedBank);
+        var saved = first.Save();
+        var restored = new Rig(); var second = SnapshotMachine(restored); second.Load(saved);
+        foreach (var r in new[] { original, restored })
+        {
+            Assert.Equal((ushort)515, r.Memory.Latches.PagedBank);
+            Assert.Equal(0x6e, r.Root.GetUnit(1).ReadMemory(0xf000));
+            r.Root.GetUnit(1).WriteMemory(0xf000, 0x99);
+            Assert.Equal(0x6e, r.Root.GetUnit(1).ReadMemory(0xf000));
+            r.Memory.WritePagedPort(0x7efd, 0x55); Assert.Equal((ushort)515, r.Memory.Latches.PagedBank);
+            Assert.Equal(0, r.Send(1, 8, execution: 2)[1]);
+            Assert.Equal((ushort)previousBank, r.Memory.Latches.PagedBank);
+            r.Root.GetUnit(1).WriteMemory(0xf000, 0x99); Assert.Equal(0x99, r.Root.GetUnit(1).ReadMemory(0xf000));
+            r.Scheduler.AdvanceTo(2000); Assert.Equal(ExpansionLifecycle.ServiceIdle, r.Root.GetUnit(1).Lifecycle);
+        }
+        Assert.Equal(original.Scheduler.PendingEvents, restored.Scheduler.PendingEvents);
     }
 
     [Fact]

@@ -114,6 +114,38 @@ public sealed class ExpansionSnapshotValidationTests
         Assert.StartsWith("StateInconsistent: expansion metadata:", Reject(manifest).Message);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(0x1234)]
+    public void LiveExchangeAllowsLegalPreviousBankAndAckedOutboxButRejectsForeignPageNames(int previous)
+    {
+        var manifest = Detached();
+        var state = manifest["components"]![0]!["state"]!;
+        var unit = state["Units"]![0]!;
+        unit["Lifecycle"] = (int)ExpansionLifecycle.ServiceIdle;
+        unit["Cpu"]!["Registers"]!["SP"] = 0xbfff;
+        unit["ExchangeOwner"] = 1; unit["ExchangePreviousBank"] = previous;
+        manifest["components"]![1]!["state"]!["paged"]!["bank"] = 515;
+        // No committed outbox is required after ACK, and legal bank 0 is not a sentinel.
+        Assert.Equal("UnsupportedVersion: component", Reject(manifest).Message);
+        foreach (var bank in new[] { 512, 513, 514, 515, 516, 519 })
+        {
+            unit["ExchangePreviousBank"] = bank;
+            Assert.StartsWith("StateInconsistent: expansion metadata:", Reject(manifest).Message);
+        }
+        unit["ExchangePreviousBank"] = previous;
+        unit["ExchangeOwner"] = 2;
+        Assert.StartsWith("StateInconsistent: expansion metadata:", Reject(manifest).Message);
+        unit["ExchangeOwner"] = 1; unit["HandoverHalt"] = true;
+        Assert.StartsWith("StateInconsistent: expansion metadata:", Reject(manifest).Message);
+        unit["HandoverHalt"] = false;
+        unit["Cpu"]!["Registers"]!["SP"] = 0xc000;
+        Assert.StartsWith("StateInconsistent: expansion metadata:", Reject(manifest).Message);
+        unit["Cpu"]!["Registers"]!["SP"] = 0xbfff;
+        unit["Cpu"]!["Registers"]!["PC"] = 0xc000;
+        Assert.StartsWith("StateInconsistent: expansion metadata:", Reject(manifest).Message);
+    }
+
     private static HcsException Reject(JsonObject manifest) => Assert.Throws<HcsException>(() =>
         HcsCodec.Write(Stream.Null, JsonSerializer.SerializeToElement(manifest), [],
             new MachineSchema(MachineProfile.Hc2000V2PagedExpansionV1)));

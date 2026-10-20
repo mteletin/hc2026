@@ -13,6 +13,11 @@ internal sealed class ExplorerPaneState
     public string MachineName { get; set; } = "HC2000";
     public string Notice { get; set; } = "Choose Browse files on a drive or an existing disk-library row.";
     public ExplorerImage? Image { get; set; }
+    // Read-only listing for a scanned row that is not a disk file view: a tape block list
+    // (Tap.List) or an hdd-container volume catalog (the existing footer/index read). Set with
+    // Image null; the pane renders it without the disk copy-in/out controls.
+    public string? ListingTitle { get; set; }
+    public IReadOnlyList<string>? Listing { get; set; }
     public Func<Task>? Refresh { get; set; }
     public string Name { get; set; } = "";
     public int User { get; set; }

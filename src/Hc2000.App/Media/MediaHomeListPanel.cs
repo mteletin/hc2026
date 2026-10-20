@@ -12,7 +12,7 @@ namespace Hc2000.App.Media;
 /// <summary>
 /// One rendered scanned media home row: the row data plus the actions the contract allows on it.
 /// The row host is <see cref="MediaHomeRowView"/>; a consumer attaches its own double-click browse
-/// to that host (the existing media panel owns the double-click browse lane, not this list).
+/// to that host (the explorer pane owns the browse lane, not this list).
 /// </summary>
 public sealed class MediaHomeRowView : Border
 {
@@ -205,7 +205,9 @@ public sealed class MediaHomeListPanel : StackPanel
             host.ContextMenu = menu;
         }
         // The consumer's browse lane attaches here (double-click); the panel only reports the row.
-        if (row.Selectable && row.Kind is "floppy-dsk" or "tape")
+        // Every recognized kind gets the gesture: the pane decides what the reader opens and
+        // refuses in words where the kind is not a CP/M browse (snapshot).
+        if (row.Selectable && row.Kind is "floppy-dsk" or "hdd-raw" or "hdd-container" or "tape" or "snapshot")
             host.DoubleTapped += (_, _) =>
             {
                 if (BrowseRequested is { } browse)

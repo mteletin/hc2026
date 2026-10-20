@@ -22,7 +22,25 @@ internal sealed class DiskExplorerPanel : StackPanel
             button.Click += async (_, _) => await refresh();
             Children.Add(button);
         }
-        if (image is null) return;
+        if (image is null)
+        {
+            // A scanned tape or hdd-container row: the existing readers listed it and the pane
+            // shows the read-only listing. No disk file view, no copy-in/out controls.
+            if (state.Listing is { } listing)
+            {
+                Children.Add(new TextBlock { Name = "ExplorerListingTitle", Text = state.ListingTitle ?? "", FontSize = 14 });
+                foreach (var line in listing)
+                    Children.Add(new TextBlock { Name = "ExplorerListingLine", Text = line, TextWrapping = TextWrapping.Wrap });
+                if (listing.Count == 0) Children.Add(new TextBlock { Text = "Empty: the reader found no entries." });
+                Children.Add(new TextBlock
+                {
+                    Text = "Read-only listing: the browse opened the existing reader; copy-in/out is not offered for this kind.",
+                    TextWrapping = TextWrapping.Wrap
+                });
+                return;
+            }
+            return;
+        }
         Children.Add(new TextBlock { Name = "ExplorerSource", Text = image.Label, TextWrapping = TextWrapping.Wrap });
         Children.Add(new TextBlock { Text = "Stored records only: sizes are rounded to 128 bytes; terminal 0x00 / 0x1A are kept.", TextWrapping = TextWrapping.Wrap });
         foreach (var entry in image.Entries)

@@ -147,6 +147,7 @@ public partial class MainWindow : Window
         snapshots.LastSnapshot = lastSnapshot;
         snapshots.SnapshotDirectory = lastSnapshot is null ? null : Path.GetDirectoryName(lastSnapshot);
         BindMediaHomeLane(session);
+        BindMediaHomeBrowse(session);
         if (session.Closed || session.Worker?.Completion.IsCompleted != false)
         {
             media.RefreshDiskLibraryList();
@@ -214,6 +215,16 @@ public partial class MainWindow : Window
             bridge.RequestAsync(new MediaCommand(MediaAction.InsertDisk, slot, bytes, name));
         mediaHomeLane.DispatchEject = (slot, _) =>
             bridge.RequestAsync(new MediaCommand(MediaAction.EjectDisk, slot));
+    }
+
+    /// <summary>Point the scanned list's double-click at this session's existing reader (contract
+    /// section 3). Browse reads host bytes only, so a draft session is wired too; the pane refuses
+    /// a row that is not the current session.</summary>
+    private void BindMediaHomeBrowse(MachineSession session)
+    {
+        var panel = this.FindControl<MediaHomeListPanel>("MediaHomeList");
+        if (panel is null) return;
+        panel.BrowseRequested = row => BrowseMediaHomeRowAsync(session, row);
     }
 
     private void RefreshTabsView()

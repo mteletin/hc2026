@@ -25,6 +25,8 @@ public partial class MainWindow
             state.Request++;
             state.Image = null;
             state.Refresh = null;
+            state.Listing = null;
+            state.ListingTitle = null;
             state.Notice = "Choose Browse files on a drive or an existing disk-library row.";
         }
         state.MachineName = configuration?.Name ?? "HC2000";
@@ -208,6 +210,8 @@ public partial class MainWindow
         var generation = session.RuntimeGeneration;
         var request = ++state.Request;
         state.Image = null;
+        state.Listing = null;
+        state.ListingTitle = null;
         state.Notice = "Reading " + label;
         state.Refresh = () => BrowseExplorerImageAsync(session, label, path, descriptor, read);
         RenderExplorer(session);
@@ -281,11 +285,67 @@ public partial class MainWindow
             () => Task.FromResult(ReadExplorerImage(configured.Path, MediaImageDescriptor.HddRaw8MiB)));
     }
 
+    // Production double-click seam for a scanned media home row (contract section 3): the kind
+    // comes from the scan row (MediaHomeRow), never a suffix or length guess. A floppy-dsk and an
+    // hdd-raw row open through the current explorer composition - the same cold-read path the
+    // drive and library rows use. A tape and an hdd-container row browse through the existing
+    // readers (Tap.List, the footer/index container read) and the pane shows that listing
+    // read-only - the disk file-view composition with copy in/out is for disks and volumes.
+    // A snapshot row is not a CP/M browse; an unknown row has no browse action. Browsing
+    // writes nothing.
+    internal Task BrowseMediaHomeRowAsync(MachineSession session, MediaHomeRow row)
+    {
+        if (!ExplorerCurrent(session)) return Task.CompletedTask;
+        var label = "Scanned row: " + row.Name;
+        switch (MediaHomeBrowseLane.ParseKind(row.Kind))
+        {
+            case MediaHomeRowKind.FloppyDsk:
+                return BrowseExplorerImageAsync(session, label, row.Path, MediaImageDescriptor.DskContainer,
+                    () => Task.FromResult(ReadExplorerImage(row.Path, MediaImageDescriptor.DskContainer)));
+            case MediaHomeRowKind.HddRaw:
+                return BrowseExplorerImageAsync(session, label, row.Path, MediaImageDescriptor.HddRaw8MiB,
+                    () => Task.FromResult(ReadExplorerImage(row.Path, MediaImageDescriptor.HddRaw8MiB)));
+            case MediaHomeRowKind.Tape:
+            case MediaHomeRowKind.HddContainer:
+                return BrowseMediaHomeListingAsync(session, label, row);
+            case MediaHomeRowKind.Snapshot:
+                return ExplorerRefusalAsync(session, "a snapshot row is not a CP/M browse; the scan does not decode it");
+            case MediaHomeRowKind.Unknown:
+            default:
+                return ExplorerRefusalAsync(session, "an unknown row has no browse action");
+        }
+    }
+
+    private async Task BrowseMediaHomeListingAsync(MachineSession session, string label, MediaHomeRow row)
+    {
+        // The existing readers list the row: Tap.List for a tape, the existing footer/index
+        // container read for an hdd-container. No new parser, no arena or payload read.
+        var result = await new MediaHomeBrowseLane().OpenRowAsync(row);
+        if (result.Outcome != MediaHomeBrowseOutcome.Browsable)
+        {
+            await ExplorerRefusalAsync(session, result.Message);
+            return;
+        }
+        session.Explorer.Request++;
+        session.Explorer.Image = null;
+        session.Explorer.Refresh = null;
+        session.Explorer.Notice = label + " \u2014 " + result.Message;
+        session.Explorer.ListingTitle = label;
+        session.Explorer.Listing = result.Tape is { } tape
+            ? tape.Select(f => $"{f.Name} \u00b7 {f.Data.Length} bytes").ToList()
+            : result.Container?.Entries.Select((e, i) =>
+                $"volume {i + 1} \u00b7 slot {e.SlotOrdinal.Value} \u00b7 {e.Name} \u00b7 {e.ImageBytes:N0} bytes"
+                + (e.ReadOnly ? " \u00b7 R/O" : "")).ToList() ?? new List<string>();
+        RenderExplorer(session);
+    }
+
     private Task ExplorerRefusalAsync(MachineSession session, string message)
     {
         session.Explorer.Request++;
         session.Explorer.Image = null;
         session.Explorer.Refresh = null;
+        session.Explorer.Listing = null;
+        session.Explorer.ListingTitle = null;
         session.Explorer.Notice = "Explorer refused: " + message;
         RenderExplorer(session);
         return Task.CompletedTask;

@@ -21,6 +21,7 @@
     <ProjectReference Include="..\Hc2000.Disasm\Hc2000.Disasm.csproj" />
     <!-- This is a build-host tool, even when cross-publishing the App. -->
     <ProjectReference Include="../../tools/FactoryHddBuilder/FactoryHddBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
+    <ProjectReference Include="../../tools/UtilitiesDiskBuilder/UtilitiesDiskBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
     <EmbeddedResource Include="..\..\software\demos\z80-visual.bin" LogicalName="Hc2000.App.Demos.z80-visual.bin" />
     <EmbeddedResource Include="..\..\software\demos\z80-visual-negative.bin" LogicalName="Hc2000.App.Demos.z80-visual-negative.bin" />
   </ItemGroup>
@@ -41,5 +42,15 @@
   </ItemGroup>
   <Target Name="GenerateFactoryHddImages" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
     <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/FactoryHddBuilder/bin/$(Configuration)/$(TargetFramework)/FactoryHddBuilder.dll&quot; &quot;$(FactoryHddOutput)&quot;" />
+  </Target>
+  <PropertyGroup>
+    <UtilitiesDiskOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/utilities-disks/</UtilitiesDiskOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="$(UtilitiesDiskOutput)HC2000-UTIL.DSK;$(UtilitiesDiskOutput)HC2000-UTIL-8M.DSK;$(UtilitiesDiskOutput)CPM22-HC-ram-paged-upgrade.DSK;$(UtilitiesDiskOutput)utilities-manifest.json;$(UtilitiesDiskOutput)m-v1-source-fit.txt"
+             Link="disks/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="GenerateUtilitiesDisks" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/UtilitiesDiskBuilder/bin/$(Configuration)/$(TargetFramework)/UtilitiesDiskBuilder.dll&quot; &quot;$(MSBuildProjectDirectory)/../..&quot; &quot;$(UtilitiesDiskOutput)&quot;" />
   </Target>
 </Project>

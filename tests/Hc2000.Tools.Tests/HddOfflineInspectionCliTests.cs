@@ -18,6 +18,10 @@ public sealed class HddOfflineInspectionCliTests(ITestOutputHelper log)
     private const string Row0 = "hdd-volume row=0 ordinal=0 name=\"VOL1.DSK\" protection=rw offset=0 bytes=8388608 storedImageCrc=0362a35b";
     private const string Row1 = "hdd-volume row=1 ordinal=1 name=\"VOL2.DSK\" protection=ro offset=8388608 bytes=8388608 storedImageCrc=25cfecb9";
     private static string Lines(params string[] lines) => string.Join(Environment.NewLine, lines) + Environment.NewLine;
+    private static readonly Lazy<string> DefaultProofRoot = new(() => ResolveProofRoot(null));
+
+    internal static string ResolveProofRoot(string? requestedRoot)
+        => requestedRoot ?? Directory.CreateTempSubdirectory("hc-hdd-inspection-proof-").FullName;
 
     [Fact]
     public void LiteralTwoVolumeInspectionReportsMetadata()
@@ -236,8 +240,7 @@ public sealed class HddOfflineInspectionCliTests(ITestOutputHelper log)
 
     private static string Image(string kind, byte[]? index = null, byte[]? footer = null, long arena = Arena)
     {
-        var root = Environment.GetEnvironmentVariable("HC_HDD_INSPECTION_PROOF_ROOT")
-            ?? Path.Combine(Path.GetTempPath(), "hc-hdd-inspection-proof");
+        var root = Environment.GetEnvironmentVariable("HC_HDD_INSPECTION_PROOF_ROOT") ?? DefaultProofRoot.Value;
         var directory = Path.Combine(root, kind + "-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, "input.img");

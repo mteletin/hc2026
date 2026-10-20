@@ -45,7 +45,10 @@
         <StackPanel Spacing="8">
           <Grid ColumnDefinitions="*,Auto">
             <TextBlock Name="MachineWorkspaceHeading" Classes="sectionTitle" Text="Machines" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Name="NewMachine" Content="New machine" AutomationProperties.Name="Configure a new machine"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Name="NewMachine" Content="New machine" AutomationProperties.Name="Configure a new machine"/>
+              <Button Content="Debugger…" Click="OpenDebugger"/>
+            </StackPanel>
           </Grid>
           <TextBlock Text="Up to four machines. × closes only that machine; settings topics below are not machines." TextWrapping="Wrap"/>
           <TextBlock Name="EmptyWorkspace" Text="No machine started. Configure the first machine below." TextWrapping="Wrap"/>
@@ -68,7 +71,6 @@
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Name="MachineReset" Content="Reset selected machine" IsEnabled="False"/>
           <Button Content="Settings…" Click="OpenSettings" ToolTip.Tip="Application preferences; not a new machine"/>
-          <Button Content="Debugger…" Click="OpenDebugger"/>
         </StackPanel>
         <StackPanel Name="Z80DemoControls" IsVisible="False" Orientation="Horizontal" Spacing="8">
           <Button Name="Z80DemoRerun" AutomationProperties.Name="Reset / Run again" Content="Reset / Run again"/>
@@ -79,6 +81,9 @@
         </Expander>
         <Expander Header="Media and disks · selected machine">
           <media:MediaPanel Name="MediaControls" Margin="0,8,0,0"/>
+        </Expander>
+        <Expander Header="Media homes · scanned images">
+          <media:MediaHomeListPanel Name="MediaHomeList" Margin="0,8,0,0"/>
         </Expander>
         <media:ProfileRomPanel Name="ProfileRomControls" IsVisible="False" IsEnabled="False"/>
         <Expander Header="Snapshots · selected machine">

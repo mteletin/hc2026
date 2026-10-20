@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Hc2000.Machine/Hc2000.Machine.csproj" />
+    <ProjectReference Include="../../src/Hc2000.Asm/Hc2000.Asm.csproj" />
+    <ProjectReference Include="../UpgradeBiosBuilder/UpgradeBiosBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
+    <Compile Include="../../src/HostShared/CpmUtilitiesImages.cs" Link="HostShared/CpmUtilitiesImages.cs" />
+  </ItemGroup>
+</Project>

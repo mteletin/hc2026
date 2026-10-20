@@ -22,6 +22,21 @@ public sealed class MVolumeV2VolumeTests
             BinaryPrimitives.WriteUInt16LittleEndian(raw.AsSpan(o + 16 + j * 2), (ushort)block);
     }
     [Fact]
+    public void BuildFormatterWritesMultipleExtentsWithOnlyFourAllocationWordsPerEntry()
+    {
+        var fs = CpmFs.FormatMVolumeV2();
+        var bytes = Enumerable.Range(0, 66000).Select(i => (byte)(i * 23)).ToArray();
+        fs.Put("LARGE.COM", bytes);
+        var image = fs.ExportVolumeBytes();
+        var reopened = CpmFs.OpenMVolumeV2(image);
+        var actual = reopened.Get("LARGE.COM");
+        Assert.Equal(bytes, actual[..bytes.Length]);
+        Assert.All(actual[bytes.Length..], b => Assert.Equal(0x1a, b));
+        for (var entry = 0; entry < 3; entry++)
+            Assert.Equal(new byte[8], image.AsSpan(entry * 32 + 24, 8).ToArray());
+        Assert.Throws<InvalidDataException>(() => reopened.Put("NO.COM", bytes));
+    }
+    [Fact]
     public void MVolumeV2DpbMatchesPinnedGeometry()
     {
         var fs = CpmFs.OpenMVolumeV2(Volume());

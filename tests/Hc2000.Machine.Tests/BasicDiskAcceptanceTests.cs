@@ -1,8 +1,10 @@
 using System.Buffers.Binary;
+using System.Reflection;
 using System.Security.Cryptography;
 using Hc2000.Machine.Input;
 using Hc2000.Machine.Video;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Hc2000.Machine.Tests;
 
@@ -43,14 +45,14 @@ public sealed class BasicDiskAcceptanceTests
     }
 
     [Theory]
-    [InlineData("ALBA8.DSK")]
-    [InlineData("ALEO-UTILS.DSK")]
-    [InlineData("ALEO-GAMES1.DSK")]
-    [InlineData("BASDEMO35.DSK")]
-    [InlineData("BASIC2.DSK")]
-    [InlineData("CRISTIG1.DSK")]
-    [InlineData("GEOOLDIES.DSK")]
-    [InlineData("RARESGOLDENAXE.DSK")]
+    [BasicDiskData("ALBA8.DSK")]
+    [BasicDiskData("ALEO-UTILS.DSK")]
+    [BasicDiskData("ALEO-GAMES1.DSK")]
+    [BasicDiskData("BASDEMO35.DSK")]
+    [BasicDiskData("BASIC2.DSK")]
+    [BasicDiskData("CRISTIG1.DSK")]
+    [BasicDiskData("GEOOLDIES.DSK")]
+    [BasicDiskData("RARESGOLDENAXE.DSK")]
     public void BasicV2CatReadsEachTitleDisk(string disk)
     {
         if (!MachineBootAcceptanceTests.AssetsAvailable("basic")) return;
@@ -117,14 +119,14 @@ public sealed class BasicDiskAcceptanceTests
     }
 
     [Theory]
-    [InlineData("ALBA8.DSK", "run")]
-    [InlineData("ALEO-UTILS.DSK", "artist2")]
-    [InlineData("ALEO-GAMES1.DSK", "run")]
-    [InlineData("BASDEMO35.DSK", "run")]
-    [InlineData("BASIC2.DSK", "run")]
-    [InlineData("CRISTIG1.DSK", "run")]
-    [InlineData("GEOOLDIES.DSK", "ManicMiner")]
-    [InlineData("RARESGOLDENAXE.DSK", "goldenaxe")]
+    [BasicDiskData("ALBA8.DSK", "run")]
+    [BasicDiskData("ALEO-UTILS.DSK", "artist2")]
+    [BasicDiskData("ALEO-GAMES1.DSK", "run")]
+    [BasicDiskData("BASDEMO35.DSK", "run")]
+    [BasicDiskData("BASIC2.DSK", "run")]
+    [BasicDiskData("CRISTIG1.DSK", "run")]
+    [BasicDiskData("GEOOLDIES.DSK", "ManicMiner")]
+    [BasicDiskData("RARESGOLDENAXE.DSK", "goldenaxe")]
     public void FreshBasicV2LoadsAndRunsEachTitleProgram(string disk, string program)
     {
         if (!MachineBootAcceptanceTests.AssetsAvailable("basic")) return;
@@ -254,4 +256,23 @@ public sealed class BasicDiskAcceptanceTests
             BinaryPrimitives.WriteUInt32LittleEndian(bmp.AsSpan(54 + i * 4), pixels[i]);
         File.WriteAllBytes(path, bmp);
     }
+}
+
+// xUnit v2 data-source skips apply to this row, not to the whole theory.
+public sealed class BasicDiskDataAttribute : DataAttribute
+{
+    private readonly object[] data;
+
+    public BasicDiskDataAttribute(string disk, params string[] program)
+        : this(StorageAssetTests.Root(), disk, program) { }
+
+    internal BasicDiskDataAttribute(string root, string disk, string[] program)
+    {
+        data = [disk, .. program];
+        var relative = Path.Combine("disks", "basic", disk);
+        if (!File.Exists(Path.Combine(root, relative)))
+            Skip = "Copyrighted asset is absent: " + relative;
+    }
+
+    public override IEnumerable<object[]> GetData(MethodInfo testMethod) => [data];
 }

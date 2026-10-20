@@ -8,6 +8,7 @@
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../../src/HostShared/CpmUtilitiesImages.cs" Link="HostShared/CpmUtilitiesImages.cs" />
     <ProjectReference Include="..\..\src\Hc2000.Tools\Hc2000.Tools.csproj" />
     <ProjectReference Include="../../src/Hc2000.App/Hc2000.App.csproj" Aliases="app" />
     <ProjectReference Include="../Hc2000.ImageAdmissionProbe/Hc2000.ImageAdmissionProbe.csproj" ReferenceOutputAssembly="false" />

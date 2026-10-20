@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Hc2000.App.Input;
 using Hc2000.App.Media;
@@ -47,7 +48,12 @@ public sealed class TapeVolumeMountUiTests
                 deadline.Token.ThrowIfCancellationRequested();
                 var poll = Media.PollAsync();
                 Controller.ApplyPending(0, new KeyboardMatrix());
+                // Deliver the worker reply and finish the UI action before the next click.
+                Dispatcher.UIThread.RunJobs();
                 await poll.WaitAsync(deadline.Token);
+                // ApplyPending is synchronous: commit may already have finished the operation.
+                // Do not cancel a successful outcome in an unnecessary post-completion delay.
+                if (done()) return;
                 await Task.Delay(1, deadline.Token);
             }
         }

@@ -142,6 +142,19 @@ else
   exit 1
 fi
 
+# App publish runs the single utilities producer on both legs. Require the
+# closed artifacts and identical bytes; never silently omit a generated disk.
+for n in HC2000-UTIL.DSK HC2000-UTIL-8M.DSK CPM22-HC-ram-paged-upgrade.DSK utilities-manifest.json m-v1-source-fit.txt; do
+  [[ -s "$STAGE/win-app/disks/$n" && -s "$STAGE/linux-app/disks/$n" ]] || {
+    echo "ERROR: utilities output $n missing from a publish leg" >&2; exit 1;
+  }
+  cmp "$STAGE/win-app/disks/$n" "$STAGE/linux-app/disks/$n" || {
+    echo "ERROR: non-reproducible utilities output $n" >&2; exit 1;
+  }
+  cp -a -- "$STAGE/linux-app/disks/$n" "$STAGE/disks/$n"
+done
+cp "$STAGE/disks/utilities-manifest.json" "$OUTPUT/utilities-manifest.json"
+
 # Both publish legs use HddFactoryImages.GenerateInto, also exposed as hc hdd
 # factory. Require identical container bytes and receipts; preserve the receipt
 # beside the installers as well as inside each app/disks payload.

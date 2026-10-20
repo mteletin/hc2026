@@ -127,6 +127,9 @@ public sealed class CpmFs
     }
     /// <summary>Container bytes this filesystem holds: the floppy image or the flat cold-volume raw.</summary>
     public byte[] ImageBytes() => volume ? logical.ToArray() : disk!.Save();
+    /// <summary>Build-only writable M: v2 image, using the shared blank writer and the resident DPB.
+    /// OpenMVolumeV2 remains a read-only inspection surface for owner media.</summary>
+    public static CpmFs FormatMVolumeV2() => new(FormatHddVolume(), Dpb.MVolumeV2());
     /// <summary>Export the flat 8,388,608-byte cold volume bytes as a copy that OpenHddVolume
     /// accepts. Volume constructor only (data start 0, no skew); floppy images save through
     /// their Dsk container. The §4 shared formatter sibling (no-skew 0xe5 blank) belongs to
@@ -240,8 +243,11 @@ public sealed class CpmFs
         var old = DirectoryOffsets().Where(o => Live(o) && logical[o] == user && string.Equals(Name(o), name, NameComparison)).ToArray();
         if (old.Any(o => (logical[o + 9] & 128) != 0)) throw new InvalidDataException("File is read-only.");
         var records = checked(data.Length + 127) / 128;
-        var extentBytes = Parameters.BlockSize * (Parameters.WordAllocations ? 8 : 16);
-        if (extentBytes != 16384 * (Parameters.Exm + 1)) throw new InvalidDataException("Unsupported DPB extent capacity.");
+        // EXM defines the bytes represented by an entry, not the total physical
+        // allocation-word capacity (M v2 uses four of eight words per 32 KiB entry).
+        var extentBytes = 16384 * (Parameters.Exm + 1);
+        if (extentBytes > Parameters.BlockSize * (Parameters.WordAllocations ? 8 : 16))
+            throw new InvalidDataException("Unsupported DPB extent capacity.");
         var entriesNeeded = Math.Max(1, checked(data.Length + extentBytes - 1) / extentBytes);
         if (entriesNeeded * (Parameters.Exm + 1) > 2048) throw new InvalidDataException("File exceeds CP/M extent range.");
         var freeEntries = DirectoryOffsets().Where(o => !Live(o) || old.Contains(o)).Take(entriesNeeded).ToArray();

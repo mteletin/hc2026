@@ -85,18 +85,23 @@ copy_roms_if_absent() {
 # to the one location the --disk resolver checks (<config>/disks/),
 # copy-if-absent like the ROMs - an existing user copy is never touched.
 copy_disk_if_absent() {
-  local src="$1" dest="$CONFIG_DIR/disks/CPM22-HC.DSK"
-  [ -f "$src" ] || { echo "error: payload has no disks/CPM22-HC.DSK" >&2; exit 1; }
+  local src="$1" name="${1##*/}" dest="$CONFIG_DIR/disks/${1##*/}"
+  [ -f "$src" ] || { echo "error: payload has no disks/$name" >&2; exit 1; }
   if [ -e "$dest" ]; then
-    echo "disk: CPM22-HC.DSK already at $dest (left untouched)"
+    echo "disk: $name already at $dest (left untouched)"
     return 0
   fi
   mkdir -p -- "$CONFIG_DIR/disks"
   cp -a -- "$src" "$dest"
-  echo "disk: copied CPM22-HC.DSK into $CONFIG_DIR/disks"
+  echo "disk: copied $name into $CONFIG_DIR/disks"
 }
 
 install() {
+  local disk
+  local disks=(CPM22-HC.DSK HC2000-UTIL.DSK HC2000-UTIL-8M.DSK CPM22-HC-ram-paged-upgrade.DSK utilities-manifest.json m-v1-source-fit.txt)
+  for disk in "${disks[@]}"; do
+    [ -s "$PWD/disks/$disk" ] || { echo "error: payload lacks disks/$disk" >&2; return 1; }
+  done
   # Reject an incomplete/corrupt native payload before touching an existing
   # installation or user data. No host SDL, compiler or audio-device probe.
   local native="$PWD/app/runtimes/linux-x64/native"
@@ -128,7 +133,9 @@ install() {
   } > "$PREFIX/$OWNED_NAME"
 
   copy_roms_if_absent "$PWD/roms"
-  copy_disk_if_absent "$PWD/disks/CPM22-HC.DSK"
+  for disk in "${disks[@]}"; do
+    copy_disk_if_absent "$PWD/disks/$disk"
+  done
 
   mkdir -p -- "$CONFIG_DIR"
   printf '{"version":"%s","prefix":"%s","installed_at":"%s"}\n' \

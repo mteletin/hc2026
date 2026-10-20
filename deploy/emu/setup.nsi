@@ -97,6 +97,12 @@ no_prev_install:
   SetOutPath "$APPDATA\hc2000\disks"
   SetOverwrite off
   File "${PAYLOAD_DIR}\disks\CPM22-HC.DSK"
+  ; Mandatory generated artifacts: File refuses missing media at package time.
+  File "${PAYLOAD_DIR}\disks\HC2000-UTIL.DSK"
+  File "${PAYLOAD_DIR}\disks\HC2000-UTIL-8M.DSK"
+  File "${PAYLOAD_DIR}\disks\CPM22-HC-ram-paged-upgrade.DSK"
+  File "${PAYLOAD_DIR}\disks\utilities-manifest.json"
+  File "${PAYLOAD_DIR}\disks\m-v1-source-fit.txt"
   SetOverwrite on
 
   ; --- Registry (HKCU only) ---

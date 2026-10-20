@@ -11,6 +11,7 @@ using Avalonia.VisualTree;
 using Avalonia.Platform.Storage;
 using Avalonia.Media;
 using Hc2000.App.Input;
+using Hc2000.App.Library;
 using Hc2000.App.Media;
 using Hc2000.App.Workspace;
 using Hc2000.Machine.Video;
@@ -91,6 +92,10 @@ public partial class MainWindow : Window
 
     private readonly LaunchOptions? launchOptions;
     private readonly string? assetRootOverride;
+    // Scanned-home mount uses the accepted MediaHomeMountLane only. Null means the catalog
+    // could not be loaded; the panel then shows no Mount or Eject action.
+    private DiskLibraryMount? mediaHomeMount;
+    private MediaHomeMountLane? mediaHomeLane;
     private Configuration.PrestartPanel prestart;
     private readonly Configuration.ReconfigurePanel reconfigure;
     private bool closing;
@@ -141,6 +146,7 @@ public partial class MainWindow : Window
         var lastSnapshot = configuration?.LastSnapshot;
         snapshots.LastSnapshot = lastSnapshot;
         snapshots.SnapshotDirectory = lastSnapshot is null ? null : Path.GetDirectoryName(lastSnapshot);
+        BindMediaHomeLane(session);
         if (session.Closed || session.Worker?.Completion.IsCompleted != false)
         {
             media.RefreshDiskLibraryList();
@@ -154,6 +160,60 @@ public partial class MainWindow : Window
         }
         if (session.SnapshotBridge is not null)
             snapshots.Attach(session.SnapshotBridge);
+    }
+
+    /// <summary>Wire the scanned media-home list to the existing catalog and mount lane.
+    /// A catalog that cannot be loaded leaves the lane null (no Mount or Eject); the scan still runs.</summary>
+    private void WireMediaHomeList()
+    {
+        var panel = this.FindControl<MediaHomeListPanel>("MediaHomeList");
+        if (panel is null) return;
+        panel.Scan = cancellation =>
+        {
+            var settings = configurationStore.Load().Settings;
+            var configuration = workspace.Selected?.Configuration ?? CurrentSession.StartingConfiguration;
+            var last = configuration?.LastSnapshot;
+            return MediaHomeScan.ScanAsync(settings, last is null ? null : Path.GetDirectoryName(last), cancellation);
+        };
+        try
+        {
+            var settingsDir = Path.GetDirectoryName(Path.GetFullPath(configurationStore.FilePath))
+                ?? throw new InvalidOperationException("settings directory is missing");
+            var catalog = DiskLibraryCatalog.Load(Path.Combine(settingsDir, "disk-library.json"), DiskLibraryHostAdmission.StoppedHost);
+            // CreateWorkingCopyAsync compares Path.GetDirectoryName(CatalogPath) to Path.GetFullPath(libraryRoot).
+            var root = Path.GetDirectoryName(catalog.CatalogPath)
+                ?? throw new InvalidOperationException("catalog directory is missing");
+            mediaHomeMount = new DiskLibraryMount(catalog, root);
+            mediaHomeLane = new MediaHomeMountLane(catalog, root, mediaHomeMount);
+            panel.MountLane = mediaHomeLane;
+        }
+        catch (Exception ex) when (ex is DiskLibrarySchemaException or IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            mediaHomeMount = null;
+            mediaHomeLane = null;
+            panel.MountLane = null;
+            panel.ShowNotice("Media home mount is closed: the disk library catalog could not be loaded. " + ex.Message);
+        }
+    }
+
+    /// <summary>Point the lane's existing media-path seams at this session's bridge, or clear them
+    /// when the session is not a live worker. The captured bridge is the one passed in, not a later selection.</summary>
+    private void BindMediaHomeLane(MachineSession session)
+    {
+        if (mediaHomeMount is null || mediaHomeLane is null) return;
+        var bridge = session.Closed || session.Worker?.Completion.IsCompleted != false ? null : session.MediaBridge;
+        if (bridge is null)
+        {
+            mediaHomeMount.Inspect = null;
+            mediaHomeMount.DispatchInsert = null;
+            mediaHomeLane.DispatchEject = null;
+            return;
+        }
+        mediaHomeMount.Inspect = () => bridge.RequestAsync(new MediaCommand(MediaAction.Inspect));
+        mediaHomeMount.DispatchInsert = (slot, bytes, name) =>
+            bridge.RequestAsync(new MediaCommand(MediaAction.InsertDisk, slot, bytes, name));
+        mediaHomeLane.DispatchEject = (slot, _) =>
+            bridge.RequestAsync(new MediaCommand(MediaAction.EjectDisk, slot));
     }
 
     private void RefreshTabsView()
@@ -608,6 +668,7 @@ public partial class MainWindow : Window
         AddHandler(DragDrop.DropEvent, MediaDrop);
         WatchInputRejected(implicitSession);
         configurationStore = settingsStore ?? new Settings.SettingsStore();
+        WireMediaHomeList();
         prestart = new Configuration.PrestartPanel(configurationStore, launch, assetRoot: assetRoot);
         this.FindControl<ContentControl>("PrestartConfiguration")!.Content = prestart;
         BindPrestartEvents(prestart);

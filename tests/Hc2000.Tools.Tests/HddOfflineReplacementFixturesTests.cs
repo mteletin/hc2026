@@ -68,8 +68,9 @@ public sealed class HddOfflineReplacementFixturesTests : IDisposable
         var root = requestedRoot;
         if (root is null)
         {
+            temporaryDirectory ??= Path.GetTempPath();
             Assert.False(string.IsNullOrWhiteSpace(temporaryDirectory),
-                "Set HDD_OFFLINE_PROOF_ROOT or supply a fresh per-run TMPDIR; never use repository assets.");
+                "TMPDIR must name an existing temporary directory; never use repository assets.");
             var temporaryRoot = Path.GetFullPath(temporaryDirectory!);
             Assert.True(Directory.Exists(temporaryRoot), "The per-run TMPDIR must already exist.");
             Assert.False(File.GetAttributes(temporaryRoot).HasFlag(FileAttributes.ReparsePoint));

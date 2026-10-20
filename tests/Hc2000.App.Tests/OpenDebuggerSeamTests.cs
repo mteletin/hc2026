@@ -1,8 +1,12 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using System.Text.RegularExpressions;
 using Hc2000.App.Configuration;
 using Hc2000.App.Debugging;
@@ -15,8 +19,8 @@ using Xunit;
 namespace Hc2000.App.Tests;
 
 /// <summary>
-/// The Debugger… button must open on the running machine's latest boundary snapshot.
-/// A bare window (Program.cs OpenDebugger) shows "No machine snapshot supplied".
+/// The existing Debugger… action is reachable without a selected machine and reports
+/// unavailable state truthfully, while a running machine supplies its boundary snapshot.
 /// </summary>
 public sealed class OpenDebuggerSeamTests : IDisposable
 {
@@ -25,6 +29,65 @@ public sealed class OpenDebuggerSeamTests : IDisposable
     public void Dispose()
     {
         if (Directory.Exists(directory)) Directory.Delete(directory, true);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(1280, 900, false)]
+    [InlineData(960, 720, false)]
+    [InlineData(960, 720, true)]
+    public async Task DebuggerWithoutASelectedMachineIsReachableAndShowsUnavailableState(int width, int height, bool closeLastMachine)
+    {
+        var window = new MainWindow(null, RomSelectionFixture.RepositoryRoot(), new SettingsStore(directory))
+        {
+            Width = width, Height = height
+        };
+        try
+        {
+            window.Show();
+            if (closeLastMachine)
+            {
+                Assert.True(window.TryAddTabView(new MachineConfiguration { Name = "Desk" }, out var tab, out _));
+                await window.CloseTabAsync(tab!);
+            }
+            // With no tabs, the shell retains an implicit session but no selected machine.
+            Assert.False(window.FindControl<Control>("MachineTabs")!.IsVisible);
+            Assert.False(window.CurrentSession.HasRuntime);
+            Assert.Null(window.CurrentRuntime);
+            Assert.False(window.FindControl<Control>("RunningWorkspace")!.IsVisible);
+            // Allow styles/layout and the rendered hit-test scene to catch up with Show.
+            await Dispatcher.UIThread.InvokeAsync(window.UpdateLayout, DispatcherPriority.Background);
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+
+            var button = Assert.Single(window.GetLogicalDescendants().OfType<Button>(),
+                b => Equals(b.Content, "Debugger…"));
+            // Finding a logical descendant is not reachability: the old button lived
+            // under the hidden RunningWorkspace. Require a visible, clickable surface.
+            Assert.True(button.IsEffectivelyVisible);
+            Assert.True(button.IsEffectivelyEnabled);
+            Assert.True(button.Bounds.Width > 0 && button.Bounds.Height > 0);
+            var point = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window);
+            Assert.NotNull(point);
+            Assert.True(new Rect(window.ClientSize).Contains(point.Value));
+            var hit = window.GetVisualAt(point.Value);
+            Assert.NotNull(hit);
+            Assert.Contains(button, hit.GetSelfAndVisualAncestors());
+            window.MouseDown(point.Value, MouseButton.Left);
+            window.MouseUp(point.Value, MouseButton.Left);
+
+            var opened = await WaitFor<DebuggerWindow>(
+                () => window.OwnedWindows.OfType<DebuggerWindow>().FirstOrDefault(),
+                TimeSpan.FromSeconds(5));
+            var controls = opened.GetLogicalDescendants().ToArray();
+            Assert.Contains(controls.OfType<TextBlock>(), t => t.Text == "No machine selected.");
+            Assert.DoesNotContain(controls.OfType<TextBlock>(), t => t.Text?.Contains("PC=") == true);
+            Assert.Contains(controls.OfType<TextBox>(), t => t.Text == "Unavailable: no boundary snapshot.");
+            Assert.False(Assert.Single(controls.OfType<Button>(), b => Equals(b.Content, "Pause machine")).IsEnabled);
+            Assert.False(Assert.Single(controls.OfType<Button>(), b => Equals(b.Content, "Resume")).IsEnabled);
+            Assert.False(Assert.Single(controls.OfType<Button>(), b => Equals(b.Content, "Record")).IsEnabled);
+            Assert.Null(window.CurrentRuntime);
+            Assert.False(File.Exists(new SettingsStore(directory).FilePath));
+        }
+        finally { window.Close(); await window.ShutdownCompletion; }
     }
 
     [AvaloniaFact]

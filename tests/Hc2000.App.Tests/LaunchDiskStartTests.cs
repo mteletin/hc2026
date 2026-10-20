@@ -9,8 +9,10 @@ using Xunit;
 namespace Hc2000.App.Tests;
 
 /// <summary>Launch-option consumption: --disk via the MediaBridge after compose, --start without a press, --help.</summary>
-public sealed class LaunchDiskStartTests
+public sealed class LaunchDiskStartTests : IDisposable
 {
+    private readonly HddColdAdmissionTests.PrivateScopedDomain nativeDomain = new();
+    public void Dispose() => nativeDomain.Dispose();
     [Fact]
     public void HelpExitsZeroWithUsage()
     {

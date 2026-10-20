@@ -10,6 +10,7 @@ namespace Hc2000.App.Tests;
 
 public sealed class PrestartWindowTests : IDisposable
 {
+    private readonly HddColdAdmissionTests.PrivateScopedDomain nativeDomain = new();
     private readonly string directory = Path.Combine(Path.GetTempPath(), "hc2000-prestart-" + Guid.NewGuid().ToString("N"));
     private SettingsStore Store => new(directory);
     private MainWindow Window(string? root = null, LaunchOptions? launch = null) => new(launch, root ?? RomSelectionFixture.RepositoryRoot(), Store);
@@ -192,5 +193,5 @@ public sealed class PrestartWindowTests : IDisposable
         finally { window.Close(); await window.ShutdownCompletion; }
     }
 
-    public void Dispose() { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    public void Dispose() { nativeDomain.Dispose(); if (Directory.Exists(directory)) Directory.Delete(directory, true); }
 }

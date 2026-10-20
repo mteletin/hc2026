@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Hc2000.App.Library;
 using Hc2000.App.Media;
@@ -525,11 +525,12 @@ public sealed class DiskLibraryCopySnapshotTests
 
         public void WriteCopy(byte[] bytes) => File.WriteAllBytes(CopyPath, bytes);
 
-        // Delete then write: a fresh file identity under the same copy path.
+        // Stage then move over the old file so ext4 cannot reuse the freed inode for the replacement.
         public void ReplaceCopy(byte[] bytes)
         {
-            File.Delete(CopyPath);
-            File.WriteAllBytes(CopyPath, bytes);
+            var staged = CopyPath + ".replaced";
+            File.WriteAllBytes(staged, bytes);
+            File.Move(staged, CopyPath, overwrite: true);
         }
 
         public void HardlinkCopyTo(string targetPath)
@@ -616,17 +617,33 @@ public sealed class DiskLibraryCopySnapshotTests
             return bytes;
         }
 
+        [DllImport("libc", EntryPoint = "link", SetLastError = true)]
+        private static extern int Link(string existing, string alias);
+
+        [DllImport("libc", EntryPoint = "mkfifo", SetLastError = true)]
+        private static extern int MkFifo(string path, uint mode);
+
         public static void UnixProcess(string name, params string[] args)
         {
-            var start = new ProcessStartInfo(name, args)
+            if (name == "mkfifo" && args.Length == 1)
             {
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
-            using var process = Process.Start(start) ?? throw new InvalidOperationException(name + " did not start");
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            Assert.True(process.ExitCode == 0, name + " " + string.Join(' ', args) + " failed: " + error);
+                Assert.True(MkFifo(args[0], 0x180) == 0, $"mkfifo {args[0]} failed: errno={Marshal.GetLastPInvokeError()}");
+                return;
+            }
+            if (name == "ln" && args.Length == 2)
+            {
+                Assert.True(Link(args[0], args[1]) == 0, $"ln {args[0]} {args[1]} failed: errno={Marshal.GetLastPInvokeError()}");
+                return;
+            }
+            if (name == "ln" && args.Length == 3 && args[0] == "-s")
+            {
+                if (Directory.Exists(args[1]))
+                    Directory.CreateSymbolicLink(args[2], args[1]);
+                else
+                    File.CreateSymbolicLink(args[2], args[1]);
+                return;
+            }
+            throw new InvalidOperationException($"Unsupported UnixProcess call: {name} {string.Join(' ', args)}");
         }
     }
 }

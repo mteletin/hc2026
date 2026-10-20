@@ -71,8 +71,12 @@ public sealed partial class HeadlessOracle
             var fetchStart = ctx.Trace.EntryFetches.Count;
             var overflowStart = Volatile.Read(ref ctx.Trace.EntryFetchOverflow);
             output.WriteLine($"input={command.Replace("\n", "<CR>", StringComparison.Ordinal)}; expected={string.Join(" + ", expected)}; bound=40s including paste; cadence=16frames/edge; maxCONOUT=8192");
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
             ctx.Queue.Enqueue(new PasteText(command, 16 * 355680L));
-            var until = DateTime.UtcNow + TimeSpan.FromSeconds(40);
+            const long maxEmulatedTStates = 2500L * 71136L;
+            var startTStates = ctx.Cpu.TStates;
+            var lastTStates = startTStates;
+            var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
             // DIP HeadlessOracle.cs raw-hex pattern, this Send's new queue suffix only.
             // Labels stay out of the masked string the parser returns.
             void RetainRawAndFetches()
@@ -90,21 +94,34 @@ public sealed partial class HeadlessOracle
                     output.WriteLine($"entry-fetch[{i}] C={record.C:X2} tstates={record.CpuTStates} opcode={record.Opcode:X2} mapping={record.Mapping.Store}:{record.Mapping.Offset}:writable={record.Mapping.Writable}");
                 }
             }
-            while (DateTime.UtcNow < until)
+            try
             {
-                if (ctx.Worker.TakeLatestFrame() is { } frame) finalFrame = frame;
-                if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
-                Assert.True(ctx.Trace.Console.Count < 8192, "Bounded CONOUT observation overflow");
-                var seen = Text()[start..];
-                if (expected.All(value => seen.Contains(value, StringComparison.Ordinal)))
+                while (ctx.Cpu.TStates - startTStates < maxEmulatedTStates && DateTime.UtcNow < stallDeadline)
                 {
-                    RetainRawAndFetches();
-                    output.WriteLine($"seen:\n{seen}");
-                    Assert.DoesNotContain("error", seen, StringComparison.OrdinalIgnoreCase);
-                    Assert.DoesNotContain("Break", seen, StringComparison.Ordinal);
-                    return seen;
+                    var nowTStates = ctx.Cpu.TStates;
+                    if (nowTStates > lastTStates)
+                    {
+                        lastTStates = nowTStates;
+                        stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                    }
+                    if (ctx.Worker.TakeLatestFrame() is { } frame) finalFrame = frame;
+                    if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
+                    Assert.True(ctx.Trace.Console.Count < 8192, "Bounded CONOUT observation overflow");
+                    var seen = Text()[start..];
+                    if (expected.All(value => seen.Contains(value, StringComparison.Ordinal)))
+                    {
+                        RetainRawAndFetches();
+                        output.WriteLine($"seen:\n{seen}");
+                        Assert.DoesNotContain("error", seen, StringComparison.OrdinalIgnoreCase);
+                        Assert.DoesNotContain("Break", seen, StringComparison.Ordinal);
+                        return seen;
+                    }
+                    await Task.Delay(10);
                 }
-                await Task.Delay(20);
+            }
+            finally
+            {
+                ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
             }
             RetainRawAndFetches();
             Assert.Fail($"Expected {string.Join(" + ", expected)} within40s; PC={ctx.Cpu.R.PC:X4}; seen:\n{Text()[start..]}");

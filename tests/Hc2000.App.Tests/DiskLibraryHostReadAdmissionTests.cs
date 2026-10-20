@@ -54,9 +54,10 @@ public sealed class DiskLibraryHostReadAdmissionTests(ITestOutputHelper output)
 
     private static void SwapFile(string path, byte[] other)
     {
-        // A rewrite in place keeps the inode; a delete plus a fresh file is a new identity.
-        File.Delete(path);
-        File.WriteAllBytes(path, other);
+        // A rewrite in place keeps the inode; staging then replacing guarantees a distinct inode even on ext4.
+        var staged = path + ".swapped";
+        File.WriteAllBytes(staged, other);
+        File.Move(staged, path, overwrite: true);
     }
 
     [Fact, SupportedOSPlatform("linux")]
@@ -505,6 +506,7 @@ public sealed class DiskLibraryHostReadAdmissionTests(ITestOutputHelper output)
     public async Task BindFailureKeepsTheActualMountAsUnboundError()
     {
         using var domain = new HddColdAdmissionTests.PrivateDomain();
+        using var scope = domain.Enter();
         var source = Path.Combine(domain.Root, "source.dsk");
         var alias = Path.Combine(domain.Root, "alias.dsk");
         File.WriteAllBytes(source, DiskLibraryCatalogLiteralFixtures.Standard());

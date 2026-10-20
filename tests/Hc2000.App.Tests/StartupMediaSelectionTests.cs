@@ -10,6 +10,7 @@ namespace Hc2000.App.Tests;
 
 public sealed class StartupMediaSelectionTests : IDisposable
 {
+    private readonly HddColdAdmissionTests.PrivateScopedDomain nativeDomain = new();
     private readonly string root = Path.Combine(Path.GetTempPath(), "hc2000-startup-media-" + Guid.NewGuid().ToString("N"));
     private SettingsStore Store => new(root);
     private static T Field<T>(Control panel, string name) where T : Control => panel.GetLogicalDescendants().OfType<T>().Distinct().Single(c => c.Name == name);
@@ -85,5 +86,5 @@ public sealed class StartupMediaSelectionTests : IDisposable
         finally { window.Close(); await window.ShutdownCompletion; }
     }
 
-    public void Dispose() { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    public void Dispose() { nativeDomain.Dispose(); if (Directory.Exists(root)) Directory.Delete(root, true); }
 }

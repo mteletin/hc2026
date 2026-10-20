@@ -7,8 +7,10 @@ using Xunit;
 
 namespace Hc2000.App.Tests;
 
-public sealed class V2OnlyWindowTests(ITestOutputHelper output)
+public sealed class V2OnlyWindowTests(ITestOutputHelper output) : IDisposable
 {
+    private readonly HddColdAdmissionTests.PrivateScopedDomain nativeDomain = new();
+    public void Dispose() => nativeDomain.Dispose();
     [AvaloniaFact]
     public async Task MissingWholeChipShowsErrorAndNeverOffersLegacyBoot()
     {

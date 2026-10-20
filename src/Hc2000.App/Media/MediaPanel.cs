@@ -27,6 +27,7 @@ public sealed class MediaPanel : StackPanel
     internal Func<DiskSlot, string, ImmutableArray<byte>, MediaReply, DiskReadReservation.HostFileIdentity?, Task>? DiskMounted { get; set; }
     public Func<Task<string?>>? WritebackBeforeClose { get; set; }
     private bool busy;
+    private Task? activePoll;
     private bool updating;
     private MediaReply? state;
     private readonly TextBlock notice = new() { Text = "Media disconnected. TAP playback/instant-load unavailable: no tape device attached.", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
@@ -172,16 +173,22 @@ public sealed class MediaPanel : StackPanel
     // A tab switch releases only the shared view, not the session-owned live bridge.
     public void Unbind()
     {
-        bridge = null; state = null; deckPanel.Disconnect(); hddPanel.Disconnect(); UpdateControls();
+        bridge = null; state = null; activePoll = null; deckPanel.Disconnect(); hddPanel.Disconnect(); UpdateControls();
         DiskReadReserver = null; DiskReadCompleted = null; DiskReadHeldFor = null; PathIsProtectedOriginal = null; StoredDescriptorFor = null;
         RefreshDiskLibraryList();
         notice.Text = "Media runtime disconnected.";
     }
     public Task InspectAsync() => RunAsync(() => RequestAsync(new(MediaAction.Inspect)));
     public Task PollAsync() => bridge is null || busy || bridge.HasPending || deckPanel.IsBusy || hddPanel.IsBusy
-        ? Task.CompletedTask : InspectAsync();
+        ? Task.CompletedTask : (activePoll = InspectAsync());
     public async Task<bool> CanCloseAsync()
     {
+        if (bridge is null) return true;
+        if (activePoll is { IsCompleted: false } poll)
+        {
+            try { await poll.WaitAsync(TimeSpan.FromSeconds(5)); }
+            catch { /* CanCloseAsync performs its own authoritative Inspect below. */ }
+        }
         if (bridge is null) return true;
         if (busy || bridge.HasPending || deckPanel.IsBusy || hddPanel.IsBusy)
         { notice.Text = "Finish the pending media action before closing."; return false; }

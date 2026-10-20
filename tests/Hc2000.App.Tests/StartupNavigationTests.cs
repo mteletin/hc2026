@@ -12,6 +12,7 @@ namespace Hc2000.App.Tests;
 
 public sealed class StartupNavigationTests : IDisposable
 {
+    private readonly HddColdAdmissionTests.PrivateScopedDomain nativeDomain = new();
     private readonly string directory = Path.Combine(Path.GetTempPath(), "hc2000-startup-navigation-" + Guid.NewGuid().ToString("N"));
 
     private MainWindow Window() => new(null, RomSelectionFixture.RepositoryRoot(), new SettingsStore(directory));
@@ -311,6 +312,7 @@ public sealed class StartupNavigationTests : IDisposable
 
     public void Dispose()
     {
+        nativeDomain.Dispose();
         if (Directory.Exists(directory)) Directory.Delete(directory, true);
     }
 }

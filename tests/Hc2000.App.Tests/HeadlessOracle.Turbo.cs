@@ -99,15 +99,24 @@ public sealed partial class HeadlessOracle
         async Task<string> Stage(string input, string expected, Func<string, bool> predicate, Action<ushort>? samplePc = null)
         {
             var start = Text().Length;
-            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(40);
+            const long maxStageTStates = 2000L * 71136L;
+            var startTStates = ctx.Cpu.TStates;
+            var lastTStates = startTStates;
+            var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
             var masterStart = ctx.Worker.TakeLatestFrame()?.MasterTick ?? -1;
             long latestTick = -1;
             var frames = 0;
             long lastPcSampleTick = masterStart;
             output.WriteLine($"input={input.Replace("\n", "<CR>", StringComparison.Ordinal)}; expected={expected}; bound=40s/2000frames including paste; cadence=16frames/edge");
             ctx.Queue.Enqueue(new PasteText(input, 16 * 355680L));
-            while (DateTime.UtcNow < deadline && frames < 2000)
+            while (ctx.Cpu.TStates - startTStates < maxStageTStates && DateTime.UtcNow < stallDeadline && frames < 2000)
             {
+                var nowTStates = ctx.Cpu.TStates;
+                if (nowTStates > lastTStates)
+                {
+                    lastTStates = nowTStates;
+                    stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                }
                 if (ctx.Worker.TakeLatestFrame() is { } frame && frame.MasterTick > latestTick)
                 {
                     last = frame;
@@ -131,7 +140,7 @@ public sealed partial class HeadlessOracle
                     output.WriteLine($"framesObserved={frames}; seen:\n{seen}");
                     return seen;
                 }
-                await Task.Delay(10);
+                await Task.Delay(5);
             }
             Assert.Fail($"Incomplete TURBO stage: {expected}; PC={ctx.Cpu.R.PC:X4}; framesObserved={frames}; seen:\n{Text()[start..]}\nUnsupported-input/termination gap: stop, never inject an invented wait key.");
             return "";

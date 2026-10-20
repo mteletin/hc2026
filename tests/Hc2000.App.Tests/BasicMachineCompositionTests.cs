@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Collections.Immutable;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -5,6 +6,7 @@ using Avalonia.Input;
 using Hc2000.App.Input;
 using Hc2000.App.Media;
 using Hc2000.App.Runtime;
+using Hc2000.Machine.Timing;
 using Xunit;
 
 namespace Hc2000.App.Tests;
@@ -53,6 +55,7 @@ public sealed class BasicMachineCompositionTests
             var typedLine = DecodeBasicScreen(entered, rom);
             Assert.Contains("PRINT", typedLine);
             Assert.Contains("2+2", typedLine);
+            lastTick = Math.Max(lastTick, entered.MasterTick);
             lastTick = await TypeSymbolicKey(keyboard, Key.Enter, null, worker, lastTick);
 
             var output = await WaitForDecodedScreen(worker, rom,
@@ -134,21 +137,32 @@ public sealed class BasicMachineCompositionTests
             Assert.NotNull(panel);
             Assert.False(panel!.IsVisible);
 
-            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(15);
+            var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+            const long maxBootTicks = 600L * FrameTiming.FrameTicks;
+            long startTick = -1;
+            long lastTick = -1;
             var last = "(no frame yet)";
-            while (DateTime.UtcNow < deadline)
+            while (DateTime.UtcNow < stallDeadline)
             {
                 if (window.LatestPresentedFrame is { } frame)
                 {
+                    if (startTick < 0) startTick = frame.MasterTick;
+                    if (frame.MasterTick > lastTick)
+                    {
+                        lastTick = frame.MasterTick;
+                        stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                    }
                     last = DecodeBasicScreen(frame, basic);
                     // Settled v2 glyph screen (measured: still this line after 3e8 master ticks).
                     // Not the v1 contiguous banner "HC2000 ICE FELIX", and not the console-hook word READY.
                     if (last.Contains("I.C.E.", StringComparison.Ordinal)
                         && last.Contains("HC2000", StringComparison.Ordinal))
                         break;
+                    if (frame.MasterTick - startTick >= maxBootTicks)
+                        break;
                 }
                 if (window.ShutdownCompletion.IsCompleted) await window.ShutdownCompletion;
-                await Task.Delay(20);
+                await Task.Delay(10);
             }
 
             Assert.Contains("HC2000", last, StringComparison.Ordinal);
@@ -210,15 +224,20 @@ public sealed class BasicMachineCompositionTests
         using var worker = BasicMachineComposition.CreateWorker(selected, input);
         var frame = await WaitForDecodedScreen(worker, rom,
             screen => screen.Contains("HC2000 ICE FELIX", StringComparison.Ordinal), TimeSpan.FromSeconds(12));
-        await WaitFrames(worker, 250, frame.MasterTick);
+        var pasteStartTick = await WaitFrames(worker, 250, frame.MasterTick);
         Assert.True(keyboard.Paste(text));
         var seen = new List<string>();
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(8);
+        var minPasteTicks = (text.Length * 16L + 80L) * FrameTiming.FrameTicks;
+        var maxPasteTicks = (text.Length * 16L + 600L) * FrameTiming.FrameTicks;
+        var latestTick = pasteStartTick;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
         var last = "";
-        while (DateTime.UtcNow < deadline)
+        while (latestTick - pasteStartTick < maxPasteTicks && DateTime.UtcNow < stallDeadline)
         {
-            if (worker.TakeLatestFrame() is { } later)
+            if (worker.TakeLatestFrame() is { } later && later.MasterTick > latestTick)
             {
+                latestTick = later.MasterTick;
+                stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
                 var interesting = string.Join(" | ", DecodeBasicScreen(later, rom).Split('\n')
                     .Select(line => line.TrimEnd())
                     .Where(line => line.Trim().Length > 0));
@@ -227,53 +246,125 @@ public sealed class BasicMachineCompositionTests
                     seen.Add(interesting);
                     last = interesting;
                 }
+                if (latestTick - pasteStartTick >= minPasteTicks
+                    && (last.Contains("OK", StringComparison.Ordinal)
+                        || last.Contains("Variable not found", StringComparison.Ordinal)))
+                {
+                    break;
+                }
             }
-            await Task.Delay(15);
+            else
+            {
+                if (worker.Completion.IsCompleted) await worker.Completion;
+                await Task.Delay(1);
+            }
         }
         worker.Dispose();
-        await worker.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+        await worker.Completion.WaitAsync(TimeSpan.FromSeconds(15));
         return seen;
     }
 
     private static async Task<long> TypeSymbolicKey(KeyboardInputAdapter keyboard, Key key, string? text,
         EmulationWorker worker, long afterTick)
     {
+        if (worker.TakeLatestFrame() is { } prior && prior.MasterTick > afterTick)
+            afterTick = prior.MasterTick;
         Assert.Equal(text is null, keyboard.KeyDown(key));
         if (text is not null) Assert.True(keyboard.TextInput(text));
-        var heldThrough = await WaitFrames(worker, 8, afterTick);
+        var heldThrough = await WaitKeyFrames(worker, 8, afterTick);
         keyboard.KeyUp(key);
-        return await WaitFrames(worker, 8, heldThrough);
+        return await WaitKeyFrames(worker, 8, heldThrough);
     }
 
-    private static async Task<long> WaitFrames(EmulationWorker worker, int count, long afterTick)
+    private static async Task<long> WaitKeyFrames(EmulationWorker worker, int count, long afterTick)
     {
-        var seen = 0;
+        // Anchor on the first frame completed after the key transition was enqueued so stale
+        // ticks never shorten the hold below the ROM's 5-frame debounce, and use synchronous
+        // 1ms sleeps so a starved ThreadPool continuation queue cannot stretch a key hold past
+        // the ROM's 35-frame typematic repeat threshold.
+        long anchorTick = -1;
         var tick = afterTick;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2 + count * 0.03);
-        while (seen < count && DateTime.UtcNow < deadline)
+        var targetTick = -1L;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        while (targetTick < 0 || tick < targetTick)
         {
             if (worker.TakeLatestFrame() is { } frame && frame.MasterTick > tick)
             {
                 tick = frame.MasterTick;
-                seen++;
+                stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                if (anchorTick < 0)
+                {
+                    anchorTick = tick;
+                    targetTick = anchorTick + count * FrameTiming.FrameTicks;
+                }
+                if (tick >= targetTick) break;
             }
-            else await Task.Delay(1);
+            else
+            {
+                if (worker.Completion.IsCompleted) { await worker.Completion; break; }
+                if (DateTime.UtcNow >= stallDeadline) break;
+                Thread.Sleep(1);
+            }
         }
-        Assert.True(seen >= count, $"Expected {count} paced frames after tick {afterTick}; saw {seen}.");
+        var elapsedFrames = anchorTick > 0 && tick >= anchorTick
+            ? (int)((tick - anchorTick) / FrameTiming.FrameTicks) : 0;
+        Assert.True(elapsedFrames >= count, $"Expected {count} key-hold frames after tick {afterTick}; saw {elapsedFrames}.");
+        return tick;
+    }
+
+    private static async Task<long> WaitFrames(EmulationWorker worker, int count, long afterTick)
+    {
+        var startTick = afterTick;
+        var tick = afterTick;
+        var targetTick = afterTick > 0 ? afterTick + count * FrameTiming.FrameTicks : -1L;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        while (targetTick < 0 || tick < targetTick)
+        {
+            if (worker.TakeLatestFrame() is { } frame && frame.MasterTick > tick)
+            {
+                if (startTick <= 0)
+                {
+                    startTick = frame.MasterTick - FrameTiming.FrameTicks;
+                    targetTick = startTick + count * FrameTiming.FrameTicks;
+                }
+                tick = frame.MasterTick;
+                stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                if (tick >= targetTick) break;
+            }
+            else
+            {
+                if (worker.Completion.IsCompleted) { await worker.Completion; break; }
+                if (DateTime.UtcNow >= stallDeadline) break;
+                await Task.Delay(1);
+            }
+        }
+        var elapsedFrames = startTick > 0 && tick > startTick
+            ? (int)((tick - startTick) / FrameTiming.FrameTicks) : 0;
+        Assert.True(elapsedFrames >= count, $"Expected {count} paced frames after tick {afterTick}; saw {elapsedFrames}.");
         return tick;
     }
 
     private static async Task<Hc2000.Machine.Video.VideoFrame> WaitForDecodedScreen(EmulationWorker worker,
         byte[] rom, Func<string, bool> predicate, TimeSpan timeout)
     {
-        var deadline = DateTime.UtcNow + timeout;
+        var maxEmulatedTicks = Math.Max(300L, (long)Math.Ceiling(timeout.TotalSeconds * 50.0)) * FrameTiming.FrameTicks;
+        long startTick = -1;
+        long lastTick = -1;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(Math.Max(30.0, timeout.TotalSeconds * 2));
         var last = "(no frame yet)";
-        while (DateTime.UtcNow < deadline)
+        while (DateTime.UtcNow < stallDeadline)
         {
             if (worker.TakeLatestFrame() is { } frame)
             {
+                if (startTick < 0) startTick = frame.MasterTick;
+                if (frame.MasterTick > lastTick)
+                {
+                    lastTick = frame.MasterTick;
+                    stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                }
                 last = DecodeBasicScreen(frame, rom);
                 if (predicate(last)) return frame;
+                if (frame.MasterTick - startTick >= maxEmulatedTicks) break;
             }
             if (worker.Completion.IsCompleted) await worker.Completion;
             await Task.Delay(1);
@@ -286,32 +377,64 @@ public sealed class BasicMachineCompositionTests
     internal static string DecodeBasicScreen(Hc2000.Machine.Video.VideoFrame frame, byte[] rom)
     {
         if (frame.Width != 352 || frame.Height != 296) return "";
-        var glyphs = new Dictionary<string, char>(StringComparer.Ordinal);
+        var glyphs = new Dictionary<ulong, char>(96);
         for (var code = 32; code < 127; code++)
         {
-            var glyph = rom.AsSpan(0x3d00 + (code - 32) * 8, 8).ToArray();
-            glyphs.TryAdd(Convert.ToHexString(glyph), (char)code);
+            var key = BinaryPrimitives.ReadUInt64LittleEndian(rom.AsSpan(0x3d00 + (code - 32) * 8, 8));
+            glyphs.TryAdd(key, (char)code);
         }
         var pixels = frame.Pixels.Span;
         var screen = new System.Text.StringBuilder(24 * 33);
+        Span<byte> bits = stackalloc byte[8];
+        Span<uint> cellColors = stackalloc uint[8];
+        Span<int> cellCounts = stackalloc int[8];
         for (var row = 0; row < 24; row++)
         {
             for (var column = 0; column < 32; column++)
             {
-                var bits = new byte[8];
-                var counts = new Dictionary<uint, int>();
+                bits.Clear();
+                var colorKinds = 0;
                 for (var y = 0; y < 8; y++)
+                {
+                    var rowOffset = (40 + row * 8 + y) * frame.Width + 48 + column * 8;
                     for (var x = 0; x < 8; x++)
                     {
-                        var color = pixels[(40 + row * 8 + y) * frame.Width + 48 + column * 8 + x];
-                        counts[color] = counts.GetValueOrDefault(color) + 1;
+                        var color = pixels[rowOffset + x];
+                        var found = -1;
+                        for (var k = 0; k < colorKinds; k++)
+                        {
+                            if (cellColors[k] == color) { found = k; break; }
+                        }
+                        if (found >= 0) cellCounts[found]++;
+                        else if (colorKinds < cellColors.Length)
+                        {
+                            cellColors[colorKinds] = color;
+                            cellCounts[colorKinds] = 1;
+                            colorKinds++;
+                        }
                     }
-                var background = counts.MaxBy(pair => pair.Value).Key;
+                }
+                var background = cellColors[0];
+                var bestCount = cellCounts[0];
+                for (var k = 1; k < colorKinds; k++)
+                {
+                    if (cellCounts[k] > bestCount)
+                    {
+                        bestCount = cellCounts[k];
+                        background = cellColors[k];
+                    }
+                }
                 for (var y = 0; y < 8; y++)
+                {
+                    var rowOffset = (40 + row * 8 + y) * frame.Width + 48 + column * 8;
+                    byte rowBits = 0;
                     for (var x = 0; x < 8; x++)
-                        if (pixels[(40 + row * 8 + y) * frame.Width + 48 + column * 8 + x] != background)
-                            bits[y] |= (byte)(0x80 >> x);
-                screen.Append(glyphs.GetValueOrDefault(Convert.ToHexString(bits), '?'));
+                        if (pixels[rowOffset + x] != background)
+                            rowBits |= (byte)(0x80 >> x);
+                    bits[y] = rowBits;
+                }
+                var glyphKey = BinaryPrimitives.ReadUInt64LittleEndian(bits);
+                screen.Append(glyphs.GetValueOrDefault(glyphKey, '?'));
             }
             if (row < 23) screen.Append('\n');
         }
@@ -320,10 +443,23 @@ public sealed class BasicMachineCompositionTests
 
     private static async Task<Hc2000.Machine.Video.VideoFrame> WaitForBootFrame(EmulationWorker worker, TimeSpan timeout)
     {
-        var deadline = DateTime.UtcNow + timeout;
-        while (DateTime.UtcNow < deadline)
+        var maxEmulatedTicks = Math.Max(150L, (long)Math.Ceiling(timeout.TotalSeconds * 50.0)) * FrameTiming.FrameTicks;
+        long startTick = -1;
+        long lastTick = -1;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(Math.Max(30.0, timeout.TotalSeconds * 2));
+        while (DateTime.UtcNow < stallDeadline)
         {
-            if (worker.TakeLatestFrame() is { } frame && frame.Pixels.ToArray().Distinct().Count() > 1) return frame;
+            if (worker.TakeLatestFrame() is { } frame)
+            {
+                if (startTick < 0) startTick = frame.MasterTick;
+                if (frame.MasterTick > lastTick)
+                {
+                    lastTick = frame.MasterTick;
+                    stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                }
+                if (frame.Pixels.ToArray().Distinct().Count() > 1) return frame;
+                if (frame.MasterTick - startTick >= maxEmulatedTicks) break;
+            }
             if (worker.Completion.IsCompleted) await worker.Completion;
             await Task.Delay(5);
         }

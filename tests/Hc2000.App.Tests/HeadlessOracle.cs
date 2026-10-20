@@ -192,6 +192,8 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         var input = new InputController(queue, (control, _) =>
         {
             if (control.Kind == InputControlKind.Shutdown) context?.Shutdown();
+            if (control.Kind == InputControlKind.SetSpeed)
+                context?.SetSpeed(control.SpeedPercent == 0 ? SpeedMode.Turbo : (SpeedMode)control.SpeedPercent);
         }, media: (command, _) =>
         {
             var floppy = slot.Controller ?? throw new InvalidOperationException("FDC not composed");
@@ -266,29 +268,34 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
             }, () => cpu.TStates);
         }
 
+        var currentKeys = new int[40];
         var worker = new EmulationWorker(
             BuildMachine,
             ctx =>
             {
                 context = ctx;
+                var pendingBefore = queue.BoundaryCount;
+                var wasPasting = input.IsPasting;
                 input.ApplyPending(ctx.Machine.MasterTick, ctx.Machine.Keyboard);
-                var keys = new int[40];
-                for (var row = 0; row < 8; row++)
+                if (pendingBefore > 0 || wasPasting || input.IsPasting)
                 {
-                    var value = ctx.Machine.Keyboard.Read((ushort)(0xffff & ~(1 << (row + 8))));
-                    for (var col = 0; col < 5; col++) keys[row * 5 + col] = (value & (1 << col)) == 0 ? 1 : 0;
-                }
-                if (!keys.SequenceEqual(trace.PreviousKeys))
-                {
-                    var held = Enumerable.Range(0, keys.Length).Where(i => keys[i] != 0).Select(i => (HcKey)i).ToArray();
-                    foreach (var key in held) trace.SeenKeys.TryAdd(key, 0);
-                    trace.Events.Enqueue($"matrix={string.Join(',', held)} PC={cpuRef!.R.PC:X4}");
-                    if (trace.PreviousKeys[(int)HcKey.X] == 1 && keys[(int)HcKey.X] == 0)
+                    for (var row = 0; row < 8; row++)
                     {
-                        var screen = memRef!.Ram.Span.Slice(memRef.VideoBase, 0x1b00).ToArray();
-                        trace.Events.Enqueue($"screen RAM after X: base={memRef.VideoBase:X4}, nonzero={screen.Count(b => b != 0)}, sha256={Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(screen))}, hex={Convert.ToHexString(screen)}");
+                        var value = ctx.Machine.Keyboard.Read((ushort)(0xffff & ~(1 << (row + 8))));
+                        for (var col = 0; col < 5; col++) currentKeys[row * 5 + col] = (value & (1 << col)) == 0 ? 1 : 0;
                     }
-                    trace.PreviousKeys = keys;
+                    if (!currentKeys.AsSpan().SequenceEqual(trace.PreviousKeys))
+                    {
+                        var held = Enumerable.Range(0, currentKeys.Length).Where(i => currentKeys[i] != 0).Select(i => (HcKey)i).ToArray();
+                        foreach (var key in held) trace.SeenKeys.TryAdd(key, 0);
+                        trace.Events.Enqueue($"matrix={string.Join(',', held)} PC={cpuRef!.R.PC:X4}");
+                        if (trace.PreviousKeys[(int)HcKey.X] == 1 && currentKeys[(int)HcKey.X] == 0)
+                        {
+                            var screen = memRef!.Ram.Span.Slice(memRef.VideoBase, 0x1b00).ToArray();
+                            trace.Events.Enqueue($"screen RAM after X: base={memRef.VideoBase:X4}, nonzero={screen.Count(b => b != 0)}, sha256={Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(screen))}, hex={Convert.ToHexString(screen)}");
+                        }
+                        trace.PreviousKeys = currentKeys.ToArray();
+                    }
                 }
                 // Same natural owner boundary; no additional input, wait or machine step.
                 if (ctx.Stopping || ctx.Resetting) baudOwner?.Close();
@@ -360,6 +367,15 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         Assert.NotNull(postFrame);
         var postScreen = DecodeBasicScreen(postFrame!, ctx.Rom);
         var postEchoPc = ctx.Cpu.R.PC;
+        if (postEchoPc == initialPc)
+        {
+            var startTicks = ctx.Cpu.TStates;
+            while (ctx.Cpu.R.PC == initialPc && ctx.Cpu.TStates < startTicks + 50_000)
+            {
+                await Task.Yield();
+            }
+            postEchoPc = ctx.Cpu.R.PC;
+        }
         var postEchoTicks = ctx.Cpu.TStates;
 
         // Verdict checks:
@@ -453,12 +469,21 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         await Tap(ctx, HcKey.D6);
         await Tap(ctx, HcKey.Enter);
 
-        // Wait up to 75s for A> prompt or worker completion
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(75);
+        // Wait in emulated time (up to 3750 emulated frames = 75s @ 50Hz) for A> prompt or worker completion
+        const long maxWarmBootTStates = 3750L * 71136L;
+        var warmBootStartTStates = ctx.Cpu.TStates;
+        var lastObservedTStates = warmBootStartTStates;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
         string lastScreen = "(no frame)";
         bool sawPrompt = false;
-        while (DateTime.UtcNow < deadline)
+        while (ctx.Cpu.TStates - warmBootStartTStates < maxWarmBootTStates && DateTime.UtcNow < stallDeadline)
         {
+            var nowTStates = ctx.Cpu.TStates;
+            if (nowTStates > lastObservedTStates)
+            {
+                lastObservedTStates = nowTStates;
+                stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+            }
             if (worker.TakeLatestFrame() is { } frame)
             {
                 lastScreen = DecodeBasicScreen(frame, ctx.Rom);
@@ -469,7 +494,7 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
                 }
             }
             if (worker.Completion.IsCompleted) await worker.Completion;
-            await Task.Delay(20);
+            await Task.Delay(10);
         }
 
         VideoFrame? settled = null;
@@ -721,12 +746,15 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         {
             var start = ConsoleText().Length;
             output.WriteLine($"input={text.Replace("\n", "<CR>")}; expected={expected}; bound=75s; paste cadence=16frames/edge");
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
             ctx.Queue.Enqueue(new PasteText(text, 16 * 355680L));
-            var until = DateTime.UtcNow + TimeSpan.FromSeconds(75);
-            while (DateTime.UtcNow < until && !ConsoleText()[start..].Contains(expected, StringComparison.Ordinal))
+            try
             {
-                if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
-                await Task.Delay(20);
+                await WaitForConsoleText(ctx, ConsoleText, start, expected, 3750L * 71136L);
+            }
+            finally
+            {
+                ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
             }
             var seen = ConsoleText()[start..];
             output.WriteLine($"seen={seen}; PC={ctx.Cpu.R.PC:X4}");
@@ -934,26 +962,37 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         string ConsoleText() => new(ctx.Trace.Console.ToArray().Select(value => (char)value).ToArray());
         async Task WaitConsole(int start, string expected)
         {
-            var until = DateTime.UtcNow + TimeSpan.FromSeconds(75);
-            while (DateTime.UtcNow < until && !ConsoleText()[start..].Contains(expected, StringComparison.Ordinal))
-            {
-                if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
-                await Task.Delay(20);
-            }
+            await WaitForConsoleText(ctx, ConsoleText, start, expected, 3750L * 71136L);
             var seen = ConsoleText()[start..];
             output.WriteLine($"expected={expected}; seen={seen}; PC={ctx.Cpu.R.PC:X4}");
             Assert.Contains(expected, seen);
             Assert.DoesNotContain("ERROR", seen, StringComparison.OrdinalIgnoreCase);
         }
-        await WaitConsole(0, "A>");
+        ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
+        try
+        {
+            await WaitConsole(0, "A>");
+        }
+        finally
+        {
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
+        }
         Assert.Contains("CP/M ver 2.2", ConsoleText());
         await WaitFrames(ctx.Worker, 40);
         async Task Send(string text, string expected = "A>")
         {
             var start = ConsoleText().Length;
-            output.WriteLine($"command={text.TrimEnd()}; bound=75s; cadence=16 frames/edge");
-            ctx.Queue.Enqueue(new PasteText(text, 16 * 355680L));
-            await WaitConsole(start, expected);
+            output.WriteLine($"command={text.TrimEnd()}; bound=75s; cadence=8 frames/edge");
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
+            ctx.Queue.Enqueue(new PasteText(text, 8 * 355680L));
+            try
+            {
+                await WaitConsole(start, expected);
+            }
+            finally
+            {
+                ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
+            }
             await WaitFrames(ctx.Worker, 40);
         }
         await Send("PIP B:ROUND.COM=A:PIP.COM[OV]\n");
@@ -1035,26 +1074,37 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         string ConsoleText() => new(ctx.Trace.Console.ToArray().Select(value => (char)value).ToArray());
         async Task WaitConsole(int start, string expected)
         {
-            var until = DateTime.UtcNow + TimeSpan.FromSeconds(75);
-            while (DateTime.UtcNow < until && !ConsoleText()[start..].Contains(expected, StringComparison.Ordinal))
-            {
-                if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
-                await Task.Delay(20);
-            }
+            await WaitForConsoleText(ctx, ConsoleText, start, expected, 3750L * 71136L);
             var seen = ConsoleText()[start..];
             output.WriteLine($"expected={expected}; seen={seen}; PC={ctx.Cpu.R.PC:X4}");
             Assert.Contains(expected, seen);
             Assert.DoesNotContain("ERROR", seen, StringComparison.OrdinalIgnoreCase);
         }
-        await WaitConsole(0, "A>");
+        ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
+        try
+        {
+            await WaitConsole(0, "A>");
+        }
+        finally
+        {
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
+        }
         Assert.Contains("CP/M ver 2.2", ConsoleText());
         await WaitFrames(ctx.Worker, 40);
         async Task Send(string text, string expected = "A>")
         {
             var start = ConsoleText().Length;
-            output.WriteLine($"command={text.TrimEnd()}; bound=75s; cadence=16 frames/edge");
-            ctx.Queue.Enqueue(new PasteText(text, 16 * 355680L));
-            await WaitConsole(start, expected);
+            output.WriteLine($"command={text.TrimEnd()}; bound=75s; cadence=8 frames/edge");
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
+            ctx.Queue.Enqueue(new PasteText(text, 8 * 355680L));
+            try
+            {
+                await WaitConsole(start, expected);
+            }
+            finally
+            {
+                ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
+            }
             await WaitFrames(ctx.Worker, 40);
         }
         await Send("LOAD LDFIX\n");
@@ -1142,19 +1192,22 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
             await Hold(ctx, HcKey.CapsShift, HcKey.SymbolShift);
             await Tap(ctx, HcKey.L); await Tap(ctx, HcKey.Space);
             foreach (var k in new[] { HcKey.D1, HcKey.D4, HcKey.D4, HcKey.D4, HcKey.D6, HcKey.Enter }) await Tap(ctx, k);
-            await WaitConsole(ctx, 0, prompt);
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
+            try
+            {
+                await WaitConsole(ctx, 0, prompt);
+            }
+            finally
+            {
+                ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
+            }
             await WaitFrames(ctx.Worker, 40);
         }
         string Text(OracleContext ctx) => new(ctx.Trace.Console.ToArray().Select(value => (char)value).ToArray());
         ushort Divisor(OracleContext ctx) => ReadBaudDivisor(ctx.Memory);
         async Task<string> WaitConsole(OracleContext ctx, int start, string expected)
         {
-            var until = DateTime.UtcNow + TimeSpan.FromSeconds(75);
-            while (DateTime.UtcNow < until && !Text(ctx)[start..].Contains(expected, StringComparison.Ordinal))
-            {
-                if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
-                await Task.Delay(20);
-            }
+            await WaitForConsoleText(ctx, () => Text(ctx), start, expected, 3750L * 71136L);
             var seen = Text(ctx)[start..];
             output.WriteLine($"expected={expected}; seen={seen}; PC={ctx.Cpu.R.PC:X4}; physical-FF0C={Divisor(ctx):X4}");
             Assert.Contains(expected, seen);
@@ -1168,9 +1221,18 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
             async Task<string> Send(string command)
             {
                 var start = Text(ctx).Length;
-                output.WriteLine($"command={command.TrimEnd()}; bound=75s; cadence=16 frames/edge");
-                ctx.Queue.Enqueue(new PasteText(command, 16 * 355680L));
-                var seen = await WaitConsole(ctx, start, prompt);
+                output.WriteLine($"command={command.TrimEnd()}; bound=75s; cadence=8 frames/edge");
+                ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
+                ctx.Queue.Enqueue(new PasteText(command, 8 * 355680L));
+                string seen;
+                try
+                {
+                    seen = await WaitConsole(ctx, start, prompt);
+                }
+                finally
+                {
+                    ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
+                }
                 await WaitFrames(ctx.Worker, 40);
                 return seen;
             }
@@ -1294,12 +1356,7 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         string ConsoleText() => new(ctx.Trace.Console.ToArray().Select(value => (char)value).ToArray());
         async Task WaitConsole(int start, string expected)
         {
-            var until = DateTime.UtcNow + TimeSpan.FromSeconds(75);
-            while (DateTime.UtcNow < until && !ConsoleText()[start..].Contains(expected, StringComparison.Ordinal))
-            {
-                if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
-                await Task.Delay(20);
-            }
+            await WaitForConsoleText(ctx, ConsoleText, start, expected, 3750L * 71136L);
             var seen = ConsoleText()[start..];
             File.WriteAllText(Path.Combine(evidence, "console.txt"), ConsoleText());
             output.WriteLine($"expected={expected}; seen={seen}; PC={ctx.Cpu.R.PC:X4}; bound=75s");
@@ -1312,8 +1369,16 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         {
             var start = ConsoleText().Length;
             output.WriteLine($"command={text.TrimEnd()}; cadence=16 frames/edge");
+            ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 0));
             ctx.Queue.Enqueue(new PasteText(text, 16 * 355680L));
-            await WaitConsole(start, expected);
+            try
+            {
+                await WaitConsole(start, expected);
+            }
+            finally
+            {
+                ctx.Queue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: 100));
+            }
             await WaitFrames(ctx.Worker, 40);
         }
         await Send("DDT\n", "\n-");
@@ -1350,54 +1415,105 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
+    private static async Task WaitForConsoleText(OracleContext ctx, Func<string> getText, int start, string expected, long maxEmulatedTStates)
+    {
+        var startTStates = ctx.Cpu.TStates;
+        var lastTStates = startTStates;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        while (ctx.Cpu.TStates - startTStates < maxEmulatedTStates && DateTime.UtcNow < stallDeadline)
+        {
+            var current = getText();
+            if (current.Length >= start && current[start..].Contains(expected, StringComparison.Ordinal))
+                return;
+            var nowTStates = ctx.Cpu.TStates;
+            if (nowTStates > lastTStates)
+            {
+                lastTStates = nowTStates;
+                stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+            }
+            if (ctx.Worker.Completion.IsCompleted) await ctx.Worker.Completion;
+            await Task.Delay(5);
+        }
+    }
+
     private static async Task Tap(OracleContext ctx, HcKey key)
     {
         var src = "oracle:" + Interlocked.Increment(ref ctx.TapSeq);
+        long afterTick = ctx.Worker.TakeLatestFrame()?.MasterTick ?? -1;
         ctx.Queue.Enqueue(new KeyTransition(src, new KeyChord(key), true));
-        await WaitFrames(ctx.Worker, 8);
+        afterTick = await WaitKeyHoldFrames(ctx.Worker, 8, afterTick);
         ctx.Queue.Enqueue(new KeyTransition(src, new KeyChord(key), false));
-        await WaitFrames(ctx.Worker, 8);
+        await WaitKeyHoldFrames(ctx.Worker, 8, afterTick);
     }
 
     private static async Task Hold(OracleContext ctx, HcKey a, HcKey b)
     {
         var sa = "oracle:" + Interlocked.Increment(ref ctx.TapSeq);
         var sb = "oracle:" + Interlocked.Increment(ref ctx.TapSeq);
+        long afterTick = ctx.Worker.TakeLatestFrame()?.MasterTick ?? -1;
         ctx.Queue.Enqueue(new KeyTransition(sa, new KeyChord(a), true));
         ctx.Queue.Enqueue(new KeyTransition(sb, new KeyChord(b), true));
-        await WaitFrames(ctx.Worker, 8);
+        afterTick = await WaitKeyHoldFrames(ctx.Worker, 8, afterTick);
         ctx.Queue.Enqueue(new KeyTransition(sa, new KeyChord(a), false));
         ctx.Queue.Enqueue(new KeyTransition(sb, new KeyChord(b), false));
-        await WaitFrames(ctx.Worker, 8);
+        await WaitKeyHoldFrames(ctx.Worker, 8, afterTick);
     }
 
-    private static async Task WaitFrames(EmulationWorker worker, int count)
+    private static async Task<long> WaitKeyHoldFrames(EmulationWorker worker, int count, long afterTick)
     {
-        var seen = 0;
-        long tick = -1;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(4 + count * 0.05);
-        while (seen < count && DateTime.UtcNow < deadline)
+        long anchorTick = afterTick > 0 ? afterTick : -1;
+        long tick = afterTick;
+        long targetTick = anchorTick > 0 ? anchorTick + count * FrameTiming.FrameTicks : -1;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        while (targetTick < 0 || tick < targetTick)
         {
             if (worker.TakeLatestFrame() is { } frame && frame.MasterTick > tick)
             {
                 tick = frame.MasterTick;
-                seen++;
+                stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                if (anchorTick < 0)
+                {
+                    anchorTick = tick - FrameTiming.FrameTicks;
+                    targetTick = anchorTick + count * FrameTiming.FrameTicks;
+                }
+                if (tick >= targetTick) break;
             }
-            else await Task.Delay(1);
+            else
+            {
+                if (worker.Completion.IsCompleted) { await worker.Completion; break; }
+                if (DateTime.UtcNow >= stallDeadline) break;
+                Thread.Sleep(1);
+            }
         }
-        Assert.True(seen >= count, $"Expected {count} frames; saw {seen}.");
+        var elapsedFrames = anchorTick >= 0 && tick > anchorTick
+            ? (int)((tick - anchorTick) / FrameTiming.FrameTicks) : 0;
+        Assert.True(elapsedFrames >= count, $"Expected {count} frames; saw {elapsedFrames}.");
+        return tick;
     }
+
+    private static Task WaitFrames(EmulationWorker worker, int count) =>
+        WaitFramesKeeping(worker, count, _ => { });
 
     private static async Task<VideoFrame> WaitForDecodedFrame(EmulationWorker worker, byte[] rom, Func<string, bool> predicate, TimeSpan timeout)
     {
-        var deadline = DateTime.UtcNow + timeout;
+        var maxEmulatedTicks = Math.Max(300L, (long)Math.Ceiling(timeout.TotalSeconds * 50.0)) * FrameTiming.FrameTicks;
+        long startTick = -1;
+        long lastTick = -1;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(Math.Max(30.0, timeout.TotalSeconds * 2));
         var last = "(no frame yet)";
-        while (DateTime.UtcNow < deadline)
+        while (DateTime.UtcNow < stallDeadline)
         {
             if (worker.TakeLatestFrame() is { } frame)
             {
+                if (startTick < 0) startTick = frame.MasterTick;
+                if (frame.MasterTick > lastTick)
+                {
+                    lastTick = frame.MasterTick;
+                    stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+                }
                 last = DecodeBasicScreen(frame, rom);
                 if (predicate(last)) return frame;
+                if (frame.MasterTick - startTick >= maxEmulatedTicks) break;
             }
             if (worker.Completion.IsCompleted) await worker.Completion;
             await Task.Delay(5);
@@ -1407,20 +1523,34 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
 
     private static async Task WaitFramesKeeping(EmulationWorker worker, int count, Action<VideoFrame> keep)
     {
-        var seen = 0;
+        long startTick = -1;
         long tick = -1;
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(4 + count * 0.05);
-        while (seen < count && DateTime.UtcNow < deadline)
+        long targetTick = -1;
+        var stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        while (targetTick < 0 || tick < targetTick)
         {
             if (worker.TakeLatestFrame() is { } frame && frame.MasterTick > tick)
             {
+                if (startTick < 0)
+                {
+                    startTick = frame.MasterTick - FrameTiming.FrameTicks;
+                    targetTick = startTick + count * FrameTiming.FrameTicks;
+                }
                 tick = frame.MasterTick;
-                seen++;
+                stallDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
                 keep(frame);
+                if (tick >= targetTick) break;
             }
-            else await Task.Delay(1);
+            else
+            {
+                if (worker.Completion.IsCompleted) { await worker.Completion; break; }
+                if (DateTime.UtcNow >= stallDeadline) break;
+                await Task.Delay(1);
+            }
         }
-        Assert.True(seen >= count, $"Expected {count} frames; saw {seen}.");
+        var elapsedFrames = startTick >= 0 && tick > startTick
+            ? (int)((tick - startTick) / FrameTiming.FrameTicks) : 0;
+        Assert.True(elapsedFrames >= count, $"Expected {count} frames; saw {elapsedFrames}.");
     }
 
     private static Dictionary<uint, int> PixelColorCounts(VideoFrame? frame)
@@ -1437,32 +1567,64 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
     private static string DecodeBasicScreen(VideoFrame frame, byte[] rom)
     {
         if (frame.Width != 352 || frame.Height != 296) return "";
-        var glyphs = new Dictionary<string, char>(StringComparer.Ordinal);
+        var glyphs = new Dictionary<ulong, char>(96);
         for (var code = 32; code < 127; code++)
         {
-            var glyph = rom.AsSpan(0x3d00 + (code - 32) * 8, 8).ToArray();
-            glyphs.TryAdd(Convert.ToHexString(glyph), (char)code);
+            var key = BinaryPrimitives.ReadUInt64LittleEndian(rom.AsSpan(0x3d00 + (code - 32) * 8, 8));
+            glyphs.TryAdd(key, (char)code);
         }
         var pixels = frame.Pixels.Span;
         var screen = new System.Text.StringBuilder(24 * 33);
+        Span<byte> bits = stackalloc byte[8];
+        Span<uint> cellColors = stackalloc uint[8];
+        Span<int> cellCounts = stackalloc int[8];
         for (var row = 0; row < 24; row++)
         {
             for (var column = 0; column < 32; column++)
             {
-                var bits = new byte[8];
-                var counts = new Dictionary<uint, int>();
+                bits.Clear();
+                var colorKinds = 0;
                 for (var y = 0; y < 8; y++)
+                {
+                    var rowOffset = (40 + row * 8 + y) * frame.Width + 48 + column * 8;
                     for (var x = 0; x < 8; x++)
                     {
-                        var color = pixels[(40 + row * 8 + y) * frame.Width + 48 + column * 8 + x];
-                        counts[color] = counts.GetValueOrDefault(color) + 1;
+                        var color = pixels[rowOffset + x];
+                        var found = -1;
+                        for (var k = 0; k < colorKinds; k++)
+                        {
+                            if (cellColors[k] == color) { found = k; break; }
+                        }
+                        if (found >= 0) cellCounts[found]++;
+                        else if (colorKinds < cellColors.Length)
+                        {
+                            cellColors[colorKinds] = color;
+                            cellCounts[colorKinds] = 1;
+                            colorKinds++;
+                        }
                     }
-                var background = counts.MaxBy(pair => pair.Value).Key;
+                }
+                var background = cellColors[0];
+                var bestCount = cellCounts[0];
+                for (var k = 1; k < colorKinds; k++)
+                {
+                    if (cellCounts[k] > bestCount)
+                    {
+                        bestCount = cellCounts[k];
+                        background = cellColors[k];
+                    }
+                }
                 for (var y = 0; y < 8; y++)
+                {
+                    var rowOffset = (40 + row * 8 + y) * frame.Width + 48 + column * 8;
+                    byte rowBits = 0;
                     for (var x = 0; x < 8; x++)
-                        if (pixels[(40 + row * 8 + y) * frame.Width + 48 + column * 8 + x] != background)
-                            bits[y] |= (byte)(0x80 >> x);
-                screen.Append(glyphs.GetValueOrDefault(Convert.ToHexString(bits), '?'));
+                        if (pixels[rowOffset + x] != background)
+                            rowBits |= (byte)(0x80 >> x);
+                    bits[y] = rowBits;
+                }
+                var glyphKey = BinaryPrimitives.ReadUInt64LittleEndian(bits);
+                screen.Append(glyphs.GetValueOrDefault(glyphKey, '?'));
             }
             if (row < 23) screen.Append('\n');
         }
@@ -1493,14 +1655,36 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         const int originY = 40;
         var cellX = originX + (col / 2) * 8;
         var cellY = originY + row * 8;
-        var counts = new Dictionary<uint, int>();
+        Span<uint> cellColors = stackalloc uint[8];
+        Span<int> cellCounts = stackalloc int[8];
+        var colorKinds = 0;
         for (var y = 0; y < 8; y++)
             for (var x = 0; x < 8; x++)
             {
                 var color = pixels[(cellY + y) * width + cellX + x];
-                counts[color] = counts.GetValueOrDefault(color) + 1;
+                var found = -1;
+                for (var k = 0; k < colorKinds; k++)
+                {
+                    if (cellColors[k] == color) { found = k; break; }
+                }
+                if (found >= 0) cellCounts[found]++;
+                else if (colorKinds < cellColors.Length)
+                {
+                    cellColors[colorKinds] = color;
+                    cellCounts[colorKinds] = 1;
+                    colorKinds++;
+                }
             }
-        var background = counts.MaxBy(pair => pair.Value).Key;
+        var background = cellColors[0];
+        var bestCount = cellCounts[0];
+        for (var k = 1; k < colorKinds; k++)
+        {
+            if (cellCounts[k] > bestCount)
+            {
+                bestCount = cellCounts[k];
+                background = cellColors[k];
+            }
+        }
         for (var y = 0; y < 8; y++)
         {
             byte bits = 0;

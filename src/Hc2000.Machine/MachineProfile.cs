@@ -7,7 +7,7 @@ namespace Hc2000.Machine;
 /// <summary>Versioned selected odd-only FDC/F7/EF policy, not verified aliases or live port devices.</summary>
 public enum MachineIoPolicy { FaithfulOddFdcV1 }
 /// <summary>Explicit opt-in virtual block-disk wire policy; the faithful profiles have none.</summary>
-public enum BlockDiskPolicy { V1, HddV1, HddGuestV1 }
+public enum BlockDiskPolicy { V1, HddV1 }
 public enum ProfileRomRole { Basic, Cpm, CpmUpper, CpmLower, If1 }
 public enum ProfileRomStore { MainRom, ShadowRom }
 public enum ProfileRomAvailability { SuppliedUnverified, MissingLowerHalf }
@@ -84,11 +84,6 @@ public sealed record MachineProfile
         Name = "hc2000-v2-hdd-v1",
         BlockDisk = BlockDiskPolicy.HddV1
     };
-    public static MachineProfile Hc2000V2HddGuestV1 => new()
-    {
-        Name = "hc2000-v2-hdd-guest-v1",
-        BlockDisk = BlockDiskPolicy.HddGuestV1
-    };
     public static MachineProfile Hc2000V2TapeControlV1 => new()
     {
         Name = "hc2000-v2-tape-control-v1",
@@ -108,14 +103,6 @@ public sealed record MachineProfile
         Memory = new(HcRomLayout.V2, RamBytes: PagedRamPolicy.RamBytes, RamPaged: new())
     };
 
-    /// <summary>Tape storage v2: spec 12 paging restricted to bound CP/M banks, and existing 0091 control.</summary>
-    public static MachineProfile Hc2000V2PagedTapeV2 => new()
-    {
-        Name = "hc2000-v2-paged-tape-v2",
-        TapeControl = true,
-        Memory = new(HcRomLayout.V2, RamBytes: PagedRamPolicy.RamBytes, RamPaged: new() { BoundCpmWindow = true })
-    };
-
     /// <summary>Faithful base view with explicit C7-only expanded transfer access; not installed M firmware.</summary>
     public static MachineProfile Hc2000V2PagedMTransferV1 => new()
     {
@@ -124,41 +111,13 @@ public sealed record MachineProfile
             RamPaged: new(PagedRamPolicy.MTransferPolicyId))
     };
 
-    /// <summary>M-transfer view v2: the 8-MiB M: (pages 0-511) under its own identity; host wiring identical to v1.</summary>
-    public static MachineProfile Hc2000V2PagedMTransferV2 => new()
-    {
-        Name = "hc2000-v2-paged-m-v2",
-        Memory = new(HcRomLayout.V2, RamBytes: PagedRamPolicy.RamBytes,
-            RamPaged: new(PagedRamPolicy.MTransferV2PolicyId))
-    };
-
-    /// <summary>Explicit expansion identity; retains M compatibility paging and the native main map.</summary>
-    public static MachineProfile Hc2000V2PagedExpansionV1 => Hc2000V2PagedMTransferV1 with
-    {
-        Name = "hc2000-v2-paged-expansion-v1"
-    };
-
     public void Validate()
     {
-        if (Name == "hc2000-v2-paged-tape-v2")
+        if (Name is "hc2000-v2-paged-v1" or "hc2000-v2-paged-m-v1")
         {
             ArgumentNullException.ThrowIfNull(Memory);
-            if (!TapeControl || Memory.RamPaged is not { PolicyId: PagedRamPolicy.PolicyId, BoundCpmWindow: true })
-                throw new ArgumentException("Paged tape requires tape control and the bound CP/M restriction of plain ram.paged.");
-            // Strip only this explicit composition; neither parent's accepted identity is widened.
-            (this with { Name = "hc2000-v2-tape-control-v1", Memory = Memory with { RamBytes = 0x10000, RamPaged = null } }).Validate();
-            Memory.Validate();
-            if (Memory.RomBytes != 0x8000 || Memory.ShadowRomBytes != 0x4000 || Memory.ShadowRamBytes != 0x400
-                || Memory.If1Traps != new If1TrapProfile() || Io != MachineIoPolicy.FaithfulOddFdcV1)
-                throw new ArgumentException("Paged tape preserves the canonical v2 ROM and IF1 layout.", nameof(Memory));
-            return;
-        }
-        if (Name is "hc2000-v2-paged-v1" or "hc2000-v2-paged-m-v1" or "hc2000-v2-paged-m-v2" or "hc2000-v2-paged-expansion-v1")
-        {
-            ArgumentNullException.ThrowIfNull(Memory);
-            var expectedPolicy = Name == "hc2000-v2-paged-m-v2" ? PagedRamPolicy.MTransferV2PolicyId
-                : Name == "hc2000-v2-paged-v1" ? PagedRamPolicy.PolicyId : PagedRamPolicy.MTransferPolicyId;
-            if (Memory.RamPaged?.PolicyId != expectedPolicy || Memory.RamPaged.BoundCpmWindow)
+            var expectedPolicy = Name == "hc2000-v2-paged-m-v1" ? PagedRamPolicy.MTransferPolicyId : PagedRamPolicy.PolicyId;
+            if (Memory.RamPaged?.PolicyId != expectedPolicy)
                 throw new ArgumentException("Paged profile requires its exact ram.paged policy.", nameof(Memory));
             (this with { Name = "hc2000-v2", Memory = Memory with { RamBytes = 0x10000, RamPaged = null } }).Validate();
             Memory.Validate();
@@ -186,7 +145,7 @@ public sealed record MachineProfile
                 throw new ArgumentException("The tape-control identity uses the canonical v2 machine.", nameof(Name));
             return;
         }
-        if (Name is "hc2000-v2-blockport-v1" or "hc2000-v2-hdd-v1" or "hc2000-v2-hdd-guest-v1")
+        if (Name is "hc2000-v2-blockport-v1" or "hc2000-v2-hdd-v1")
         {
             ValidateBlockportUpgrade();
             return;
@@ -224,12 +183,7 @@ public sealed record MachineProfile
     private void ValidateBlockportUpgrade()
     {
         if (Version != 1) throw new ArgumentOutOfRangeException(nameof(Version), "Only profile version 1 is supported.");
-        var expectedDisk = Name switch
-        {
-            "hc2000-v2-hdd-v1" => BlockDiskPolicy.HddV1,
-            "hc2000-v2-hdd-guest-v1" => BlockDiskPolicy.HddGuestV1,
-            _ => BlockDiskPolicy.V1
-        };
+        var expectedDisk = Name == "hc2000-v2-hdd-v1" ? BlockDiskPolicy.HddV1 : BlockDiskPolicy.V1;
         if (BlockDisk != expectedDisk) throw new ArgumentException("The blockport/HDD identity requires its explicit disk policy.", nameof(BlockDisk));
         if (CpuTurboMultiplier != 1) throw new ArgumentException("The blockport profile does not enable CPU turbo.", nameof(CpuTurboMultiplier));
         ArgumentNullException.ThrowIfNull(Memory);

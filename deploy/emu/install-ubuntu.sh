@@ -97,13 +97,6 @@ copy_disk_if_absent() {
 }
 
 install() {
-  # Reject an incomplete/corrupt native payload before touching an existing
-  # installation or user data. No host SDL, compiler or audio-device probe.
-  local native="$PWD/app/runtimes/linux-x64/native"
-  [ -f "$native/libSDL2-2.0.so.0" ] && [ -f "$native/SDL2-MANIFEST.sha256" ] || {
-    echo "error: payload lacks pinned SDL2 library/manifest" >&2; return 1;
-  }
-  (cd "$native" && sha256sum --strict -c SDL2-MANIFEST.sha256) || return 1
   if [ -z "$PREFIX" ]; then
     local rec
     rec="$(recorded_prefix)"

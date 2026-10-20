@@ -60,31 +60,6 @@ public sealed class HddOfflineReplacementFixturesTests : IDisposable
     private static HddSelectionLimits Limits() => new(F, 2, 60, 624, S, 0, 2UL * S,
         3UL * S + 32768, 64UL * 1024 * 1024, 2 * F, 512UL * 1024 * 1024);
 
-    private static readonly Lazy<string> ProofRoot = new(() => ResolveProofRoot(
-        Environment.GetEnvironmentVariable("HDD_OFFLINE_PROOF_ROOT"), Environment.GetEnvironmentVariable("TMPDIR")));
-
-    internal static string ResolveProofRoot(string? requestedRoot, string? temporaryDirectory)
-    {
-        var root = requestedRoot;
-        if (root is null)
-        {
-            Assert.False(string.IsNullOrWhiteSpace(temporaryDirectory),
-                "Set HDD_OFFLINE_PROOF_ROOT or supply a fresh per-run TMPDIR; never use repository assets.");
-            var temporaryRoot = Path.GetFullPath(temporaryDirectory!);
-            Assert.True(Directory.Exists(temporaryRoot), "The per-run TMPDIR must already exist.");
-            Assert.False(File.GetAttributes(temporaryRoot).HasFlag(FileAttributes.ReparsePoint));
-            root = Path.Combine(temporaryRoot, "hc-hdd-offline-proof-" + Guid.NewGuid().ToString("N"));
-            if (OperatingSystem.IsWindows()) Directory.CreateDirectory(root);
-            else Directory.CreateDirectory(root, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-        }
-        Assert.False(string.IsNullOrWhiteSpace(root), "HDD_OFFLINE_PROOF_ROOT must name a private run directory.");
-        root = Path.GetFullPath(root);
-        Assert.True(Directory.Exists(root), "The proof owner must create and record the fresh private run root.");
-        Assert.False(File.GetAttributes(root).HasFlag(FileAttributes.ReparsePoint));
-        Assert.True(new DriveInfo(root).AvailableFreeSpace >= 4L * (long)F, "Insufficient finite proof space.");
-        return root;
-    }
-
     internal sealed class PrivateCase
     {
         public string DirectoryPath { get; }
@@ -95,7 +70,12 @@ public sealed class HddOfflineReplacementFixturesTests : IDisposable
         public OfflineReplaceRequest Request { get; }
         public PrivateCase(string name)
         {
-            var root = ProofRoot.Value;
+            var root = Environment.GetEnvironmentVariable("HDD_OFFLINE_PROOF_ROOT");
+            Assert.False(string.IsNullOrWhiteSpace(root), "Set HDD_OFFLINE_PROOF_ROOT to a fresh own-user 0700 run directory; never use repository assets.");
+            root = Path.GetFullPath(root!);
+            Assert.True(Directory.Exists(root), "The proof owner must create and record the fresh private run root.");
+            Assert.False(File.GetAttributes(root).HasFlag(FileAttributes.ReparsePoint));
+            Assert.True(new DriveInfo(root).AvailableFreeSpace >= 4L * (long)F, "Insufficient finite proof space.");
             DirectoryPath = Path.Combine(root, name + "-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(DirectoryPath);
             if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(DirectoryPath, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
@@ -112,8 +92,7 @@ public sealed class HddOfflineReplacementFixturesTests : IDisposable
             OriginalSha = Hash(Original);
             Request = new(Target, new(new(Hex("0102030405060708090a0b0c0d0e0f10"), 1, Hex(OldMetadata)), "VOL1.DSK", Hex(P0)),
                 Guid.NewGuid(), Guid.NewGuid(), new(true, true, true, true), Limits(), new(1, 0, S + 80UL, 0));
-            Record("setup", new { ProofRoot = root, PrivateCaseDirectory = DirectoryPath,
-                FileBytes = F, Volumes = 2, RetainedFixtureFiles = 3 * F,
+            Record("setup", new { FileBytes = F, Volumes = 2, RetainedFixtureFiles = 3 * F,
                 SetupWrittenBytes = 3 * F, SetupCopyReadBytes = 2 * F,
                 CallerSnapshotBytes = S + 80UL, AdditionalDigestAndReadbackChargedOutsideOperation = true,
                 OriginalSha, NamedRollback = Rollback, OperationLimits = Request.Limits, Usage = Request.Usage });

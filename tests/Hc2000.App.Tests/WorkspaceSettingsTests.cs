@@ -125,28 +125,15 @@ public sealed class WorkspaceSettingsTests : IDisposable
     }
 
     [Fact]
-    public void TypedDescriptorUsesNativeValidationAndActivatesRaw()
+    public void TypedDescriptorUsesNativeValidationAndDoesNotActivateRaw()
     {
         var raw = new ImageConfiguration("RawFloppy", 80, 2, 9, 512);
         Assert.Equal(737280, raw.ToDescriptor().Geometry!.Length);
-        var machine = new MachineConfiguration
-        {
-            DiskA = new(Path.GetFullPath("disk.raw"), Image: raw),
-            DiskB = new(Path.GetFullPath("disk2.raw"), Image: raw)
-        };
+        var machine = new MachineConfiguration { DiskA = new(Path.GetFullPath("disk.raw"), Image: raw) };
         machine.Validate();
-        machine.ValidateEffective();
+        Assert.Throws<ArgumentException>(() => machine.ValidateEffective());
         Assert.Throws<ArgumentException>(() => new ImageConfiguration("RawFloppy").ToDescriptor());
         Assert.ThrowsAny<Exception>(() => new ImageConfiguration("RawFloppy", int.MaxValue, 2, 9, 512).ToDescriptor());
-    }
-
-    [Theory]
-    [InlineData("RawFloppy", 81, 2, 9, 512)] // cylinders exceed the 80/2 device profile
-    [InlineData("HddRaw8MiB", null, null, null, null)] // HDD descriptor on a floppy device
-    public void UnsupportedFloppyDescriptorIsRefusedAtValidation(string kind, int? cylinders, int? sides, int? sectors, int? sectorSize)
-    {
-        var floppy = new FloppyConfiguration(Path.GetFullPath("disk.img"), Image: new ImageConfiguration(kind, cylinders, sides, sectors, sectorSize));
-        Assert.ThrowsAny<Exception>(floppy.Validate);
     }
 
     public void Dispose() { if (Directory.Exists(directory)) Directory.Delete(directory, true); }

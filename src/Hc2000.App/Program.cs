@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 // Skeleton for slice 00a; the real app lands in its own epic (epic 06, spec 06-app.md).
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
@@ -12,7 +11,6 @@ using Avalonia.Platform.Storage;
 using Avalonia.Media;
 using Hc2000.App.Input;
 using Hc2000.App.Media;
-using Hc2000.App.Workspace;
 using Hc2000.Machine.Video;
 
 namespace Hc2000.App;
@@ -86,208 +84,64 @@ public partial class App : Application
 
 public partial class MainWindow : Window
 {
-    private readonly MachineWorkspace workspace = new();
-    private readonly MachineSession implicitSession = new(KeyMappingMode.Positional);
+    public InputQueue InputQueue { get; } = new();
+    public KeyboardInputAdapter KeyboardInput { get; }
 
     private readonly LaunchOptions? launchOptions;
     private readonly string? assetRootOverride;
-    private Configuration.PrestartPanel prestart;
-    private readonly Configuration.ReconfigurePanel reconfigure;
+    private readonly Configuration.PrestartPanel prestart;
+    private Configuration.MachineConfiguration? startingConfiguration;
+    private Runtime.EmulationWorker? worker;
     private bool closing;
+    private bool replacingRuntime;
+    private long runtimeGeneration;
+    private Task basicReplacementCompletion = Task.CompletedTask;
     private Task shutdownCompletion = Task.CompletedTask;
+    private bool basicRuntimeActive;
     private bool closeConfirmed, checkingClose;
+    private int mediaPollTicks;
+    private readonly string inputEvidenceWindowId = Guid.NewGuid().ToString("N");
+    private long observedWorkerSession = -1, observedRuntimeGeneration = -1;
     private bool syncingInputEvidenceUi;
     private readonly CheckBox inputEvidenceToggle = new() { Content = "Observe future emulator-window input (volatile, bounded)", Focusable = false };
     private readonly TextBlock inputEvidenceText = new() { Text = FrontendInputEvidence.Coverage, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
     private readonly Avalonia.Threading.DispatcherTimer presentation = new() { Interval = TimeSpan.FromMilliseconds(20) };
+    private Media.DiskWritebackHost? writebackHost;
 
-    // The one machine the shared view answers for: the selected tab's session, or the implicit
-    // window session when there are no tabs (every legacy single-machine path and test).
-    internal MachineSession CurrentSession
-    {
-        get
-        {
-            var selected = workspace.Selected;
-            return selected is not null ? selected.Session : implicitSession;
-        }
-    }
-    public InputQueue InputQueue => CurrentSession.InputQueue;
-    public KeyboardInputAdapter KeyboardInput => CurrentSession.KeyboardInput;
-
-    private IEnumerable<MachineSession> AllSessions()
-    {
-        yield return implicitSession;
-        foreach (var tab in workspace.Tabs) yield return tab.Session;
-    }
-
-    private void WatchInputRejected(MachineSession session)
-        => session.KeyboardInput.Rejected += message => this.FindControl<TextBlock>("InputNotice")!.Text = message;
-
-    // The one shared media/snapshot panel set re-binds to the selected session. A session without
-    // a live runtime (draft, or a completed one) leaves the panel disconnected; selection never
-    // touches the runtime state of another session.
-    private void BindSelectedSessionView()
-    {
-        var media = this.FindControl<Media.MediaPanel>("MediaControls")!;
-        var snapshots = this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!;
-        media.Unbind();
-        snapshots.Unbind();
-        var session = CurrentSession;
-        // Per-machine snapshot scope: this machine's persisted last snapshot selection, from the
-        // tab's own configuration (drafts never carry StartingConfiguration). The list is
-        // refreshed for the bound machine only; selection dispatches through the bound bridge.
-        var configuration = workspace.Selected?.Configuration ?? session.StartingConfiguration;
-        BindExplorer(session, configuration);
-        var lastSnapshot = configuration?.LastSnapshot;
-        snapshots.LastSnapshot = lastSnapshot;
-        snapshots.SnapshotDirectory = lastSnapshot is null ? null : Path.GetDirectoryName(lastSnapshot);
-        if (session.Closed || session.Worker?.Completion.IsCompleted != false)
-        {
-            media.RefreshDiskLibraryList();
-            snapshots.RefreshSnapshotList();
-            return;
-        }
-        if (session.MediaBridge is not null && session.WritebackHost is not null)
-        {
-            media.Attach(session.MediaBridge);
-            BindMediaPanel(session, media, session.WritebackHost);
-        }
-        if (session.SnapshotBridge is not null)
-            snapshots.Attach(session.SnapshotBridge);
-    }
-
-    private void RefreshTabsView()
-    {
-        var panel = this.FindControl<StackPanel>("MachineTabs")!;
-        panel.Children.Clear();
-        panel.IsVisible = workspace.Tabs.Count > 0;
-        RefreshShellView();
-        foreach (var tab in workspace.Tabs)
-        {
-            var selected = ReferenceEquals(workspace.Selected, tab);
-            var select = new Button
-            {
-                Content = (selected ? "\u25CF " : "") + tab.Configuration.Name,
-                Focusable = false,
-                Padding = new Thickness(10, 6),
-                FontWeight = selected ? Avalonia.Media.FontWeight.SemiBold : Avalonia.Media.FontWeight.Normal
-            };
-            Avalonia.Automation.AutomationProperties.SetName(select, "Select machine " + tab.Configuration.Name);
-            ToolTip.SetTip(select, (selected ? "Selected machine: " : "Select machine: ") + tab.Configuration.Name);
-            select.Click += (_, _) =>
-            {
-                if (workspace.Select(tab.TabId))
-                {
-                    BindSelectedSessionView();
-                    SyncInputView();
-                    BindReconfigureView();
-                    RefreshTabsView();
-                    this.FindControl<TextBlock>("RuntimeStatus")!.Text = CurrentSession.Worker is null
-                        ? "Selected draft: no guest executing."
-                        : CurrentSession.Worker.Completion.IsCompleted ? "Selected machine stopped: " + tab.Configuration.Name + "."
-                        : "Selected machine runtime; actions below affect only " + tab.Configuration.Name + ".";
-                }
-            };
-            var close = new Button { Content = "\u00D7", Focusable = false, Width = 30, Margin = new Thickness(4, 0, 0, 0) };
-            Avalonia.Automation.AutomationProperties.SetName(close, "Close machine " + tab.Configuration.Name);
-            ToolTip.SetTip(close, "Close only " + tab.Configuration.Name);
-            close.Click += async (_, _) => await CloseTabAsync(tab);
-            var state = new TextBlock { Text = tab.Session.Worker is null ? "Draft" : tab.Session.Worker.Completion.IsCompleted ? "Stopped" : "Running",
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0) };
-            panel.Children.Add(new Border
-            {
-                BorderThickness = new Thickness(selected ? 2 : 1), CornerRadius = new CornerRadius(4),
-                BorderBrush = select.Foreground, Padding = new Thickness(2),
-                Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { select, state, close } }
-            });
-        }
-    }
-
-    private void SyncInputView()
-    {
-        var box = this.FindControl<ComboBox>("InputModeBox")!;
-        // Reflect the selected machine's adapter mode; switching tabs never re-maps the other one.
-        box.SelectedIndex = CurrentSession.KeyboardInput.Mode == KeyMappingMode.Positional ? 1 : 0;
-    }
-
-    // Tab close: actual close/drain evidence. A live tab must answer its own writeback close
-    // gate, so the panel is bound to it first; the session is retired, the worker drained, and
-    // the named hold released before the tab is removed.
-    internal async Task CloseTabAsync(MachineTabContext tab)
-    {
-        var session = tab.Session;
-        if (session.Closed || closing) return;
-        if (session.BasicRuntimeActive && session.Worker is { Completion: { IsCompleted: false } })
-        {
-            if (workspace.Select(tab.TabId))
-            {
-                BindSelectedSessionView();
-                SyncInputView();
-            }
-            if (!await this.FindControl<Media.MediaPanel>("MediaControls")!.CanCloseAsync()) return;
-        }
-        var wasSelected = ReferenceEquals(workspace.Selected, tab);
-        session.Retire();
-        var old = session.Worker;
-        session.DetachWorker();
-        old?.Dispose();
-        var shutdown = AwaitShutdownAndDiscardPendingAsync(session, old, session.BasicReplacementCompletion);
-        // Proven owner drain before the named release: the retired worker and the in-flight
-        // replacement/boot (including a configured prestart read under the fence) are quiescent
-        // before the fence goes away; the release itself also awaits any started member read.
-        try { await shutdown; }
-        catch { /* the replacement records its own failure before close */ }
-        session.ReleaseHeldRead("tab closed");
-        session.BasicRuntimeActive = false;
-        adoptedProfiles.Remove(session);
-        displayedStops.Remove(session);
-        workspace.RemoveTab(tab.TabId, out _);
-        if (wasSelected) BindSelectedSessionView();
-        this.FindControl<Button>("MachineReset")!.IsEnabled = CurrentSession.BasicRuntimeActive;
-        SyncInputView();
-        BindReconfigureView();
-        RefreshTabsView();
-        if (!presentation.IsEnabled && AllSessions().Any(s => s.Worker is { Completion: { IsCompleted: false } }))
-            presentation.Start();
-    }
-
-    internal Runtime.EmulationWorker? CurrentRuntime => CurrentSession.Worker;
+    internal Runtime.EmulationWorker? CurrentRuntime => worker;
     internal Task ShutdownCompletion => shutdownCompletion;
     /// <summary>Last frame the window presented. The startup test reads this, not a worker it composed.</summary>
     internal VideoFrame? LatestPresentedFrame { get; private set; }
     /// <summary>IF1 shadow length composed at window open. 0 until the whole-chip boot attaches.</summary>
     internal int BootedIf1Length { get; private set; }
 
-    /// <summary>Composition root attaches the worker to the selected machine; no synthetic CPU
-    /// is used for a fake boot.</summary>
+    /// <summary>Composition root attaches the worker; no synthetic CPU is used for a fake boot.</summary>
     public void AttachRuntime(Runtime.EmulationWorker runtime)
     {
         Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
-        var session = CurrentSession;
-        if (session.Worker is not null) throw new InvalidOperationException("Runtime already attached.");
-        session.AttachWorker(runtime);
-        BindExplorer(session, workspace.Selected?.Configuration ?? session.StartingConfiguration);
+        if (worker is not null) throw new InvalidOperationException("Runtime already attached.");
+        worker = runtime;
+        runtimeGeneration++;
+        runtime.SessionRetired += KeyboardInput.Evidence.EndSession;
         RefreshInputEvidenceSession();
         this.FindControl<TextBlock>("RuntimeStatus")!.Text = "Runtime attached";
-        RefreshShellView();
         presentation.Start();
     }
 
     private async Task RestartZ80DemoAsync()
     {
         Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
-        var session = CurrentSession;
-        if (closing || session.ReplacingRuntime || !Program.Z80VisualDemoEnabled) return;
-        session.ReplacingRuntime = true;
+        if (closing || replacingRuntime || !Program.Z80VisualDemoEnabled) return;
+        replacingRuntime = true;
         var button = this.FindControl<Button>("Z80DemoRerun")!;
         button.IsEnabled = false;
         presentation.Stop();
         this.FindControl<Runtime.VideoSurface>("Screen")!.ClearPresentation();
-        var old = session.Worker;
-        session.KeyboardInput.Evidence.EndSession();
+        var old = worker;
+        KeyboardInput.Evidence.EndSession();
         ResetInputEvidenceView();
-        session.DetachWorker(); // no old frame or completion can reach the new session
-        session.BumpGeneration();
+        worker = null; // no old frame or completion can reach the new session
+        runtimeGeneration++;
         old?.Dispose();
         try
         {
@@ -302,33 +156,21 @@ public partial class MainWindow : Window
         }
         finally
         {
-            session.ReplacingRuntime = false;
+            replacingRuntime = false;
             if (!closing) button.IsEnabled = true;
         }
     }
 
     private void ResetWholeChipMachine()
     {
-        var session = CurrentSession;
-        if (closing || !session.BasicRuntimeActive || session.Worker?.Completion.IsCompleted != false) return;
-        // Binding-preserving reset (machine tabs config v2): an unresolved writeback fence refuses
-        // the reset WITHOUT invalidating the mounted media or its bindings; the machine keeps both.
-        if (session.WritebackHost is { } host && !host.ResetGuardClear())
-        {
-            this.FindControl<TextBlock>("RuntimeStatus")!.Text =
-                "Reset refused: a writeback fence is unresolved; mounted media and bindings retained.";
-            return;
-        }
-        // The owner's reset consumption is enqueued before the named drain: the reset is the owner's
-        // work, and the drain (which also awaits any started member read) must not run before the
-        // owner has a chance to consume it.
-        session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.Reset));
-        session.ReleaseHeldRead("machine reset");
-        session.KeyboardInput.ReleaseFocus(InputReleaseOrigin.Reset);
-        session.KeyboardInput.Evidence.EndSession();
+        if (closing || !basicRuntimeActive || worker?.Completion.IsCompleted != false || writebackHost?.Frozen == true) return;
+        _ = writebackHost?.InvalidateAsync();
+        KeyboardInput.ReleaseFocus(InputReleaseOrigin.Reset);
+        KeyboardInput.Evidence.EndSession();
         ResetInputEvidenceView();
         this.FindControl<Runtime.VideoSurface>("Screen")!.ClearPresentation();
         LatestPresentedFrame = null;
+        InputQueue.Enqueue(new RuntimeControl(InputControlKind.Reset));
     }
 
     /// <summary>Attach only a command/reply bridge; live drives remain on the worker.</summary>
@@ -352,224 +194,103 @@ public partial class MainWindow : Window
     /// The chip read runs off the UI thread: LoadWholeChipV2 blocks on ReadAsync, which deadlocks
     /// a UI sync context.</summary>
     private async Task BootWholeChipMachine(ImmutableArray<HddInitialMedia>? initialHdd = null,
-        Media.HddColdVolume? coldVolume = null, byte coldDrive = 2, bool useColdMap = false)
+        Media.HddColdVolume? coldVolume = null, byte coldDrive = 2)
     {
-        var session = CurrentSession;
-        if (closing || session.Worker is not null || session.ReplacingRuntime || session.Closed || Program.Z80VisualDemoEnabled || Stage1SpectrumDemo.Enabled)
+        if (closing || worker is not null || replacingRuntime || Program.Z80VisualDemoEnabled || Stage1SpectrumDemo.Enabled)
         {
             coldVolume?.Admission.CancelBeforeEnqueue();
             return;
         }
         var ownerStarted = false;
-        var startingEditor = prestart;
-        var generation = session.RuntimeGeneration;
+        var generation = runtimeGeneration;
         var panel = this.FindControl<Media.ProfileRomPanel>("ProfileRomControls");
         if (panel is not null) panel.IsVisible = false;
         try
         {
             var assetRoot = assetRootOverride ?? ProfileRomSelection.DefaultAssetRoot();
             var roms = await Task.Run(() => ProfileRomSelection.LoadWholeChipV2(assetRoot));
-            if (closing || session.Closed || session.Worker is not null || session.ReplacingRuntime || generation != session.RuntimeGeneration) return;
-            var disks = session.StartingConfiguration is { } configuration
-                ? await Configuration.PrestartMedia.ReadAsync(configuration, session.ClaimHeldConfiguredStart(configuration)) : [];
-            if (closing || session.Closed || session.Worker is not null || generation != session.RuntimeGeneration)
-            {
-                session.ReleaseHeldRead("machine restart");
-                return;
-            }
-            var prepared = session.StartingConfiguration is { } startConfiguration
-                ? await Runtime.StartupHardwarePreparation.PrepareAsync(roms, startConfiguration)
-                : coldVolume is not null
-                ? useColdMap
-                    ? Runtime.BasicMachineComposition.PrepareAdmittedHddMapWholeChipV2(roms, coldVolume)
-                    : Runtime.BasicMachineComposition.PrepareAdmittedHddWholeChipV2(roms, coldVolume.Media(coldDrive), coldVolume.Admission)
+            if (closing || worker is not null || replacingRuntime || generation != runtimeGeneration) return;
+            var disks = startingConfiguration is { } configuration
+                ? await Configuration.PrestartMedia.ReadAsync(configuration) : [];
+            if (closing || worker is not null || generation != runtimeGeneration) return;
+            var prepared = coldVolume is not null
+                ? Runtime.BasicMachineComposition.PrepareAdmittedHddWholeChipV2(roms, coldVolume.Media(coldDrive), coldVolume.Admission)
                 : initialHdd is { } images
                     ? Runtime.BasicMachineComposition.PrepareHddWholeChipV2(roms, images)
                     : Runtime.BasicMachineComposition.PrepareWholeChipV2(roms);
-            if (closing || session.Closed || session.Worker is not null || generation != session.RuntimeGeneration) return;
             var media = this.FindControl<Media.MediaPanel>("MediaControls")!;
-            if (ReferenceEquals(CurrentSession, session)) media.Disconnect();
-            var bridge = new Media.MediaBridge(session.InputQueue);
-            session.MediaBridge = bridge;
+            media.Disconnect();
+            var bridge = new Media.MediaBridge(InputQueue);
             var ledger = new Media.DiskWritebackOwnerLedger();
-            var host = new Media.DiskWritebackHost(ledger, bridge, launchOptions?.Writeback == true);
-            session.WritebackHost = host;
-            if (ReferenceEquals(CurrentSession, session))
-            {
-                BindMediaPanel(session, media, host);
-                if (LaunchStartup.HasDisk(launchOptions) || initialHdd.HasValue || coldVolume is not null || session.StartingConfiguration is not null)
-                    media.Attach(bridge);
-                else
-                    AttachMedia(bridge);
-            }
-            var snapshots = new Snapshots.HcsBridge(session.InputQueue);
-            session.SnapshotBridge = snapshots;
-            if (ReferenceEquals(CurrentSession, session))
-            {
-                this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
-                AttachSnapshots(snapshots);
-            }
+            writebackHost = new Media.DiskWritebackHost(ledger, bridge, launchOptions?.Writeback == true);
+            media.TryWritebackEject = writebackHost.TryEjectAsync;
+            media.DiskMounted = writebackHost.NoteMounted;
+            media.WritebackBeforeClose = writebackHost.BeforeCloseAsync;
+            if (LaunchStartup.HasDisk(launchOptions) || initialHdd.HasValue || coldVolume is not null || startingConfiguration is not null)
+                media.Attach(bridge);
+            else
+                AttachMedia(bridge);
+            var snapshots = new Snapshots.HcsBridge(InputQueue);
+            this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
+            AttachSnapshots(snapshots);
             // The existing FIFO consumes Pause before its first instruction. Mount receipts are
             // acknowledged while paused; a failed mount must never resume a partially configured guest.
-            if (session.StartingConfiguration is { } draft)
+            if (startingConfiguration is { } draft)
             {
-                session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.Pause));
-                session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: draft.SpeedPercent));
+                InputQueue.Enqueue(new RuntimeControl(InputControlKind.Pause));
+                InputQueue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: draft.SpeedPercent));
             }
-            // The sound-dump route (hc2000-app-sound-dump-route): the CLI flag and the saved setting
-            // share the name and the one fence (PO ruling board 634859); the CLI flag wins, and a
-            // refusal is reported once on the deck line and, for the CLI, on stderr.
-            var soundDump = launchOptions?.SoundDump ?? configurationStore.Load().Settings.SoundDump;
-            var soundDumpResolution = Audio.SoundDumpGate.Resolve(soundDump);
-            if (soundDumpResolution.Refusal is not null)
-            {
-                if (launchOptions?.SoundDump is not null) Console.Error.WriteLine(soundDumpResolution.Refusal);
-                if (ReferenceEquals(CurrentSession, session))
-                    this.FindControl<TextBlock>("RuntimeStatus")!.Text = soundDumpResolution.Refusal;
-            }
-            var runtime = Runtime.BasicMachineComposition.CreateWorker(prepared, session.InputQueue, bridge, snapshots,
-                audioEnabled: true, writeback: ledger, soundDump: soundDumpResolution.Path);
+            var runtime = Runtime.BasicMachineComposition.CreateWorker(prepared, InputQueue, bridge, snapshots, audioEnabled: true, writeback: ledger);
             ownerStarted = true; // Only the actual owner may now acknowledge/release admission.
-            session.AttachWorker(runtime);
-            var ownerGeneration = session.RuntimeGeneration;
-            if (ReferenceEquals(CurrentSession, session)) BindExplorer(session, session.StartingConfiguration);
-            presentation.Start();
-            RefreshInputEvidenceSession();
+            AttachRuntime(runtime);
             foreach (var disk in disks)
             {
-                // Host-held prestart read: revalidate the file against the read facts before enqueue
-                // (a swapped file refuses now, not as an old mount), then acknowledge the actual owner
-                // outcome; the cold-read gate stays held by the reservation until that outcome or a drain.
-                var reservation = disk.Reservation;
-                if (reservation is not null)
-                    try { reservation.MarkDispatched(); }
-                    catch { reservation.DrainAtStop(); throw; }
-                // O5/F7: the owner mount receipt carries the slot's stored descriptor kind+geometry,
-                // and the host records it with the observation and the writable-bind decision.
-                var descriptor = session.StartingConfiguration is { } configuredStart
-                    ? (disk.Slot == Media.DiskSlot.A ? configuredStart.DiskA : configuredStart.DiskB)?.Descriptor.ToDescriptor()
-                    : null;
-                var receipt = await bridge.RequestAsync(new(MediaAction.InsertDisk, disk.Slot, disk.Bytes, Path.GetFileName(disk.Path), Descriptor: descriptor));
-                var identity = reservation is null ? null : reservation.CompleteAfterOwnerOutcome(receipt);
+                var receipt = await bridge.RequestAsync(new(MediaAction.InsertDisk, disk.Slot, disk.Bytes, Path.GetFileName(disk.Path)));
                 if (receipt.Error is not null) throw new InvalidDataException(receipt.Error);
-                await host.NoteMounted(disk.Slot, disk.Path, disk.Bytes, receipt, identity, descriptor);
+                await writebackHost.NoteMounted(disk.Slot, disk.Path, disk.Bytes, receipt);
             }
-            // Every expected member is now accounted (its real receipt, the bind/no-bind outcome and
-            // the host accounting): the operation's single fence is released exactly once. A failure
-            // above already left through the named "boot aborted" drain.
-            session.ReleaseHeldRead("configured start accounted");
-            if (session.StartingConfiguration is not null)
+            if (startingConfiguration is not null)
             {
                 // Even an empty draft requires an actual owner reply, not just a returned
                 // thread/worker constructor, before successful Start and any save intent.
                 var installed = await bridge.RequestAsync(new(MediaAction.Inspect));
                 if (installed.Error is not null) throw new InvalidDataException(installed.Error);
-                if (closing || session.Closed || ownerGeneration != session.RuntimeGeneration) return;
-                session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.Resume));
+                if (closing) return;
+                InputQueue.Enqueue(new RuntimeControl(InputControlKind.Resume));
             }
             BootedIf1Length = roms.If1.Length;
-            session.BasicRuntimeActive = true;
-            adoptedProfiles[session] = prepared.Roms.Profile.Name;
-            // An automation Start completes the same editor presentation as a UI Start.
-            // Never hide a newer detached draft, or one now starting on another session.
-            if (session.StartingConfiguration is null && ReferenceEquals(CurrentSession, session)
-                && ReferenceEquals(prestart, startingEditor) && !startingConfiguration)
-                startingEditor.IsVisible = false;
-            RefreshTabsView();
-            if (ReferenceEquals(CurrentSession, session))
-            {
-                BindReconfigureView();
-                this.FindControl<TextBlock>("RuntimeStatus")!.Text = "Real " + prepared.Roms.Profile.Name + " whole-chip machine running"
-                    + (soundDumpResolution.Refusal is not null ? " | " + soundDumpResolution.Refusal : "");
-                if (prepared.Roms.Profile.Name == "hc2000-v2-hdd-v1" || initialHdd.HasValue || coldVolume is not null)
-                    await media.Hdd.InspectAsync();
-            }
-            if (session.StartingConfiguration is null) _ = ApplyLaunchDisksAsync(media, session);
+            basicRuntimeActive = true;
+            this.FindControl<Button>("MachineReset")!.IsEnabled = true;
+            this.FindControl<TextBlock>("RuntimeStatus")!.Text =
+                initialHdd.HasValue || coldVolume is not null ? "Real hc2000-v2-hdd-v1 whole-chip machine running; original BIOS, live switching unavailable" :
+                "Real hc2000-v2 whole-chip machine running";
+            if (initialHdd.HasValue || coldVolume is not null) await media.Hdd.InspectAsync();
+            if (startingConfiguration is null) _ = ApplyLaunchDisksAsync(media);
         }
         catch (Exception ex)
         {
             Exception failure = ex;
-            if (session.StartingConfiguration is not null && session.Worker is { } failed)
+            if (startingConfiguration is not null && worker is { } failed)
             {
-                session.DetachWorker();
+                worker = null;
                 failed.Dispose();
                 try { await failed.Completion; }
                 catch (Exception ownerFailure) { failure = ownerFailure; } // Report the original owner fault after drain.
-                if (!AllSessions().Any(s => s.Worker is { Completion.IsCompleted: false })) presentation.Stop();
-                if (ReferenceEquals(CurrentSession, session))
-                {
-                    this.FindControl<Media.MediaPanel>("MediaControls")!.Disconnect();
-                    this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
-                }
-                // Proven failed-owner drain: the failed owner will never deliver an owner reply, so an
-                // operation held under the configured start is discharged here, exactly once, after
-                // the worker's completion; the finally's !ownerStarted path then no-ops.
-                session.ReleaseHeldRead("configured start failed");
+                presentation.Stop();
+                this.FindControl<Media.MediaPanel>("MediaControls")!.Disconnect();
+                this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
             }
-            if (!closing && ReferenceEquals(CurrentSession, session))
+            if (!closing)
                 this.FindControl<TextBlock>("RuntimeStatus")!.Text =
-                    (session.StartingConfiguration is { } failedDraft ? "Could not start " + failedDraft.Name + ": " : "BASIC runtime failed: ")
-                    + failure.GetBaseException().Message;
+                    "BASIC runtime failed: " + failure.GetBaseException().Message;
         }
         finally
         {
-            // Proven owner drain, symmetric with the cold-volume admission above: it fires only when
-            // the actual owner never started, i.e. the work left in flight can never get an owner
-            // reply. On the normal path the owner took over and an in-flight launch-disk operation is
-            // the owner's own work, acknowledged by its real owner outcome (the panel mount), never by
-            // this drain: draining it mid-read would clobber a live insert.
-            if (!ownerStarted)
-            {
-                coldVolume?.Admission.CancelBeforeEnqueue();
-                session.ReleaseHeldRead("boot aborted");
-            }
+            if (!ownerStarted) coldVolume?.Admission.CancelBeforeEnqueue();
         }
     }
 
-    // The one shared media panel's hooks, bound to a session's host: a member is not the
-    // terminal account of the parent operation, and a read never releases a fence.
-    private void BindMediaPanel(Workspace.MachineSession session, Media.MediaPanel media, Media.DiskWritebackHost host)
-    {
-        media.TryWritebackEject = host.TryEjectAsync;
-        media.DiskMounted = async (slot, path, bytes, reply, identity) =>
-        {
-            // The hook Task is the host's accounting/bind I/O itself (NoteMounted awaits the
-            // writeback coordinator's async BindAsync -> InspectAsync), so the parent fence is
-            // held across it: capture the same operation identity, await the accounting, and
-            // release only once it has completed and every expected member is terminal. A
-            // lost-outcome refusal (no hook) waits for a named host drain.
-            var operation = session.HeldOperation;
-            await host.NoteMounted(slot, path, bytes, reply, identity, media.StoredDescriptorFor?.Invoke(slot));
-            if (operation is not null && !operation.Released
-                && operation.Member(slot) is { } member
-                && member.CurrentPhase == Media.DiskReadReservation.Phase.Terminal
-                && operation.AllMembersTerminal)
-                await session.ReleaseHeldReadAsync(operation, "all members accounted");
-        };
-        media.WritebackBeforeClose = host.BeforeCloseAsync;
-        media.DiskReadReserver = session.ReserveHeldReadAsync;
-        media.DiskReadCompleted = (reservation, _, reply) =>
-        {
-            Media.DiskReadReservation.HostFileIdentity? identity = null;
-            if (reply is not null) identity = reservation.CompleteAfterOwnerOutcome(reply);
-            else reservation.CompleteAfterRefusal();
-            // A member terminal releases no fence: the parent operation retains the single
-            // fence until its own release (last member accounted, or a named host drain).
-            return Task.FromResult(identity);
-        };
-        media.DiskReadHeldFor = slot => session.HeldOperation is { } op && op.IsMember(slot);
-        // Cross-tab source protection: the panel is shared, so a save from the selected tab is
-        // refused against any other open session's protected mounted source, not only the
-        // selected session's own. Closed sessions drop out of the refusal set with their media.
-        media.PathIsProtectedOriginal = path => AllSessions().Any(s => !s.Closed && s.PathIsProtectedOriginal(path));
-        // O1: the panel admits a raw sector image only under the slot's stored, validated
-        // descriptor; a slot without one keeps the legacy .dsk gate.
-        media.StoredDescriptorFor = session.StartingConfiguration is { } slotConfiguration
-            ? slot => (slot == Media.DiskSlot.A ? slotConfiguration.DiskA : slotConfiguration.DiskB)?.Descriptor.ToDescriptor()
-            : null;
-    }
-
-    private async Task ApplyLaunchDisksAsync(Media.MediaPanel media, Workspace.MachineSession session)
+    private async Task ApplyLaunchDisksAsync(Media.MediaPanel media)
     {
         try
         {
@@ -577,7 +298,7 @@ public partial class MainWindow : Window
                 (slot, path) => media.InsertDiskAsync(path, slot));
             if (!closing && diskStatus is not null)
                 this.FindControl<TextBlock>("RuntimeStatus")!.Text = diskStatus;
-            else if (!closing && session.WritebackHost is { ReportsTarget: true } host)
+            else if (!closing && writebackHost is { ReportsTarget: true } host)
             {
                 var status = this.FindControl<TextBlock>("RuntimeStatus")!;
                 var report = host.StatusLine();
@@ -606,17 +327,11 @@ public partial class MainWindow : Window
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DragOverEvent, MediaDragOver);
         AddHandler(DragDrop.DropEvent, MediaDrop);
-        WatchInputRejected(implicitSession);
-        configurationStore = settingsStore ?? new Settings.SettingsStore();
-        prestart = new Configuration.PrestartPanel(configurationStore, launch, assetRoot: assetRoot);
+        KeyboardInput = new KeyboardInputAdapter(InputQueue);
+        prestart = new Configuration.PrestartPanel(settingsStore ?? new Settings.SettingsStore(), launch);
         this.FindControl<ContentControl>("PrestartConfiguration")!.Content = prestart;
-        BindPrestartEvents(prestart);
+        prestart.StartRequested = StartConfigurationAsync;
         prestart.IsVisible = !Program.Z80VisualDemoEnabled && !Stage1SpectrumDemo.Enabled && launch?.Start != true && launch?.HddEnabled != true;
-        reconfigure = new Configuration.ReconfigurePanel();
-        this.FindControl<ContentControl>("ReconfigureConfiguration")!.Content = reconfigure;
-        reconfigure.ApplyRequested = ApplyRunningDraftAsync;
-        this.FindControl<Button>("NewMachine")!.Click += (_, _) => OpenNewMachineDraft();
-        BindReconfigureView();
         AddInputEvidenceControls();
         AddHandler(KeyDownEvent, MachineKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         AddHandler(KeyUpEvent, MachineKeyUp, Avalonia.Interactivity.RoutingStrategies.Tunnel);
@@ -650,29 +365,24 @@ public partial class MainWindow : Window
         // Ordinary open stays Draft. Explicit CLI --start and the existing cold HDD path retain their semantics.
         Opened += (_, _) =>
         {
-            var session = CurrentSession;
-            if (launchOptions?.HddEnabled == true && session.Worker is null && !Program.Z80VisualDemoEnabled && !Stage1SpectrumDemo.Enabled)
+            if (launchOptions?.HddEnabled == true && worker is null && !Program.Z80VisualDemoEnabled && !Stage1SpectrumDemo.Enabled)
             {
                 this.FindControl<TextBlock>("RuntimeStatus")!.Text = "HDD opt-in: prepare images, then start a NEW machine. No guest HDD BIOS or live switching.";
                 this.FindControl<Media.MediaPanel>("MediaControls")!.Hdd.ConfigureCold(images =>
                 {
-                    session.BasicReplacementCompletion = BootWholeChipMachine(images);
-                    return session.BasicReplacementCompletion;
+                    basicReplacementCompletion = BootWholeChipMachine(images);
+                    return basicReplacementCompletion;
                 }, (volume, drive) =>
                 {
-                    session.BasicReplacementCompletion = BootWholeChipMachine(coldVolume: volume, coldDrive: drive);
-                    return session.BasicReplacementCompletion;
-                }, volume =>
-                {
-                    session.BasicReplacementCompletion = BootWholeChipMachine(coldVolume: volume, useColdMap: true);
-                    return session.BasicReplacementCompletion;
+                    basicReplacementCompletion = BootWholeChipMachine(coldVolume: volume, coldDrive: drive);
+                    return basicReplacementCompletion;
                 });
             }
             else if (launchOptions?.Start == true || Program.Z80VisualDemoEnabled || Stage1SpectrumDemo.Enabled)
-                session.BasicReplacementCompletion = BootWholeChipMachine();
-            else if (session.Worker is null)
+                basicReplacementCompletion = BootWholeChipMachine();
+            else if (worker is null)
                 this.FindControl<TextBlock>("RuntimeStatus")!.Text = "Draft: configure, then Start. No guest executing.";
-            if (session.Worker is not null || launchOptions?.Start == true)
+            if (worker is not null || launchOptions?.Start == true)
                 this.FindControl<Runtime.VideoSurface>("Screen")!.Focus();
         };
 
@@ -681,43 +391,37 @@ public partial class MainWindow : Window
         // Reflect the adapter's startup policy instead of maintaining a second XAML default.
         inputModeBox.SelectedIndex = KeyboardInput.Mode == KeyMappingMode.Positional ? 1 : 0;
         inputModeBox.SelectionChanged += (_, _) =>
-            CurrentSession.KeyboardInput.Mode = inputModeBox.SelectedIndex == 1
+            KeyboardInput.Mode = inputModeBox.SelectedIndex == 1
                 ? KeyMappingMode.Positional : KeyMappingMode.Symbolic;
         inputModeBox.DropDownClosed += (_, _) => this.FindControl<Runtime.VideoSurface>("Screen")!.Focus();
         Deactivated += (_, _) => KeyboardInput.ReleaseFocus(InputReleaseOrigin.Deactivated);
         presentation.Tick += (_, _) =>
         {
             RefreshInputEvidenceSession();
-            var session = CurrentSession;
-            if (session.Worker?.TakeLatestFrame() is { } frame)
+            if (worker?.TakeLatestFrame() is { } frame)
             {
                 LatestPresentedFrame = frame;
                 this.FindControl<Runtime.VideoSurface>("Screen")!.Present(frame);
             }
-            if (session.BasicRuntimeActive && !checkingClose && ++session.MediaPollTicks % 10 == 0)
+            if (basicRuntimeActive && !checkingClose && ++mediaPollTicks % 10 == 0)
                 _ = this.FindControl<Media.MediaPanel>("MediaControls")!.PollAsync();
-            if (session.Worker is { Completion: { IsCompleted: true } } runtime
-                && (!displayedStops.TryGetValue(session, out var displayed) || !ReferenceEquals(displayed, runtime)))
+            if (worker?.Completion.IsCompleted == true)
             {
-                displayedStops[session] = runtime;
-                if (!AllSessions().Any(s => s.Worker is { Completion.IsCompleted: false })) presentation.Stop();
-                session.ReleaseHeldRead("worker completed");
+                presentation.Stop();
                 this.FindControl<Media.MediaPanel>("MediaControls")!.Disconnect();
                 this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
-                this.FindControl<TextBlock>("RuntimeStatus")!.Text = runtime.Completion.IsFaulted
-                    ? "Runtime stopped: " + runtime.Completion.Exception!.GetBaseException().Message : "Runtime stopped";
-                if (session.BasicRuntimeActive)
+                this.FindControl<TextBlock>("RuntimeStatus")!.Text = worker.Completion.IsFaulted
+                    ? "Runtime stopped: " + worker.Completion.Exception!.GetBaseException().Message : "Runtime stopped";
+                if (basicRuntimeActive)
                 {
-                    session.BasicRuntimeActive = false;
+                    basicRuntimeActive = false;
                     this.FindControl<Button>("MachineReset")!.IsEnabled = false;
-                    BindReconfigureView();
                 }
-                RefreshTabsView();
             }
         };
         Closing += async (_, e) =>
         {
-            if (closeConfirmed || !CurrentSession.BasicRuntimeActive || CurrentSession.Worker?.Completion.IsCompleted != false) return;
+            if (closeConfirmed || !basicRuntimeActive || worker?.Completion.IsCompleted != false) return;
             e.Cancel = true;
             if (checkingClose) return;
             checkingClose = true;
@@ -728,146 +432,39 @@ public partial class MainWindow : Window
             }
             finally { checkingClose = false; }
         };
-        Closed += async (_, _) =>
+        Closed += (_, _) =>
         {
             closing = true;
-            presentation.Stop();
-            var shutdowns = new List<Task>();
-            foreach (var session in AllSessions())
-            {
-                session.Retire(); // generation bump, focus release, evidence end, shutdown enqueued
-                var old = session.Worker;
-                session.DetachWorker();
-                old?.Dispose();
-                shutdowns.Add(AwaitShutdownAndDiscardPendingAsync(session, old, session.BasicReplacementCompletion));
-            }
+            runtimeGeneration++;
+            KeyboardInput.ReleaseFocus(InputReleaseOrigin.SessionEnd);
+            KeyboardInput.Evidence.EndSession();
             ResetInputEvidenceView();
-            shutdownCompletion = Task.WhenAll(shutdowns);
-            // Proven owner drain before the named release: each retired worker and its in-flight
-            // replacement/boot (including a configured prestart read under the fence) are quiescent
-            // before that session's fence goes away; the release itself also awaits any started member read.
-            try { await shutdownCompletion; }
-            catch { /* the replacement records its own failure before close */ }
-            foreach (var session in AllSessions()) session.ReleaseHeldRead("window closed");
+            InputQueue.Enqueue(new RuntimeControl(InputControlKind.Shutdown));
+            presentation.Stop();
+            var old = worker;
+            worker = null;
+            old?.Dispose();
+            shutdownCompletion = AwaitShutdownAndDiscardPendingAsync(old, basicReplacementCompletion);
             this.FindControl<Media.MediaPanel>("MediaControls")!.Disconnect();
             this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
             this.FindControl<Runtime.VideoSurface>("Screen")!.Dispose();
         };
-        BindExplorer(CurrentSession, workspace.Selected?.Configuration ?? CurrentSession.StartingConfiguration);
-        this.FindControl<Media.MediaPanel>("MediaControls")!.RefreshDiskLibraryList();
-    }
-
-    // Adds a machine tab and binds the shared view set to it; no boot here.
-    internal bool TryAddTabView(Configuration.MachineConfiguration configuration, out Workspace.MachineTabContext? tab, out string? refusal)
-    {
-        if (!workspace.TryAddDraft(configuration, out tab, out refusal) || tab is null) return false;
-        workspace.Select(tab.TabId);
-        WatchInputRejected(tab.Session);
-        BindSelectedSessionView();
-        SyncInputView();
-        RefreshTabsView();
-        return true;
     }
 
     private async Task<bool> StartConfigurationAsync(Configuration.MachineConfiguration configuration)
     {
-        if (closing || startingConfiguration) return false;
+        if (closing || worker is not null || replacingRuntime) return false;
         configuration.ValidateEffective();
-        var previousSelection = workspace.Selected;
-        if (!TryAddTabView(configuration, out var tab, out var refusal))
-        {
-            this.FindControl<TextBlock>("RuntimeStatus")!.Text = refusal ?? "Max 4 machines";
-            return false;
-        }
-        startingConfiguration = true;
-        RefreshShellView();
-        try
-        {
-            var session = tab!.Session;
-            session.StartingConfiguration = configuration;
-            session.KeyboardInput.ReleaseFocus(InputReleaseOrigin.Reset);
-            session.KeyboardInput.Mode = configuration.KeyboardMode == "Positional" ? KeyMappingMode.Positional : KeyMappingMode.Symbolic;
-            this.FindControl<Runtime.AspectRatioViewport>("ScreenViewport")!.RequestedScale = configuration.Scale;
-            session.BasicReplacementCompletion = BootWholeChipMachine();
-            await session.BasicReplacementCompletion;
-            if (session.Closed || session.Worker is not { Completion.IsCompleted: false } || !session.BasicRuntimeActive || closing)
-            {
-                var wasSelected = ReferenceEquals(workspace.Selected, tab);
-                // Reuse the existing drain/retire path for ONLY this candidate; never retire the
-                // previously selected runtime as a way to make room for a failed new Start.
-                if (!session.Closed && !closing) await CloseTabAsync(tab);
-                if (wasSelected && previousSelection is not null) workspace.Select(previousSelection.TabId);
-                BindSelectedSessionView();
-                SyncInputView();
-                RefreshTabsView();
-                return false;
-            }
-            RefreshTabsView();
-            if (ReferenceEquals(workspace.Selected, tab)) this.FindControl<Runtime.VideoSurface>("Screen")!.Focus();
-            return true;
-        }
-        finally { startingConfiguration = false; RefreshShellView(); }
-    }
-
-    /// <summary>Apply a running draft and reset only the target machine (UI thread, synchronous).
-    /// The draft must be the target tab's current revision, keep the mounted A/B media and writeback
-    /// choices unchanged (ReconfigureApply policy), and pass the writeback binding-preserving reset
-    /// guard. A refusal changes nothing on any machine; no persistence happens here.</summary>
-    internal string? ApplyRunningDraft(MachineDraftTarget target, Configuration.MachineConfiguration draft)
-    {
-        if (closing) return "the window is closing.";
-        if (!workspace.TryResolveDraft(target, out var tab) || tab is null)
-            return "the machine draft changed while this apply was in flight.";
-        var session = tab.Session;
-        if (session.Closed || session.ReplacingRuntime || !session.BasicRuntimeActive || session.Worker?.Completion.IsCompleted != false)
-            return "that machine is not running.";
-        if (!Configuration.ReconfigureApply.TryPlan(tab.Configuration, draft, out var planError))
-            return planError;
-        if (session.WritebackHost is { } host && !host.ResetGuardClear())
-            return "a writeback fence is unresolved; the machine was not reset and its mounted media and bindings were retained.";
-        var previous = tab.Configuration;
-        if (!workspace.TryUpdateDraft(target, draft))
-            return "the machine draft changed while this apply was in flight.";
-        // The reset is the owner's work: the new pacing mode (only when it changed) and the reset
-        // are enqueued on the TARGET session's own FIFO only; the other tabs' queues are untouched.
-        if (previous.SpeedPercent != draft.SpeedPercent)
-            session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.SetSpeed, SpeedPercent: draft.SpeedPercent));
-        session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.Reset));
-        session.ReleaseHeldRead("running configuration applied; machine reset");
-        session.KeyboardInput.ReleaseFocus(InputReleaseOrigin.Reset);
-        session.KeyboardInput.Evidence.EndSession();
-        if (ReferenceEquals(workspace.Selected, tab))
-        {
-            if (previous.Scale != draft.Scale)
-                this.FindControl<Runtime.AspectRatioViewport>("ScreenViewport")!.RequestedScale = draft.Scale;
-            ResetInputEvidenceView();
-            this.FindControl<Runtime.VideoSurface>("Screen")!.ClearPresentation();
-            LatestPresentedFrame = null;
-            SyncInputView();
-            this.FindControl<TextBlock>("RuntimeStatus")!.Text = "Applied; only this machine was reset. No settings saved.";
-        }
-        return null;
-    }
-
-    internal Task<string?> ApplyRunningDraftAsync(MachineDraftTarget target, Configuration.MachineConfiguration draft)
-    {
-        Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
-        var error = ApplyRunningDraft(target, draft);
-        if (error is null) BindReconfigureView(); // rebind the committed draft so a further apply starts from it
-        return Task.FromResult(error);
-    }
-
-    // The reconfigure panel binds to the selected running tab's current draft; a draft, closing or
-    // completed tab hides it. Selection and lifecycle changes rebind it here.
-    private void BindReconfigureView()
-    {
-        RefreshShellView();
-        var tab = workspace.Selected;
-        var running = tab is not null && !tab.Session.Closed && !tab.Session.ReplacingRuntime
-            && tab.Session.BasicRuntimeActive && tab.Session.Worker is { Completion: { IsCompleted: false } };
-        if (!running) { reconfigure.IsVisible = false; return; }
-        if (workspace.CaptureSelectedDraft() is { } captured) reconfigure.Bind(captured, tab!.Configuration);
-        reconfigure.IsVisible = true;
+        startingConfiguration = configuration;
+        KeyboardInput.ReleaseFocus(InputReleaseOrigin.Reset);
+        KeyboardInput.Mode = configuration.KeyboardMode == "Positional" ? KeyMappingMode.Positional : KeyMappingMode.Symbolic;
+        this.FindControl<ComboBox>("InputModeBox")!.SelectedIndex = KeyboardInput.Mode == KeyMappingMode.Positional ? 1 : 0;
+        this.FindControl<Runtime.AspectRatioViewport>("ScreenViewport")!.RequestedScale = configuration.Scale;
+        basicReplacementCompletion = BootWholeChipMachine();
+        await basicReplacementCompletion;
+        if (worker is null || closing) { startingConfiguration = null; return false; }
+        this.FindControl<Runtime.VideoSurface>("Screen")!.Focus();
+        return true;
     }
 
     private void AddInputEvidenceControls()
@@ -903,21 +500,20 @@ public partial class MainWindow : Window
     internal void RefreshInputEvidenceSession()
     {
         Avalonia.Threading.Dispatcher.UIThread.VerifyAccess();
-        var session = CurrentSession;
-        var current = session.Worker;
-        if (closing || session.ReplacingRuntime || current is null || current.Completion.IsCompleted || !current.ObservationSessionAvailable)
+        var current = worker;
+        if (closing || replacingRuntime || current is null || current.Completion.IsCompleted || !current.ObservationSessionAvailable)
         {
             KeyboardInput.Evidence.EndSession();
-            session.ObservedWorkerSession = -1;
+            observedWorkerSession = -1;
             ResetInputEvidenceView();
             return;
         }
         var generation = current.SessionGeneration;
-        if (session.ObservedWorkerSession != generation || session.ObservedRuntimeGeneration != session.RuntimeGeneration)
+        if (observedWorkerSession != generation || observedRuntimeGeneration != runtimeGeneration)
         {
-            KeyboardInput.Evidence.BeginSession($"window-{session.InputEvidenceWindowId}/{session.RuntimeGeneration}/machine-{generation}", current.HostClock,
+            KeyboardInput.Evidence.BeginSession($"window-{inputEvidenceWindowId}/{runtimeGeneration}/machine-{generation}", current.HostClock,
                 () => current.ObservationSessionAvailable && !current.Completion.IsCompleted && current.SessionGeneration == generation);
-            session.ObservedWorkerSession = generation; session.ObservedRuntimeGeneration = session.RuntimeGeneration;
+            observedWorkerSession = generation; observedRuntimeGeneration = runtimeGeneration;
             ResetInputEvidenceView();
         }
         if (!KeyboardInput.Evidence.Enabled) ResetInputEvidenceView();
@@ -941,7 +537,7 @@ public partial class MainWindow : Window
         return KeyboardInput.Evidence.Read();
     }
 
-    private async Task AwaitShutdownAndDiscardPendingAsync(Workspace.MachineSession session, Runtime.EmulationWorker? old, Task replacement)
+    private async Task AwaitShutdownAndDiscardPendingAsync(Runtime.EmulationWorker? old, Task replacement)
     {
         if (old is not null)
         {
@@ -953,16 +549,15 @@ public partial class MainWindow : Window
         // With no worker there is no retired consumer whose queue must be drained. Keep the
         // ordered ReleaseAll/Shutdown pair available to an owner/test consumer instead of
         // synchronously discarding the very release that Closing just enqueued.
-        if (old is not null) session.InputQueue.DiscardPending();
+        if (old is not null) InputQueue.DiscardPending();
     }
 
     private static string? DroppedDisk(DragEventArgs e)
     {
-        // O2: the extension gate lives in the panel's descriptor-aware admission; drag offers any
-        // single local file and the slot's stored descriptor decides acceptance.
         var files = e.DataTransfer.TryGetFiles();
         if (files?.Length != 1) return null;
-        return files[0].TryGetLocalPath();
+        var path = files[0].TryGetLocalPath();
+        return path is not null && string.Equals(Path.GetExtension(path), ".dsk", StringComparison.OrdinalIgnoreCase) ? path : null;
     }
     private void MediaDragOver(object? sender, DragEventArgs e)
     {
@@ -983,11 +578,11 @@ public partial class MainWindow : Window
         if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
         {
             e.Handled = true;
-            if (CurrentSession.WritebackHost is { } host) _ = host.ShortcutAsync().ContinueWith(done =>
+            if (writebackHost is not null) _ = writebackHost.ShortcutAsync().ContinueWith(done =>
             {
                 if (done.IsFaulted) return;
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    this.FindControl<TextBlock>("RuntimeStatus")!.Text = host.StatusLine());
+                    this.FindControl<TextBlock>("RuntimeStatus")!.Text = writebackHost.StatusLine());
             }, TaskScheduler.Default);
             return;
         }
@@ -1039,77 +634,7 @@ public partial class MainWindow : Window
         => new Settings.SettingsWindow(new Settings.SettingsStore()).ShowDialog(this);
 
     private void OpenDebugger(object? sender, Avalonia.Interactivity.RoutedEventArgs args)
-    {
-        // No command sink: recording, exports and breakpoints stay visibly unavailable. The one
-        // control this window drives, pause, goes through the selected session's existing FIFO.
-        var window = new Debugging.DebuggerWindow();
-        bool closed = false;
-        window.Closed += (_, _) => closed = true;
-        window.Show(this);
-        var bound = CurrentRuntime;
-        if (bound is null) { window.Detach("No machine selected."); return; }
-        _ = RefreshDebugger(window, CurrentSession, bound, () => closed);
-    }
-
-    /// <summary>Refreshed readback while the window is open: at most one outstanding capture demand,
-    /// copies accepted only when stamped with the bound worker's current generation and a sequence
-    /// newer than the last one shown. Started from the UI handler, so the delay continuations resume
-    /// on the UI dispatcher where Publish and Detach require access.</summary>
-    private async Task RefreshDebugger(Debugging.DebuggerWindow window, MachineSession session, Runtime.EmulationWorker bound, Func<bool> isClosed)
-    {
-        window.BindPause(() =>
-        {
-            if (ReferenceEquals(CurrentSession, session) && ReferenceEquals(CurrentRuntime, bound) &&
-                !session.Closed && !bound.Completion.IsCompleted)
-                session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.Pause));
-        });
-        // A retained copy is useful to other readers, but it is not a response to this attachment.
-        long lastPublished = bound.TakeLatestDebugEvidence()?.Sequence ?? 0;
-        long seenGeneration = bound.SessionGeneration;
-        var runtimeGeneration = session.RuntimeGeneration;
-        window.AwaitSnapshot();
-        while (!isClosed())
-        {
-            if (!ReferenceEquals(CurrentSession, session) || !ReferenceEquals(CurrentRuntime, bound) ||
-                session.Closed || session.RuntimeGeneration != runtimeGeneration)
-            {
-                window.Detach("No machine selected.");
-                return;
-            }
-            if (bound.Completion.IsFaulted)
-            {
-                window.Detach("Worker failure: " + bound.Completion.Exception?.GetBaseException().Message);
-                return;
-            }
-            if (bound.Completion.IsCompleted)
-            {
-                window.Detach("No machine selected.");
-                return;
-            }
-            var generation = bound.SessionGeneration;
-            if (generation != seenGeneration)
-            {
-                seenGeneration = generation;
-                window.AwaitSnapshot();
-            }
-            var evidence = bound.TakeLatestDebugEvidence();
-            var fresh = evidence is { } found && found.SessionId == bound.DebugSessionId &&
-                found.Generation == generation && found.Sequence > lastPublished;
-            if (fresh)
-            {
-                // The owner may retire a generation while the UI reads the immutable mailbox.
-                if (bound.ObservationSessionAvailable && bound.SessionGeneration == generation)
-                {
-                    lastPublished = evidence!.Sequence;
-                    window.Publish(evidence.Snapshot, evidence.Generation, evidence.Sequence, evidence.Paused);
-                }
-                else window.AwaitSnapshot();
-            }
-            else if (!bound.DebugDemandPending)
-                bound.RequestDebugSnapshot();
-            await Task.Delay(10);
-        }
-    }
+        => new Debugging.DebuggerWindow().Show(this);
 }
 
 /// <summary>Inspection-only cell grid. It never modifies the displayed bitmap.</summary>

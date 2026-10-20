@@ -48,16 +48,11 @@ public sealed class MemoryPage
 /// <summary>Pure latch-to-page-table mapping. No ports, CPU events, device time or store contents.</summary>
 public static class MemoryPaging
 {
-    public static IReadOnlyList<MemoryPage> Build(MemoryProfile profile, PagingLatches latches, PagedMemoryRange? boundRange = null)
+    public static IReadOnlyList<MemoryPage> Build(MemoryProfile profile, PagingLatches latches)
     {
         ArgumentNullException.ThrowIfNull(profile);
         profile.Validate();
-        var mTransfer = PagedRamPolicy.IsMTransfer(profile.RamPaged?.PolicyId);
-        var boundOnly = profile.RamPaged?.BoundCpmWindow == true;
-        var window = profile.RamPaged is not null && latches.PagedEnabled
-            && (!mTransfer || (latches.Cpm && latches.PagedTransfer))
-            && (!boundOnly || (latches.Cpm && boundRange is { } range
-                && latches.PagedBank >= range.FirstPage && latches.PagedBank < range.FirstPage + range.PageCount));
+        var mTransfer = profile.RamPaged?.PolicyId == PagedRamPolicy.MTransferPolicyId;
         var pages = new MemoryPage[8];
         for (var i = 0; i < pages.Length; i++)
             pages[i] = new(new(MemoryStore.Ram, i * 0x2000, true));
@@ -76,12 +71,13 @@ public static class MemoryPaging
         }
         else
         {
-            if (profile.RamPaged is not null && !mTransfer && latches.PagedEnabled && (!boundOnly || window))
+            if (profile.RamPaged is not null && !mTransfer && latches.PagedEnabled)
                 half = (latches.PagedControl & 0x10) == 0 ? 0 : 0x4000;
             pages[0] = new(new(MemoryStore.Rom, half, false));
             pages[1] = new(new(MemoryStore.Rom, half + 0x2000, false));
         }
-        if (window)
+        if (profile.RamPaged is not null && latches.PagedEnabled
+            && (!mTransfer || (latches.Cpm && latches.PagedTransfer)))
         {
             var offset = checked(0x10000 + latches.PagedBank * PagedRamPolicy.PageBytes);
             var first = latches.Cpm ? 4 : 6;

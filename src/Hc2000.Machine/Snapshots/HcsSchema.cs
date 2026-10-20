@@ -13,7 +13,6 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
 {
     private readonly string fingerprint = HcsCodec.ProfileFingerprint(definition);
     protected abstract void ValidateModels(JsonElement manifest);
-    protected virtual bool UsesCpuFrontiers => false;
     protected internal virtual bool HasLargeBlobPolicy => false;
     protected virtual void ValidateBlobModels(JsonElement manifest, byte[][] blobs, HcsLimits limits) { }
     protected internal virtual bool AdmitLargeBlob(JsonElement manifest, uint blobId, int length,
@@ -129,9 +128,7 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
         long remainder = Counter(clock.GetProperty("mapperRemainder")), whole = Counter(clock.GetProperty("mapperWhole"));
         static long Gcd(long a, long b) { while (b != 0) (a, b) = (b, a % b); return a; }
         if (pnum == 0 || den == 0 || Gcd(pnum, den) != 1 || Counter(clock.GetProperty("masterHz")) == 0 || remainder >= den
-            || (UsesCpuFrontiers
-                ? (System.Numerics.BigInteger)whole + (remainder == 0 ? 0 : 1) > now
-                : (System.Numerics.BigInteger)whole + (remainder == 0 ? 0 : 1) != now)
+            || (System.Numerics.BigInteger)whole + (remainder == 0 ? 0 : 1) != now
             || Counter(clock.GetProperty("lastCpuTStates")) != Counter(root.GetProperty("cpu").GetProperty("tStates")))
             Error(HcsError.StateInconsistent, "clock");
         var gens = Array(clock.GetProperty("deviceGenerations")); Sorted(gens);
@@ -143,7 +140,7 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
             Fields(e, "dueTick", "phase", "deviceId", "kind", "generation", "sequence", "payload");
             long due = Counter(e.GetProperty("dueTick")), sequence = Counter(e.GetProperty("sequence"));
             string device = Id(e.GetProperty("deviceId")); Id(e.GetProperty("kind"));
-            uint phase = UInt(e.GetProperty("phase"), UsesCpuFrontiers ? 5u : 4u);
+            uint phase = UInt(e.GetProperty("phase"), 4);
             var tuple = (due, phase, device, sequence);
             if (due <= now || !generations.TryGetValue(device, out var gen) || gen != Counter(e.GetProperty("generation"))
                 || !sequences.Add(sequence) || sequence >= Counter(clock.GetProperty("nextSequence"))
@@ -174,16 +171,16 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
         int c = a.Tick.CompareTo(b.Tick); if (c != 0) return c;
         c = string.CompareOrdinal(a.Source, b.Source); return c != 0 ? c : a.Sequence.CompareTo(b.Sequence);
     }
-    private void ValidateCpu(JsonElement cpu)
+    private static void ValidateCpu(JsonElement cpu)
     {
         string[] words = ["af", "bc", "de", "hl", "ix", "iy", "sp", "pc", "afShadow", "bcShadow", "deShadow", "hlShadow", "wz"];
         string[] bytes = ["i", "r", "q"];
         string[] booleans = ["iff1", "iff2", "halted", "intLine", "nmiPending", "lastLdAiOrR", "nmosLdAirInterruptBug"];
         Fields(cpu, [.. words, .. bytes, .. booleans, "im", "eiDelay", "tStates", "modelId", "modelVersion"]);
-        if (Text(cpu.GetProperty("modelId")) != (UsesCpuFrontiers ? "nmos-z80-frontier" : "nmos-z80") || UInt(cpu.GetProperty("modelVersion")) != 1) Error(HcsError.UnsupportedVersion, "cpu");
+        if (Text(cpu.GetProperty("modelId")) != "nmos-z80" || UInt(cpu.GetProperty("modelVersion")) != 1) Error(HcsError.UnsupportedVersion, "cpu");
         foreach (string k in words) UInt(cpu.GetProperty(k), 65535);
         foreach (string k in bytes) UInt(cpu.GetProperty(k), 255);
         foreach (string k in booleans) if (cpu.GetProperty(k).ValueKind is not (JsonValueKind.True or JsonValueKind.False)) Error(HcsError.InvalidFormat, k);
-        UInt(cpu.GetProperty("im"), 2); UInt(cpu.GetProperty("eiDelay"), UsesCpuFrontiers ? 2u : 1u); Counter(cpu.GetProperty("tStates"));
+        UInt(cpu.GetProperty("im"), 2); UInt(cpu.GetProperty("eiDelay"), 1); Counter(cpu.GetProperty("tStates"));
     }
 }

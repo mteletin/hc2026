@@ -1,13 +1,12 @@
 namespace Hc2000.Machine.Memory;
 
 /// <summary>Instance-owned physical stores and CPU/M1 views. Bus-cycle classification and port decode belong to the caller.</summary>
-public sealed partial class HcMemory
+public sealed class HcMemory
 {
     private readonly byte[] ram;
     private readonly byte[] rom;
     private readonly byte[] shadowRom;
     private readonly byte[] shadowRam;
-    private PagedMemoryRange? sessionRange;
 
     public MemoryProfile Profile { get; }
     /// <summary>Faithful latches plus bank selector; starts disabled (0xff), never bank 0 by accident.</summary>
@@ -18,19 +17,19 @@ public sealed partial class HcMemory
     public ReadOnlyMemory<byte> ShadowRom => shadowRom;
     public Memory<byte> ShadowRam => shadowRam;
     /// <summary>Physical video address, independent of the CPU's C5/C7 alias.</summary>
-    public int VideoBase => Profile.RamPaged is { PolicyId: PagedRamPolicy.PolicyId, BoundCpmWindow: false } && Latches.PagedEnabled && !Latches.Cpm
+    public int VideoBase => Profile.RamPaged?.PolicyId == PagedRamPolicy.PolicyId && Latches.PagedEnabled && !Latches.Cpm
         ? (Latches.PagedControl & 8) == 0 ? 0x4000 : 0x2c000
         : (Latches.Port7E & 8) == 0 ? 0x4000 : 0xc000;
 
     public byte ReadPagedPort(ushort port)
     {
-        if (!PagedPortsActive) return 0xff;
+        if (Profile.RamPaged is null || !Latches.PagedEnabled) return 0xff;
         return port switch
         {
             0x7ffd => (byte)((Latches.PagedBank & 7) | Latches.PagedControl),
             0x7efd => (byte)Latches.PagedBank,
             0x7dfd => (byte)(Latches.PagedBank >> 8),
-            0x7cfd when PagedRamPolicy.IsMTransfer(Profile.RamPaged!.PolicyId)
+            0x7cfd when Profile.RamPaged.PolicyId == PagedRamPolicy.MTransferPolicyId
                 => (byte)(0x40 | (Latches.PagedTransfer ? 1 : 0) | (Latches.PagedControl & 0x20)),
             _ => 0xff
         };
@@ -38,8 +37,8 @@ public sealed partial class HcMemory
 
     public void WritePagedPort(ushort port, byte value)
     {
-        if (!PagedPortsActive) return;
-        if (port == 0x7cfd && PagedRamPolicy.IsMTransfer(Profile.RamPaged!.PolicyId))
+        if (Profile.RamPaged is null || !Latches.PagedEnabled) return;
+        if (port == 0x7cfd && Profile.RamPaged.PolicyId == PagedRamPolicy.MTransferPolicyId)
         {
             // Escape is independent of the bank lock; invalid writes have no latch/history effect.
             if (value == 0) Update(Latches with { PagedTransfer = false });
@@ -72,7 +71,7 @@ public sealed partial class HcMemory
         if (cpm.Length != 0x4000) throw new ArgumentException("Supply the full 16-KiB CP/M half, with explicit provenance.", nameof(cpm));
         if (if1.Length != 0x4000) throw new ArgumentException("IF1 must be exactly 16 KiB.", nameof(if1));
         Profile = profile;
-        Latches = DisabledLatches with { PagedEnabled = profile.RamPaged is { BoundCpmWindow: false } };
+        Latches = DisabledLatches with { PagedEnabled = profile.RamPaged is not null };
         ram = new byte[profile.RamBytes];
         rom = new byte[profile.RomBytes];
         shadowRom = new byte[profile.ShadowRomBytes];
@@ -121,9 +120,7 @@ public sealed partial class HcMemory
     public void Write(ushort address, byte value)
     {
         var location = Resolve(address);
-        if (!location.Writable) return;
-        if (location.Store == MemoryStore.Ram && WriteClaimedPagedByte(location.Offset, value)) return;
-        Store(location.Store)[location.Offset] = value;
+        if (location.Writable) Store(location.Store)[location.Offset] = value;
     }
 
     /// <summary>Only D0..D3 are latched. D2 locks further 7E writes, not C5/C7 or IF1.</summary>
@@ -153,42 +150,17 @@ public sealed partial class HcMemory
     }
 
     /// <summary>Reset latches only; never clears physical stores. Bank selector returns to disabled (0xff).</summary>
-    public void ResetPaging() => Update(DisabledLatches with
-    {
-        PagedEnabled = Profile.RamPaged?.BoundCpmWindow != true && Latches.PagedEnabled
-    });
-
-    // The tape composition owns engagement as session state, not a new device
-    // policy. Standalone ram.paged retains its power-on/reset behavior.
-    internal void UseSessionPaging() => SetSessionPagingEngaged(false);
-
-    private bool PagedPortsActive => Profile.RamPaged is { } device && Latches.PagedEnabled
-        && (!device.BoundCpmWindow || Latches.Cpm);
-
-    internal void SetSessionPagingEngaged(bool engaged, PagedMemoryRange? range = null)
-    {
-        if (engaged && (range is null || !pagedClaims.Any(c => c.Range == range)))
-            throw new InvalidOperationException("Engagement requires the session's claimed range.");
-        sessionRange = engaged ? range : null;
-        Latches = Latches with { PagedEnabled = engaged };
-        Pages = MemoryPaging.Build(Profile, Latches, sessionRange);
-    }
+    public void ResetPaging() => Update(DisabledLatches with { PagedEnabled = Latches.PagedEnabled });
 
     private void Update(PagingLatches value)
     {
         if (value == Latches) return;
-        if (expansionArena is not null && !expansionArena.TrySelectMainBank(value.PagedBank)) return;
         Latches = value;
-        Pages = MemoryPaging.Build(Profile, value, sessionRange);
+        Pages = MemoryPaging.Build(Profile, value);
     }
 
     /// <summary>Restores the page-table inputs of a captured snapshot (snapshot restore).</summary>
-    internal void RestoreLatches(PagingLatches value)
-    {
-        if (expansionArena is not null && !expansionArena.TrySelectMainBank(value.PagedBank))
-            throw new InvalidOperationException("The main snapshot latch names a private compute page.");
-        Update(value);
-    }
+    internal void RestoreLatches(PagingLatches value) => Update(value);
 
     private byte[] Store(MemoryStore store) => store switch
     {

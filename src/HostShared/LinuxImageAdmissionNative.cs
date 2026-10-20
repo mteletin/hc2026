@@ -88,12 +88,9 @@ internal static class LinuxImageAdmissionNative
                 try
                 {
                     var f = Probe(next);
-                    // A root-owned sticky ancestor (the standard /tmp, /var/tmp) is safe in every domain:
-                    // a non-root user cannot rename or delete entries it does not own, and each component
-                    // above is opened with O_NOFOLLOW, so the walk cannot be diverted by a local attacker.
-                    var stickyAncestor = (f.Mode & 0x200) != 0 && f.Uid == 0;
+                    var stickyTestAncestor = privateTest && (f.Mode & 0x200) != 0 && f.Uid == 0;
                     if ((f.Mode & 0xf000) != 0x4000 || (f.Uid != 0 && f.Uid != Uid) ||
-                        ((f.Mode & 0x12) != 0 && !stickyAncestor))
+                        ((f.Mode & 0x12) != 0 && !stickyTestAncestor))
                         throw new AdmissionException(ImageAdmissionRefusal.InvalidDomain);
                 }
                 catch { next.Dispose(); throw; }

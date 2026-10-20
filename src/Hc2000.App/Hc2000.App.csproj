@@ -13,33 +13,17 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Hc2000.App.Tests" />
-    <InternalsVisibleTo Include="Hc2000.Tools.Tests" />
     <InternalsVisibleTo Include="Hc2000.ImageAdmissionProbe" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hc2000.Machine\Hc2000.Machine.csproj" />
     <ProjectReference Include="..\Hc2000.Disasm\Hc2000.Disasm.csproj" />
-    <!-- This is a build-host tool, even when cross-publishing the App. -->
-    <ProjectReference Include="../../tools/FactoryHddBuilder/FactoryHddBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
     <EmbeddedResource Include="..\..\software\demos\z80-visual.bin" LogicalName="Hc2000.App.Demos.z80-visual.bin" />
     <EmbeddedResource Include="..\..\software\demos\z80-visual-negative.bin" LogicalName="Hc2000.App.Demos.z80-visual-negative.bin" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="../HostShared/HddFactoryImages.cs" Link="HostShared/HddFactoryImages.cs" />
-    <Compile Include="../HostShared/HddContainerPublication.cs" Link="HostShared/HddContainerPublication.cs" />
-    <Compile Include="../HostShared/MediaHomeCreate.cs" Link="HostShared/MediaHomeCreate.cs" />
     <Compile Include="../HostShared/NativeImageAdmission.cs" Link="HostShared/NativeImageAdmission.cs" />
     <Compile Include="../HostShared/LinuxImageAdmissionNative.cs" Link="HostShared/LinuxImageAdmissionNative.cs" />
     <Compile Include="../HostShared/ImageAdmissionRecord.cs" Link="HostShared/ImageAdmissionRecord.cs" />
   </ItemGroup>
-  <PropertyGroup>
-    <FactoryHddOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/factory-hdd/</FactoryHddOutput>
-  </PropertyGroup>
-  <ItemGroup>
-    <Content Include="$(FactoryHddOutput)HC2000-HDD.hdd;$(FactoryHddOutput)factory-hdd.sha256"
-             Link="disks/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
-  <Target Name="GenerateFactoryHddImages" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
-    <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/FactoryHddBuilder/bin/$(Configuration)/$(TargetFramework)/FactoryHddBuilder.dll&quot; &quot;$(FactoryHddOutput)&quot;" />
-  </Target>
 </Project>

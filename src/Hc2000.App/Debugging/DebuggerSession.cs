@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Hc2000.Disasm;
 using Hc2000.Machine.Floppy;
 using Hc2000.Machine.Memory;
-using Hc2000.Machine.Snapshots;
 
 namespace Hc2000.App.Debugging;
 
@@ -142,11 +141,4 @@ public sealed class DebuggerSession
             memory.Latches, fdc?.Inspect(), stopped, pending, Array.AsReadOnly(breakpoints.ToArray()));
         return Snapshot;
     }
-
-    /// <summary>Register view of a drained logical .hcs CPU state, for debugger snapshots captured off the machine.</summary>
-    public static RegisterSnapshot RegisterView(CpuLogicalState state) => new(
-        Pc: state.Pc, Sp: state.Sp, Af: state.Af, Bc: state.Bc, De: state.De, Hl: state.Hl,
-        AfPrime: state.AfShadow, BcPrime: state.BcShadow, DePrime: state.DeShadow, HlPrime: state.HlShadow,
-        Ix: state.Ix, Iy: state.Iy, Wz: state.Wz, I: state.I, R: state.R, Im: (byte)state.Im,
-        Iff1: state.Iff1, Iff2: state.Iff2, Halted: state.Halted, Q: state.Q != 0);
 }

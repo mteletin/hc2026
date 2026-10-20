@@ -116,18 +116,6 @@ public sealed class DiskWritebackCoordinator(IDiskWritebackOwner owner, IDiskWri
         finally { gate.Release(); }
     }
 
-    /// <summary>Binding-preserving reset guard: true when a same-media machine reset may proceed with the
-    /// writeback bindings retained. A false refusal drops no binding: it means the reset may not run yet
-    /// (a host request holds the gate, an owner/writer fence is pending, or the owner outcome is unknown),
-    /// never that a binding was invalidated. Invalidation remains reserved for confirmed changed or
-    /// retired media.</summary>
-    public bool ResetGuardClear()
-    {
-        if (!gate.Wait(0)) return false;
-        try { return pending.Count == 0 && !ownerUnknown; }
-        finally { gate.Release(); }
-    }
-
     /// <summary>Called only for confirmed picker/drag/replacement/eject/HCS invalidation.
     /// A pending freeze must be resolved first, never silently removed.</summary>
     public async Task<bool> InvalidateAsync(string? drive = null)

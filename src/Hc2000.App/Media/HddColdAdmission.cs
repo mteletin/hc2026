@@ -40,19 +40,17 @@ internal sealed class HddColdAdmission : IDisposable
         lock (sync)
         {
             if (state != State.Reading) throw new InvalidOperationException("Read admission is already bound.");
-            RequireAdmittedPayload(value);
+            RequireReadOnlyPayload(value);
             admission.ValidateSourceStillCurrent(Source, facts);
             admission.MarkColdOwnerPending(candidate);
             prepared = value; state = State.Prepared;
         }
     }
-    private static void RequireAdmittedPayload(PreparedBasicMachine value)
+    private static void RequireReadOnlyPayload(PreparedBasicMachine value)
     {
-        if (value.InitialHdd.Length is < 1 or > 4 || value.InitialHdd.Any(image =>
-                image.Drive is < 2 or > 5 || (!image.WriteProtected && image.Binding is not { Writable: true }) ||
-                image.Bytes.IsDefault || image.Bytes.Length != HddMediaAdapter.ImageLength) ||
-            value.InitialHdd.Select(image => image.Drive).Distinct().Count() != value.InitialHdd.Length)
-            throw new InvalidOperationException("Admitted cold input must be one to four distinct 8 MiB images; writes require an explicitly writable named binding.");
+        if (value.InitialHdd.Length != 1 || !value.InitialHdd[0].WriteProtected ||
+            value.InitialHdd[0].Bytes.IsDefault || value.InitialHdd[0].Bytes.Length != HddMediaAdapter.ImageLength)
+            throw new InvalidOperationException("Admitted cold input must be one exact read-only 8 MiB image.");
     }
     internal void MarkEnqueued(PreparedBasicMachine value)
     {
@@ -90,7 +88,7 @@ internal sealed class HddColdAdmission : IDisposable
             if (state is not (State.Prepared or State.Enqueued) || !ReferenceEquals(prepared, value) ||
                 (ownerThread != 0 && ownerThread != Environment.CurrentManagedThreadId))
                 throw new InvalidOperationException("Cold candidate is stale or belongs to another owner.");
-            RequireAdmittedPayload(value);
+            RequireReadOnlyPayload(value);
         }
     }
     internal void ValidateBeforeAdoption(PreparedBasicMachine value, LiveMachine machine)
@@ -101,7 +99,7 @@ internal sealed class HddColdAdmission : IDisposable
                 throw new InvalidOperationException("Cold adoption requires the same detached never-executed candidate.");
             if (ownerThread != 0 && ownerThread != Environment.CurrentManagedThreadId)
                 throw new InvalidOperationException("Cold adoption must run on its actual owner.");
-            RequireAdmittedPayload(value);
+            RequireReadOnlyPayload(value);
             admission.ValidateColdOwner(candidate, Source, facts);
             ownerThread = Environment.CurrentManagedThreadId;
             ownerMachine = machine; state = State.Adopting;

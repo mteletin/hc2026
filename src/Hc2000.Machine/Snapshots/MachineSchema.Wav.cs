@@ -59,7 +59,7 @@ public sealed partial class MachineSchema
         { return false; }
     }
 
-    private bool ValidOriginalRoster(JsonElement manifest, JsonElement[] assets)
+    private static bool ValidOriginalRoster(JsonElement manifest, JsonElement[] assets)
     {
         var required = new Dictionary<string, (string Kind, string Format)>(StringComparer.Ordinal)
         {
@@ -85,7 +85,6 @@ public sealed partial class MachineSchema
         }
         if (required.Count != 0) return false;
         var components = manifest.GetProperty("components").EnumerateArray().Select(c => Text(c.GetProperty("id"))).ToHashSet(StringComparer.Ordinal);
-        if (UsesCpuFrontiers && !components.Remove(ExpansionSchema.ComponentId)) return false;
         if (!new[] { "frame-clock", "keyboard", "memory", "tape", "ula" }.All(components.Remove)) return false;
         if (components.Count != 0 && !components.SetEquals(new[] { "fdc", "drive-a", "drive-b" })) return false;
         var stores = manifest.GetProperty("stores").EnumerateArray().ToArray();

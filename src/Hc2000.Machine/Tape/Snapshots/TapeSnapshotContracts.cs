@@ -113,7 +113,7 @@ public sealed record TapeSelectionDto(
     [property: JsonPropertyName("option"), JsonRequired] uint Option);
 
 /// <summary>Detached logical capture/adoption; transport validates all fields before live mutation.</summary>
-public sealed record TapeDeckState(TapeComponent2Dto Component, TapeCassetteImage? Cassette, ulong MediaEpoch = 0);
+public sealed record TapeDeckState(TapeComponent2Dto Component, TapeCassetteImage? Cassette);
 
 /// <summary>Migration must first validate the old cursor, raw TAP, profile/asset and scheduler pair.
 /// The SAME transport supplies its existing TapeCursor and DeviceEvent; no second clock/facade.</summary>

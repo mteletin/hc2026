@@ -1,6 +1,6 @@
 namespace Hc2000.Machine.Timing;
 
-public enum EventPhase { ExternalInput = 0, SignalEdge = 1, Controller = 2, Video = 3, Frame = 4, Cpu = 5 }
+public enum EventPhase { ExternalInput = 0, SignalEdge = 1, Controller = 2, Video = 3, Frame = 4 }
 
 /// <summary>Logical event data; callbacks belong to registered devices, not queue identity.</summary>
 public sealed record DeviceEvent(long DueTick, EventPhase Phase, int DeviceId, int Kind,

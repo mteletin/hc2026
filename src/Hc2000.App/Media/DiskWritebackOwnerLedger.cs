@@ -4,19 +4,16 @@ using Hc2000.App.Runtime;
 
 namespace Hc2000.App.Media;
 
-public enum WritebackOwnerOp { Begin, Commit, InspectCommit, Abort, Complete, CancelCompletion, BeginHdd, PublishHdd, ReconcileHdd, AbortHdd, InspectHdd }
+public enum WritebackOwnerOp { Begin, Commit, InspectCommit, Abort, Complete, CancelCompletion }
 
 public sealed record WritebackOwnerRequest(
     WritebackOwnerOp Op,
     string? Drive = null,
     WritebackIntent Intent = WritebackIntent.Shortcut,
     PersistToken? Token = null,
-    IReadOnlyList<PersistenceReceipt>? Receipts = null,
-    byte HddDrive = 2,
-    long HddSaveId = 0);
+    IReadOnlyList<PersistenceReceipt>? Receipts = null);
 
-public sealed record WritebackOwnerReply(bool Accepted, bool SessionFrozen, FrozenWriteback? Snapshot = null, string? Error = null,
-    HddSaveCapture? HddSave = null, HddPublicationView? HddPublication = null);
+public sealed record WritebackOwnerReply(bool Accepted, bool SessionFrozen, FrozenWriteback? Snapshot = null, string? Error = null);
 
 /// <summary>Owner-thread lease and session fence. Begin refusal with a null snapshot creates no lease.
 /// A throw after a freeze is unknown to the caller, not a fabricated abort.</summary>
@@ -24,14 +21,13 @@ internal sealed class DiskWritebackOwnerLedger
 {
     private readonly object gate = new();
     private FrozenWriteback? lease;
-    private HddSaveCapture? hddLease;
     private PersistenceReceipt? committed;
     private bool completionHold;
     private bool wasPaused;
     private bool pauseHeld;
     public string SessionId { get; } = Guid.NewGuid().ToString("N");
-    public bool Frozen { get { lock (gate) return lease is not null || hddLease is not null || completionHold; } }
-    public bool ShutdownPermitted { get { lock (gate) return lease is null && hddLease is null && completionHold; } }
+    public bool Frozen { get { lock (gate) return lease is not null || completionHold; } }
+    public bool ShutdownPermitted { get { lock (gate) return lease is null && completionHold; } }
 
     public WritebackOwnerReply Apply(WritebackOwnerRequest? request, MediaSession session, RuntimeContext? runtime,
         InputQueue queue)
@@ -46,10 +42,6 @@ internal sealed class DiskWritebackOwnerLedger
             WritebackOwnerOp.Abort => Abort(request, runtime),
             WritebackOwnerOp.Complete => Complete(request, session, runtime),
             WritebackOwnerOp.CancelCompletion => Cancel(runtime),
-            WritebackOwnerOp.BeginHdd => BeginHdd(request, session, runtime, queue),
-            WritebackOwnerOp.PublishHdd or WritebackOwnerOp.ReconcileHdd => PublishHdd(request, session, runtime),
-            WritebackOwnerOp.AbortHdd => AbortHdd(request, session, runtime),
-            WritebackOwnerOp.InspectHdd => InspectHdd(),
             _ => new(false, Frozen, Error: "Unknown writeback owner op.")
         };
     }
@@ -58,7 +50,7 @@ internal sealed class DiskWritebackOwnerLedger
     {
         lock (gate)
         {
-            if (lease is not null || hddLease is not null) return;
+            if (lease is not null) return;
             completionHold = false;
         }
     }
@@ -67,7 +59,7 @@ internal sealed class DiskWritebackOwnerLedger
     {
         lock (gate)
         {
-            if (lease is not null || hddLease is not null || completionHold)
+            if (lease is not null || completionHold)
                 return new(false, true, Error: "Writeback fence already held.");
         }
         if (queue.BoundaryCount != 0)
@@ -142,7 +134,7 @@ internal sealed class DiskWritebackOwnerLedger
     {
         lock (gate)
         {
-            if (lease is not null || hddLease is not null) return new(false, true, Error: "Unresolved lease.");
+            if (lease is not null) return new(false, true, Error: "Unresolved lease.");
             if (!Enum.IsDefined(request.Intent)) return new(false, Frozen, Error: "Invalid completion intent.");
             var receipts = request.Receipts ?? Array.Empty<PersistenceReceipt>();
             if (request.Intent == WritebackIntent.Eject)
@@ -182,62 +174,10 @@ internal sealed class DiskWritebackOwnerLedger
     {
         lock (gate)
         {
-            if (lease is not null || hddLease is not null) return new(false, true, Error: "Cannot cancel completion while a lease is open.");
+            if (lease is not null) return new(false, true, Error: "Cannot cancel completion while a lease is open.");
             completionHold = false;
             ReleasePause(runtime);
             return new(true, false);
-        }
-    }
-
-    private WritebackOwnerReply BeginHdd(WritebackOwnerRequest request, MediaSession session, RuntimeContext? runtime, InputQueue queue)
-    {
-        lock (gate)
-        {
-            if (Frozen) return new(false, true, Error: "Writeback fence already held.");
-            if (queue.BoundaryCount != 0 || runtime?.Stopping == true || runtime?.Resetting == true)
-                return new(false, false, Error: "Foreign FIFO work or lifecycle conflict.");
-            HoldPause(runtime);
-            HddSaveCapture? capture = null;
-            try
-            {
-                capture = session.CaptureHddSave(request.HddDrive);
-                session.FreezeHddSave(capture);
-                hddLease = capture; // Set before replying: a lost Begin reply never releases the fence.
-                return new(true, true, HddSave: capture);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
-            {
-                ReleasePause(runtime);
-                return new(false, false, Error: ex.Message, HddSave: capture);
-            }
-        }
-    }
-
-    private WritebackOwnerReply InspectHdd()
-    {
-        lock (gate) return new(true, Frozen, HddSave: hddLease);
-    }
-
-    private WritebackOwnerReply PublishHdd(WritebackOwnerRequest request, MediaSession session, RuntimeContext? runtime)
-    {
-        lock (gate)
-        {
-            if (hddLease?.Id != request.HddSaveId) return new(false, Frozen, Error: "HDD capture is not the active owner lease.");
-            var result = session.PublishHddSave(request.HddSaveId, request.Op == WritebackOwnerOp.ReconcileHdd);
-            if (!result.RequiresFence) { hddLease = null; ReleasePause(runtime); }
-            return new(result.Acknowledged, Frozen, Error: result.Error, HddPublication: result);
-        }
-    }
-
-    private WritebackOwnerReply AbortHdd(WritebackOwnerRequest request, MediaSession session, RuntimeContext? runtime)
-    {
-        lock (gate)
-        {
-            if (hddLease?.Id != request.HddSaveId || !session.AbortHddSave(request.HddSaveId))
-                return new(false, Frozen, Error: "HDD publication is unresolved; reconcile the same capture.");
-            hddLease = null;
-            ReleasePause(runtime);
-            return new(true, Frozen);
         }
     }
 

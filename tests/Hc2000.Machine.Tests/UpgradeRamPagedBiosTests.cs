@@ -74,7 +74,6 @@ public sealed class UpgradeRamPagedBiosTests(RamPagedPrivateOutput artifact, ITe
     [InlineData(0xC480, true)]
     [InlineData(0x8000, true)]
     [InlineData(0xBF80, false)]
-    [InlineData(0xDC34, false)]
     public void GlobalDmaRoundTripsActualBytesAndRestoresBankGateIffAndStack(int dma, bool iff)
     {
         var r = new RamPagedCpu(artifact);
@@ -115,9 +114,6 @@ public sealed class UpgradeRamPagedBiosTests(RamPagedPrivateOutput artifact, ITe
     [InlineData(0, 0, 0xC481)]
     [InlineData(0, 0, 0xFF81)]
     [InlineData(0, 0, 0x7000)]
-    [InlineData(0, 0, 0xDC33)]
-    [InlineData(0, 0, 0xDC35)]
-    [InlineData(0, 0, 0xDCB4)]
     public void InvalidFullWidthCoordinatesAndDmaNeverTouchMOrChangeCallerState(int track, int sector, int dma)
     {
         var r = new RamPagedCpu(artifact);

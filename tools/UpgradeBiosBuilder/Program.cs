@@ -6,9 +6,9 @@ using Hc2000.Machine;
 using Hc2000.Machine.Storage;
 using Hc2000.Machine.Memory;
 
-if (args.Length != 2 || args[0] is not ("blockport" or "m" or "m-paged" or "m-paged-v2" or "hdd-guest" or "tape-guest"))
+if (args.Length != 2 || args[0] is not ("blockport" or "m" or "m-paged"))
 {
-    Console.Error.WriteLine("Usage: dotnet run --project tools/UpgradeBiosBuilder -- <blockport|m|m-paged|m-paged-v2|hdd-guest|tape-guest> <output-directory>");
+    Console.Error.WriteLine("Usage: dotnet run --project tools/UpgradeBiosBuilder -- <blockport|m|m-paged> <output-directory>");
     return 2;
 }
 
@@ -16,67 +16,9 @@ var root = FindRoot(AppContext.BaseDirectory);
 var output = Path.GetFullPath(args[1]);
 if (args[0] == "m-paged")
     return BuildMPaged(root, output);
-if (args[0] == "m-paged-v2")
-    return BuildMPagedVariant(root, output, v2: true);
 Directory.CreateDirectory(output);
 
-if (args[0] == "tape-guest")
-{
-    var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade/tape.init.asm");
-    var sourceBytes = File.ReadAllBytes(sourcePath);
-    var assembled = Assembler.AssembleText(Encoding.UTF8.GetString(sourceBytes), file: sourcePath);
-    File.WriteAllText(Path.Combine(output, "tape.init.lst"), assembled.ToListing());
-    File.WriteAllText(Path.Combine(output, "tape.init.sym"), assembled.ToSymbolFile());
-    if (!assembled.Success)
-    {
-        foreach (var diagnostic in assembled.Diagnostics) Console.Error.WriteLine(diagnostic.Message);
-        return 3;
-    }
-    var image = assembled.ToBinary();
-    if (assembled.Segments.Min(s => s.Address) != 0x100 || image.Length > 0x5F00)
-        throw new InvalidOperationException("Tape COM exceeds its reserved TPA ceiling.");
-    // Unbound template refuses installation until an owner-mounted session supplies metadata.
-    File.WriteAllBytes(Path.Combine(output, "TAPEINIT.COM"), image);
-    Console.WriteLine($"SOURCE {Hash(sourceBytes)} {sourcePath}");
-    Console.WriteLine($"COM tape.init {image.Length} {Hash(image)} STATIC_ONLY DB=none runtime=not-run");
-    foreach (var include in new[] { "tape.layout.inc", "tape.resident.asm" })
-    {
-        var path = Path.Combine(root, "bios/src/hc2000/upgrade", include);
-        Console.WriteLine($"INCLUDE {Hash(File.ReadAllBytes(path))} {path}");
-    }
-    return 0;
-}
-else if (args[0] == "hdd-guest")
-{
-    // Source-fit artifacts only, not installation or positive guest ACK proof.
-    // Preserve old modes, input media and profile defaults verbatim.
-    foreach (var name in new[] { "hdd.init", "hdd.swap" })
-    {
-        var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade", name + ".asm");
-        var sourceBytes = File.ReadAllBytes(sourcePath);
-        var assembled = Assembler.AssembleText(Encoding.UTF8.GetString(sourceBytes), file: sourcePath);
-        File.WriteAllText(Path.Combine(output, name + ".lst"), assembled.ToListing());
-        File.WriteAllText(Path.Combine(output, name + ".sym"), assembled.ToSymbolFile());
-        if (!assembled.Success)
-        {
-            foreach (var diagnostic in assembled.Diagnostics) Console.Error.WriteLine(diagnostic.Message);
-            return 3;
-        }
-        var image = assembled.ToBinary();
-        if (assembled.Segments.Min(s => s.Address) != 0x100 || image.Length > 0x8F00)
-            throw new InvalidOperationException("HDD guest COM exceeds the reserved TPA ceiling.");
-        File.WriteAllBytes(Path.Combine(output, name == "hdd.init" ? "HDDINIT.COM" : "HDSWAP.COM"), image);
-        Console.WriteLine($"SOURCE {Hash(sourceBytes)} {sourcePath}");
-        Console.WriteLine($"COM {name} {image.Length} {Hash(image)} STATIC_ONLY DB=none runtime=not-run");
-        foreach (var include in new[] { "hdd.layout.inc", "hdd.resident.asm" })
-        {
-            var path = Path.Combine(root, "bios/src/hc2000/upgrade", include);
-            Console.WriteLine($"INCLUDE {Hash(File.ReadAllBytes(path))} {path}");
-        }
-    }
-    return 0;
-}
-else if (args[0] == "blockport")
+if (args[0] == "blockport")
 {
     var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade/disk.blockport.asm");
     var sourceBytes = File.ReadAllBytes(sourcePath);
@@ -166,17 +108,11 @@ else
 }
 
 // Host-only source-stage assembly: never constructs Machine/CPU or executes guest code.
-// v2 (hc2000-m-drive-8mib-v2, PO ruling-8kib-fallback-20261019): same bootstrap, pins and
-// fit gate; identity and media names carry the v2 8 KiB-block DPB (SPT128 BSH6 BLM63
-// EXM1 DSM1023 DRM255 ALV128 AL0 0x80 CKS0 OFF0) and the lifted 7DFD/Track+1 latches.
-static int BuildMPaged(string root, string output) => BuildMPagedVariant(root, output, v2: false);
-
-static int BuildMPagedVariant(string root, string output, bool v2)
+static int BuildMPaged(string root, string output)
 {
     if (Directory.Exists(output) || File.Exists(output))
         throw new IOException("m-paged requires a NEW private output directory.");
-    var mode = v2 ? "m-paged-v2" : "m-paged";
-    var sourcePath = Path.Combine(root, $"bios/src/hc2000/upgrade/ram.paged{(v2 ? ".v2" : "")}.asm");
+    var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade/ram.paged.asm");
     var sourceBytes = File.ReadAllBytes(sourcePath);
     var diskPath = Path.Combine(root, "disks/cpm/CPM22-HC.DSK");
     var input = File.ReadAllBytes(diskPath);
@@ -205,14 +141,11 @@ static int BuildMPagedVariant(string root, string output, bool v2)
     Record($"BASE_BIOS {baseline.Length} {Hash(baseline)}");
     Record($"INPUT_MEDIA {input.Length} {Hash(input)} {diskPath}");
     Record($"WHOLE_ROM {rom.Length} {Hash(rom)} {romPath}");
-    var profileName = v2 ? MachineProfile.Hc2000V2PagedMTransferV2.Name : MachineProfile.Hc2000V2PagedMTransferV1.Name;
-    var policyId = v2 ? PagedRamPolicy.MTransferV2PolicyId : PagedRamPolicy.MTransferPolicyId;
-    Record($"PROFILE {profileName} {policyId}");
-    var prefix = v2 ? "ram.paged.v2" : "ram.paged";
+    Record($"PROFILE {MachineProfile.Hc2000V2PagedMTransferV1.Name} {PagedRamPolicy.MTransferPolicyId}");
     var assembly = Assembler.AssembleText(Encoding.UTF8.GetString(sourceBytes), file: sourcePath);
-    File.WriteAllText(Path.Combine(output, $"{prefix}.lst"), assembly.ToListing());
-    File.WriteAllText(Path.Combine(output, $"{prefix}.sym"), assembly.ToSymbolFile());
-    File.WriteAllText(Path.Combine(output, $"{prefix}.hex"), assembly.ToIntelHex());
+    File.WriteAllText(Path.Combine(output, "ram.paged.lst"), assembly.ToListing());
+    File.WriteAllText(Path.Combine(output, "ram.paged.sym"), assembly.ToSymbolFile());
+    File.WriteAllText(Path.Combine(output, "ram.paged.hex"), assembly.ToIntelHex());
     foreach (var diagnostic in assembly.Diagnostics)
         Record($"DIAGNOSTIC {diagnostic.Line} {diagnostic.Severity} {diagnostic.Message}");
     foreach (var segment in assembly.Segments)
@@ -295,11 +228,10 @@ static int BuildMPagedVariant(string root, string output, bool v2)
         if (!original.SequenceEqual(sector.Data))
             Record($"CHANGED_SECTOR C{track.Cylinder}/H{track.Side}/R{sector.R} {Hash(original)}->{Hash(sector.Data)}");
     }
-    var mediaName = v2 ? "CPM22-HC-ram-paged-v2-upgrade.DSK" : "CPM22-HC-ram-paged-upgrade.DSK";
-    File.WriteAllBytes(Path.Combine(output, $"{prefix}.bin"), bios);
-    File.WriteAllBytes(Path.Combine(output, mediaName), media);
-    Record($"IMAGE {bios.Length} {Hash(bios)} {prefix}.bin");
-    Record($"MEDIA {media.Length} {Hash(media)} {mediaName}");
+    File.WriteAllBytes(Path.Combine(output, "ram.paged.bin"), bios);
+    File.WriteAllBytes(Path.Combine(output, "CPM22-HC-ram-paged-upgrade.DSK"), media);
+    Record($"IMAGE {bios.Length} {Hash(bios)} ram.paged.bin");
+    Record($"MEDIA {media.Length} {Hash(media)} CPM22-HC-ram-paged-upgrade.DSK");
     return Finish(0);
 }
 

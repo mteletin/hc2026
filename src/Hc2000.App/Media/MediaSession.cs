@@ -8,13 +8,11 @@ namespace Hc2000.App.Media;
 
 public enum MediaAction { Inspect, InsertDisk, EjectDisk, WriteProtect, ExportDisk, QueueTape, PlayTape, StopTape, EjectTape,
     InsertCassette, BlankTape, FlipTape, TabTape, RecordTape, RewindTape, ForwardTape, PauseTape,
-    CounterTape, FastWindTape, StopEjectTape, ExportTape, AcknowledgeTape, MonitorTape, Hdd, Writeback,
-    MountTapeVolume, UnmountTapeVolume, DiscardTapeVolume }
+    CounterTape, FastWindTape, StopEjectTape, ExportTape, AcknowledgeTape, MonitorTape, Hdd, Writeback }
 public enum DiskSlot { A, B }
 public sealed record MediaCommand(MediaAction Action, DiskSlot Slot = DiskSlot.A,
     ImmutableArray<byte> Bytes = default, string? Name = null, bool Value = false,
     bool DiscardChanges = false, long RequestId = 0, TapeCassetteImage? Cassette = null,
-    MediaImageDescriptor? Descriptor = null,
     TapeCapacity Capacity = TapeCapacity.C60, TapeSide Side = TapeSide.A,
     TapeSaveAcknowledgement? Acknowledgement = null, HddRequest? Hdd = null,
     WritebackOwnerRequest? Writeback = null) : InputCommand;
@@ -22,23 +20,15 @@ public sealed record DriveView(string? Name, bool Present, bool WriteProtected, 
 public sealed record MediaReply(long RequestId, DriveView A, DriveView B,
     ImmutableArray<byte> Export = default, string? Error = null, TapeView? Tape = null,
     TapeExportSnapshot? TapeExport = null, TapeFailure? TapeFailure = null, HddReply? Hdd = null,
-    WritebackOwnerReply? Writeback = null, TapeVolumeView? TapeVolume = null);
+    WritebackOwnerReply? Writeback = null);
 public sealed record TapeView(string? Name, TapeCursor Cursor, TapeDeckView? Deck = null,
     bool AudioAvailable = false, string? AudioReason = null, TapeFormat? SourceFormat = null);
-
-/// <summary>One newest-valid-catalog volume as the App mount lane sees it.</summary>
-public sealed record TapeVolumeListView(string Name, int ImageBytes, bool WriteProtected, bool Mounted);
-/// <summary>The bound session's state: what is mounted where, what is listed, and what the lane refused.</summary>
-public sealed record TapeVolumeView(bool Mounted, char Letter, string? Name, int ImageBytes, bool Dirty,
-    bool WriteProtected, bool MediaLive, ImmutableArray<TapeVolumeListView> Volumes = default, string? ListError = null);
 
 /// <summary>Owner-side adapter around the SAME drives supplied to the FDC. No host I/O,
 /// CPU, replacement drive, scheduler, or UI reference. Invoke at ordered boundaries.</summary>
 public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTransport? tape = null, bool manualDeck = false,
-    HddMediaAdapter? hdd = null, Func<TapeVolumeSession?>? tapeVolume = null)
+    HddMediaAdapter? hdd = null)
 {
-    private readonly Func<TapeVolumeSession?>? volume = tapeVolume;
-
     public MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTransport? tape)
         : this(driveA, driveB, tape, manualDeck: false) { }
 
@@ -57,27 +47,6 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
     internal void RebindTape(TapeTransport value)
     {
         VerifyOwner(); transport = value;
-    }
-    internal HddSaveCapture CaptureHddSave(byte drive)
-    {
-        VerifyOwner();
-        var reply = hdd?.Apply(new(HddAction.CaptureSave, drive)) ?? HddReply.Unavailable;
-        return reply.Save ?? throw new InvalidOperationException(reply.Error ?? "HDD capture unavailable.");
-    }
-    internal void FreezeHddSave(HddSaveCapture capture)
-    {
-        VerifyOwner();
-        (hdd ?? throw new InvalidOperationException("HDD unavailable.")).FreezeSave(capture);
-    }
-    internal HddPublicationView PublishHddSave(long saveId, bool reconcile)
-    {
-        VerifyOwner();
-        return (hdd ?? throw new InvalidOperationException("HDD unavailable.")).PublishSave(saveId, reconcile);
-    }
-    internal bool AbortHddSave(long saveId)
-    {
-        VerifyOwner();
-        return hdd?.AbortPublication(saveId) == true;
     }
     private void VerifyOwner()
     {
@@ -168,14 +137,7 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
                     if (drive.DirtySectors.Count != 0 && !command.DiscardChanges && !receiptCoveredEject)
                         throw new InvalidOperationException("Unsaved changes: save a copy or explicitly allow discard before replacing media.");
                     // Parse into a detached container first; invalid input never ejects the old disk.
-                    // The one descriptor-aware seam: an explicit raw descriptor loads through the native
-                    // adapter against this drive's device profile; every other command keeps the legacy
-                    // container parse. No filename or byte length selects a format or supplies geometry.
-                    var disk = command.Action == MediaAction.InsertDisk
-                        ? (command.Descriptor is { Kind: MediaImageKind.RawFloppy } descriptor
-                            ? RawFloppyAdapter.Load(command.Bytes.AsSpan(), descriptor, drive.Profile)
-                            : Dsk.Load(command.Bytes.AsSpan()))
-                        : null;
+                    var disk = command.Action == MediaAction.InsertDisk ? Dsk.Load(command.Bytes.AsSpan()) : null;
                     drive.Mount(disk); // Existing mechanics reject motor-on/head-loaded replacement.
                     if (command.Slot == DiskSlot.A) { nameA = disk is null ? null : command.Name; generationA++; }
                     else { nameB = disk is null ? null : command.Name; generationB++; }
@@ -185,11 +147,6 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
                     break;
                 case MediaAction.ExportDisk:
                     export = ImmutableArray.CreateRange(drive.ExportMedia());
-                    break;
-                case MediaAction.MountTapeVolume:
-                case MediaAction.UnmountTapeVolume:
-                case MediaAction.DiscardTapeVolume:
-                    ApplyTapeVolume(command);
                     break;
                 case MediaAction.Writeback:
                     throw new InvalidOperationException("Writeback is applied by the owner ledger, not as a drive mutation.");
@@ -201,77 +158,13 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
         }
         var deckView = transport is not null && useDeck ? ((ITapeDeck)transport).Observe() : null;
         return new(command.RequestId, View(driveA, nameA, generationA), View(driveB, nameB, generationB), export, error,
-            transport is null ? null : new(tapeName, transport.Cursor, deckView, SourceFormat: deckView?.ActiveSide == TapeSide.B ? formatB : formatA),
-            tapeExport, failure, hddReply, TapeVolume: VolumeView());
+            transport is null ? null : new(tapeName, transport.Cursor, deckView, SourceFormat: deckView?.ActiveSide == TapeSide.B ? formatB : formatA), tapeExport, failure, hddReply);
 
         void ApplyDeck(TapeResult<TapeDeckView> result)
         {
             if (!result.Success) SetFailure(result.Failure!);
         }
         void SetFailure(TapeFailure value) { failure = value; error = $"{value.Code}: {value.Detail}"; }
-    }
-
-    /// <summary>The mount lane: mount binds the first free letter; unmount commits (writeback-then-unmount);
-    /// discard cancels. Volumes over the 4 MiB product cap are refused here, on the shared
-    /// TapeCatalogCodec validation path, with the codec's existing contract reason. Refusals throw;
-    /// Apply's catch turns them into the reply error, like every other lane.</summary>
-    private void ApplyTapeVolume(MediaCommand command)
-    {
-        var session = volume?.Invoke() ?? throw new InvalidOperationException("Tape volume binding unavailable on this machine.");
-        switch (command.Action)
-        {
-            case MediaAction.MountTapeVolume:
-                if (session.Mounted) throw new InvalidOperationException($"A tape volume is already mounted as {session.Letter}.");
-                var name = command.Name ?? throw new ArgumentException("Volume name required.");
-                var list = session.List();
-                if (list.Success)
-                {
-                    var entry = list.Value.FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
-                    var cap = entry is null ? null : TapeCatalogCodec.ProductCapRefusal(entry.ImageBytes);
-                    if (cap is not null) throw new InvalidOperationException($"{cap.Code}: {cap.Detail}");
-                }
-                TapeFailure? last = null;
-                foreach (var letter in "CDEFGHIJKLMNOP")
-                {
-                    if (letter == 'M') continue;
-                    var mounted = session.Mount(name, letter);
-                    if (mounted.Success) return;
-                    last = mounted.Failure!;
-                }
-                throw new InvalidOperationException($"{last!.Code}: {last.Detail}");
-            case MediaAction.UnmountTapeVolume:
-                if (!session.Mounted) throw new InvalidOperationException("No tape volume is mounted.");
-                if (session.Dirty)
-                {
-                    var writeback = session.Writeback();
-                    if (!writeback.Success) throw new InvalidOperationException($"Commit refused: {writeback.Failure!.Code}: {writeback.Failure.Detail}");
-                }
-                var unmount = session.Unmount();
-                if (!unmount.Success) throw new InvalidOperationException($"Unmount refused: {unmount.Failure!.Code}: {unmount.Failure.Detail}");
-                break;
-            case MediaAction.DiscardTapeVolume:
-                if (!session.Mounted) throw new InvalidOperationException("No tape volume is mounted.");
-                session.Cancel();
-                break;
-        }
-    }
-
-    private TapeVolumeView? VolumeView()
-    {
-        var session = volume?.Invoke();
-        if (session is null) return null;
-        TapeFailure? listError = null;
-        ImmutableArray<TapeVolumeListView> listed = default;
-        var list = session.List();
-        if (list.Success)
-        {
-            listed = [.. list.Value.Select(e => new TapeVolumeListView(e.Name, checked((int)e.ImageBytes), e.WriteProtected,
-                session.Mounted && string.Equals(session.Name, e.Name, StringComparison.OrdinalIgnoreCase)))];
-        }
-        else { listError = new(list.Failure!.Code, list.Failure.Detail); }
-        return new(session.Mounted, session.Letter, session.Name, session.ImageBytes, session.Dirty,
-            session.WriteProtected, session.MediaLive, listed,
-            listError is null ? null : $"{listError.Code}: {listError.Detail}");
     }
 
     private TapeTransport RequireTape() => transport ?? throw new InvalidOperationException("Tape runtime unavailable.");

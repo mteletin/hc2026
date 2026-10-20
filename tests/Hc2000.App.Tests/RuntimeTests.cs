@@ -1,6 +1,4 @@
-using System.Buffers.Binary;
 using Hc2000.App.Runtime;
-using Hc2000.Machine.Floppy;
 using Hc2000.Machine.Input;
 using Hc2000.Machine.Memory;
 using Hc2000.Machine.Timing;
@@ -181,68 +179,5 @@ public sealed class RuntimeTests
         });
         await worker.Completion.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal(11, fixture!.Cpu); Assert.Null(worker.TakeLatestFrame()); worker.Dispose();
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task GuestAckHoldsWorkerThroughAccountedCommitOrCancelWithoutConsumingStep(bool commit)
-    {
-        Fixture? fixture = null;
-        BlockDiskPort? port = null;
-        BlockDiskPort.GuestSwitchTicket? ticket = null;
-        int boundaries = 0;
-        using var worker = new EmulationWorker(() =>
-        {
-            fixture = new Fixture();
-            port = new BlockDiskPort(fixture.Memory,
-                new FloppyController(fixture.Scheduler, 100, new(new()), new(new())),
-                hddEnabled: true, guestAckEnabled: true);
-            port.AttachHdd(2, new byte[8_388_608]);
-            port.BindGuestAckSession(Guid.NewGuid());
-            port.BeginGuestSwitch(2, 4);
-            return fixture.Machine;
-        }, ctx =>
-        {
-            switch (++boundaries)
-            {
-                case 1:
-                    // Native wire QUERY/ACK, not an owner-issued substitute ticket.
-                    GuestCommand(fixture!.Memory, port!, 4);
-                    GuestCommand(fixture.Memory, port!, 5);
-                    Assert.True(port!.TryGetHeldGuestSwitch(out ticket));
-                    ctx.Step();
-                    break;
-                case 2:
-                    Assert.Equal(0, fixture!.Steps);
-                    if (commit) Assert.True(port!.CommitGuestSwitch(ticket!, new byte[8_388_608], false, false).Committed);
-                    else port!.CancelGuestSwitch(ticket!);
-                    break;
-                case 3:
-                    Assert.Equal(0, fixture!.Steps);
-                    Assert.True(port!.GuestSwitchHoldsCpu);
-                    // Accounting and cleanup precede this release, even for cancellation.
-                    port.FinishGuestSwitch(ticket!);
-                    break;
-                case 4:
-                    Assert.Equal(1, fixture!.Steps);
-                    ctx.Shutdown();
-                    break;
-            }
-        }, executionAllowed: () => !port!.GuestSwitchHoldsCpu);
-        await worker.Completion.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.Equal(1, fixture!.Steps);
-    }
-
-    private static void GuestCommand(HcMemory memory, BlockDiskPort port, byte operation)
-    {
-        Span<byte> command = stackalloc byte[16];
-        command.Clear();
-        command[0] = 2; command[1] = operation; command[2] = 2;
-        BinaryPrimitives.WriteUInt16LittleEndian(command[8..], 0x8200);
-        BinaryPrimitives.WriteUInt32LittleEndian(command[12..], 1);
-        for (var i = 0; i < command.Length; i++) memory.Write((ushort)(0x8000 + i), command[i]);
-        port.Write(0x81, 0, 0); port.Write(0x83, 0x80, 0); port.Write(0x89, 1, 0);
-        Assert.Equal(0, port.Read(0x89, 0));
     }
 }

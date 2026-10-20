@@ -2,15 +2,11 @@ using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Hc2000.App.Audio;
 
 namespace Hc2000.App.Settings;
 
 public sealed class SettingsWindow : Window
 {
-    private readonly SoundSpeedNotice soundNotice;
-    public SoundSpeedNotice SoundNotice => soundNotice;
-
     public SettingsWindow(SettingsStore store)
     {
         Title = "HC2000 settings";
@@ -27,20 +23,9 @@ public sealed class SettingsWindow : Window
         var profile = AddField(form, "Profile", draft.Profile);
         var rom = AddField(form, "ROM set (path)", draft.RomSet);
         var speed = AddField(form, "Speed: 100, 200, 400 or 0 (unlimited)", draft.SpeedPercent);
-        // Saved preferences decide the speed the next machine starts at, so the silence they would
-        // cause is stated here too; its control puts the saved draft back to 100 before Save.
-        soundNotice = new SoundSpeedNotice(speed);
-        form.Children.Add(soundNotice);
         var scale = AddField(form, "Integer scale", draft.Scale);
         var audio = AddField(form, "Audio preference (opaque; backend not selected here)", draft.AudioPreference);
         var map = AddField(form, "Key mapping: JSON object of PC key → machine key strings", draft.KeyMapJson);
-        var diskHome = AddField(form, "Disk home (directory; optional, blank clears)", draft.DiskHome);
-        var tapeHome = AddField(form, "Tape home (directory; optional, blank clears)", draft.TapeHome);
-        var snapshotHome = AddField(form, "Snapshot home (directory; optional, blank clears)", draft.SnapshotHome);
-        // The sound-dump route (hc2000-app-sound-dump-route): same name and same fence as the CLI
-        // flag; the field is fenced once on Save, before anything is written.
-        var soundDump = AddField(form, "Sound dump: WAV file path (sound-dump; inside your user home; optional, blank clears)", draft.SoundDump);
-        soundDump.Name = Audio.SoundDumpGate.Name;
         map.AcceptsReturn = true;
         map.MinHeight = 100;
         var status = new TextBlock
@@ -62,17 +47,9 @@ public sealed class SettingsWindow : Window
                 draft.SpeedPercent = speed.Text ?? "";
                 draft.Scale = scale.Text ?? "";
                 draft.AudioPreference = audio.Text ?? "";
-                draft.DiskHome = diskHome.Text ?? "";
-                draft.TapeHome = tapeHome.Text ?? "";
-                draft.SnapshotHome = snapshotHome.Text ?? "";
-                draft.SoundDump = soundDump.Text ?? "";
                 draft.KeyMapJson = map.Text ?? "";
                 if (loaded.Warning is not null && overwrite.IsChecked != true)
                     throw new ArgumentException("Confirm replacement of the original settings before saving.");
-                // The dump-route fence, once, before the save: the one refusal sentence, identical to
-                // the CLI flag's (PO ruling board 634859).
-                var dump = Audio.SoundDumpGate.Resolve(draft.SoundDump);
-                if (!dump.Ok) throw new ArgumentException(dump.Refusal!);
                 store.Save(draft.Build());
                 status.Text = $"Saved to {store.FilePath}.";
             }

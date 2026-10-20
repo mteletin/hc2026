@@ -40,10 +40,8 @@ public sealed class LaunchDiskThreadAffinityTests(ITestOutputHelper output)
         }
     }
 
-    [AvaloniaTheory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task IncompleteRealAInsertionKeepsBCallbackOnUiOwner(bool pollBeforeB)
+    [AvaloniaFact]
+    public async Task IncompleteRealAInsertionKeepsBCallbackOnUiOwner()
     {
         Assert.Null(RomSelectionFixture.MissingAssets());
         var root = RomSelectionFixture.RepositoryRoot();
@@ -54,7 +52,6 @@ public sealed class LaunchDiskThreadAffinityTests(ITestOutputHelper output)
         var aInserted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseA = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         Task<string?>? application = null;
-        Task? overlappingInspection = null;
         var entered = new List<DiskSlot>();
         var aOnUi = false;
         var bOnUi = false;
@@ -69,27 +66,12 @@ public sealed class LaunchDiskThreadAffinityTests(ITestOutputHelper output)
                 entered.Add(slot);
                 if (slot == DiskSlot.A) aOnUi = Dispatcher.UIThread.CheckAccess();
                 else bOnUi = Dispatcher.UIThread.CheckAccess();
-                output.WriteLine($"Before {slot} insertion: controls ready={InsertReady(media)}; notice={media.Notice}");
                 // Do not substitute a stub reply or fake mounted state: use the real panel/worker.
                 await media.InsertDiskAsync(path, slot);
                 if (slot == DiskSlot.A)
                 {
                     aInserted.TrySetResult();
                     await releaseA.Task;
-                    if (pollBeforeB)
-                    {
-                        do
-                        {
-                            while (!InsertReady(media)) await Task.Delay(5, deadline.Token);
-                            overlappingInspection = media.PollAsync(); // genuine inspection, not a fake mounted reply
-                            if (overlappingInspection.IsCompleted) await Task.Delay(5, deadline.Token);
-                        } while (overlappingInspection.IsCompleted);
-                        output.WriteLine($"Inspection after held A: pending={!overlappingInspection.IsCompleted}");
-                        Assert.False(overlappingInspection.IsCompleted);
-                    }
-                    // The synthetic hold lets normal inspection acquire the media command gate.
-                    // Complete A only when B's real UI action is enabled again, without bypassing it.
-                    while (!InsertReady(media)) await Task.Delay(5, deadline.Token);
                 }
             }
             application = LaunchStartup.ApplyDisksAsync(Options(copies), Insert);
@@ -101,7 +83,6 @@ public sealed class LaunchDiskThreadAffinityTests(ITestOutputHelper output)
             // without a sleep or changing any worker/file-I/O scheduling or emulation boundary.
             await Task.Run(() => releaseA.TrySetResult());
             var status = await application.WaitAsync(deadline.Token);
-            if (overlappingInspection is not null) await overlappingInspection.WaitAsync(deadline.Token);
             output.WriteLine($"A UI={aOnUi}; B UI={bOnUi}; status={status ?? "(null)"}");
             Assert.Equal(new[] { DiskSlot.A, DiskSlot.B }, entered);
             Assert.True(aOnUi);
@@ -118,8 +99,6 @@ public sealed class LaunchDiskThreadAffinityTests(ITestOutputHelper output)
             {
                 if (application is not null)
                     await application.WaitAsync(TimeSpan.FromSeconds(10));
-                if (overlappingInspection is not null)
-                    await overlappingInspection.WaitAsync(TimeSpan.FromSeconds(10));
             }
             finally
             {
@@ -152,13 +131,6 @@ public sealed class LaunchDiskThreadAffinityTests(ITestOutputHelper output)
     private static bool HasBothDisks(MediaPanel media) =>
         DriveLabel(media, DiskSlot.A).Contains("A-private.dsk", StringComparison.Ordinal)
         && DriveLabel(media, DiskSlot.B).Contains("B-private.dsk", StringComparison.Ordinal);
-
-    private static bool InsertReady(MediaPanel media)
-    {
-        var buttons = media.GetLogicalDescendants().OfType<Button>()
-            .Where(b => Equals(b.Content, "Insert DSK…")).ToArray();
-        return buttons.Length == 2 && buttons.All(b => b.IsEnabled);
-    }
 
     private void AssertBothDisks(MediaPanel media)
     {

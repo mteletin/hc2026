@@ -12,10 +12,6 @@ public sealed class SettingsEditor
     public string Scale { get; set; }
     public string AudioPreference { get; set; }
     public string KeyMapJson { get; set; }
-    public string DiskHome { get; set; }
-    public string TapeHome { get; set; }
-    public string SnapshotHome { get; set; }
-    public string SoundDump { get; set; }
     private readonly Configuration.WorkspaceSettings? workspace;
 
     public SettingsEditor(AppSettings settings)
@@ -26,10 +22,6 @@ public sealed class SettingsEditor
         SpeedPercent = settings.SpeedPercent.ToString(CultureInfo.InvariantCulture);
         Scale = settings.Scale.ToString(CultureInfo.InvariantCulture);
         AudioPreference = settings.AudioPreference;
-        DiskHome = settings.DiskHome ?? "";
-        TapeHome = settings.TapeHome ?? "";
-        SnapshotHome = settings.SnapshotHome ?? "";
-        SoundDump = settings.SoundDump ?? "";
         KeyMapJson = JsonSerializer.Serialize(settings.KeyMap, AppSettings.JsonOptions);
     }
 
@@ -46,17 +38,10 @@ public sealed class SettingsEditor
             SpeedPercent = speed,
             Scale = scale,
             AudioPreference = AudioPreference.Trim(),
-            DiskHome = Home(DiskHome),
-            TapeHome = Home(TapeHome),
-            SnapshotHome = Home(SnapshotHome),
-            SoundDump = Home(SoundDump),
             KeyMap = JsonSerializer.Deserialize<Dictionary<string, string>>(KeyMapJson)
                 ?? throw new ArgumentException("Key mapping must be a JSON object.")
         };
         settings.Validate();
         return settings;
     }
-
-    // A blank field clears the home: null (absent), never an empty string.
-    private static string? Home(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

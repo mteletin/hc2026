@@ -837,8 +837,6 @@ public sealed class MachineBootAcceptanceTests
                         }
                     }), mapping.Access)).ToArray();
             }
-            else if (profile.Memory.RamPaged is not null)
-                mappings = HcIoProfile.WithPagedRam(memory, ula, driveLatch, fdcStatus, fdcData, idle, idle);
             else if (profile.Memory.RamBanks is not null)
                 mappings = HcIoProfile.WithRamBanks(memory, ula, driveLatch, fdcStatus, fdcData, idle, idle);
             else

@@ -11,12 +11,7 @@ public readonly record struct BeeperEdge(long MasterTick, bool Speaker, bool Mic
     public int MixLevel => (Speaker ? 2 : 0) + (Microphone ? 1 : 0);
 }
 
-public record VideoFrame(long MasterTick, int Width, int Height, ReadOnlyMemory<uint> Pixels);
-
-/// <summary>An unchanged faithful frame plus a separate, transparent-paper 2x ink surface.
-/// Raster content is preserved verbatim, not recognized or replaced with host fonts.</summary>
-public sealed record TextOverlayVideoFrame(long MasterTick, int Width, int Height,
-    ReadOnlyMemory<uint> Pixels, VideoFrame TextOverlay) : VideoFrame(MasterTick, Width, Height, Pixels);
+public sealed record VideoFrame(long MasterTick, int Width, int Height, ReadOnlyMemory<uint> Pixels);
 
 /// <summary>Character-granular ULA on the master clock; no CPU, wall-clock or host I/O.</summary>
 public sealed class Ula : IPortDevice
@@ -29,8 +24,7 @@ public sealed class Ula : IPortDevice
     private RationalClock flashClock;
     private readonly uint[] palette;
     private readonly bool fullRaster;
-    // Opt-in mask follows the faithful raster in the same store: no new default-state allocation.
-    private readonly uint[] raster;
+    private readonly uint[] raster = new uint[RasterWidth * RasterHeight];
     public KeyboardMatrix Keyboard { get; }
     public byte FeLatch { get; private set; }
     private bool tapeIn;
@@ -70,8 +64,7 @@ public sealed class Ula : IPortDevice
         flashDeviceId = stableFlashDeviceId;
         fullRaster = profile.FullRaster;
         palette = profile.Palette.ToArray();
-        raster = new uint[RasterWidth * RasterHeight * (profile.TextOverlay ? 2 : 1)];
-        Array.Fill(raster, palette[0], 0, RasterWidth * RasterHeight);
+        Array.Fill(raster, palette[0]);
         flashClock = new(0, profile.FlashPeriodNumerator, profile.FlashPeriodDenominator);
         scheduler.RegisterDevice(flashDeviceId, Flash);
         ScheduleFlash();
@@ -154,11 +147,6 @@ public sealed class Ula : IPortDevice
         var paper = palette[((attr >> 3) & 7) + bright];
         if ((attr & 0x80) != 0 && FlashInverted) (ink, paper) = (paper, ink);
         for (var x = 0; x < 8; x++) raster[offset + x] = (bits & (0x80 >> x)) != 0 ? ink : paper;
-        // Reuse the very same sampled byte/attribute, including raster-time paging and flash.
-        // A zero bit is transparent, including a space; nontext stays an exact pixel fallback.
-        if (raster.Length > RasterWidth * RasterHeight)
-            for (var x = 0; x < 8; x++)
-                raster[RasterWidth * RasterHeight + offset + x] = (bits & (0x80 >> x)) != 0 ? ink : 0;
     }
 
     private void Publish(long tick)
@@ -174,28 +162,9 @@ public sealed class Ula : IPortDevice
             for (var x = 0; x < width; x++)
                 pixels[y * width + x] = raster[(y + (fullRaster ? 0 : 16)) * RasterWidth +
                     (fullRaster ? x : (left + x) % RasterWidth)];
-        var completed = raster.Length == RasterWidth * RasterHeight
-            ? new VideoFrame(tick, width, height, pixels)
-            : new TextOverlayVideoFrame(tick, width, height, pixels, PublishOverlay(tick, width, height, left));
-        Array.Fill(raster, palette[0], 0, RasterWidth * RasterHeight);
-        if (raster.Length > RasterWidth * RasterHeight)
-            Array.Clear(raster, RasterWidth * RasterHeight, RasterWidth * RasterHeight);
+        var completed = new VideoFrame(tick, width, height, pixels);
+        Array.Fill(raster, palette[0]);
         LastFrame = completed;
         FrameReady?.Invoke(completed);
-    }
-
-    private VideoFrame PublishOverlay(long tick, int width, int height, int left)
-    {
-        var scaledWidth = width * 2;
-        var pixels = new uint[scaledWidth * height * 2];
-        for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-            {
-                var ink = raster[RasterWidth * RasterHeight + (y + (fullRaster ? 0 : 16)) * RasterWidth +
-                    (fullRaster ? x : (left + x) % RasterWidth)];
-                var target = y * 2 * scaledWidth + x * 2;
-                pixels[target] = pixels[target + 1] = pixels[target + scaledWidth] = pixels[target + scaledWidth + 1] = ink;
-            }
-        return new(tick, scaledWidth, height * 2, pixels);
     }
 }

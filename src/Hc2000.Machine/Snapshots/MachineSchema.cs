@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Hc2000.Machine.Tape;
 using Hc2000.Machine.Tape.Snapshots;
 
 namespace Hc2000.Machine.Snapshots;
@@ -14,7 +13,6 @@ namespace Hc2000.Machine.Snapshots;
 public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? wavPolicy = null)
     : HcsSchema(profile.Name, checked((uint)profile.Version), Definition(profile))
 {
-    protected override bool UsesCpuFrontiers => ExpansionSchema.Enabled(profile);
     private static readonly string[] Components =
         ["drive-a", "drive-b", "fdc", "frame-clock", "keyboard", "memory", "tape", "ula"];
 
@@ -93,18 +91,13 @@ public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? 
         foreach (var o in Arr(manifest.GetProperty("components")))
         {
             string id = Id(o.GetProperty("id"));
-            if (!Components.Contains(id) && !(UsesCpuFrontiers && id == ExpansionSchema.ComponentId)) Error(HcsError.UnsupportedVersion, "component");
+            if (!Components.Contains(id)) Error(HcsError.UnsupportedVersion, "component");
             if (Id(o.GetProperty("modelId")) != id)
                 Error(HcsError.UnsupportedVersion, "component");
             var mv = UInt(o.GetProperty("modelVersion"));
             if (id == "fdc" ? mv != 2 : id == "tape" ? mv is not (1 or 2) : mv != 1)
                 Error(HcsError.UnsupportedVersion, "component");
             var s = o.GetProperty("state");
-            if (id == ExpansionSchema.ComponentId)
-            {
-                _ = ExpansionSchema.Read(manifest);
-                continue;
-            }
             if (id == "tape" && mv == 2)
             {
                 try { TapeComponentCodec.Read(s); }
@@ -112,23 +105,7 @@ public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? 
                 { Error(HcsError.InvalidFormat, "tape2"); }
                 continue;
             }
-            if (id == "memory")
-            {
-                var memoryFields = Tables[id].ToList();
-                if (s.TryGetProperty("paged", out _)) memoryFields.Add("paged");
-                if (s.TryGetProperty("tapeVolume", out var volumeState))
-                {
-                    memoryFields.Add("tapeVolume");
-                    try
-                    {
-                        var state = volumeState.Deserialize<TapeVolumeState>() ?? throw new ArgumentException("volume state");
-                        if (state.Mounted is { } mounted) TapeVolumeSession.ValidateMetadata(mounted);
-                    }
-                    catch (Exception e) when (e is JsonException or ArgumentException or OverflowException)
-                    { Error(HcsError.InvalidFormat, "tape volume metadata"); }
-                }
-                Fields(s, memoryFields.ToArray());
-            }
+            if (id == "memory" && s.TryGetProperty("paged", out _)) Fields(s, [.. Tables[id], "paged"]);
             else Fields(s, [.. Tables[id]]);
             switch (id)
             {
@@ -192,8 +169,6 @@ public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? 
                     break;
             }
         }
-        if (UsesCpuFrontiers && !Arr(manifest.GetProperty("components")).Any(c => Id(c.GetProperty("id")) == ExpansionSchema.ComponentId))
-            Error(HcsError.StateInconsistent, "expansion component");
         if (Arr(manifest.GetProperty("pendingOutput")).Length != 0)
             Error(HcsError.StateUnsupported, "pendingOutput");
     }

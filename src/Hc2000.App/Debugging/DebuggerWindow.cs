@@ -25,25 +25,13 @@ public sealed class DebuggerWindow : Window
     private readonly TextBox breakpointList = Panel();
     private readonly TextBlock errors = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Action<DebuggerCommand>? enqueue;
-    private readonly Button pause;
-    private Action? pauseAction;
     private DebuggerSnapshot? snapshot;
-    private long generation;
-    private long sequence;
-    private bool paused;
-    // Set when the view is explicitly detached; null while a machine is bound.
-    private string? detached;
 
     public DebuggerWindow(Action<DebuggerCommand>? enqueue = null)
     {
         this.enqueue = enqueue;
         Title = "HC2000 debugger"; Width = 940; Height = 680;
         var toolbar = new WrapPanel { Orientation = Orientation.Horizontal };
-        // Pause is the one control this window drives, and it goes through the existing FIFO, not the
-        // command sink: the sink stays null, so the unimplemented commands below stay visibly disabled.
-        pause = new Button { Content = "Pause machine", IsEnabled = false, Margin = new Thickness(4) };
-        pause.Click += (_, _) => pauseAction?.Invoke();
-        toolbar.Children.Add(pause);
         foreach (var (name, kind) in new[] { ("Resume", DebuggerCommandKind.Resume), ("Step", DebuggerCommandKind.Step),
             ("Record", DebuggerCommandKind.StartRecording), ("Stop recording", DebuggerCommandKind.StopRecording),
             ("Save text map", DebuggerCommandKind.ExportTextMap), ("Save binary map", DebuggerCommandKind.ExportBinaryMap) })
@@ -103,46 +91,17 @@ public sealed class DebuggerWindow : Window
         } };
     }
 
-    /// <summary>Binds or clears the pause action. Enabled only while bound; it enqueues the existing
-    /// pause control and never touches the command sink, so the other toolbar buttons stay disabled.</summary>
-    public void BindPause(Action? action)
+    /// <summary>Call on the UI dispatcher with a copied boundary view. No live component reference crosses this boundary.</summary>
+    public void Publish(DebuggerSnapshot view)
     {
-        Dispatcher.UIThread.VerifyAccess(); pauseAction = action; pause.IsEnabled = action is not null;
-    }
-
-    /// <summary>Call on the UI dispatcher with a copied boundary view and the stamps it was captured
-    /// with. No live component reference crosses this boundary.</summary>
-    public void Publish(DebuggerSnapshot view, long generation, long sequence, bool paused)
-    {
-        Dispatcher.UIThread.VerifyAccess();
-        snapshot = view; this.generation = generation; this.sequence = sequence; this.paused = paused;
-        detached = null; Render();
-    }
-
-    /// <summary>Drops the displayed copy and says why the view is no longer following a machine.
-    /// The wording is the caller's: a lost selection, a machine awaiting its first copy, and a
-    /// failed worker read differently.</summary>
-    public void Detach(string reason)
-    {
-        Dispatcher.UIThread.VerifyAccess();
-        snapshot = null; detached = reason; BindPause(null); Render();
-    }
-
-    /// <summary>Invalidates the retired generation without disconnecting the selected-session FIFO.</summary>
-    public void AwaitSnapshot()
-    {
-        Dispatcher.UIThread.VerifyAccess();
-        snapshot = null; detached = null; Render();
+        Dispatcher.UIThread.VerifyAccess(); snapshot = view; Render();
     }
 
     private void Render()
     {
-        status.Text = detached is not null ? detached
-            : snapshot is null ? "Selected machine awaiting snapshot."
-            : (pauseAction is not null ? "Following selected machine. "
-                : enqueue is null ? "Disconnected: runtime controls unavailable. " : "Commands are queued to the runtime owner. ") +
-                $"{snapshot.Source} — last captured boundary T={snapshot.CpuTStates}, PC={snapshot.Registers.Pc:X4}, " +
-                $"gen={generation} seq={sequence} paused={(paused ? "yes" : "no")}. Display is a copied snapshot, not live state.";
+        status.Text = (enqueue is null ? "Disconnected: runtime controls unavailable. " : "Commands are queued to the runtime owner. ") +
+            (snapshot is null ? "No machine snapshot supplied; no CPU running state is claimed." :
+                $"{snapshot.Source} — last captured boundary T={snapshot.CpuTStates}, PC={snapshot.Registers.Pc:X4}. Display is a copied snapshot, not live state.");
         if (snapshot is null)
         {
             code.Text = memory.Text = registers.Text = fdc.Text = breakpointList.Text = "Unavailable: no boundary snapshot."; return;

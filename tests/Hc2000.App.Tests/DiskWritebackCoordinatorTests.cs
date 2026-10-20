@@ -222,47 +222,6 @@ public sealed class DiskWritebackCoordinatorTests : IDisposable
         Assert.Equal(0, rig.Files.Writes);
     }
 
-    [Fact]
-    public async Task ResetGuardIsClearWithLiveBindingsAndRefusedOnlyByUnresolvedFences()
-    {
-        using var rig = new Rig();
-        Assert.True(rig.Coordinator.ResetGuardClear(), "fresh coordinator: no unresolved fences");
-        Assert.NotNull((await rig.Bind("B")).Binding);
-        Assert.True(rig.Coordinator.ResetGuardClear(), "a live binding alone must not block a binding-preserving reset");
-
-        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        rig.Files.Override = async (path, bytes, _) =>
-        {
-            await release.Task;
-            return await rig.Files.Replace(path, bytes);
-        };
-        var held = rig.Coordinator.PersistAsync("B", WritebackIntent.Close);
-        await rig.Files.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.False(rig.Coordinator.ResetGuardClear(), "a held writer must block the reset");
-        Assert.False(await rig.Coordinator.InvalidateAsync(), "the fence must also block invalidation");
-        release.SetResult(true);
-        // Awaiting the settle lets the held writer drain, commit and release the gate.
-        // ReconcileAsync must not race that in-flight settle: while the gate is held it reports Unknown.
-        var settlement = await held.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.Equal(WritebackPublication.Published, settlement.Outcome);
-        Assert.True((await rig.Coordinator.CompleteAsync(WritebackIntent.Close)).Accepted);
-        Assert.True(rig.Coordinator.ResetGuardClear(), "the cleared fence must re-open the reset");
-        // The binding survived the refused reset window unchanged: it is still writable.
-        Assert.Equal(WritebackPublication.Published,
-            (await rig.Coordinator.PersistAsync("B", WritebackIntent.Shortcut)).Outcome);
-    }
-
-    [Fact]
-    public async Task UnknownOwnerOutcomeKeepsTheResetGuardRefused()
-    {
-        using var rig = new Rig();
-        Assert.NotNull((await rig.Bind("B")).Binding);
-        rig.Owner.ThrowOnComplete = true;
-        Assert.False((await rig.Coordinator.CompleteAsync(WritebackIntent.Close)).Accepted);
-        Assert.False(rig.Coordinator.ResetGuardClear(), "an unknown owner outcome must block the reset");
-        Assert.False(await rig.Coordinator.InvalidateAsync(), "an unknown owner outcome must block invalidation");
-    }
-
     private sealed class Rig : IDisposable
     {
         private readonly string directory = Path.Combine(Path.GetTempPath(), "hc2000-writeback-" + Guid.NewGuid().ToString("N"));
@@ -306,10 +265,8 @@ public sealed class DiskWritebackCoordinatorTests : IDisposable
         }
         public Task<WritebackPublishResult> PublishAsync(string path, ImmutableArray<byte> bytes, PersistToken token)
         {
-            // Writer is assigned BEFORE Started so a reader resumed from Started can never see a null writer.
-            Writes++;
+            Writes++; Started.TrySetResult(true);
             Writer = Override is null ? Replace(path, bytes) : Override(path, bytes, token);
-            Started.TrySetResult(true);
             return Writer;
         }
         public async Task<WritebackPublishResult> Replace(string path, ImmutableArray<byte> bytes)
@@ -331,7 +288,6 @@ public sealed class DiskWritebackCoordinatorTests : IDisposable
             { ["A"] = MediaSessionTests.Disk(0x72), ["B"] = MediaSessionTests.Disk(0x72) };
         public Dictionary<string, int> Dirty { get; } = new(StringComparer.Ordinal) { ["A"] = 0, ["B"] = 1 };
         public bool Frozen { get; private set; }
-        public bool ThrowOnComplete;
         public bool Paused { get; set; }
         public bool HddTapeSafe { get; set; } = true;
         public bool OtherDrivePending { get; set; }
@@ -394,7 +350,6 @@ public sealed class DiskWritebackCoordinatorTests : IDisposable
         public Task<WritebackOwnerResult> CompleteAsync(WritebackIntent intent, string? drive,
             IReadOnlyList<PersistenceReceipt> receipts)
         {
-            if (ThrowOnComplete) throw new IOException("Owner state unknown.");
             if (!Frozen) priorPaused = Paused;
             Frozen = true; Paused = true;
             var dirtyDrives = intent == WritebackIntent.Eject ? new[] { drive! } : new[] { "A", "B" };

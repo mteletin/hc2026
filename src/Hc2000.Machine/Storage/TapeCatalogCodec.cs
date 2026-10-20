@@ -27,12 +27,6 @@ public sealed record TapeCatalogAppendPlan(TapeCatalogIdentity? Expected, TapeCa
 public sealed class TapeCatalogCodec
 {
     private sealed class Refusal(TapeError code, string detail) : Exception(detail) { public TapeError Code => code; }
-    /// <summary>Owner ruling hc2000-tape-app-mount-volume (board 634579): the product cap for the mount lane.
-    /// The App and the CLI refuse anything over 4 MiB on this one shared validation path with the existing
-    /// contract reason; the codec's 8 MiB ceiling stays the driver's technical limit.</summary>
-    public const uint ProductVolumeCap = 4194304;
-    public static TapeFailure? ProductCapRefusal(uint imageBytes)
-        => imageBytes > ProductVolumeCap ? new(TapeError.InvalidFormat, "Invalid volume size.") : null;
     private static void Require(bool condition, string detail, TapeError code = TapeError.InvalidFormat)
     { if (!condition) throw new Refusal(code, detail); }
     private static TapeResult<T> Run<T>(Func<T> action) where T : notnull

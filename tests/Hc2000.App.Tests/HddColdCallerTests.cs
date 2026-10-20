@@ -95,7 +95,6 @@ public sealed class HddColdCallerTests
         var panel = new HddPanel();
         panel.ConfigureCold(_ => Task.CompletedTask);
         Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), field => field.Name == "ColdVolumeName");
-        Assert.Contains(panel.GetLogicalDescendants().OfType<Button>(), button => Equals(button.Content, "Prepare named volume"));
-        Assert.False(panel.GetLogicalDescendants().OfType<CheckBox>().Single(check => check.Name == "WritableNamedVolume").IsChecked == true);
+        Assert.Contains(panel.GetLogicalDescendants().OfType<Button>(), button => Equals(button.Content, "Prepare named volume (read-only)"));
     }
 }

@@ -18,7 +18,6 @@ public sealed record MachineConfiguration
     public string RomSet { get; init; } = "roms/hc2000/eprom-dump-hc2k-2";
     public int SpeedPercent { get; init; } = 100;
     public int Scale { get; init; } = 2;
-    public bool TextOverlay { get; init; }
     public string AudioPreference { get; init; } = "default";
     public ImmutableDictionary<string, string> KeyMap { get; init; } = ImmutableDictionary<string, string>.Empty;
     public string KeyboardMode { get; init; } = "Positional";
@@ -56,13 +55,12 @@ public sealed record MachineConfiguration
     public void ValidateEffective()
     {
         Validate();
-        if (Profile is not ("hc2000-v2" or "hc2000-v2-ram-banks-v1" or "hc2000-v2-paged-v1"
-                or "hc2000-v2-paged-m-v1" or "hc2000-v2-paged-m-v2" or "hc2000-v2-hdd-v1" or "hc2000-v2-paged-expansion-v1")
-            || RomSet != "roms/hc2000/eprom-dump-hc2k-2")
-            throw new ArgumentException("Select an implemented hc2000-v2 hardware profile with the bundled whole M27C512/IF1; ROM picking is unavailable.");
+        if (Profile != "hc2000-v2" || RomSet != "roms/hc2000/eprom-dump-hc2k-2")
+            throw new ArgumentException("Only faithful hc2000-v2 with the bundled whole M27C512/IF1 is implemented; ROM picking is unavailable.");
         if (Scale > 8) throw new ArgumentException("Implemented scale is 1–8.");
-        if (!Hdd.IsEmpty && Profile != "hc2000-v2-hdd-v1")
-            throw new ArgumentException("HDD slots require the raw HDD profile; extended RAM and HDD cannot be combined. Remove the draft HDD slots explicitly or select HDD before a new cold Start.");
+        if (DiskA?.Descriptor.Kind != "DskContainer" && DiskA is not null || DiskB?.Descriptor.Kind != "DskContainer" && DiskB is not null)
+            throw new ArgumentException("Raw media activation is unavailable; stored descriptors are retained, not mounted.");
+        if (!Hdd.IsEmpty) throw new ArgumentException("Stored HDD attachment is unavailable here; use explicit cold preparation.");
     }
 
     internal static void ValidatePath(string? path)
@@ -105,19 +103,13 @@ public sealed record ImageConfiguration(string Kind, int? Cylinders = null, int?
 }
 
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public sealed record HddConfiguration(string Slot, string Path, bool WriteProtected = true, string? Volume = null)
+public sealed record HddConfiguration(string Slot, string Path, bool WriteProtected = true)
 {
     public void Validate()
     {
         if (Slot is not ("C" or "D" or "E" or "F")) throw new ArgumentException("HDD slots are C–F.");
         ArgumentException.ThrowIfNullOrWhiteSpace(Path);
         MachineConfiguration.ValidatePath(Path);
-        if (Volume is not null)
-        {
-            if (string.IsNullOrWhiteSpace(Volume) || Volume.Length > 32 ||
-                Volume.Any(ch => ch is '/' or '\\' or ':' or '\0'))
-                throw new ArgumentException("A named HDD volume is a container volume name, not a path.");
-        }
     }
 }
 

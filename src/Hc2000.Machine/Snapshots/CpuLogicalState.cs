@@ -24,7 +24,7 @@ public sealed record CpuLogicalState(
 
     /// <summary>The exact HCS <c>cpu</c> section: modelId "nmos-z80", modelVersion 1,
     /// words/bytes/im/eiDelay as unsigned integers and tStates as a decimal64 string.</summary>
-    public JsonObject ToJson(bool frontier = false)
+    public JsonObject ToJson()
     {
         var o = new JsonObject();
         o["af"] = Af; o["bc"] = Bc; o["de"] = De; o["hl"] = Hl;
@@ -37,17 +37,17 @@ public sealed record CpuLogicalState(
         o["lastLdAiOrR"] = LastLdAiOrR; o["nmosLdAirInterruptBug"] = NmosLdAirInterruptBug;
         o["im"] = (uint)Im; o["eiDelay"] = EiDelay;
         o["tStates"] = TStates.ToString(CultureInfo.InvariantCulture);
-        o["modelId"] = frontier ? "nmos-z80-frontier" : "nmos-z80"; o["modelVersion"] = 1;
+        o["modelId"] = "nmos-z80"; o["modelVersion"] = 1;
         return o;
     }
 
     /// <summary>Strict parse of the <c>cpu</c> section (same field table as the base schema).</summary>
-    public static CpuLogicalState FromJson(JsonElement e, bool frontier = false)
+    public static CpuLogicalState FromJson(JsonElement e)
     {
         if (e.ValueKind != JsonValueKind.Object) Fail("cpu");
         var names = e.EnumerateObject().Select(p => p.Name).ToArray();
         if (names.Length != Fields.Length || names.Except(Fields, StringComparer.Ordinal).Any()) Fail("cpu fields");
-        if (e.GetProperty("modelId").GetString() != (frontier ? "nmos-z80-frontier" : "nmos-z80") || UInt(e, "modelVersion", 1) != 1)
+        if (e.GetProperty("modelId").GetString() != "nmos-z80" || UInt(e, "modelVersion", 1) != 1)
             throw new HcsException(HcsError.UnsupportedVersion, "cpu");
         ushort Word(string k)
         {
@@ -88,7 +88,7 @@ public sealed record CpuLogicalState(
             Byte("i"), Byte("r"), Byte("q"),
             Bool("iff1"), Bool("iff2"), Bool("halted"), Bool("intLine"),
             Bool("nmiPending"), Bool("lastLdAiOrR"), Bool("nmosLdAirInterruptBug"),
-            (int)UInt(e, "im", 2), (byte)UInt(e, "eiDelay", frontier ? 2u : 1u), TStates(e));
+            (int)UInt(e, "im", 2), (byte)UInt(e, "eiDelay", 1), TStates(e));
 
         static long TStates(JsonElement e)
         {

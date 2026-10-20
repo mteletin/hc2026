@@ -5,15 +5,9 @@ public enum HcRomLayout { V1, V2 }
 /// <summary>Spec 12: independent opt-in 65,536 by 16-KiB paged store.</summary>
 public sealed record PagedRamDevice(string PolicyId = PagedRamPolicy.PolicyId)
 {
-    /// <summary>Tape-profile restriction; does not change the standalone spec 12 policy.</summary>
-    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
-    public bool BoundCpmWindow { get; init; }
-
     internal void Validate()
     {
-        if (PolicyId is not (PagedRamPolicy.PolicyId or PagedRamPolicy.MTransferPolicyId or PagedRamPolicy.MTransferV2PolicyId)) throw new ArgumentException("Unknown paged-RAM policy.", nameof(PolicyId));
-        if (BoundCpmWindow && PolicyId != PagedRamPolicy.PolicyId)
-            throw new ArgumentException("The bound CP/M window requires plain paging.");
+        if (PolicyId is not (PagedRamPolicy.PolicyId or PagedRamPolicy.MTransferPolicyId)) throw new ArgumentException("Unknown paged-RAM policy.", nameof(PolicyId));
     }
 }
 
@@ -21,14 +15,10 @@ public static class PagedRamPolicy
 {
     public const string PolicyId = "hc2000-ram-paged-16k65536-v1";
     public const string MTransferPolicyId = "hc2000-ram-paged-m-transfer-16k65536-v1";
-    public const string MTransferV2PolicyId = "hc2000-ram-paged-m-transfer-16k65536-v2";
     public const int PageBytes = 0x4000;
     public const int PageCount = 65536;
     public const int ExtraBytes = 0x40000000;
     public const int RamBytes = 0x40010000;
-
-    /// <summary>M-transfer view under either identity (v1's 256-page M: or v2's 512-page M:); host wiring is identical.</summary>
-    public static bool IsMTransfer(string? policyId) => policyId is MTransferPolicyId or MTransferV2PolicyId;
 }
 
 /// <summary>

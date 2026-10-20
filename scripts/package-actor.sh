@@ -39,9 +39,6 @@ trap 'rm -rf -- "$stage"' EXIT
 # Stamp build output, never rewrite the merge owner's VERSION.md. No ROMs/disks/fixtures.
 dotnet publish "$project" -c Release -r linux-x64 --self-contained false -o "$stage/bin" \
   -p:Version="$version" -p:InformationalVersion="$version+$commit" -p:SourceRevisionId="$commit"
-if [[ $deploy == deploy/emu ]]; then
-  bash deploy/emu/package-linux-sdl2.sh "$stage/bin"
-fi
 cp -a "$deploy" "$stage/deploy"
 install -m 0755 "$deploy/artifact-install.sh" "$stage/install.sh"
 printf '%s\n' "$version" > "$stage/VERSION"

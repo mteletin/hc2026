@@ -13,4 +13,3 @@ tests/assets/z80/fuse/tests.in -text
 tests/assets/z80/fuse/tests.expected -text
 tests/assets/z80/zex/*.com -text
 deploy/emu/sdl2/*.dll -text
-deploy/emu/sdl2/linux-x64/*.so.0 -text

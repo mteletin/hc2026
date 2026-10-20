@@ -18,19 +18,11 @@ public sealed class ScreenFocusExtendTests(ITestOutputHelper output)
         => (matrix.Read((ushort)(0xffff ^ (1 << ((int)key / 5 + 8)))) & (1 << ((int)key % 5))) == 0;
 
     [AvaloniaFact]
-    public async Task ScreenTakesFocusOnOpenClickAndMappingClose()
+    public void ScreenTakesFocusOnOpenClickAndMappingClose()
     {
         var window = new MainWindow(new LaunchOptions(null, null, true, false)); window.Show();
         try
         {
-            // Explicit automation Start is asynchronous. Exercise the actual running frame,
-            // not a synthetic image while startup is still changing the shell geometry.
-            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            while (window.BootedIf1Length == 0 || window.LatestPresentedFrame is null)
-                await Task.Delay(5, deadline.Token);
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(window.UpdateLayout,
-                Avalonia.Threading.DispatcherPriority.Background);
-            Assert.False(window.FindControl<Border>("ConfigurationCard")!.IsVisible);
             var screen = window.FindControl<VideoSurface>("Screen")!;
             var box = window.FindControl<ComboBox>("InputModeBox")!;
             Assert.True(screen.IsFocused);
@@ -55,6 +47,7 @@ public sealed class ScreenFocusExtendTests(ITestOutputHelper output)
             window.AddHandler(InputElement.PointerPressedEvent, (_, e) =>
                 ObservePointer("PointerPressed bubble", e.Source, e.Handled),
                 RoutingStrategies.Bubble, handledEventsToo: true);
+            screen.Present(Stage1SpectrumDemo.CreateFrame());
             window.UpdateLayout();
             ObservePointer("after layout");
             box.Focus(); Assert.True(box.IsFocused);
@@ -74,7 +67,7 @@ public sealed class ScreenFocusExtendTests(ITestOutputHelper output)
             ObservePointer("after original mapping close");
             Assert.True(screen.IsFocused);
         }
-        finally { window.Close(); await window.ShutdownCompletion.WaitAsync(TimeSpan.FromSeconds(10)); }
+        finally { window.Close(); }
     }
 
     [AvaloniaFact]

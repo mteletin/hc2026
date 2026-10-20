@@ -13,7 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Hc2000.App/Hc2000.App.csproj" />
-    <ProjectReference Include="../../src/Hc2000.Asm/Hc2000.Asm.csproj" />
     <None Update="Fixtures/Tape/*.tap" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

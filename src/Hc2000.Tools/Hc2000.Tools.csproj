@@ -14,9 +14,6 @@
     <InternalsVisibleTo Include="Hc2000.ImageAdmissionProbe" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="../HostShared/HddFactoryImages.cs" Link="HostShared/HddFactoryImages.cs" />
-    <Compile Include="../HostShared/HddContainerPublication.cs" Link="HostShared/HddContainerPublication.cs" />
-    <Compile Include="../HostShared/MediaHomeCreate.cs" Link="HostShared/MediaHomeCreate.cs" />
     <Compile Include="../HostShared/NativeImageAdmission.cs" Link="HostShared/NativeImageAdmission.cs" />
     <Compile Include="../HostShared/LinuxImageAdmissionNative.cs" Link="HostShared/LinuxImageAdmissionNative.cs" />
     <Compile Include="../HostShared/ImageAdmissionRecord.cs" Link="HostShared/ImageAdmissionRecord.cs" />

@@ -18,6 +18,17 @@ public sealed record Dpb(string Name, DiskGeometry Geometry, int Spt, int Bsh, i
         new("hcfs80", new(80,2,16,256),32,4,15,0,320,127,0xc0,0,32,0,true,true),
         new("hcfs40", new(40,2,16,256),32,4,15,0,160,127,0xc0,0,32,0,true,true)
     };
+    /// <summary>Accepted logical DPB v1 for the cold C:-F: HDD volumes the HDD epic delivers
+    /// (KB hc2000-cpm22-large-drive-dpb-v1 / hc2000-hdd-transport-v1): 4 KiB blocks, DSM 2047,
+    /// DRM 1023, EXM 1, CKS 256, OFF 0 over a flat 16384x512 raw image. Geometry describes
+    /// 1024 logical tracks of 16 physical sectors (SPT 64 in 128-byte records), not DSK CHS;
+    /// Skew is not applied to a cold volume.</summary>
+    public static Dpb HddVolume() => new("hdd-volume-8m", new(1024,1,16,512), 64, 5, 31, 1, 2047, 1023, 0xff, 0, 256, 0, true, false);
+    /// <summary>Accepted logical DPB for the resident M: v2 8 KiB drive (KB hc2000-m-base-view-v1,
+    /// doc amendment-m-v2-geometry-8kib): 8 KiB blocks (Bsh 6), EXM 1 with 16-bit allocation, DSM 1023,
+    /// DRM 255, ALV 128 (AL0 0x80), CKS/OFF 0. SPT 128 records is logical, not DSK CHS; Geometry is a
+    /// flat 512x16x1024 = 8 MiB raw store (1024 blocks, DSM 1023); Skew is not applied to a cold drive.</summary>
+    public static Dpb MVolumeV2() => new("m-volume-8m-v2", new(512, 1, 16, 1024), 128, 6, 63, 1, 1023, 255, 0x80, 0x00, 0, 0, true, false);
 }
 public sealed record CpmFile(int User, string Name, string CatalogName, bool ReadOnly, bool System,
     int Records, int AllocatedBytes, int DirectoryIndex);
@@ -25,10 +36,12 @@ public sealed record CpmFile(int User, string Name, string CatalogName, bool Rea
 /// <summary>CP/M 2.2 extents. Get returns record-rounded data, never guessed trimming.</summary>
 public sealed class CpmFs
 {
-    private readonly Dsk disk;
+    private readonly Dsk? disk;
     private readonly byte[] logical;
     private readonly int dataStart;
     private readonly int maxBlock;
+    private readonly bool volume;
+    private readonly bool readOnly;
     public Dpb Parameters { get; }
     private StringComparison NameComparison => Parameters.HcHeader ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
     private StringComparer NameComparer => Parameters.HcHeader ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
@@ -38,21 +51,54 @@ public sealed class CpmFs
     {
         this.disk = disk; Parameters = parameters;
         if (disk.UniformGeometry() != parameters.Geometry) throw new InvalidDataException("Geometry does not match DPB.");
+        (logical, dataStart, maxBlock, Warnings) = Initialize(parameters, disk.LogicalBytes(parameters.Skew), checked(parameters.Off * parameters.Spt * 128));
+        ValidateDirectory();
+    }
+    private CpmFs(byte[] volume, Dpb parameters, bool readOnly = false)
+    {
+        Parameters = parameters; this.volume = true; this.readOnly = readOnly;
+        if (volume.Length != parameters.Geometry.Length)
+            throw new InvalidDataException($"Cold HDD volume must be a flat {parameters.Geometry.Length}-byte raw image; got {volume.Length}.");
+        (logical, dataStart, maxBlock, Warnings) = Initialize(parameters, volume, 0);
+        ValidateDirectory();
+    }
+    private static (byte[], int, int, IReadOnlyList<string>) Initialize(Dpb parameters, byte[] logical, int dataStart)
+    {
         if (parameters.Bsh is < 3 or > 7 || parameters.Blm != (1 << parameters.Bsh) - 1 || parameters.Exm is < 0 or > 31 ||
             (parameters.Exm & (parameters.Exm + 1)) != 0 || parameters.Dsm < 0 || parameters.Drm is < 0 or > 65535 ||
             parameters.Spt * 128 != parameters.Geometry.Sectors * parameters.Geometry.SectorSize || parameters.Off < 0)
             throw new InvalidDataException("Invalid DPB.");
         var directoryMask = (parameters.Al0 << 8) | parameters.Al1;
+        var extentBytes = 16384 * (parameters.Exm + 1); // one extent is a whole number of blocks within the allocation words
         if (parameters.DirectoryBlocks == 0 || directoryMask != ((0xffff << (16 - parameters.DirectoryBlocks)) & 0xffff) ||
             (!parameters.HcHeader && parameters.WordAllocations != (parameters.Dsm > 255)) ||
-            parameters.BlockSize * (parameters.WordAllocations ? 8 : 16) != 16384 * (parameters.Exm + 1))
+            extentBytes % parameters.BlockSize != 0 || extentBytes / parameters.BlockSize > (parameters.WordAllocations ? 8 : 16))
             throw new InvalidDataException("Unsupported DPB directory/allocation/extent layout.");
-        logical = disk.LogicalBytes(parameters.Skew); dataStart = checked(parameters.Off * parameters.Spt * 128);
-        maxBlock = Math.Min(parameters.Dsm, (logical.Length - dataStart) / parameters.BlockSize - 1);
+        var maxBlock = Math.Min(parameters.Dsm, (logical.Length - dataStart) / parameters.BlockSize - 1);
         if (maxBlock < parameters.DirectoryBlocks || (parameters.Drm + 1) * 32 > parameters.DirectoryBlocks * parameters.BlockSize)
             throw new InvalidDataException("DPB directory exceeds physical capacity.");
-        Warnings = maxBlock == parameters.Dsm ? Array.Empty<string>() : new[] { $"Published DSM {parameters.Dsm} exceeds physical maximum {maxBlock}; allocation and reads are bounded." };
-        ValidateDirectory();
+        var warnings = maxBlock == parameters.Dsm ? Array.Empty<string>() : new[] { $"Published DSM {parameters.Dsm} exceeds physical maximum {maxBlock}; allocation and reads are bounded." };
+        return (logical, dataStart, maxBlock, warnings);
+    }
+    /// <summary>Host-side read model over a cold C:-F: HDD volume: one flat 8,388,608-byte
+    /// (16384x512) raw image with the explicit DPB v1 geometry (OFF 0, no skew). Any other
+    /// length, or a directory that fails validation, is a refusal, never an empty disk.</summary>
+    public static CpmFs OpenHddVolume(ReadOnlySpan<byte> raw)
+    {
+        var parameters = Dpb.HddVolume();
+        if (raw.Length != parameters.Geometry.Length)
+            throw new InvalidDataException($"Cold HDD volume must be exactly {parameters.Geometry.Length} bytes (16384 sectors x 512); got {raw.Length}.");
+        return new CpmFs(raw.ToArray(), parameters);
+    }
+    /// <summary>Host-side read model over the resident M: v2 8 KiB drive: one flat 8,388,608-byte
+    /// (1024 blocks x 8 KiB) raw image with the accepted v2 geometry (OFF 0, no skew). Any other
+    /// length, or a directory that fails validation, is a refusal, never an empty drive.</summary>
+    public static CpmFs OpenMVolumeV2(ReadOnlySpan<byte> raw)
+    {
+        var parameters = Dpb.MVolumeV2();
+        if (raw.Length != parameters.Geometry.Length)
+            throw new InvalidDataException($"M: v2 volume must be exactly {parameters.Geometry.Length} bytes (1024 blocks x 8 KiB); got {raw.Length}.");
+        return new CpmFs(raw.ToArray(), parameters, readOnly: true);
     }
     public static CpmFs Open(Dsk disk, string format = "auto")
     {
@@ -68,6 +114,28 @@ public sealed class CpmFs
     }
     public static CpmFs Format(Dpb parameters, DiskFormat format = DiskFormat.Extended)
         => new(Dsk.Create(parameters.Geometry, format), parameters);
+    /// <summary>Shared blank cold-volume writer (KB hc2000-media-home-scan-admission-v1 sec 4): fills exactly
+    /// 8,388,608 bytes with 0xe5 and returns the flat raw image CpmFs.OpenHddVolume accepts through the
+    /// volume constructor (data start 0, no skew). Not the zero fill of hc hdd create; the Dpb.HddVolume()
+    /// geometry is not a Dsk geometry, so Format(Dpb.HddVolume()) is structurally never on this path.</summary>
+    public static byte[] FormatHddVolume()
+    {
+        var raw = new byte[Dpb.HddVolume().Geometry.Length];
+        Array.Fill(raw, (byte)0xe5);
+        OpenHddVolume(raw); // the volume constructor validates this exact image
+        return raw;
+    }
+    /// <summary>Container bytes this filesystem holds: the floppy image or the flat cold-volume raw.</summary>
+    public byte[] ImageBytes() => volume ? logical.ToArray() : disk!.Save();
+    /// <summary>Export the flat 8,388,608-byte cold volume bytes as a copy that OpenHddVolume
+    /// accepts. Volume constructor only (data start 0, no skew); floppy images save through
+    /// their Dsk container. The §4 shared formatter sibling (no-skew 0xe5 blank) belongs to
+    /// hc2000-hdd-volume-format-cli and is not this method.</summary>
+    public byte[] ExportVolumeBytes()
+    {
+        if (!volume) throw new InvalidOperationException("Volume export is only valid on a cold HDD volume.");
+        return logical.ToArray();
+    }
 
     private IEnumerable<int> DirectoryOffsets() => Enumerable.Range(0, Parameters.Drm + 1).Select(i => dataStart + i * 32);
     private bool Live(int offset) => logical[offset] != 0xe5;
@@ -163,6 +231,7 @@ public sealed class CpmFs
     }
     public void Put(string name, ReadOnlySpan<byte> data, int user = 0)
     {
+        if (readOnly) throw new InvalidDataException("M: v2 host view is read-only.");
         if (user is < 0 or > 31) throw new InvalidDataException("User must be 0..31.");
         var encodedName = EncodeName(name);
         var field = Encoding.ASCII.GetString(encodedName);
@@ -179,7 +248,8 @@ public sealed class CpmFs
         var used = DirectoryOffsets().Where(o => Live(o) && !old.Contains(o)).SelectMany(Blocks).ToHashSet();
         var blocksNeeded = checked(data.Length + Parameters.BlockSize - 1) / Parameters.BlockSize;
         var freeBlocks = Enumerable.Range(0, maxBlock + 1).Where(b => !Reserved(b) && !used.Contains(b)).Take(blocksNeeded).ToArray();
-        if (freeEntries.Length != entriesNeeded || freeBlocks.Length != blocksNeeded) throw new InvalidDataException("Disk or directory is full.");
+        if (freeEntries.Length != entriesNeeded) throw new InvalidDataException("Directory is full.");
+        if (freeBlocks.Length != blocksNeeded) throw new InvalidDataException("Disk is full.");
         var next = logical.ToArray();
         foreach (var offset in old) next[offset] = 0xe5;
         var copied = 0; var blockIndex = 0;
@@ -200,13 +270,14 @@ public sealed class CpmFs
             }
             records -= recordCount;
         }
-        next.CopyTo(logical, 0); disk.WriteLogicalBytes(logical, Parameters.Skew);
+        next.CopyTo(logical, 0); if (volume) return; disk!.WriteLogicalBytes(logical, Parameters.Skew);
     }
     public void Delete(string name, int user = 0)
     {
+        if (readOnly) throw new InvalidDataException("M: v2 host view is read-only.");
         var offsets = Offsets(name, user);
         if (offsets.Any(o => (logical[o + 9] & 128) != 0)) throw new InvalidDataException("File is read-only.");
         foreach (var offset in offsets) logical[offset] = 0xe5;
-        disk.WriteLogicalBytes(logical, Parameters.Skew);
+        if (volume) return; disk!.WriteLogicalBytes(logical, Parameters.Skew);
     }
 }

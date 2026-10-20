@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.VisualTree;
 using Hc2000.App.Runtime;
+using Hc2000.Machine.Video;
 using Xunit;
 
 namespace Hc2000.App.Tests;
@@ -39,8 +40,10 @@ public sealed class AspectRatioViewportTests
         var viewport = new AspectRatioViewport { Surface = surface, RequestedScale = 3, FitToWindow = false };
         Layout(viewport, 1408, 1184);
         Assert.Equal(new Rect(176, 148, 1056, 888), viewport.Child!.Bounds);
+        // A slot smaller than the 1x frame keeps the full frame at 1x (letterboxed),
+        // never a fractional shrink below 1x.
         Layout(viewport, 176, 148);
-        Assert.Equal(new Size(176, 148), viewport.Child.Bounds.Size);
+        Assert.Equal(new Size(352, 296), viewport.Child.Bounds.Size);
         Assert.Equal(3, viewport.RequestedScale);
         viewport.FitToWindow = true;
         Layout(viewport, 1408, 1184);
@@ -48,6 +51,51 @@ public sealed class AspectRatioViewportTests
         viewport.FitToWindow = false;
         Layout(viewport, 1408, 1184);
         Assert.Equal(new Size(1056, 888), viewport.Child.Bounds.Size);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(600, 400, 352, 296)]   // fit 1.35 floors to 1: letterbox, not a fractional zoom
+    [InlineData(704, 592, 704, 592)]   // exact 2x slot keeps the requested zoom
+    [InlineData(1000, 800, 704, 592)]  // larger than 704x592 keeps the requested zoom
+    public void FiniteSlotCapsIntegerScaleAtRequestedZoom(double slotWidth, double slotHeight, double expectedWidth, double expectedHeight)
+    {
+        using var surface = new VideoSurface();
+        var viewport = new AspectRatioViewport { Surface = surface, RequestedScale = 2, FitToWindow = false };
+        Layout(viewport, slotWidth, slotHeight);
+        var box = Assert.IsType<Viewbox>(viewport.Child);
+        Assert.Equal(new Size(expectedWidth, expectedHeight), box.Bounds.Size);
+        Assert.True(box.Bounds.Width <= slotWidth + .001 && box.Bounds.Height <= slotHeight + .001,
+            $"slot {slotWidth}x{slotHeight} got {box.Bounds.Size}");
+        Assert.Equal(352.0 / 296, box.Bounds.Width / box.Bounds.Height, 3);
+        Assert.Equal(2, viewport.RequestedScale); // the ceiling is never rewritten by fitting
+    }
+
+    [AvaloniaFact]
+    public void RequestedScaleIsACeilingNotAFloorOnAFiniteSlot()
+    {
+        using var surface = new VideoSurface();
+        var viewport = new AspectRatioViewport { Surface = surface, RequestedScale = 4, FitToWindow = false };
+        Layout(viewport, 1000, 800); // fit 2.70 floors to 2; min(4, 2) stays 2
+        Assert.Equal(new Size(704, 592), Assert.IsType<Viewbox>(viewport.Child).Bounds.Size);
+    }
+
+    [AvaloniaFact]
+    public void OverlayOnSurfaceMeasuresFromTheMachineLogicalFrame()
+    {
+        // X1 overlay-ON: the display bitmap is 2W x 2H at 96 dpi, but the viewport still
+        // sizes from the machine frame (352x296), so compact 2x is 704x592, not 1408x1184
+        // (the clipped-slice blank screen of hc2000-app-blank-screen-after-cold-start-150).
+        const int w = 352, h = 296;
+        using var surface = new VideoSurface();
+        surface.Present(new TextOverlayVideoFrame(1, w, h, new uint[w * h],
+            new VideoFrame(1, w * 2, h * 2, new uint[w * 2 * h * 2])));
+        var viewport = new AspectRatioViewport { Surface = surface, RequestedScale = 2, FitToWindow = false };
+        Layout(viewport, 1408, 1184);
+        Assert.Equal(new Size(704, 592), viewport.Child!.Bounds.Size);
+        // Fit mode fills the slot at the frame aspect either way.
+        viewport.FitToWindow = true;
+        Layout(viewport, 1408, 1184);
+        Assert.Equal(new Size(1408, 1184), viewport.Child.Bounds.Size);
     }
 
     [AvaloniaFact]

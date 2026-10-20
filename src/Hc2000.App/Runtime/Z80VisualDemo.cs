@@ -4,6 +4,8 @@ using Hc2000.Machine.Io;
 using Hc2000.Machine.Memory;
 using Hc2000.Machine.Timing;
 using Hc2000.Machine.Video;
+using Hc2000.App.Debugging;
+using Hc2000.Machine.Snapshots;
 using CpuZ80 = Hc2000.Z80.Z80;
 using LiveMachine = Hc2000.Machine.Machine;
 
@@ -55,7 +57,23 @@ public static class Z80VisualDemo
         return new LiveMachine(scheduler, clock, adapter, ula, () => actualCpu.Step(), () => actualCpu.TStates);
     }
 
-    public static EmulationWorker CreateWorker(bool paint = true) => new(
-        () => CreateMachine(out _, out _, paint), _ => { });
+    public static EmulationWorker CreateWorker(bool paint = true)
+    {
+        CpuZ80? cpu = null; HcMemory? memory = null;
+        return new(() =>
+        {
+            // The factory re-runs on reset; the provider always snapshots the current pair.
+            var machine = CreateMachine(out var c, out var m, paint);
+            cpu = c; memory = m;
+            return machine;
+        }, _ => { },
+        debugSnapshot: _ =>
+        {
+            if (cpu is not { } c || memory is not { } m) return null;
+            var state = new Z80SnapshotSeam(c).Capture();
+            return new DebuggerSession("HC2000 App — Z80 visual demo (boundary copy)")
+                .Boundary(DebuggerSession.RegisterView(state), m, null, state.TStates);
+        });
+    }
 
 }

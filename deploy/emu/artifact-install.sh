@@ -14,6 +14,9 @@ done
 [[ -z $dest || ($dest == /tmp/* && $dest != *..*) ]] || { echo 'dest must be a directory under /tmp' >&2; exit 2; }
 [[ -f VERSION && -f source-commit && -x bin/Hc2000.App && -f bin/Hc2000.App.dll \
   && -f bin/Hc2000.App.runtimeconfig.json && -f bin/Hc2000.Machine.dll ]] || { echo 'incomplete HC2000 emu artifact' >&2; exit 1; }
+native=bin/runtimes/linux-x64/native
+[[ -f $native/libSDL2-2.0.so.0 && -f $native/SDL2-MANIFEST.sha256 ]] || { echo 'missing pinned SDL2 payload' >&2; exit 1; }
+(cd "$native" && sha256sum --strict -c SDL2-MANIFEST.sha256) || { echo 'corrupt SDL2 payload' >&2; exit 1; }
 version=$(cat VERSION)
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'invalid artifact version' >&2; exit 1; }
 [[ $(cat source-commit) =~ ^[0-9a-f]{40}$ ]] || { echo 'invalid source commit' >&2; exit 1; }

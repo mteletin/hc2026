@@ -104,6 +104,10 @@ public sealed partial class DiskLibraryCatalog
     /// <summary>Replace the host admission snapshot for subsequent register/verify calls (ownership changes after load).</summary>
     public void SetAdmission(DiskLibraryHostAdmission? admission) => _admission = admission;
 
+    /// <summary>True when no host admission snapshot is present (load-time admission was null and no SetAdmission since).
+    /// Register and working-copy refuse ownership-unknown without it; the UI reports the refusal instead of guessing.</summary>
+    public bool AdmissionMissing => _admission is null;
+
     /// <summary>Register one host .dsk. listContents observes the CP/M directory read-only; otherwise contents stay unknown/not-scanned. Refusals are closed and honest; the in-memory document changes only on Accepted.</summary>
     public async Task<DiskLibraryRegisterResult> RegisterAsync(string path, string provenanceSource, string? provenanceNote = null, bool listContents = false)
     {

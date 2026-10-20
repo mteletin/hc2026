@@ -14,7 +14,10 @@ public sealed record LaunchOptionsResult(bool Ok, LaunchOptions? Options, string
 /// There is no <c>--rom-set</c> and no <c>--asset-root</c>: one bundled whole-chip ROM, no ROM selection
 /// (owner rulings 626711/626718, arch-2 contract 626727; PO re-scope 626755). If passed, both are reported as
 /// unknown flags and appear nowhere as valid options. Existence and readability of a disk path are runtime
-/// facts reported on the RuntimeStatus line by the consumer; this record never checks them and never throws.</summary>
+/// facts reported on the RuntimeStatus line by the consumer; this record never checks them and never
+/// throws. <c>--sound-dump &lt;path&gt;</c> (the sound-dump route, hc2000-app-sound-dump-route) writes the
+/// machine's audio stream to a WAV while the machine runs; its value is kept raw here, and the fence
+/// (user home only) is owned by <see cref="Audio.SoundDumpGate"/>.</summary>
 public sealed record LaunchOptions(
     string? DiskA,
     string? DiskB,
@@ -22,7 +25,8 @@ public sealed record LaunchOptions(
     bool Help,
     bool HddEnabled = false,
     bool? Writeback = null,
-    string? Session = null)
+    string? Session = null,
+    string? SoundDump = null)
 {
     /// <summary>Pure argv -> result (deterministic: equal input yields an equal result, no I/O, no state).
     /// Failures — unknown option, missing/duplicate value, malformed <c>--disk</c>, stray positional — come
@@ -34,7 +38,7 @@ public sealed record LaunchOptions(
         if (args.Any(a => string.Equals(a, "--help", StringComparison.Ordinal)))
             return new LaunchOptionsResult(true, new(null, null, false, true), null);
 
-        string? diskA = null, diskB = null, session = null;
+        string? diskA = null, diskB = null, session = null, soundDump = null;
         var start = false;
         var hdd = false;
         bool? writeback = null;
@@ -63,6 +67,13 @@ public sealed record LaunchOptions(
                         return LaunchOptionsResult.Fail("Missing value for --session.");
                     if (session is not null) return LaunchOptionsResult.Fail("Duplicate --session.");
                     session = args[++i];
+                    break;
+
+                case "--sound-dump":
+                    if (i + 1 >= args.Count || args[i + 1] is null || args[i + 1].StartsWith("--", StringComparison.Ordinal))
+                        return LaunchOptionsResult.Fail("Missing value for --sound-dump.");
+                    if (soundDump is not null) return LaunchOptionsResult.Fail("Duplicate --sound-dump.");
+                    soundDump = args[++i];
                     break;
 
                 case "--disk":
@@ -96,6 +107,6 @@ public sealed record LaunchOptions(
 
         if (hdd && start)
             return LaunchOptionsResult.Fail("--hdd requires cold image preparation; --start cannot bypass the NEW-machine confirmation.");
-        return new LaunchOptionsResult(true, new(diskA, diskB, start, false, hdd, writeback, session), null);
+        return new LaunchOptionsResult(true, new(diskA, diskB, start, false, hdd, writeback, session, soundDump), null);
     }
 }

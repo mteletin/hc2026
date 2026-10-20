@@ -1,0 +1,357 @@
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking how to print strings... printf
+checking for gcc... gcc
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C... yes
+checking whether gcc accepts -g... yes
+checking for gcc option to enable C11 features... none needed
+checking for a sed that does not truncate output... /usr/bin/sed
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by gcc... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... /usr/bin/nm -B
+checking the name lister (/usr/bin/nm -B) interface... BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /usr/bin/ld option to reload object files... -r
+checking for objdump... objdump
+checking how to recognize dependent libraries... pass_all
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for ar... ar
+checking for archiver @FILE support... @
+checking for strip... strip
+checking for ranlib... ranlib
+checking for gawk... no
+checking for mawk... mawk
+checking command to parse /usr/bin/nm -B output from gcc object... ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... /usr/bin/dd bs=4096 count=1
+checking for mt... mt
+checking if mt is a manifest tool... no
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... yes
+checking for unistd.h... yes
+checking for dlfcn.h... yes
+checking for objdir... .libs
+checking if gcc supports -fno-rtti -fno-exceptions... no
+checking for gcc option to produce PIC... -fPIC -DPIC
+checking if gcc PIC flag -fPIC -DPIC works... yes
+checking if gcc static flag -static works... yes
+checking if gcc supports -c -o file.o... yes
+checking if gcc supports -c -o file.o... (cached) yes
+checking whether the gcc linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking whether -lc should be explicitly linked in... no
+checking dynamic linker characteristics... GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... yes
+checking whether to build static libraries... no
+checking for windres... no
+checking for gawk... (cached) mawk
+checking for gcc... (cached) gcc
+checking whether the compiler supports GNU C... (cached) yes
+checking whether gcc accepts -g... (cached) yes
+checking for gcc option to enable C11 features... (cached) none needed
+checking for g++... g++
+checking whether the compiler supports GNU C++... yes
+checking whether g++ accepts -g... yes
+checking for g++ option to enable C++11 features... none needed
+checking how to run the C++ preprocessor... g++ -E
+checking for ld used by g++... /usr/bin/ld -m elf_x86_64
+checking if the linker (/usr/bin/ld -m elf_x86_64) is GNU ld... yes
+checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking for g++ option to produce PIC... -fPIC -DPIC
+checking if g++ PIC flag -fPIC -DPIC works... yes
+checking if g++ static flag -static works... yes
+checking if g++ supports -c -o file.o... yes
+checking if g++ supports -c -o file.o... (cached) yes
+checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking dynamic linker characteristics... (cached) GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking for egrep... (cached) /usr/bin/grep -E
+checking for fgrep... (cached) /usr/bin/grep -F
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether make sets $(MAKE)... yes
+checking for pkg-config... /usr/bin/pkg-config
+checking pkg-config is at least version 0.9.0... yes
+checking for gsort... no
+checking for sort... sort
+checking for special C compiler options needed for large files... no
+checking for _FILE_OFFSET_BITS value needed for large files... no
+checking for an ANSI C-conforming const... yes
+checking for inline... inline
+checking for working volatile... yes
+checking for GCC -MMD -MT option... yes
+checking for linker option --no-undefined... yes
+checking for linker option --dynamicbase... no
+checking for linker option --nxcompat... no
+checking for linker option --high-entropy-va... no
+checking for sys/types.h... (cached) yes
+checking for stdio.h... (cached) yes
+checking for stdlib.h... (cached) yes
+checking for stddef.h... yes
+checking for stdarg.h... yes
+checking for malloc.h... yes
+checking for memory.h... yes
+checking for string.h... (cached) yes
+checking for strings.h... (cached) yes
+checking for wchar.h... yes
+checking for inttypes.h... (cached) yes
+checking for stdint.h... (cached) yes
+checking for limits.h... yes
+checking for ctype.h... yes
+checking for math.h... yes
+checking for float.h... yes
+checking for iconv.h... yes
+checking for signal.h... yes
+checking for size_t... yes
+checking how to run the C preprocessor... gcc -E
+checking for M_PI in math.h... yes
+checking for working alloca.h... yes
+checking for alloca... yes
+checking for mprotect... yes
+checking for malloc... yes
+checking for calloc... yes
+checking for realloc... yes
+checking for free... yes
+checking for getenv... yes
+checking for setenv... yes
+checking for putenv... yes
+checking for unsetenv... yes
+checking for bsearch... yes
+checking for qsort... yes
+checking for abs... yes
+checking for bcopy... yes
+checking for memset... yes
+checking for memcmp... yes
+checking for memcpy... yes
+checking for memmove... yes
+checking for wcslen... yes
+checking for wcslcpy... yes
+checking for wcslcat... yes
+checking for _wcsdup... no
+checking for wcsdup... yes
+checking for wcsstr... yes
+checking for wcscmp... yes
+checking for wcsncmp... yes
+checking for wcscasecmp... yes
+checking for _wcsicmp... no
+checking for wcsncasecmp... yes
+checking for _wcsnicmp... no
+checking for strlen... yes
+checking for strlcpy... yes
+checking for strlcat... yes
+checking for _strrev... no
+checking for _strupr... no
+checking for _strlwr... no
+checking for index... yes
+checking for rindex... yes
+checking for strchr... yes
+checking for strrchr... yes
+checking for strstr... yes
+checking for strtok_r... yes
+checking for itoa... no
+checking for _ltoa... no
+checking for _uitoa... no
+checking for _ultoa... no
+checking for strtod... yes
+checking for strtol... yes
+checking for strtoul... yes
+checking for _i64toa... no
+checking for _ui64toa... no
+checking for strtoll... yes
+checking for strtoull... yes
+checking for atoi... yes
+checking for atof... yes
+checking for strcmp... yes
+checking for strncmp... yes
+checking for _stricmp... no
+checking for strcasecmp... yes
+checking for _strnicmp... no
+checking for strncasecmp... yes
+checking for strcasestr... yes
+checking for vsscanf... yes
+checking for vsnprintf... yes
+checking for fopen64... yes
+checking for fseeko... yes
+checking for fseeko64... yes
+checking for sigaction... yes
+checking for sigtimedwait... yes
+checking for setjmp... yes
+checking for nanosleep... yes
+checking for sysconf... yes
+checking for sysctlbyname... no
+checking for getauxval... yes
+checking for elf_aux_info... no
+checking for poll... yes
+checking for memfd_create... yes
+checking for posix_fallocate... yes
+checking for _Exit... yes
+checking for pow in -lm... yes
+checking for acos... yes
+checking for acosf... yes
+checking for asin... yes
+checking for asinf... yes
+checking for atan... yes
+checking for atanf... yes
+checking for atan2... yes
+checking for atan2f... yes
+checking for ceil... yes
+checking for ceilf... yes
+checking for copysign... yes
+checking for copysignf... yes
+checking for cos... yes
+checking for cosf... yes
+checking for exp... yes
+checking for expf... yes
+checking for fabs... yes
+checking for fabsf... yes
+checking for floor... yes
+checking for floorf... yes
+checking for trunc... yes
+checking for truncf... yes
+checking for fmod... yes
+checking for fmodf... yes
+checking for log... yes
+checking for logf... yes
+checking for log10... yes
+checking for log10f... yes
+checking for lround... yes
+checking for lroundf... yes
+checking for pow... yes
+checking for powf... yes
+checking for round... yes
+checking for roundf... yes
+checking for scalbn... yes
+checking for scalbnf... yes
+checking for sin... yes
+checking for sinf... yes
+checking for sqrt... yes
+checking for sqrtf... yes
+checking for tan... yes
+checking for tanf... yes
+checking for iconv in libc... yes
+checking for iconv in libiconv... no
+-- Using iconv from libc
+checking for struct sigaction.sa_sigaction... yes
+checking for libunwind.h... no
+checking for GCC builtin atomic operations... yes
+checking for GCC -mmmx option... yes
+checking for GCC -msse option... yes
+checking for GCC -msse2 option... yes
+checking for GCC -msse3 option... yes
+checking for immintrin.h... yes
+checking for Altivec with GCC altivec.h and -maltivec option... no
+checking for Altivec with GCC -maltivec option... no
+checking for Altivec with GCC altivec.h and -faltivec option... no
+checking for Altivec with GCC -faltivec option... no
+checking for GCC -mlsx option... no
+checking for lsxintrin.h... no
+checking for GCC -Wall option... yes
+checking for necessary GCC -Wno-multichar option... no
+checking for GCC -Wunused-local-typedefs option... yes
+checking for GCC -fno-strict-aliasing option... yes
+checking for GCC -fvisibility=hidden option... yes
+checking for GCC -Wdeclaration-after-statement option... yes
+checking for dlfcn.h... (cached) yes
+checking for dlopen in -lc... yes
+checking for dlopen... yes
+checking for O_CLOEXEC... yes
+checking for OSS audio support... yes
+checking for ALSA CFLAGS... 
+checking for ALSA LDFLAGS...  -lasound -lm -ldl -lpthread
+checking for libasound headers version >= 1.0.11... found.
+checking for snd_ctl_open in -lasound... yes
+-- dynamic libasound -> libasound.so.2
+checking for libpipewire-0.3 >= 0.3.20... no
+checking for libpulse >= 0.9.15... no
+checking for jack >= 0.125... no
+checking for artsc-config... no
+checking for esound >= 0.2.8... no
+checking for esd-config... no
+checking for ESD - version >= 0.2.8... no
+checking for audio/audiolib.h... no
+checking for AuOpenServer in -laudio... no
+checking for NAS audio support... no
+checking for sndio... no
+checking for samplerate.h... no
+checking for bcm_host... no
+checking for brcmegl... no
+checking for Raspberry Pi 0-3... no
+checking for EGL support... yes
+checking for libdrm >= 1.4.82... no
+checking for gbm >= 11.1.0... no
+checking for GLX support... no
+checking for OpenGL headers... no
+checking for OpenGL ES v1 headers... no
+checking for OpenGL ES v2 headers... yes
+checking for linux/input.h... yes
+checking for Linux 2.4 unified input interface... yes
+checking for libudev.h... no
+checking for dbus-1... no
+checking for dbus/dbus.h... no
+checking for sys/inotify.h... yes
+checking for inotify_init... yes
+checking for inotify_init1... yes
+checking for ibus-1.0... no
+checking for ibus-1.0/ibus.h... no
+checking for fcitx support... configure: WARNING: DBus support is required for fcitx.
+no
+checking for Linux kd.h... yes
+checking for hidapi joystick support... yes
+checking for pthreads... yes
+checking for recursive mutexes... yes
+checking for pthread semaphores... yes
+checking for sem_timedwait... yes
+checking for pthread_np.h... no
+checking for pthread_setname_np... yes
+checking for pthread_set_name_np... no
+checking for clock_gettime in -lc... yes
+checking for linux/version.h... yes
+checking for Vivante VDK API... no
+checking for Vivante FB API... no
+checking whether to install sdl2-config... yes
+checking for linker option --enable-new-dtags... yes
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating sdl2-config
+config.status: creating sdl2-config.cmake
+config.status: creating sdl2-config-version.cmake
+config.status: creating SDL2.spec
+config.status: creating sdl2.pc
+config.status: creating include/SDL_config.h
+config.status: executing libtool commands
+config.status: executing sdl2_config commands
+config.status: executing summary commands
+SDL2 Configure Summary:
+Building Shared Libraries
+Enabled modules : atomic audio video render events hidapi power filesystem threads timers file misc locale loadso cpuinfo assembly
+Assembly Math   : mmx sse sse2 sse3
+Audio drivers   : disk dummy oss alsa(dynamic)
+Video drivers   : dummy offscreen opengl_es2 vulkan
+Input drivers   : linuxev linuxkd
+Enable virtual joystick APIs : NO
+Using libsamplerate : NO
+Using libudev       : NO
+Using dbus          : NO
+Using ime           : YES
+Using ibus          : NO
+Using fcitx         : NO

@@ -24,6 +24,7 @@ internal sealed partial class TapeDeckCore : ITapeDeck
     private TapeTime position, anchorPosition;
     private long anchorTick, token;
     private ulong identity;
+    internal ulong MediaEpoch { get; private set; }
     private uint? consumedStop;
     private TapeTime? nextPosition, idealDue;
     private int? pendingKind;
@@ -113,8 +114,8 @@ internal sealed partial class TapeDeckCore : ITapeDeck
             if (persistenceCheck is null && sources.Values.Any(s => s.Bytes.Length > limits.InputBytes))
                 return Fail(TapeError.BoundsExceeded, "Large original requires composed snapshot persistability admission.");
         }
-        ulong newIdentity = checked(identity + 1);
-        Cancel(); cassette = candidate; indexes = [a.Value, b.Value]; identity = newIdentity;
+        ulong newIdentity = checked(identity + 1), newEpoch = checked(MediaEpoch + 1);
+        Cancel(); cassette = candidate; indexes = [a.Value, b.Value]; identity = newIdentity; MediaEpoch = newEpoch;
         active = TapeSide.A; position = default; Anchor(); hold = TapeHoldReason.None; consumedStop = null;
         sides = [new(true, false, 0, 0, 0), new(true, false, 0, 0, 0)]; ula.TapeIn = false;
         return Ok();
@@ -183,7 +184,8 @@ internal sealed partial class TapeDeckCore : ITapeDeck
             Anchor(); ula.TapeIn = false; return Ok();
         }
         if (Dirty && !discardDirty) return Fail(TapeError.DirtyConfirmationRequired, "Confirm discarding cassette edits.");
-        Cancel(); cassette = null; indexes = []; active = TapeSide.A; position = default;
+        var epoch = cassette is null ? MediaEpoch : checked(MediaEpoch + 1);
+        Cancel(); cassette = null; indexes = []; active = TapeSide.A; position = default; MediaEpoch = epoch;
         sides = [new(true, false, 0, 0, 0), new(true, false, 0, 0, 0)]; hold = TapeHoldReason.None; consumedStop = null;
         Anchor(); ula.TapeIn = false; return Ok();
     }

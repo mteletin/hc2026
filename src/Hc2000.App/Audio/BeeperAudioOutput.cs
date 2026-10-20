@@ -34,14 +34,39 @@ public sealed class BeeperAudioOutput : IDisposable
         if (sink is not null) TrySink(() => sink.Pause(true));
     }
 
-    /// <summary>Construct on the worker. Disabled mode does not load any native library.</summary>
-    public static BeeperAudioOutput Open(long masterHz, bool enabled, Action<string>? diagnostic = null)
+    /// <summary>Construct on the worker. Disabled mode does not load any native library. When
+    /// <paramref name="capturePath"/> names the sound-dump route (PO ruling board 634859), the live
+    /// sink is wrapped so the machine's audio stream is written to the WAV while it runs; with no
+    /// live sink the file is still written - silent, and saying why it is. A capture failure keeps
+    /// the machine's sound; only the dump is reported.</summary>
+    public static BeeperAudioOutput Open(long masterHz, bool enabled, Action<string>? diagnostic = null,
+        string? capturePath = null)
     {
         IQueuedAudioSink? sink = null;
+        string? unavailable = null;
         if (enabled)
         {
             try { sink = SdlQueuedAudioSink.Open(); }
-            catch (Exception ex) when (IsSinkError(ex)) { diagnostic?.Invoke($"Audio unavailable: {ex.Message}"); }
+            catch (Exception ex) when (IsSinkError(ex))
+            {
+                unavailable = ex.Message;
+                diagnostic?.Invoke($"Audio unavailable: {unavailable}");
+            }
+        }
+        if (capturePath is not null)
+        {
+            try
+            {
+                if (sink is not null)
+                    sink = new CapturingAudioSink(sink, capturePath);
+                else
+                    SoundDumpSilentFile.Write(capturePath,
+                        enabled ? "Audio unavailable: " + unavailable : "Audio is disabled.");
+            }
+            catch (Exception ex)
+            {
+                diagnostic?.Invoke($"Sound dump unavailable: {ex.Message}");
+            }
         }
         return new(masterHz, sink, diagnostic: diagnostic, physicalChannels: true);
     }

@@ -153,7 +153,7 @@ public sealed class TimingTests
             Assert.Throws<InvalidOperationException>(() => scheduler.AdvanceTo(scheduler.Now));
         });
         Assert.Throws<ArgumentOutOfRangeException>(() => scheduler.Schedule(new(0, EventPhase.Video, 0, 0)));
-        Assert.Throws<ArgumentException>(() => scheduler.Schedule(new(1, (EventPhase)5, 0, 0)));
+        Assert.Throws<ArgumentException>(() => scheduler.Schedule(new(1, (EventPhase)int.MaxValue, 0, 0)));
         scheduler.Schedule(new(1, EventPhase.Video, 0, 0));
         scheduler.AdvanceTo(10);
         Assert.Throws<ArgumentOutOfRangeException>(() => scheduler.AdvanceTo(9));

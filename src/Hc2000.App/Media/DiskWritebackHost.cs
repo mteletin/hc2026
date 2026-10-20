@@ -14,7 +14,9 @@ internal sealed class DiskWritebackHost
         DiskSlot Slot, string SessionId, long RequestId, long Generation,
         string? CanonicalSourcePath, string MountedHash,
         LinuxFileFacts.Fact PathFactsAtReceipt,
-        MountBindingState BindingState, bool Invalidated, string? Error);
+        MountBindingState BindingState, bool Invalidated, string? Error,
+        DiskReadReservation.HostFileIdentity? ReadIdentity = null,
+        MediaImageDescriptor? Descriptor = null);
 
     private readonly MediaBridge bridge;
     private readonly DiskWritebackCoordinator coordinator;
@@ -36,6 +38,11 @@ internal sealed class DiskWritebackHost
     public bool Frozen => Ledger.Frozen;
     public bool ReportsTarget => paths.Count != 0 || lastError is not null;
 
+    /// <summary>Binding-preserving reset guard: true when the same-media reset may proceed with the
+    /// writeback bindings retained. A false refusal means no reset and no dropped binding; invalidation
+    /// remains reserved for confirmed changed or retired media.</summary>
+    public bool ResetGuardClear() => coordinator.ResetGuardClear();
+
     /// <summary>Latest confirmed mount receipts per A/B slot as an immutable snapshot; a refused, stale or
     /// absent observation is never recorded and never erases the predecessor.</summary>
     internal ImmutableArray<MountObservation> CaptureMountObservations()
@@ -46,7 +53,8 @@ internal sealed class DiskWritebackHost
         return snapshot.ToImmutableArray();
     }
 
-    public async Task NoteMounted(DiskSlot slot, string path, ImmutableArray<byte> bytes, MediaReply reply)
+    public async Task NoteMounted(DiskSlot slot, string path, ImmutableArray<byte> bytes, MediaReply reply, DiskReadReservation.HostFileIdentity? readIdentity = null,
+        MediaImageDescriptor? descriptor = null)
     {
         var drive = slot == DiskSlot.A ? "A" : "B";
         var view = slot == DiskSlot.A ? reply.A : reply.B;
@@ -65,9 +73,21 @@ internal sealed class DiskWritebackHost
             canonical is null
                 ? new LinuxFileFacts.Fact(false, false, false, false, null)
                 : LinuxFileFacts.Inspect(canonical),
-            Enabled ? MountBindingState.Pending : MountBindingState.Off, false, null);
+            Enabled ? MountBindingState.Pending : MountBindingState.Off, false, null,
+            readIdentity, descriptor);
         observations[slot] = observation;
         if (!Enabled) return;
+        // F9: the current writeback protocol validates containers and cannot validate a raw sector
+        // image: refuse the writable binding explicitly. The confirmed mount is retained as
+        // UnboundError; nothing is bound and no predecessor state is cleared.
+        if (descriptor is { Kind: MediaImageKind.RawFloppy })
+        {
+            var rawRefusal = $"{drive}: raw sector-image writeback is not supported by the current protocol; the mount is retained without a writable binding.";
+            lastError = rawRefusal;
+            if (IsCurrent(slot, observation) && !observations[slot].Invalidated)
+                observations[slot] = observations[slot] with { BindingState = MountBindingState.UnboundError, Error = rawRefusal };
+            return;
+        }
         // Clearing runs only after a confirmed successful mount: a refused insert must not erase the
         // predecessor's writeback state or observation (no clearing-before-validation).
         generations.Remove(drive);

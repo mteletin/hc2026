@@ -1,3 +1,4 @@
+using Hc2000.Machine.Expansion;
 using Hc2000.Machine.Floppy;
 using Hc2000.Machine.Input;
 using Hc2000.Machine.Memory;
@@ -23,34 +24,54 @@ public sealed class Machine
     private readonly Ula ula;
     private readonly Action step;
     private readonly Func<long> cpuTStates;
+    private readonly ExpansionFrontierDriver? expansion;
     private readonly List<BeeperEdge> edges = [];
     private long startTick;
     private readonly Queue<VideoFrame> pending = new();
     public Machine(DeviceScheduler scheduler, FrameClock clock, CpuDeviceTimeAdapter adapter,
-        Ula ula, Action step, Func<long> cpuTStates)
+        Ula ula, Action step, Func<long> cpuTStates, ExpansionFrontierDriver? expansion = null)
     {
         this.scheduler = scheduler; runner = new(clock, adapter);
-        this.ula = ula; this.step = step; this.cpuTStates = cpuTStates;
+        this.ula = ula; this.step = step; this.cpuTStates = cpuTStates; this.expansion = expansion;
         startTick = scheduler.Now;
         ula.FrameReady += pending.Enqueue;
         ula.BeeperChanged += edges.Add;
     }
     private TapeTransport? tape;
     private MachineSnapshot? snapshotState;
+    private HcsWavPolicy snapshotPolicy = HcsWavPolicy.Default;
     public TapeTransport? Tape { get { VerifyOwner(); return tape; } }
+    public TapeVolumeSession? TapeVolume { get; private set; }
+    public TapeVolumeSession EnableTapeVolume(MachineProfile profile, HcMemory memory)
+    {
+        VerifyOwner();
+        if (tape is null || TapeVolume is not null || snapshotState is not null)
+            throw new InvalidOperationException("Compose one volume after tape and before snapshots.");
+        return TapeVolume = new(profile, tape, memory);
+    }
     /// <summary>Logical-state snapshot seam (KB hc2000 doc spec-04-machine). The composition owner attaches
     /// the live machine profile, clock, memory, CPU time mapper, CPU seam and the ULA flash device id
     /// once, after all optional components (tape, floppy) are composed. <see cref="Save"/> and
     /// <see cref="Load"/> then operate through this one attachment; no per-call configuration.</summary>
     public MachineSnapshot AttachSnapshotState(MachineProfile profile, FrameClock clock, HcMemory memory,
-        CpuTimeMapper mapper, ICpuSnapshotSeam cpu, int flashDeviceId, FloppyController? floppy = null)
+        CpuTimeMapper mapper, ICpuSnapshotSeam cpu, int flashDeviceId, FloppyController? floppy = null,
+        HcsWavPolicy? wavPolicy = null)
     {
         VerifyOwner();
         if (snapshotState is not null) throw new InvalidOperationException("Snapshot state is already attached.");
+        snapshotPolicy = wavPolicy ?? HcsWavPolicy.Default;
         snapshotState = new(profile, scheduler, clock, mapper, memory, ula, ula.Keyboard, cpu,
-            flashDeviceId, tape, floppy);
+            flashDeviceId, tape, floppy, TapeVolume, expansion);
         if (tape is not null) tape.PersistenceCheck = snapshotState.CheckCassette;
         return snapshotState;
+    }
+
+    /// <summary>Owner-only read-only admission composed into the existing session Save preflight.</summary>
+    public void ValidateSessionSnapshotSave()
+    {
+        VerifyOwner();
+        if (snapshotState is null) throw new InvalidOperationException("Snapshot state is not attached.");
+        snapshotState.ValidateSessionSnapshotSave(snapshotPolicy);
     }
 
     /// <summary>Captures the logical machine state as a versioned .hcs document at a drained
@@ -59,7 +80,7 @@ public sealed class Machine
     {
         VerifyOwner();
         if (snapshotState is null) throw new InvalidOperationException("Snapshot state is not attached.");
-        return snapshotState.Save(HcsWavPolicy.Default);
+        return snapshotState.Save(snapshotPolicy);
     }
 
     /// <summary>Adopts a versioned .hcs document onto a fresh machine: validates the container and
@@ -69,7 +90,7 @@ public sealed class Machine
     {
         VerifyOwner();
         if (snapshotState is null) throw new InvalidOperationException("Snapshot state is not attached.");
-        snapshotState.Load(file, HcsWavPolicy.Default);
+        snapshotState.Load(file, snapshotPolicy);
         // Presentation/audio buffers are not logical snapshot state. Begin the next host
         // interval at the adopted epoch, never synthesize catch-up from construction tick0.
         startTick = scheduler.Now;
@@ -102,7 +123,9 @@ public sealed class Machine
     public bool TryRunFrame(Func<bool> instructionBoundary, out MachineFrameResult? result)
     {
         VerifyOwner(); result = null;
-        if (pending.Count == 0 && !runner.TryRunFrame(step, cpuTStates, instructionBoundary)) return false;
+        if (pending.Count == 0 && !(expansion is null
+            ? runner.TryRunFrame(step, cpuTStates, instructionBoundary)
+            : expansion.TryRunFrame(instructionBoundary))) return false;
         var frame = pending.Dequeue();
         result = new(startTick, scheduler.Now, frame, Array.AsReadOnly(edges.ToArray()));
         edges.Clear(); startTick = scheduler.Now;

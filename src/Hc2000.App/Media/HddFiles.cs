@@ -6,6 +6,13 @@ namespace Hc2000.App.Media;
 /// <summary>Host-only raw image I/O. Success is returned only after the complete copy is persisted.</summary>
 public static class HddFiles
 {
+    /// <summary>Whole-container publication using the same bounded engine as Tools. A bound caller must
+    /// separately own its FIFO machine freeze; a host publication attempt does not provide one.</summary>
+    public static HddContainerPublication.OfflineAttempt ReplaceContainer(
+        HddContainerPublication.OfflineReplaceRequest request, ImmutableArray<byte> bytes,
+        CancellationToken cancellation = default, Action<HddContainerPublication.OfflineIoEvent>? fault = null)
+        => HddContainerPublication.ReplaceOffline(request, bytes.AsSpan(), cancellation, fault);
+
     public static async Task<ImmutableArray<byte>> ReadAsync(string path, CancellationToken cancellation = default)
     {
         await using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,

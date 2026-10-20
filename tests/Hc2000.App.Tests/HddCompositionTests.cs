@@ -28,6 +28,7 @@ public sealed class HddCompositionTests
         var machine = BasicMachineComposition.CreateColdNewMachine(prepared, new(), new(new()), new(new()), _ => { }, value => hdd = value);
         Assert.Equal(0, machine.MasterTick);
         Assert.NotNull(hdd);
+        Assert.False(hdd.GuestAckEnabled); // Raw HDD boot is not the admitted named-map guest profile.
         Assert.Equal((byte)0x5a, hdd.CaptureHdd(2).Bytes[0]);
         for (byte drive = 2; drive <= 5; drive++)
         {
@@ -56,10 +57,20 @@ public sealed class HddCompositionTests
         Assert.Equal(0, queue.BoundaryCount);
     }
 
-    [Fact]
-    public async Task WorkerResetRetainsIdentityAndHcsAndLiveAttachFailClosed()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WorkerResetRetainsIdentityAndHcsAndLiveAttachFailClosed(bool namedMap)
     {
-        var prepared = BasicMachineComposition.PrepareHddWholeChipV2(Roms(), [Image()]);
+        Assert.SkipWhen(namedMap && !OperatingSystem.IsLinux(), "Linux native file identity contract");
+        using var fixture = namedMap ? new HddColdVolumeTests() : null;
+        using var volume = namedMap
+            ? HddColdVolume.OpenMapped(fixture!.PathName, [new(2, "VOL2.DSK"), new(5, "VOL1.DSK")]) : null;
+        var prepared = volume is null ? BasicMachineComposition.PrepareHddWholeChipV2(Roms(), [Image()])
+            : BasicMachineComposition.PrepareAdmittedHddMapWholeChipV2(Roms(), volume);
+        var expectedProfile = namedMap ? MachineProfile.Hc2000V2HddGuestV1 : MachineProfile.Hc2000V2HddV1;
+        Assert.Equal(expectedProfile.Name, prepared.Roms.Profile.Name);
+        Assert.Equal(expectedProfile.BlockDisk, prepared.Roms.Profile.BlockDisk);
         var queue = new InputQueue(); var media = new MediaBridge(queue); var hcs = new HcsBridge(queue);
         using var worker = BasicMachineComposition.CreateWorker(prepared, queue, media, hcs);
         async Task<MediaReply> Apply(HddRequest request) =>
@@ -70,6 +81,7 @@ public sealed class HddCompositionTests
         var reset = (await Apply(new(HddAction.Inspect))).Hdd!;
         Assert.Equal(before.Drives.ToArray(), reset.Drives.ToArray()); // Reset retained logical media; initial attach was NOT replayed.
         Assert.Equal(HddMediaAdapter.SwitchUnavailable, (await Apply(new(HddAction.Attach))).Error);
+        Assert.Equal(HddMediaAdapter.SwitchUnavailable, (await Apply(new(HddAction.Detach))).Error);
         // Detached, authored non-HDD snapshot: Load must be a valid request to reach
         // the HDD owner's refusal boundary, rather than fail host queue validation.
         var loadBytes = ImmutableArray.CreateRange(HcsMachineFixture.Compose().Machine.Save());

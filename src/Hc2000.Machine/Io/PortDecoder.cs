@@ -106,8 +106,17 @@ public sealed class PortDecoder
         if (!m1)
             foreach (var row in mappings)
                 if ((row.Access & PortAccess.Read) != 0 && (port & row.Mask) == row.Match)
-                    return policy.Allows(in origin, port, PortAccess.Read)
-                        ? row.Device.Read(port, masterTick) : (byte)0xff;
+                {
+                    if (policy.Allows(in origin, port, PortAccess.Read))
+                    {
+                        // Forward the exact admitted origin exactly once; never fall back to the
+                        // legacy overload after an origin-aware delivery (see IOriginPortDevice).
+                        if (row.Device is IOriginPortDevice originDevice)
+                            return originDevice.Read(in origin, port, masterTick);
+                        return row.Device.Read(port, masterTick);
+                    }
+                    return (byte)0xff;
+                }
         return 0xff;
     }
 
@@ -122,7 +131,14 @@ public sealed class PortDecoder
             if ((row.Access & PortAccess.Write) != 0 && (port & row.Mask) == row.Match)
             {
                 if (policy.Allows(in origin, port, PortAccess.Write))
-                    row.Device.Write(port, value, masterTick);
+                {
+                    // Forward the exact admitted origin exactly once; never fall back to the
+                    // legacy overload after an origin-aware delivery (see IOriginPortDevice).
+                    if (row.Device is IOriginPortDevice originDevice)
+                        originDevice.Write(in origin, port, value, masterTick);
+                    else
+                        row.Device.Write(port, value, masterTick);
+                }
                 return;
             }
     }

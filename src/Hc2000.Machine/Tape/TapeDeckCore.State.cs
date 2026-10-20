@@ -25,7 +25,7 @@ internal sealed partial class TapeDeckCore
             recorder.Head is { } rh ? TapeNativeCodec.Rational(rh) : null, recorder.Level,
             nextPosition is { } np ? TapeNativeCodec.Rational(np) : null, idealDue is { } due ? TapeNativeCodec.Rational(due) : null,
             (uint?)pendingKind, token.ToString(CultureInfo.InvariantCulture));
-        return new(component, cassette);
+        return new(component, cassette, MediaEpoch);
     }
     internal TapeResult<TapeDeckCore> ValidateState(TapeDeckState state, long? now = null, DeviceEvent? pending = null, long? generation = null)
     {
@@ -34,7 +34,8 @@ internal sealed partial class TapeDeckCore
             var c = state.Component;
             var candidate = new TapeDeckCore(scheduler, ula, deviceId, verifyOwner, persistenceCheck)
             {
-                cassette = state.Cassette, position = TapeNativeCodec.Rational(c.Position), anchorPosition = TapeNativeCodec.Rational(c.AnchorPosition),
+                cassette = state.Cassette, MediaEpoch = state.MediaEpoch,
+                position = TapeNativeCodec.Rational(c.Position), anchorPosition = TapeNativeCodec.Rational(c.AnchorPosition),
                 anchorTick = checked((long)TapeNativeCodec.Unsigned(c.AnchorTick)), identity = TapeNativeCodec.Unsigned(c.MediaIdentity),
                 active = (TapeSide)c.ActiveSide, paused = c.Paused, fastWind = c.FastWind, mic = c.MicLevel,
                 consumedStop = c.ConsumedStop, token = checked((long)TapeNativeCodec.Unsigned(c.PendingToken)),

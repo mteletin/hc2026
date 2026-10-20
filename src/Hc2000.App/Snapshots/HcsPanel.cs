@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Platform.Storage;
 using Hc2000.App.Media;
+using Hc2000.Machine.Snapshots;
 
 namespace Hc2000.App.Snapshots;
 
@@ -15,6 +16,7 @@ public sealed class HcsPanel : StackPanel
 {
     private HcsBridge? bridge;
     private bool busy;
+    private readonly Func<string, int, Task<ImmutableArray<byte>>> readSnapshot;
     private readonly TextBlock notice = new() { Text = "Snapshot disconnected. Save/Load .hcs unavailable: no machine runtime attached.", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
     private readonly Button save = new() { Content = "Save snapshot…" };
     private readonly Button load = new() { Content = "Load snapshot…" };
@@ -30,12 +32,16 @@ public sealed class HcsPanel : StackPanel
     /// <summary>This machine's persisted last snapshot selection, if any.</summary>
     public string? LastSnapshot { get; set; }
 
-    public HcsPanel()
+    public HcsPanel() : this(MediaFiles.ReadAsync) { }
+
+    internal HcsPanel(Func<string, int, Task<ImmutableArray<byte>>> readSnapshot)
     {
+        this.readSnapshot = readSnapshot;
         Spacing = 6;
         Children.Add(new TextBlock { Text = "Machine snapshot (.hcs)", FontSize = 18 });
         save.Click += async (_, _) => await RunAsync(async () =>
         {
+            var targetRuntime = CaptureTarget();
             var provider = TopLevel.GetTopLevel(this)?.StorageProvider ?? throw new InvalidOperationException("File picker unavailable.");
             var target = await provider.SaveFilePickerAsync(new() { Title = "Save machine snapshot", SuggestedFileName = "snapshot.hcs", DefaultExtension = "hcs",
                 FileTypeChoices = [new("HC2000 snapshot") { Patterns = ["*.hcs"] }] });
@@ -43,15 +49,16 @@ public sealed class HcsPanel : StackPanel
             using (target)
             {
                 var path = target.TryGetLocalPath() ?? throw new InvalidOperationException("Only local files are supported.");
-                var reply = await RequestAsync(new(HcsAction.Save));
+                var reply = await RequestAsync(new(HcsAction.Save), targetRuntime);
                 await MediaFiles.SaveAsync(path, reply.Snapshot);
                 notice.Text = $"Snapshot saved to {Path.GetFileName(path)}.";
             }
         });
         load.Click += async (_, _) => await RunAsync(async () =>
         {
+            var target = CaptureTarget();
             if (await PickAsync("Load snapshot", "*.hcs") is not { } path) return;
-            await LoadCoreAsync(path);
+            await LoadCoreAsync(path, target);
         });
         var listSection = new StackPanel { Orientation = Orientation.Vertical, Spacing = 3 };
         listSection.Children.Add(new TextBlock { Text = "Snapshots in this machine's directory (host metadata only; selection uses the existing guarded load)", FontSize = 14 });
@@ -66,7 +73,9 @@ public sealed class HcsPanel : StackPanel
     /// <summary>Rebuild the inline snapshot listing from host metadata of the machine's scoped directory.</summary>
     public void RefreshSnapshotList()
     {
-        snapshotListed = InlineMediaListing.Snapshots(SnapshotDirectory, LastSnapshot);
+        var listedBridge = bridge;
+        var limits = listedBridge?.Limits ?? new HcsLimits();
+        snapshotListed = InlineMediaListing.Snapshots(SnapshotDirectory, LastSnapshot, limits);
         snapshotRows.Children.Clear();
         foreach (var row in snapshotListed)
         {
@@ -79,9 +88,11 @@ public sealed class HcsPanel : StackPanel
                 long size = row.Size;
                 button.Click += async (_, _) => await RunAsync(async () =>
                 {
-                    if (InlineMediaListing.RevalidateSnapshot(path, size) is { } refusal)
+                    var target = (Bridge: listedBridge ?? throw new InvalidOperationException("Snapshot disconnected."), Limits: limits);
+                    ValidateTarget(target);
+                    if (InlineMediaListing.RevalidateSnapshot(path, size, limits) is { } refusal)
                         throw new InvalidOperationException(refusal);
-                    await LoadCoreAsync(path);
+                    await LoadCoreAsync(path, target);
                 });
                 item.Children.Add(button);
             }
@@ -117,23 +128,41 @@ public sealed class HcsPanel : StackPanel
 
     private async Task SaveCoreAsync(string path)
     {
-        var reply = await RequestAsync(new(HcsAction.Save));
+        var reply = await RequestAsync(new(HcsAction.Save), CaptureTarget());
         await MediaFiles.SaveAsync(path, reply.Snapshot);
         notice.Text = $"Snapshot saved to {Path.GetFileName(path)}.";
     }
 
-    private async Task LoadCoreAsync(string path)
+    private Task LoadCoreAsync(string path) => LoadCoreAsync(path, CaptureTarget());
+
+    private async Task LoadCoreAsync(string path, (HcsBridge Bridge, HcsLimits Limits) target)
     {
-        var bytes = await MediaFiles.ReadAsync(path, MediaFiles.MaxSnapshotBytes);
-        await RequestAsync(new(HcsAction.Load, bytes, DiscardChanges: discard.IsChecked == true));
+        ValidateTarget(target);
+        var discardChanges = discard.IsChecked == true;
+        var bytes = await readSnapshot(path, target.Limits.TotalBytes);
+        await RequestAsync(new(HcsAction.Load, bytes, DiscardChanges: discardChanges), target);
         notice.Text = "Snapshot loaded at an emulation boundary.";
     }
 
-    private async Task<HcsReply> RequestAsync(HcsCommand command)
+    private (HcsBridge Bridge, HcsLimits Limits) CaptureTarget()
     {
         var source = bridge ?? throw new InvalidOperationException("Snapshot runtime disconnected.");
-        var reply = await source.RequestAsync(command);
-        if (!ReferenceEquals(source, bridge)) throw new InvalidOperationException("Stale snapshot runtime reply ignored.");
+        source.ValidateAdmission(source.Limits);
+        return (source, source.Limits);
+    }
+
+    private void ValidateTarget((HcsBridge Bridge, HcsLimits Limits) target)
+    {
+        if (!ReferenceEquals(target.Bridge, bridge) || !ReferenceEquals(target.Limits, target.Bridge.Limits))
+            throw new InvalidOperationException("Stale snapshot runtime reply ignored.");
+        target.Bridge.ValidateAdmission(target.Limits);
+    }
+
+    private async Task<HcsReply> RequestAsync(HcsCommand command, (HcsBridge Bridge, HcsLimits Limits) target)
+    {
+        ValidateTarget(target);
+        var reply = await target.Bridge.RequestAsync(command);
+        ValidateTarget(target);
         if (reply.Error is not null) throw new InvalidOperationException(reply.Error);
         return reply;
     }

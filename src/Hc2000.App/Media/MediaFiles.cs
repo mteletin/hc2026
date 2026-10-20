@@ -8,21 +8,30 @@ public static class MediaFiles
 {
     public const int MaxDiskBytes = 4 * 1024 * 1024;
     public const int MaxTapeBytes = 16 * 1024 * 1024;
-    // A .hcs container maximum, equal to HcsLimits.TotalBytes: the UI accepts exactly what the codec accepts.
+    // Compatibility/default callers only. Bound snapshot views use the adopted runtime's HcsLimits.
     public const int MaxSnapshotBytes = 256 * 1024 * 1024;
     public static async Task<ImmutableArray<byte>> ReadAsync(string path, int maximum)
     {
         await using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read,
             65536, FileOptions.Asynchronous);
-        if (input.Length > maximum) throw new InvalidDataException("Media file exceeds the size limit.");
-        using var output = new MemoryStream();
+        return await ReadAsync(input, maximum).ConfigureAwait(false);
+    }
+
+    internal static async Task<ImmutableArray<byte>> ReadAsync(Stream input, int maximum)
+    {
+        var expectedLength = input.Length;
+        if (maximum < 0 || expectedLength > maximum) throw new InvalidDataException("Media file exceeds the size limit.");
+        // Size is already admitted; avoid next-power-of-two growth for a GiB-sized HCS.
+        using var output = new MemoryStream(checked((int)expectedLength));
         var buffer = new byte[65536];
         int length;
-        while ((length = await input.ReadAsync(buffer)) != 0)
+        while ((length = await input.ReadAsync(buffer).ConfigureAwait(false)) != 0)
         {
             if (output.Length + length > maximum) throw new InvalidDataException("Media file exceeds the size limit.");
             output.Write(buffer, 0, length);
         }
+        if (output.Length != expectedLength || input.Length != expectedLength)
+            throw new InvalidDataException("Media file changed while reading.");
         return ImmutableArray.CreateRange(output.ToArray());
     }
 

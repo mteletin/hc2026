@@ -25,8 +25,8 @@ public sealed class PrestartPanel : UserControl
     private readonly ComboBox keyboard;
     private readonly CheckBox saveIntent = new() { Name = "PrestartSaveIntent", Content = "Save configuration after successful Start" };
     private readonly CheckBox overwrite = new() { Name = "PrestartOverwrite", Content = "Replace unreadable/unsupported settings (original bytes will be replaced)", IsVisible = false };
-    private readonly TextBlock status = new() { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
-    private readonly Button start = new() { Name = "PrestartStart", Content = "Start machine", Focusable = true };
+    private readonly TextBlock status = new() { TextWrapping = Avalonia.Media.TextWrapping.Wrap, Classes = { "notice" } };
+    private readonly Button start = new() { Name = "PrestartStart", Content = "Start machine", Focusable = true, Classes = { "primaryAction" } };
     private bool starting;
     public Func<MachineConfiguration, Task<bool>>? StartRequested { get; set; }
     public event EventHandler? Started;
@@ -78,7 +78,7 @@ public sealed class PrestartPanel : UserControl
         var form = new StackPanel { Spacing = 10 };
         var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         heading.Children.Add(new TextBlock { Name = "ConfigurationHeading", Text = "Machine configuration", FontSize = 20,
-            FontWeight = Avalonia.Media.FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            FontWeight = Avalonia.Media.FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Classes = { "sectionTitle" } });
         Grid.SetColumn(start, 1);
         heading.Children.Add(start);
         form.Children.Add(heading);

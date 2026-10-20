@@ -264,9 +264,12 @@ public static class BasicMachineComposition
             snapshots.Publish(loaded);
         });
         prepared.ColdAdmission?.MarkEnqueued(prepared);
+        HcsLimits? admission = null;
         try
         {
-        return new EmulationWorker(
+        admission = inputQueue.BindSnapshotRuntime(prepared);
+        snapshots?.BindAdmission(inputQueue, admission);
+        var worker = new EmulationWorker(
             () =>
             {
                 try
@@ -373,9 +376,17 @@ public static class BasicMachineComposition
                 return new DebuggerSession($"HC2000 {prepared.Roms.Profile.Name} (boundary copy)")
                     .Boundary(DebuggerSession.RegisterView(state), memory, slot.Controller?.Fdc, state.TStates);
             });
+        inputQueue.TrackSnapshotRuntime(admission, worker.Completion);
+        _ = worker.Completion.ContinueWith(_ =>
+        {
+            snapshots?.Disconnect();
+            inputQueue.RetireSnapshotRuntime(admission);
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        return worker;
         }
         catch
         {
+            if (admission is not null) inputQueue.RetireSnapshotRuntime(admission);
             // Constructor failure occurs before any worker was started.
             prepared.ColdAdmission?.RejectBeforeOwnerStarted();
             throw;

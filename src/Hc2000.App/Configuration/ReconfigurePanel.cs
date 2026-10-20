@@ -18,8 +18,8 @@ internal sealed class ReconfigurePanel : UserControl
 {
     private readonly TextBox speed, scale;
     private readonly ComboBox keyboard;
-    private readonly TextBlock status = new() { Text = "Apply validates the draft, keeps the mounted media and writeback choices, and resets only this machine.", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
-    private readonly Button apply = new() { Name = "ReconfigureApply", Content = "Apply and reset this machine", Focusable = true };
+    private readonly TextBlock status = new() { Text = "Apply validates the draft, keeps the mounted media and writeback choices, and resets only this machine.", TextWrapping = Avalonia.Media.TextWrapping.Wrap, Classes = { "notice" } };
+    private readonly Button apply = new() { Name = "ReconfigureApply", Content = "Apply and reset this machine", Focusable = true, Classes = { "primaryAction" } };
     private readonly SoundSpeedNotice soundNotice;
     private MachineDraftTarget? target;
     private MachineConfiguration? original;

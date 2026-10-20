@@ -1,3 +1,7 @@
+using Hc2000.App.Runtime;
+using Hc2000.App.Snapshots;
+using Hc2000.Machine.Snapshots;
+
 namespace Hc2000.App.Input;
 
 public abstract record InputCommand;
@@ -45,10 +49,59 @@ public sealed class InputQueue
     private long sequence;
     private int outstandingPasteCharacters;
     public const int MaxOutstandingPasteCharacters = 16384;
+    private HcsLimits snapshotLimits = new();
+    private bool snapshotRuntimeBound;
+    private Task? snapshotRuntimeCompletion;
+
+    internal HcsLimits SnapshotLimits { get { lock (gate) return snapshotLimits; } }
+
+    // Only the prepared runtime composition may install admission. A new immutable identity
+    // also retires old bridges, even if the replacement happens to use the same profile.
+    internal HcsLimits BindSnapshotRuntime(PreparedBasicMachine prepared)
+    {
+        var limits = HcsLimits.ForProfile(prepared.Roms.Profile);
+        lock (gate)
+        {
+            if (snapshotRuntimeBound && snapshotRuntimeCompletion?.IsCompleted != true
+                || pending.Any(item => item.Command is HcsCommand))
+                throw new InvalidOperationException("Retire and drain the previous snapshot runtime first.");
+            snapshotRuntimeBound = true;
+            snapshotRuntimeCompletion = null;
+            return snapshotLimits = limits;
+        }
+    }
+
+    internal void TrackSnapshotRuntime(HcsLimits limits, Task completion)
+    {
+        lock (gate)
+            if (ReferenceEquals(snapshotLimits, limits)) snapshotRuntimeCompletion = completion;
+    }
+
+    internal void RetireSnapshotRuntime(HcsLimits limits)
+    {
+        lock (gate)
+        {
+            if (!ReferenceEquals(snapshotLimits, limits)) return;
+            snapshotRuntimeBound = false;
+            snapshotRuntimeCompletion = null;
+            snapshotLimits = new();
+        }
+    }
+
+    internal void ValidateSnapshotLength(long length)
+    {
+        lock (gate)
+            if (length <= 0 || !snapshotLimits.AllowsFileLength(length))
+                throw new ArgumentException("Invalid or oversized snapshot command.");
+    }
 
     // Commands are reliable/unbounded; paste data (including active/queued requests) is bounded.
     // No synchronous wait on the UI and no native/device/clock operations in this producer.
-    public long Enqueue(InputCommand command)
+    public long Enqueue(InputCommand command) => EnqueueCore(command, null);
+
+    internal long EnqueueSnapshot(HcsCommand command, HcsLimits admission) => EnqueueCore(command, admission);
+
+    private long EnqueueCore(InputCommand command, HcsLimits? admission)
     {
         ArgumentNullException.ThrowIfNull(command);
         if (command is not (KeyTransition or PasteText or ReleaseAll or RuntimeControl or Media.MediaCommand or Snapshots.HcsCommand))
@@ -61,10 +114,14 @@ public sealed class InputQueue
             throw new ArgumentException("Invalid or oversized media command.", nameof(command));
         if (command is Snapshots.HcsCommand hcs && (!Enum.IsDefined(hcs.Action)
             || hcs.Action == Snapshots.HcsAction.Save && !hcs.Bytes.IsDefault
-            || hcs.Action == Snapshots.HcsAction.Load && (hcs.Bytes.IsDefaultOrEmpty || hcs.Bytes.Length > Media.MediaFiles.MaxSnapshotBytes)))
+            || hcs.Action == Snapshots.HcsAction.Load && hcs.Bytes.IsDefaultOrEmpty))
             throw new ArgumentException("Invalid or oversized snapshot command.", nameof(command));
         lock (gate)
         {
+            if (admission is not null && !ReferenceEquals(admission, snapshotLimits))
+                throw new InvalidOperationException("Stale snapshot runtime.");
+            if (command is HcsCommand { Action: HcsAction.Load } load)
+                ValidateSnapshotLength(load.Bytes.Length);
             if (command is PasteText paste)
             {
                 if (outstandingPasteCharacters + paste.Text.Length > MaxOutstandingPasteCharacters)

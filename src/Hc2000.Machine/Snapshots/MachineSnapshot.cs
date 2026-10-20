@@ -54,7 +54,7 @@ public sealed class MachineSnapshot(
         _ = SaveCore(wavPolicy, limits ?? DefaultLimits(), null, false, destination);
     }
 
-    private HcsLimits DefaultLimits() => profile.Memory.RamPaged is null ? new() : new(TotalBytes: 0x44000000);
+    private HcsLimits DefaultLimits() => HcsLimits.ForProfile(profile);
 
     /// <summary>Read-only session-save admission, before any RAM or container copy.</summary>
     public void ValidateSessionSnapshotSave(HcsWavPolicy? wavPolicy = null) =>

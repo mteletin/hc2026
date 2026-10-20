@@ -240,9 +240,11 @@ public partial class MainWindow : Window
             {
                 Content = (selected ? "\u25CF " : "") + tab.Configuration.Name,
                 Focusable = false,
-                Padding = new Thickness(10, 6),
+                Padding = new Thickness(10, 4),
+                Classes = { "tabStripItem" },
                 FontWeight = selected ? Avalonia.Media.FontWeight.SemiBold : Avalonia.Media.FontWeight.Normal
             };
+            if (selected) select.Classes.Add("selected");
             Avalonia.Automation.AutomationProperties.SetName(select, "Select machine " + tab.Configuration.Name);
             ToolTip.SetTip(select, (selected ? "Selected machine: " : "Select machine: ") + tab.Configuration.Name);
             select.Click += (_, _) =>
@@ -259,14 +261,28 @@ public partial class MainWindow : Window
                         : "Selected machine runtime; actions below affect only " + tab.Configuration.Name + ".";
                 }
             };
-            var close = new Button { Content = "\u00D7", Focusable = false, Width = 30, Margin = new Thickness(4, 0, 0, 0) };
+            var close = new Button
+            {
+                Content = "\u00D7",
+                Focusable = false,
+                Width = 26,
+                Padding = new Thickness(0),
+                Classes = { "toolbarAction" },
+                Margin = new Thickness(2, 0, 0, 0)
+            };
             Avalonia.Automation.AutomationProperties.SetName(close, "Close machine " + tab.Configuration.Name);
             ToolTip.SetTip(close, "Close only " + tab.Configuration.Name);
             close.Click += async (_, _) => await CloseTabAsync(tab);
-            var state = new TextBlock { Text = tab.Session.Worker is null ? "Draft" : tab.Session.Worker.Completion.IsCompleted ? "Stopped" : "Running",
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0) };
+            var state = new TextBlock
+            {
+                Text = tab.Session.Worker is null ? "Draft" : tab.Session.Worker.Completion.IsCompleted ? "Stopped" : "Running",
+                Classes = { "caption" },
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0)
+            };
             panel.Children.Add(new Border
             {
+                Classes = { "listRow" },
                 BorderThickness = new Thickness(selected ? 2 : 1), CornerRadius = new CornerRadius(4),
                 BorderBrush = select.Foreground, Padding = new Thickness(2),
                 Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { select, state, close } }
@@ -475,11 +491,6 @@ public partial class MainWindow : Window
             }
             var snapshots = new Snapshots.HcsBridge(session.InputQueue);
             session.SnapshotBridge = snapshots;
-            if (ReferenceEquals(CurrentSession, session))
-            {
-                this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
-                AttachSnapshots(snapshots);
-            }
             // The existing FIFO consumes Pause before its first instruction. Mount receipts are
             // acknowledged while paused; a failed mount must never resume a partially configured guest.
             if (session.StartingConfiguration is { } draft)
@@ -502,6 +513,11 @@ public partial class MainWindow : Window
                 audioEnabled: true, writeback: ledger, soundDump: soundDumpResolution.Path);
             ownerStarted = true; // Only the actual owner may now acknowledge/release admission.
             session.AttachWorker(runtime);
+            if (ReferenceEquals(CurrentSession, session))
+            {
+                this.FindControl<Snapshots.HcsPanel>("SnapshotControls")!.Disconnect();
+                AttachSnapshots(snapshots);
+            }
             var ownerGeneration = session.RuntimeGeneration;
             if (ReferenceEquals(CurrentSession, session)) BindExplorer(session, session.StartingConfiguration);
             presentation.Start();
@@ -1051,20 +1067,54 @@ public partial class MainWindow : Window
     private void MachineKeyDown(object? sender, KeyEventArgs e)
     {
         if (IsTextEditor(e.Source)) return;
-        // Preserve CP/M Ctrl+V (0x16); clipboard paste must use a distinct shortcut.
-        if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        // Named accelerators per menu/shortcut ownership map:
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
         {
-            e.Handled = true;
-            if (CurrentSession.WritebackHost is { } host) _ = host.ShortcutAsync().ContinueWith(done =>
+            if (e.Key == Key.N)
             {
-                if (done.IsFaulted) return;
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    this.FindControl<TextBlock>("RuntimeStatus")!.Text = host.StatusLine());
-            }, TaskScheduler.Default);
-            return;
+                e.Handled = true;
+                OpenNewMachineDraft();
+                return;
+            }
+            if (e.Key == Key.R)
+            {
+                e.Handled = true;
+                if (CurrentSession.BasicRuntimeActive && this.FindControl<Button>("MachineReset")?.IsEnabled == true)
+                    ResetWholeChipMachine();
+                return;
+            }
+            if (e.Key == Key.D)
+            {
+                e.Handled = true;
+                OpenDebugger(null, null!);
+                return;
+            }
+            if (e.Key is Key.OemComma or Key.OemPeriod)
+            {
+                e.Handled = true;
+                OpenSettings(null, null!);
+                return;
+            }
+            // Preserve CP/M Ctrl+V (0x16); clipboard paste must use a distinct shortcut.
+            if (e.Key == Key.S)
+            {
+                e.Handled = true;
+                if (CurrentSession.WritebackHost is { } host) _ = host.ShortcutAsync().ContinueWith(done =>
+                {
+                    if (done.IsFaulted) return;
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        this.FindControl<TextBlock>("RuntimeStatus")!.Text = host.StatusLine());
+                }, TaskScheduler.Default);
+                return;
+            }
+            if (e.Key == Key.V)
+            {
+                e.Handled = true;
+                PasteClipboard();
+                return;
+            }
         }
-        if (e.Key == Key.V && e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.KeyModifiers.HasFlag(KeyModifiers.Shift)
-            || e.Key == Key.Insert && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        if (e.Key == Key.Insert && e.KeyModifiers.HasFlag(KeyModifiers.Shift))
         {
             e.Handled = true;
             PasteClipboard();

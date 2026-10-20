@@ -12,7 +12,19 @@ public sealed class HcsException(HcsError error, string field) : Exception($"{er
 }
 public sealed record HcsLimits(int TotalBytes = 256 * 1024 * 1024, int ManifestBytes = 16 * 1024 * 1024,
     int BlobBytes = 64 * 1024 * 1024, int BlobCount = 1024, int Records = 65536, int Depth = 64,
-    int StringBytes = 4096, int PayloadBytes = 4096);
+    int StringBytes = 4096, int PayloadBytes = 4096)
+{
+    /// <summary>Trusted composition policy, never selected from an imported manifest or UI draft.
+    /// The schema still admits only the exact unique paged RAM blob above BlobBytes.</summary>
+    public static HcsLimits ForProfile(MachineProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        profile.Validate();
+        return profile.Memory.RamPaged is null ? new() : new(TotalBytes: 0x44000000);
+    }
+
+    public bool AllowsFileLength(long length) => length >= 0 && length <= TotalBytes;
+}
 
 /// <summary>Owned detached data. No runtime object creation or Machine adoption is performed.</summary>
 public sealed class HcsDocument

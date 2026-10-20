@@ -1,0 +1,104 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <!-- 3.1 Colour Tokens -->
+    <SolidColorBrush x:Key="AppSurfaceBrush" Color="#181A1F"/>
+    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#1F232B"/>
+    <SolidColorBrush x:Key="AppCardBorderBrush" Color="#333945"/>
+    <SolidColorBrush x:Key="AppAccentBrush" Color="#2B6CB0"/>
+    <SolidColorBrush x:Key="AppMutedTextBrush" Color="#8C95A5"/>
+    <SolidColorBrush x:Key="AppStatusNoticeBrush" Color="#2D3748"/>
+  </Styles.Resources>
+
+  <!-- 3.3 Base Overrides and Compact Density Rules -->
+  <Style Selector="Button">
+    <Setter Property="Focusable" Value="False"/>
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="Padding" Value="8,3"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="CornerRadius" Value="3"/>
+  </Style>
+  <Style Selector="TextBox">
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="Padding" Value="6,3"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="CornerRadius" Value="3"/>
+  </Style>
+  <Style Selector="ComboBox">
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="Padding" Value="6,3"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="CornerRadius" Value="3"/>
+  </Style>
+
+  <!-- 3.2 Type Scale -->
+  <Style Selector="TextBlock.appTitle">
+    <Setter Property="FontSize" Value="16"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="TextBlock.sectionTitle">
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="TextBlock.subsectionTitle">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+  <Style Selector="TextBlock.body">
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+  <Style Selector="TextBlock.caption">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+  <Style Selector="TextBlock.notice">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+
+  <!-- 3.4 Shared Control Style Classes -->
+  <Style Selector="Border.shellHeader">
+    <Setter Property="Padding" Value="8,6"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+  </Style>
+  <Style Selector="Border.section">
+    <Setter Property="Padding" Value="8"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+  </Style>
+  <Style Selector="Border.listRow">
+    <Setter Property="Padding" Value="6,3"/>
+    <Setter Property="MinHeight" Value="24"/>
+    <Setter Property="CornerRadius" Value="3"/>
+  </Style>
+  <Style Selector="Button.tabStripItem">
+    <Setter Property="Padding" Value="10,4"/>
+    <Setter Property="MinHeight" Value="28"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="CornerRadius" Value="4"/>
+  </Style>
+  <Style Selector="Button.tabStripItem.selected">
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
+  </Style>
+  <Style Selector="Button.primaryAction">
+    <Setter Property="Padding" Value="10,4"/>
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="CornerRadius" Value="3"/>
+  </Style>
+  <Style Selector="Button.toolbarAction">
+    <Setter Property="Padding" Value="8,3"/>
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="CornerRadius" Value="3"/>
+  </Style>
+  <Style Selector="ContextMenu.surfaceMenu">
+  </Style>
+</Styles>

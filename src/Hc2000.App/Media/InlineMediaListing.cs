@@ -99,8 +99,10 @@ public static class InlineMediaListing
     // Snapshots: host metadata of the machine's scoped directory only. No .hcs content is
     // read or decoded; explicit load goes through the existing guarded load action, and an
     // oversized file is refused here by the same bound the load action enforces.
-    public static ImmutableArray<InlineMediaRow> Snapshots(string? directory, string? lastSnapshot = null)
+    public static ImmutableArray<InlineMediaRow> Snapshots(string? directory, string? lastSnapshot = null,
+        Hc2000.Machine.Snapshots.HcsLimits? limits = null)
     {
+        limits ??= new();
         if (directory is null)
             return [InlineMediaRow.Unavailable("snapshot", "No snapshot directory configured for this machine.")];
         string full;
@@ -116,7 +118,7 @@ public static class InlineMediaListing
         for (int i = 0; i < Math.Min(files.Length, MaxRowsPerPage); i++)
         {
             string path = files[i];
-            (long size, string detail, InlineMediaStatus status, string? reason) = SnapshotMetadata(path);
+            (long size, string detail, InlineMediaStatus status, string? reason) = SnapshotMetadata(path, limits);
             bool isLast = lastSnapshot is not null && PathEquals(Path.GetFullPath(lastSnapshot), path);
             rows.Add(new($"hcs:{path}", "snapshot", Path.GetFileName(path) + (isLast ? " (last selection)" : ""), path, size,
                 detail, status, reason));
@@ -142,15 +144,16 @@ public static class InlineMediaListing
     }
 
     /// <summary>Revalidate a listed snapshot handle at action time: same host metadata as listed.</summary>
-    public static string? RevalidateSnapshot(string path, long listedSize)
+    public static string? RevalidateSnapshot(string path, long listedSize, Hc2000.Machine.Snapshots.HcsLimits? limits = null)
     {
+        limits ??= new();
         try
         {
             var info = new FileInfo(path);
             if (!info.Exists) return "Snapshot file no longer exists; refresh the list.";
-            if (info.Length > MediaFiles.MaxSnapshotBytes)
-                return $"Snapshot exceeds {MediaFiles.MaxSnapshotBytes} bytes; the existing load guard applies.";
-            if (listedSize > 0 && info.Length != listedSize)
+            if (!limits.AllowsFileLength(info.Length))
+                return $"Snapshot exceeds {limits.TotalBytes} bytes; the existing load guard applies.";
+            if (info.Length != listedSize)
                 return "Snapshot changed since listing; refresh the list.";
             return null;
         }
@@ -164,16 +167,17 @@ public static class InlineMediaListing
         return (InlineMediaStatus.Unavailable, "Catalog source file missing or unreadable.");
     }
 
-    private static (long Size, string Detail, InlineMediaStatus Status, string? Reason) SnapshotMetadata(string path)
+    private static (long Size, string Detail, InlineMediaStatus Status, string? Reason) SnapshotMetadata(string path,
+        Hc2000.Machine.Snapshots.HcsLimits limits)
     {
         try
         {
             var info = new FileInfo(path);
             if (!info.Exists)
                 return (0, "unreadable host metadata", InlineMediaStatus.Unavailable, "Snapshot file missing.");
-            if (info.Length > MediaFiles.MaxSnapshotBytes)
+            if (!limits.AllowsFileLength(info.Length))
                 return (info.Length, $"{info.Length} B", InlineMediaStatus.Refused,
-                    $"Snapshot exceeds {MediaFiles.MaxSnapshotBytes} bytes; the existing load guard applies.");
+                    $"Snapshot exceeds {limits.TotalBytes} bytes; the existing load guard applies.");
             return (info.Length, $"{info.Length} B · saved {info.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC", InlineMediaStatus.Ready, null);
         }
         catch (Exception ex)

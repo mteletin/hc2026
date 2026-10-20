@@ -3,5 +3,6 @@
              x:Class="Hc2000.App.App">
   <Application.Styles>
     <FluentTheme/>
+    <StyleInclude Source="avares://Hc2000.App/Styles/AppStyles.axaml"/>
   </Application.Styles>
 </Application>

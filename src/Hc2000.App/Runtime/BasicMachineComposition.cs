@@ -2,7 +2,9 @@ using System.Collections.Immutable;
 using Hc2000.App.Input;
 using Hc2000.App.Audio;
 using Hc2000.App.Media;
+using Hc2000.App.Debugging;
 using Hc2000.Machine;
+using Hc2000.Machine.Expansion;
 using Hc2000.Machine.Floppy;
 using Hc2000.Machine.Input;
 using Hc2000.Machine.Io;
@@ -36,18 +38,50 @@ public static class BasicMachineComposition
     }
 
     /// <summary>Composes a faithful v2 BASIC machine directly from the whole-chip EPROM dump.</summary>
-    public static PreparedBasicMachine PrepareWholeChipV2((MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms)
+    public static PreparedBasicMachine PrepareWholeChipV2((MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms,
+        HcsWavPolicy? snapshotPolicy = null)
     {
         // The whole chip IS the ROM map: main ROM 0x8000..0xFFFF (v2/basic.rom), CP/M half
         // 0xC000..0xFFFF, and the IF1 shadow ROM 0x4000..0x7FFF. No per-file slices, no padding,
         // no substitution -- the shadow page is the v2 IF1 image.
-        return new PreparedBasicMachine(roms);
+        roms.Profile.Validate();
+        if (roms.Profile.Name == "hc2000-v2-paged-expansion-v1")
+        {
+            // Trusted composition opt-in, before a worker or GiB arena exists; never file-derived.
+            snapshotPolicy ??= HcsWavPolicy.Default with { TransientBytes = 16L * 0x44000000 };
+            snapshotPolicy.ValidateExpansionStep1Admission();
+        }
+        return new PreparedBasicMachine(roms, snapshotPolicy: snapshotPolicy);
+    }
+
+    /// <summary>Same verified whole-chip ROM map, with one exact existing RAM policy.
+    /// No flags, combined devices, turbo or alternative firmware are inferred from a label.</summary>
+    public static PreparedBasicMachine PrepareRamWholeChipV2(
+        (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms, string profileId, bool textOverlay = false)
+    {
+        roms.Profile.Validate();
+        if (roms.Profile.Name != MachineProfile.Hc2000V2.Name)
+            throw new ArgumentException("Hardware preparation requires the verified faithful v2 ROM map.", nameof(roms));
+        var profile = profileId switch
+        {
+            "hc2000-v2" => MachineProfile.Hc2000V2,
+            "hc2000-v2-ram-banks-v1" => MachineProfile.Hc2000V2RamBanksV1,
+            "hc2000-v2-paged-v1" => MachineProfile.Hc2000V2PagedV1,
+            "hc2000-v2-paged-m-v1" => MachineProfile.Hc2000V2PagedMTransferV1,
+            "hc2000-v2-paged-m-v2" => MachineProfile.Hc2000V2PagedMTransferV2,
+            "hc2000-v2-paged-expansion-v1" => MachineProfile.Hc2000V2PagedExpansionV1,
+            _ => throw new ArgumentException("Unsupported cold RAM profile.", nameof(profileId))
+        };
+        // Cold adoption: the derived record copy carries the adopted choice; the static profile is never mutated.
+        var adopted = profile with { Video = profile.Video with { TextOverlay = textOverlay } };
+        adopted.Validate();
+        return PrepareWholeChipV2((adopted, roms.Basic, roms.Cpm, roms.If1));
     }
 
     /// <summary>Prepare host bytes BEFORE constructing the worker. No live machine is replaced.
     /// Installation occurs only in its owner-thread cold NEW factory, before its first instruction.</summary>
     public static PreparedBasicMachine PrepareHddWholeChipV2(
-        (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms, IEnumerable<HddInitialMedia> images)
+        (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms, IEnumerable<HddInitialMedia> images, bool textOverlay = false)
     {
         ArgumentNullException.ThrowIfNull(images);
         if (roms.Profile.Name != MachineProfile.Hc2000V2.Name)
@@ -60,34 +94,51 @@ public static class BasicMachineComposition
         }).ToImmutableArray();
         if (owned.Select(image => image.Drive).Distinct().Count() != owned.Length)
             throw new ArgumentException("Duplicate initial HDD drive.", nameof(images));
-        return new((MachineProfile.Hc2000V2HddV1, roms.Basic, roms.Cpm, roms.If1), owned);
+        // Cold adoption: the derived record copy carries the adopted choice; the static profile is never mutated.
+        var adopted = MachineProfile.Hc2000V2HddV1 with { Video = MachineProfile.Hc2000V2HddV1.Video with { TextOverlay = textOverlay } };
+        adopted.Validate();
+        return new((adopted, roms.Basic, roms.Cpm, roms.If1), owned);
     }
 
-    // Selected native volume only; direct immutable raw/profile-off inputs keep their original path.
+    // Selected native volumes only; direct immutable raw/profile-off inputs keep their original path.
     internal static PreparedBasicMachine PrepareAdmittedHddWholeChipV2(
         (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms,
         HddInitialMedia image, HddColdAdmission admission)
+        => PrepareAdmittedHddImagesWholeChipV2(roms, [image], admission);
+
+    internal static PreparedBasicMachine PrepareAdmittedHddMapWholeChipV2(
+        (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms,
+        HddColdVolume volume)
+        => PrepareAdmittedHddImagesWholeChipV2(roms, volume.MappedMedia, volume.Admission, guestAckEnabled: true);
+
+    private static PreparedBasicMachine PrepareAdmittedHddImagesWholeChipV2(
+        (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms,
+        IEnumerable<HddInitialMedia> images, HddColdAdmission admission, bool guestAckEnabled = false)
     {
         ArgumentNullException.ThrowIfNull(admission);
-        var copied = PrepareHddWholeChipV2(roms, [image]);
-        var prepared = new PreparedBasicMachine(copied.Roms, copied.InitialHdd, admission);
+        var copied = PrepareHddWholeChipV2(roms, images);
+        var selected = copied.Roms;
+        // The resident guest installer queries the existing acknowledgement ABI even at cold boot.
+        // This does not grant guest-safe live remapping or snapshot restore. Writable selection is a separate explicit opt-in.
+        if (guestAckEnabled) selected.Profile = MachineProfile.Hc2000V2HddGuestV1;
+        var prepared = new PreparedBasicMachine(selected, copied.InitialHdd, admission);
         admission.BindPrepared(prepared);
         return prepared;
     }
 
     public static EmulationWorker CreateWorker(PreparedBasicMachine prepared, InputQueue inputQueue, MediaBridge? media = null,
-        HcsBridge? snapshots = null, bool audioEnabled = false)
-        => CreateWorker(prepared, inputQueue, media, slot: null, snapshots, audioEnabled);
+        HcsBridge? snapshots = null, bool audioEnabled = false, string? soundDump = null)
+        => CreateWorker(prepared, inputQueue, media, slot: null, snapshots, audioEnabled, soundDump: soundDump);
 
     internal static EmulationWorker CreateWorker(PreparedBasicMachine prepared, InputQueue inputQueue, MediaBridge? media,
-        HcsBridge? snapshots, bool audioEnabled, DiskWritebackOwnerLedger? writeback)
-        => CreateWorker(prepared, inputQueue, media, slot: null, snapshots, audioEnabled, writeback);
+        HcsBridge? snapshots, bool audioEnabled, DiskWritebackOwnerLedger? writeback, string? soundDump = null)
+        => CreateWorker(prepared, inputQueue, media, slot: null, snapshots, audioEnabled, writeback, soundDump);
 
     /// <summary>Same production worker. <paramref name="slot"/> publishes the composed FDC so a
     /// test can observe READ DATA without touching the owner-thread machine.</summary>
     internal static EmulationWorker CreateWorker(PreparedBasicMachine prepared, InputQueue inputQueue,
         MediaBridge? media, ComposedFloppySlot? slot, HcsBridge? snapshots = null, bool audioEnabled = false,
-        DiskWritebackOwnerLedger? writeback = null)
+        DiskWritebackOwnerLedger? writeback = null, string? soundDump = null)
     {
         ArgumentNullException.ThrowIfNull(prepared);
         ArgumentNullException.ThrowIfNull(inputQueue);
@@ -99,6 +150,8 @@ public static class BasicMachineComposition
         TapeTransport? liveTape = null;
         TapeDeckState? retainedTape = null;
         BlockDiskPort? liveHdd = null;
+        // The current machine's CPU/RAM for request-gated debugger boundary copies.
+        CpuZ80? liveCpu = null; HcMemory? liveMemory = null;
         BlockDiskPortState? retainedHdd = null;
         HddMediaAdapter? hddAdapter = null;
         bool coldNew = true;
@@ -106,7 +159,7 @@ public static class BasicMachineComposition
         string? audioReason = audioEnabled ? null : "Host audio disabled.";
         var earEdges = new List<BeeperEdge>();
         bool monitoring = true;
-        (LiveMachine Machine, FloppyController Controller, Ula Ula, Action ActivateMonitor)? replacement = null;
+        (LiveMachine Machine, CpuZ80 Cpu, HcMemory Memory, FloppyController Controller, Ula Ula, Action ActivateMonitor)? replacement = null;
         var input = new InputController(inputQueue, (control, _) =>
         {
             if (writeback?.Frozen == true && control.Kind != InputControlKind.Shutdown) return;
@@ -125,6 +178,9 @@ public static class BasicMachineComposition
                 var capture = liveTape!.Capture();
                 if (!capture.Success) throw new InvalidOperationException($"Tape reset transfer refused: {capture.Failure!.Detail}");
                 retainedTape = capture.Value;
+                // Spec 14: reset discards the session, never publishes its dirty image.
+                runtimeContext.Machine.TapeVolume?.Cancel();
+                hddAdapter?.RetireGuestSwitch();
                 retainedHdd = liveHdd?.Capture(); // Same media, not a new-image initialization exception.
                 runtimeContext.Reset();
             }
@@ -132,8 +188,11 @@ public static class BasicMachineComposition
         {
             var floppy = slot.Controller ?? throw new InvalidOperationException(
                 "Media command before the faithful FDC was composed.");
-            session ??= new MediaSession(floppy.DriveA, floppy.DriveB, liveTape, manualDeck: true, hdd: hddAdapter);
-            if (command.Action == MediaAction.Writeback || writeback?.Frozen == true && command.Action != MediaAction.Inspect)
+            session ??= new MediaSession(floppy.DriveA, floppy.DriveB, liveTape, manualDeck: true, hdd: hddAdapter,
+                tapeVolume: () => runtimeContext?.Machine.TapeVolume); // The delegate resolves the CURRENT machine after every reset.
+            var rawHddObservation = command.Action == MediaAction.Hdd
+                && command.Hdd?.Action is HddAction.Inspect or HddAction.CaptureSave or HddAction.CancelSave;
+            if (command.Action == MediaAction.Writeback || writeback?.Frozen == true && command.Action != MediaAction.Inspect && !rawHddObservation)
             {
                 var viewed = session.Apply(new(MediaAction.Inspect));
                 var ownerReply = command.Action == MediaAction.Writeback
@@ -157,13 +216,28 @@ public static class BasicMachineComposition
                 snapshots.Publish(new(command.RequestId, Error: "Writeback freeze: snapshot refused."));
                 return;
             }
-            if (prepared.Roms.Profile.BlockDisk == BlockDiskPolicy.HddV1)
+            if (prepared.Roms.Profile.BlockDisk is BlockDiskPolicy.HddV1 or BlockDiskPolicy.HddGuestV1)
             {
                 snapshots.Publish(new(command.RequestId, Error: "HDD logical media is not yet composed into HCS; Save/Load unavailable on this profile."));
                 return;
             }
             if (command.Action != HcsAction.Load)
             {
+                // Deliberately AFTER the retained HDD profile-shape refusal above. This
+                // additional gate is ready for a later format slice; it enables no HCS lane.
+                if (command.Action == HcsAction.Save)
+                {
+                    try
+                    {
+                        hddAdapter?.ValidateSessionSnapshotSave();
+                        runtimeContext!.Machine.ValidateSessionSnapshotSave();
+                    }
+                    catch (Exception ex) when (ex is InvalidOperationException or HcsException)
+                    {
+                        snapshots.Publish(new(command.RequestId, Error: ex.Message));
+                        return;
+                    }
+                }
                 snapshots.Publish(new HcsSession(runtimeContext!.Machine).Apply(command));
                 return;
             }
@@ -179,11 +253,12 @@ public static class BasicMachineComposition
             Ula? candidateUla = null;
             bool adopted = false;
             var candidate = CreateMachine(prepared.Roms, candidateSlot, new(new()), new(new()),
-                earEdges.Add, value => candidateUla = value, canMonitor: () => adopted);
+                earEdges.Add, out var candidateCpu, out var candidateMemory,
+                observeUla: value => candidateUla = value, canMonitor: () => adopted, snapshotPolicy: prepared.SnapshotPolicy);
             var loaded = new HcsSession(candidate).Apply(command);
             if (loaded.Applied)
             {
-                replacement = (candidate, candidateSlot.Controller!, candidateUla!, () => adopted = true);
+                replacement = (candidate, candidateCpu, candidateMemory, candidateSlot.Controller!, candidateUla!, () => adopted = true);
                 runtimeContext!.Reset();
             }
             snapshots.Publish(loaded);
@@ -200,6 +275,7 @@ public static class BasicMachineComposition
                 if (replacement is { } loaded)
                 {
                     replacement = null; retainedTape = null;
+                    liveCpu = loaded.Cpu; liveMemory = loaded.Memory;
                     driveA = loaded.Controller.DriveA; driveB = loaded.Controller.DriveB;
                     slot.Publish(loaded.Controller); liveTape = loaded.Machine.Tape!;
                     session = new(driveA, driveB, liveTape, manualDeck: true);
@@ -217,18 +293,22 @@ public static class BasicMachineComposition
                 driveA.PowerCycle();
                 driveB.PowerCycle();
                 earEdges.Clear();
-                audio ??= BeeperAudioOutput.Open(FrameTiming.MasterHz, audioEnabled, reason => audioReason = reason);
+                audio ??= BeeperAudioOutput.Open(FrameTiming.MasterHz, audioEnabled, reason => audioReason = reason, soundDump);
                 audio.Reset(); audio.TapeMonitoringEnabled = monitoring;
                 LiveMachine machine;
                 if (coldNew)
                 {
                     coldNew = false;
-                    machine = CreateColdNewMachine(prepared, slot, driveA, driveB, earEdges.Add, value => liveHdd = value);
+                    machine = CreateColdNewMachine(prepared, slot, driveA, driveB, earEdges.Add, value => liveHdd = value,
+                        (c, m) => { liveCpu = c; liveMemory = m; });
                     if (liveHdd is not null) hddAdapter = new(liveHdd, prepared.InitialHdd);
                 }
                 else
                 {
-                    machine = CreateMachine(prepared.Roms, slot, driveA, driveB, earEdges.Add, observeHdd: value => liveHdd = value);
+                    machine = CreateMachine(prepared.Roms, slot, driveA, driveB, earEdges.Add,
+                        out var freshCpu, out var freshMemory, observeHdd: value => liveHdd = value,
+                        snapshotPolicy: prepared.SnapshotPolicy);
+                    liveCpu = freshCpu; liveMemory = freshMemory;
                     if (retainedHdd is not null)
                     {
                         liveHdd!.Restore(retainedHdd);
@@ -262,6 +342,7 @@ public static class BasicMachineComposition
                 // this boundary precedes its first instruction, even when immediately paused.
                 prepared.ColdAdmission?.AcknowledgeInstalled(prepared, context.Machine, hddAdapter);
                 input.ApplyPending(context.Machine.MasterTick, context.Machine.Keyboard);
+                if (!context.Resetting && !context.Stopping) hddAdapter?.PumpGuestSwitch();
             },
             audio: (frame, speed, cancellation) =>
             {
@@ -274,6 +355,7 @@ public static class BasicMachineComposition
             {
                 try
                 {
+                    hddAdapter?.RetireGuestSwitch();
                     input.ReleaseOwned(context.Machine.Keyboard);
                     if (!context.Resetting) audio?.Dispose();
                 }
@@ -281,6 +363,15 @@ public static class BasicMachineComposition
                 {
                     if (!context.Resetting) prepared.ColdAdmission?.RejectAfterOwnerDrain();
                 }
+            },
+            executionAllowed: () => liveHdd?.GuestSwitchHoldsCpu != true,
+            debugSnapshot: _ =>
+            {
+                // Request-gated boundary copy; runs on the worker's owner thread only.
+                if (liveCpu is not { } cpu || liveMemory is not { } memory) return null;
+                var state = new Z80SnapshotSeam(cpu).Capture();
+                return new DebuggerSession($"HC2000 {prepared.Roms.Profile.Name} (boundary copy)")
+                    .Boundary(DebuggerSession.RegisterView(state), memory, slot.Controller?.Fdc, state.TStates);
             });
         }
         catch
@@ -293,12 +384,15 @@ public static class BasicMachineComposition
 
     // Never called by Reset or HCS. No CPU instruction has run when this factory returns.
     internal static LiveMachine CreateColdNewMachine(PreparedBasicMachine prepared, ComposedFloppySlot slot,
-        FloppyDrive driveA, FloppyDrive driveB, Action<BeeperEdge> monitor, Action<BlockDiskPort> observeHdd)
+        FloppyDrive driveA, FloppyDrive driveB, Action<BeeperEdge> monitor, Action<BlockDiskPort> observeHdd,
+        Action<CpuZ80, HcMemory>? observeCpu = null)
     {
         prepared.ColdAdmission?.VerifyFreshOwnerCandidate(prepared);
         BlockDiskPort? controller = null;
         var machine = CreateMachine(prepared.Roms, slot, driveA, driveB, monitor,
-            observeHdd: value => { controller = value; observeHdd(value); });
+            out var cpu, out var memory, observeHdd: value => { controller = value; observeHdd(value); },
+            snapshotPolicy: prepared.SnapshotPolicy);
+        observeCpu?.Invoke(cpu, memory);
         prepared.ColdAdmission?.ValidateBeforeAdoption(prepared, machine);
         foreach (var image in prepared.InitialHdd)
             controller!.AttachHdd(image.Drive, image.Bytes.AsSpan(), image.WriteProtected);
@@ -306,15 +400,17 @@ public static class BasicMachineComposition
     }
 
     private static LiveMachine CreateMachine((MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms,
-        ComposedFloppySlot slot, FloppyDrive driveA, FloppyDrive driveB, Action<BeeperEdge> monitor, Action<Ula>? observeUla = null,
-        Func<bool>? canMonitor = null, Action<BlockDiskPort>? observeHdd = null)
+        ComposedFloppySlot slot, FloppyDrive driveA, FloppyDrive driveB, Action<BeeperEdge> monitor,
+        out CpuZ80 cpu, out HcMemory memory,
+        Action<Ula>? observeUla = null, Func<bool>? canMonitor = null, Action<BlockDiskPort>? observeHdd = null,
+        HcsWavPolicy? snapshotPolicy = null)
     {
         var profile = roms.Profile;
         var scheduler = new DeviceScheduler();
         var clock = new FrameClock(scheduler, 1);
         var mapper = CpuTimeMapper.FromProfile(profile);
         var adapter = new CpuDeviceTimeAdapter(scheduler, mapper);
-        var memory = new HcMemory(profile.Memory with { RomProvenance = $"canonical verified {profile.Name} ROM set" },
+        memory = new HcMemory(profile.Memory with { RomProvenance = $"canonical verified {profile.Name} ROM set" },
             roms.Basic, roms.Cpm, roms.If1);
         var keyboard = new KeyboardMatrix();
         var ula = new Ula(memory, keyboard, scheduler, clock, 2, profile.Video);
@@ -334,10 +430,16 @@ public static class BasicMachineComposition
             },
             write: (_, value, _) => floppy.Fdc.WriteData(value));
         var idle = new PortDevice();
-        var mappings = HcIoProfile.Faithful(memory, ula, driveLatch, fdcStatus, fdcData, idle, idle);
-        if (profile.BlockDisk == BlockDiskPolicy.HddV1)
+        var mappings = profile.Memory.RamBanks is not null
+            ? HcIoProfile.WithRamBanks(memory, ula, driveLatch, fdcStatus, fdcData, idle, idle)
+            : profile.Memory.RamPaged is not null
+                ? HcIoProfile.WithPagedRam(memory, ula, driveLatch, fdcStatus, fdcData, idle, idle)
+                : HcIoProfile.Faithful(memory, ula, driveLatch, fdcStatus, fdcData, idle, idle);
+        BlockDiskPort? hdd = null;
+        if (profile.BlockDisk is BlockDiskPolicy.HddV1 or BlockDiskPolicy.HddGuestV1)
         {
-            var hdd = new BlockDiskPort(memory, floppy, hddEnabled: true);
+            hdd = new BlockDiskPort(memory, floppy, hddEnabled: true,
+                guestAckEnabled: profile.BlockDisk == BlockDiskPolicy.HddGuestV1);
             mappings = HcIoProfile.WithBlockDisk(profile, memory, ula, driveLatch, fdcStatus, fdcData, idle, idle, hdd);
             observeHdd?.Invoke(hdd);
         }
@@ -345,17 +447,29 @@ public static class BasicMachineComposition
         var tapeControl = profile.TapeControl ? new TapeControlPort() : null;
         if (tapeControl is not null)
             mappings = HcIoProfile.WithTapeControl(profile, memory, ula, driveLatch, fdcStatus, fdcData, idle, idle, tapeControl);
-        var ports = new PortDecoder(mappings);
+        ExpansionController? expansionRoot = null;
+        if (profile.Name == "hc2000-v2-paged-expansion-v1")
+        {
+            expansionRoot = new(memory.EnableExpansionArena(profile));
+            mappings = ExpansionIoProfile.Compose(profile, memory,
+                HcIoProfile.WithPagedRam(memory, ula, driveLatch, fdcStatus, fdcData, idle, idle), expansionRoot);
+        }
+        var ports = expansionRoot is null ? new PortDecoder(mappings) : new PortDecoder(mappings, expansionRoot, expansionRoot.MainOrigin);
         var machineBus = new HcMachineBus(memory, ports, adapter, scheduler);
         var timedBus = new CpuTimedBus(machineBus, adapter);
-        var cpu = new CpuZ80(timedBus);
+        cpu = new CpuZ80(timedBus);
+        // The out parameter cannot be captured in the lambdas below; use the same instance via a local.
+        var newCpu = cpu;
         timedBus.Attach(cpu);
-        clock.InterruptChanged += (_, asserted) => cpu.IntLine = asserted;
+        clock.InterruptChanged += (_, asserted) => newCpu.IntLine = asserted;
+        var frontier = expansionRoot is null ? null : new ExpansionFrontierDriver(scheduler, clock, mapper, expansionRoot, memory, ports, cpu);
 
         // Authentic power-on: reset PC/latches, no RAM program, screen writes or ROM routine jump.
-        var machine = new LiveMachine(scheduler, clock, adapter, ula, () => cpu.Step(), () => cpu.TStates);
+        var machine = new LiveMachine(scheduler, clock, adapter, ula,
+            () => { hdd?.NotifyGuestInstruction(); newCpu.Step(); }, () => newCpu.TStates, frontier);
         var tape = machine.EnableTape(200);
         tapeControl?.Attach(tape);
+        if (profile.Name == "hc2000-v2-paged-tape-v2") machine.EnableTapeVolume(profile, memory);
         // EnableTape owns the one real ULA MIC subscription; App adds only EAR observation.
         ula.TapeInputChanged += (tick, level) =>
         {
@@ -363,7 +477,7 @@ public static class BasicMachineComposition
             var view = tape.Deck.Observe();
             monitor(new(tick, level, view.Mode == TapeDeckMode.Playing && !view.Paused && view.HoldReason == TapeHoldReason.None));
         };
-        machine.AttachSnapshotState(profile, clock, memory, mapper, new Z80SnapshotSeam(cpu), 2, floppy);
+        machine.AttachSnapshotState(profile, clock, memory, mapper, new Z80SnapshotSeam(cpu), 2, floppy, snapshotPolicy);
         return machine;
     }
 }
@@ -374,12 +488,14 @@ public sealed class PreparedBasicMachine
     internal HddColdAdmission? ColdAdmission { get; }
     internal (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) Roms { get; }
     internal ImmutableArray<HddInitialMedia> InitialHdd { get; }
+    internal HcsWavPolicy SnapshotPolicy { get; }
     internal PreparedBasicMachine((MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) roms,
-        ImmutableArray<HddInitialMedia> initialHdd = default, HddColdAdmission? coldAdmission = null)
+        ImmutableArray<HddInitialMedia> initialHdd = default, HddColdAdmission? coldAdmission = null, HcsWavPolicy? snapshotPolicy = null)
     {
         ColdAdmission = coldAdmission;
         Roms = roms;
         InitialHdd = initialHdd.IsDefault ? [] : initialHdd;
+        SnapshotPolicy = snapshotPolicy ?? HcsWavPolicy.Default;
     }
 }
 

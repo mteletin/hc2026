@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Hc2000.Machine.Expansion;
 using Hc2000.Machine.Floppy;
 using Hc2000.Machine.Input;
 using Hc2000.Machine.Memory;
@@ -32,7 +33,9 @@ public sealed class MachineSnapshot(
     ICpuSnapshotSeam cpu,
     int flashDeviceId,
     TapeTransport? tape,
-    FloppyController? floppy)
+    FloppyController? floppy,
+    TapeVolumeSession? tapeVolume = null,
+    ExpansionFrontierDriver? expansion = null)
 {
     private const string DevicePrefix = "device-";
     private const string KindPrefix = "kind-";
@@ -53,14 +56,29 @@ public sealed class MachineSnapshot(
 
     private HcsLimits DefaultLimits() => profile.Memory.RamPaged is null ? new() : new(TotalBytes: 0x44000000);
 
+    /// <summary>Read-only session-save admission, before any RAM or container copy.</summary>
+    public void ValidateSessionSnapshotSave(HcsWavPolicy? wavPolicy = null) =>
+        _ = CaptureAdmission(wavPolicy, DefaultLimits());
+
+    private (CpuLogicalState Cpu, JsonElement? Expansion) CaptureAdmission(HcsWavPolicy? wavPolicy, HcsLimits limits)
+    {
+        wavPolicy?.Reserve(limits.TotalBytes);
+        var stores = (long)memory.Ram.Length + memory.Rom.Length + memory.ShadowRam.Length + memory.ShadowRom.Length;
+        if (stores > limits.TotalBytes) Fail(HcsError.LimitExceeded, "minimum machine stores");
+        if (ExpansionSchema.Enabled(profile) != (expansion is not null)) Fail(HcsError.StateUnsupported, "expansion composition");
+        var state = expansion?.CaptureState();
+        var logical = cpu.Capture();
+        var boundary = mapper.WholeTicks + (mapper.Remainder == 0 ? 0 : 1);
+        if (expansion is null ? scheduler.Now != boundary : scheduler.Now < boundary) Fail(HcsError.StateUnsupported, "boundary");
+        if (mapper.CpuTStates != logical.TStates) Fail(HcsError.StateUnsupported, "cpu");
+        var encoded = state is null ? (JsonElement?)null : ExpansionSchema.ValidateCaptured(state, logical, scheduler, mapper, memory.Latches.PagedBank);
+        return (logical, encoded);
+    }
+
     private byte[] SaveCore(HcsWavPolicy? wavPolicy, HcsLimits limits, TapeCassetteImage? replacement, bool validateOnly, Stream? destination = null)
     {
         // Reserve the complete bounded copy plan BEFORE Capture/asset ToArray/MemoryStream allocation.
-        wavPolicy?.Reserve(limits.TotalBytes);
-        var cpuState = cpu.Capture();
-        var boundary = mapper.WholeTicks + (mapper.Remainder == 0 ? 0 : 1);
-        if (scheduler.Now != boundary) Fail(HcsError.StateUnsupported, "boundary");
-        if (mapper.CpuTStates != cpuState.TStates) Fail(HcsError.StateUnsupported, "cpu");
+        var (cpuState, expansionState) = CaptureAdmission(wavPolicy, limits);
         var fdcSnap = default(FdcDiagnosticSnapshot);
         byte sp1 = 0, sp2 = 0;
         int[] units = [];
@@ -149,6 +167,8 @@ public sealed class MachineSnapshot(
         });
         if (driveA is not null) Component("drive-a", DriveState(driveA));
         if (driveB is not null) Component("drive-b", DriveState(driveB));
+        if (expansionState is { } expansionElement)
+            Component(ExpansionSchema.ComponentId, JsonNode.Parse(expansionElement.GetRawText())!.AsObject());
         if (floppy is not null) components.Add(new JsonObject
         {
             ["id"] = "fdc", ["modelId"] = "fdc", ["modelVersion"] = 2, ["state"] = FdcState(fdcSnap!, sp1, sp2, units)
@@ -172,7 +192,7 @@ public sealed class MachineSnapshot(
         };
         if (profile.Memory.RamPaged is not null && memory.Latches.PagedEnabled)
         {
-            var mTransfer = profile.Memory.RamPaged.PolicyId == PagedRamPolicy.MTransferPolicyId;
+            var mTransfer = PagedRamPolicy.IsMTransfer(profile.Memory.RamPaged.PolicyId);
             var pagedState = new JsonObject
             {
                 ["v"] = mTransfer ? 2 : 1, ["bank"] = memory.Latches.PagedBank,
@@ -189,6 +209,7 @@ public sealed class MachineSnapshot(
             }
             memoryState["paged"] = pagedState;
         }
+        if (tapeVolume is not null) memoryState["tapeVolume"] = JsonSerializer.SerializeToNode(tapeVolume.CaptureState());
         Component("memory", memoryState);
         if (tapeState is not null) components.Add(new JsonObject
         {
@@ -205,7 +226,7 @@ public sealed class MachineSnapshot(
             ["tapeIn"] = ula.TapeIn
         });
 
-        var cpuSection = cpuState.ToJson();
+        var cpuSection = cpuState.ToJson(expansion is not null);
         var clockSection = new JsonObject
         {
             ["epoch"] = "0",
@@ -252,10 +273,19 @@ public sealed class MachineSnapshot(
             ["events"] = events,
             ["pendingOutput"] = new JsonArray()
         };
-        using Stream ownedStream = destination is not null || validateOnly ? Stream.Null : new MemoryStream();
-        var stream = destination ?? ownedStream;
         var logicalManifest = JsonDocument.Parse(manifest.ToJsonString()).RootElement.Clone();
         var schema = new MachineSchema(profile, wavPolicy);
+        var capacity = 0;
+        if (expansion is not null && destination is null && !validateOnly)
+        {
+            // Keep the byte[] save route, without doubling a GiB buffer when later blobs/trailer arrive.
+            long wireBytes = 64L + HcsCodec.CanonicalJson(logicalManifest, limits).Length;
+            foreach (var blob in blobs) wireBytes = checked(wireBytes + 12L + blob.Length);
+            if (wireBytes > limits.TotalBytes || wireBytes > Array.MaxLength) Fail(HcsError.LimitExceeded, "file");
+            capacity = (int)wireBytes;
+        }
+        using Stream ownedStream = destination is not null || validateOnly ? Stream.Null : new MemoryStream(capacity);
+        var stream = destination ?? ownedStream;
         if (profile.Memory.RamPaged is not null) HcsCodec.WriteOwned(stream, logicalManifest, blobs, schema, limits);
         else HcsCodec.Write(stream, logicalManifest, blobs, schema, limits);
         return validateOnly || destination is not null ? [] : ((MemoryStream)stream).ToArray();
@@ -287,12 +317,14 @@ public sealed class MachineSnapshot(
         ArgumentNullException.ThrowIfNull(stream);
         limits ??= DefaultLimits();
         wavPolicy?.Reserve(limits.TotalBytes);
+        if (ExpansionSchema.Enabled(profile) != (expansion is not null)) Fail(HcsError.StateUnsupported, "expansion composition");
         if (scheduler.Now != 0 || mapper.CpuTStates != 0)
             Fail(HcsError.StateInconsistent, "fresh");
         var doc = HcsCodec.Read(stream, new MachineSchema(profile, wavPolicy), limits);
         var m = doc.Manifest;
 
-        var cpuState = CpuLogicalState.FromJson(m.GetProperty("cpu"));
+        var cpuState = CpuLogicalState.FromJson(m.GetProperty("cpu"), expansion is not null);
+        var expansionState = expansion is null ? null : ExpansionSchema.Read(m);
         var c = m.GetProperty("clock");
         var now = Counter(c, "now");
         var lastCpuT = Counter(c, "lastCpuTStates");
@@ -402,6 +434,21 @@ public sealed class MachineSnapshot(
                 Fail(HcsError.StateInconsistent, "composition");
         }
 
+        TapeVolumeState? volumeState = null;
+        bool hasVolumeState = components["memory"].TryGetProperty("tapeVolume", out var volumeJson);
+        if (hasVolumeState != (tapeVolume is not null)) Fail(HcsError.StateInconsistent, "tape volume composition");
+        if (hasVolumeState)
+        {
+            try
+            {
+                volumeState = volumeJson.Deserialize<TapeVolumeState>() ?? throw new ArgumentException("volume state");
+                tapeVolume!.ValidateState(volumeState);
+                if (volumeState.WindowEngaged != components["memory"].TryGetProperty("paged", out _))
+                    throw new ArgumentException("Tape window engagement disagrees with paging state.");
+            }
+            catch (Exception e) when (e is JsonException or ArgumentException or InvalidOperationException or OverflowException)
+            { Fail(HcsError.StateInconsistent, "tape volume metadata"); }
+        }
         // Stage the entire tape (including legacy conversion and event pairing) before adoption.
         TapeDeckCore? tapeCandidate = null;
         var tapeEvents = events.Where(e => tape is not null && e.DeviceId == tape.DeviceId).ToArray();
@@ -471,6 +518,7 @@ public sealed class MachineSnapshot(
             if (detached.Component.WaveformLevel != ulaState.GetProperty("tapeIn").GetBoolean()
                 || detached.Component.MicLevel != ulaState.GetProperty("beeperMicrophone").GetBoolean()
                 || detached.Component.MicLevel != ((Num(ulaState, "feLatch") & 8) != 0)) Fail(HcsError.StateInconsistent, "tape ULA pins");
+            if (volumeState is not null) detached = detached with { MediaEpoch = volumeState.DeckEpoch };
             var staged = tape.ValidateRestoredState(detached, now, pending, gen);
             if (!staged.Success) Fail(staged.Failure!.Code == TapeError.RuntimeUnavailable ? HcsError.StateUnsupported : HcsError.StateInconsistent, "tape state");
             tapeCandidate = staged.Value;
@@ -495,6 +543,11 @@ public sealed class MachineSnapshot(
         mapper.Map(lastCpuT);
         if (mapper.WholeTicks != mapperWhole || mapper.Remainder != mapperRemainder)
             Fail(HcsError.StateInconsistent, "clock");
+        if (expansionState is not null)
+        {
+            cpu.Restore(cpuState);
+            expansion!.AdoptState(expansionState, components["memory"].GetProperty("paged").GetProperty("bank").GetUInt16(), events);
+        }
         doc.BlobView(AssetBlobId(m, "ram")).Span.CopyTo(memory.Ram.Span);
         doc.CopyBlob(AssetBlobId(m, "shadow-ram")).CopyTo(memory.ShadowRam.Span);
         var mem = components["memory"];
@@ -504,7 +557,7 @@ public sealed class MachineSnapshot(
             PagedControl: paged.ValueKind == JsonValueKind.Object ? (byte)((paged.GetProperty("screen").GetBoolean() ? 8 : 0)
                 | (paged.GetProperty("rom").GetBoolean() ? 0x10 : 0) | (paged.GetProperty("locked").GetBoolean() ? 0x20 : 0)) : (byte)0,
             PagedEnabled: memory.Profile.RamPaged is not null && paged.ValueKind == JsonValueKind.Object,
-            PagedTransfer: memory.Profile.RamPaged?.PolicyId == PagedRamPolicy.MTransferPolicyId
+            PagedTransfer: PagedRamPolicy.IsMTransfer(memory.Profile.RamPaged?.PolicyId)
                 && paged.ValueKind == JsonValueKind.Object && paged.GetProperty("transfer").GetBoolean()));
         var fc = components["frame-clock"];
         clock.Restore(Counter(fc, "completedFrames"), fc.GetProperty("intAsserted").GetBoolean());
@@ -516,6 +569,7 @@ public sealed class MachineSnapshot(
         var kb = components["keyboard"];
         keyboard.Restore(IntList(kb, "pressed"), IntList(kb, "joysticks"));
         if (tape is not null && tapeCandidate is not null) tape.AdoptValidatedState(tapeCandidate);
+        if (tapeVolume is not null && volumeState is not null) tapeVolume.RestoreState(volumeState);
         if (floppy is not null)
         {
             RestoreDrive(floppy.DriveA, "drive-a");
@@ -528,7 +582,7 @@ public sealed class MachineSnapshot(
                 null, null
             ]);
         }
-        cpu.Restore(cpuState);
+        if (expansion is null) cpu.Restore(cpuState);
         return;
 
         void RestoreDrive(FloppyDrive drive, string id)
@@ -604,6 +658,8 @@ public sealed class MachineSnapshot(
     private JsonArray Generations()
     {
         var ids = new List<int> { clock.DeviceId, flashDeviceId };
+        if (expansion is not null)
+            for (var id = 0; id <= ExpansionArena.ComputeCount; id++) ids.Add(ExpansionFrontierDriver.FirstCpuDeviceId + id);
         if (tape is not null) ids.Add(tape.DeviceId);
         if (floppy is not null)
             for (var d = floppy.FdcDeviceId; d <= floppy.FdcDeviceId + 5; d++) ids.Add(d);
@@ -670,6 +726,8 @@ public sealed class MachineSnapshot(
     private void CheckRoster(List<(int Device, long Generation)> generations)
     {
         var live = new HashSet<int> { clock.DeviceId, flashDeviceId };
+        if (expansion is not null)
+            for (var id = 0; id <= ExpansionArena.ComputeCount; id++) live.Add(ExpansionFrontierDriver.FirstCpuDeviceId + id);
         if (tape is not null) live.Add(tape.DeviceId);
         if (floppy is not null)
             for (var d = floppy.FdcDeviceId; d <= floppy.FdcDeviceId + 5; d++) live.Add(d);

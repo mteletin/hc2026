@@ -9,6 +9,8 @@ public sealed record VideoProfile
     public long FlashPeriodNumerator { get; init; } = FrameTiming.MasterHz;
     public long FlashPeriodDenominator { get; init; } = 2;
     public bool FullRaster { get; init; }
+    /// <summary>Opt-in host-only 2x ink surface; never changes guest state or the faithful frame.</summary>
+    public bool TextOverlay { get; init; }
     public IReadOnlyList<uint> Palette { get; init; } = new uint[] {
         0xff000000, 0xff0000cd, 0xffcd0000, 0xffcd00cd,
         0xff00cd00, 0xff00cdcd, 0xffcdcd00, 0xffcdcdcd,

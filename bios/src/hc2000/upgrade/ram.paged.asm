@@ -35,8 +35,9 @@ Window EQU 0xDE91
 Bounce EQU 0xDBB4
 
 ORG 0xDB15
+DirBuf EQU 0xDC34
 MDPH:
-    DW 0,0,0,0,0xDC34,MDPB,0,0xDB34
+    DW 0,0,0,0,DirBuf,MDPB,0,0xDB34
 MDPB:
     DW 128
     DB 5,31,1
@@ -129,7 +130,8 @@ MRequest:
     BIT 7,L
     JP NZ,MReject
     ; Trusted CP/M BIOS BASE entry: original 7E setup makes low RAM writable.
-    ; No caller data in OS C500-FFFF or page-zero control 0000-007F.
+    ; No caller data in OS C500-FFFF or page-zero control 0000-007F, except
+    ; this BIOS's own directory buffer, which BDOS is required to use.
     LD HL,(0xD875) ; capture GLOBAL DMA exactly once for this request
     LD (Dma),HL
     LD A,H
@@ -143,7 +145,19 @@ MDmaLowOK:
     JP C,MReject
     LD A,H
     CP 0xC5
-    JP NC,MReject
+    JR C,MDmaSpanOK
+    ; BDOS directory I/O sets the global DMA to this BIOS's own directory
+    ; buffer. Admit that exact 128-byte span (ends one below the code) and
+    ; keep refusing every other caller span in the OS tail. E is the live
+    ; operation, so the compare uses BC.
+    LD BC,(Dma)
+    LD A,B
+    CP HIGH(DirBuf)
+    JP NZ,MReject
+    LD A,C
+    CP LOW(DirBuf)
+    JP NZ,MReject
+MDmaSpanOK:
     ; Reject overlap with saved IFF and caller return word [SP,SP+4).
     ; HL = last DMA byte; stack must not wrap.
     LD (Window),HL ; temporary end, only after nested-entry refusal

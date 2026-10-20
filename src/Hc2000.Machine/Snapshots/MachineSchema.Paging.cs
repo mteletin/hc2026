@@ -10,7 +10,7 @@ public sealed partial class MachineSchema
     {
         if (!state.TryGetProperty("paged", out var paged) || paged.ValueKind == JsonValueKind.Null) return;
         if (profile.Memory.RamPaged is null) Error(HcsError.ProfileMismatch, "ram.paged on a device-less profile");
-        var mTransfer = profile.Memory.RamPaged?.PolicyId == PagedRamPolicy.MTransferPolicyId;
+        var mTransfer = PagedRamPolicy.IsMTransfer(profile.Memory.RamPaged?.PolicyId);
         if (mTransfer)
         {
             Fields(paged, "v", "view", "bank", "screen", "rom", "locked", "transfer", "ramBytes", "ramSha256");

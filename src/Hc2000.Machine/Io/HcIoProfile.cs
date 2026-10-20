@@ -63,7 +63,7 @@ public static class HcIoProfile
             new(0x7ffd, 0xffff, device, PortAccess.ReadWrite),
             new(0x7efd, 0xffff, device, PortAccess.ReadWrite),
             new(0x7dfd, 0xffff, device, PortAccess.ReadWrite),
-            .. memory.Profile.RamPaged.PolicyId == PagedRamPolicy.MTransferPolicyId
+            .. PagedRamPolicy.IsMTransfer(memory.Profile.RamPaged.PolicyId)
                 ? new PortMapping[] { new(0x7cfd, 0xffff, device, PortAccess.ReadWrite) } : [],
             .. Faithful(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf)
         ];
@@ -78,9 +78,10 @@ public static class HcIoProfile
         ArgumentNullException.ThrowIfNull(memory);
         ArgumentNullException.ThrowIfNull(blockDisk);
         profile.Validate();
-        if (profile.BlockDisk is not (BlockDiskPolicy.V1 or BlockDiskPolicy.HddV1))
+        if (profile.BlockDisk is not (BlockDiskPolicy.V1 or BlockDiskPolicy.HddV1 or BlockDiskPolicy.HddGuestV1))
             throw new ArgumentException("Only blockport/HDD profiles install ports 81/83/89.", nameof(profile));
-        if (blockDisk.HddEnabled != (profile.BlockDisk == BlockDiskPolicy.HddV1))
+        if (blockDisk.HddEnabled != (profile.BlockDisk is BlockDiskPolicy.HddV1 or BlockDiskPolicy.HddGuestV1) ||
+            blockDisk.GuestAckEnabled != (profile.BlockDisk == BlockDiskPolicy.HddGuestV1))
             throw new ArgumentException("Block-disk device and profile policy disagree.", nameof(blockDisk));
         return [.. Faithful(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf),
             .. blockDisk.Mappings()];
@@ -95,6 +96,9 @@ public static class HcIoProfile
         ArgumentNullException.ThrowIfNull(tapeControl);
         profile.Validate();
         if (!profile.TapeControl) throw new ArgumentException("Only the tape-control profile installs 0091.", nameof(profile));
-        return [.. Faithful(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf), .. tapeControl.Mappings()];
+        var core = memory.Profile.RamPaged is null
+            ? Faithful(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf)
+            : WithPagedRam(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf);
+        return [.. core, .. tapeControl.Mappings()];
     }
 }

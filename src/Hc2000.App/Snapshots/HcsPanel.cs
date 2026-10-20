@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -18,7 +19,16 @@ public sealed class HcsPanel : StackPanel
     private readonly Button save = new() { Content = "Save snapshot…" };
     private readonly Button load = new() { Content = "Load snapshot…" };
     private readonly CheckBox discard = new() { Content = "Explicitly discard unsaved disk/cassette edits on snapshot Load" };
+    private readonly Button refreshList = new() { Content = "Refresh snapshot list" };
+    private readonly StackPanel snapshotRows = new() { Spacing = 3 };
+    private ImmutableArray<InlineMediaRow> snapshotListed = [];
     public string? Notice => notice.Text;
+    public ImmutableArray<InlineMediaRow> SnapshotListed => snapshotListed;
+
+    /// <summary>Host-scoped snapshot directory for the bound machine; null = not configured (rows say so).</summary>
+    public string? SnapshotDirectory { get; set; }
+    /// <summary>This machine's persisted last snapshot selection, if any.</summary>
+    public string? LastSnapshot { get; set; }
 
     public HcsPanel()
     {
@@ -43,8 +53,40 @@ public sealed class HcsPanel : StackPanel
             if (await PickAsync("Load snapshot", "*.hcs") is not { } path) return;
             await LoadCoreAsync(path);
         });
-        Children.Add(save); Children.Add(load); Children.Add(discard); Children.Add(notice);
+        var listSection = new StackPanel { Orientation = Orientation.Vertical, Spacing = 3 };
+        listSection.Children.Add(new TextBlock { Text = "Snapshots in this machine's directory (host metadata only; selection uses the existing guarded load)", FontSize = 14 });
+        refreshList.Click += async (_, _) => await RunAsync(() => { RefreshSnapshotList(); return Task.CompletedTask; });
+        listSection.Children.Add(refreshList);
+        listSection.Children.Add(snapshotRows);
+        Children.Add(save); Children.Add(load); Children.Add(discard); Children.Add(listSection); Children.Add(notice);
         UpdateControls();
+        RefreshSnapshotList();
+    }
+
+    /// <summary>Rebuild the inline snapshot listing from host metadata of the machine's scoped directory.</summary>
+    public void RefreshSnapshotList()
+    {
+        snapshotListed = InlineMediaListing.Snapshots(SnapshotDirectory, LastSnapshot);
+        snapshotRows.Children.Clear();
+        foreach (var row in snapshotListed)
+        {
+            var item = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            item.Children.Add(new TextBlock { Text = MediaPanel.RowText(row), TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+            if (row.Selectable)
+            {
+                var button = new Button { Content = "Load", Focusable = false, IsEnabled = bridge is not null && !busy };
+                string path = row.Path!;
+                long size = row.Size;
+                button.Click += async (_, _) => await RunAsync(async () =>
+                {
+                    if (InlineMediaListing.RevalidateSnapshot(path, size) is { } refusal)
+                        throw new InvalidOperationException(refusal);
+                    await LoadCoreAsync(path);
+                });
+                item.Children.Add(button);
+            }
+            snapshotRows.Children.Add(item);
+        }
     }
 
     public void Attach(HcsBridge value)
@@ -53,11 +95,20 @@ public sealed class HcsPanel : StackPanel
         bridge = value;
         notice.Text = "Snapshot connected.";
         UpdateControls();
+        RefreshSnapshotList();
     }
 
     public void Disconnect()
     {
-        bridge?.Disconnect(); bridge = null; UpdateControls();
+        bridge?.Disconnect();
+        Unbind();
+    }
+
+    // A tab switch releases only the shared view, not the session-owned live bridge.
+    public void Unbind()
+    {
+        bridge = null; UpdateControls();
+        RefreshSnapshotList();
         notice.Text = "Snapshot runtime disconnected.";
     }
 
@@ -98,7 +149,7 @@ public sealed class HcsPanel : StackPanel
 
     private void UpdateControls()
     {
-        save.IsEnabled = load.IsEnabled = discard.IsEnabled = bridge is not null && !busy;
+        save.IsEnabled = load.IsEnabled = discard.IsEnabled = refreshList.IsEnabled = bridge is not null && !busy;
     }
 
     private async Task<string?> PickAsync(string title, string pattern)

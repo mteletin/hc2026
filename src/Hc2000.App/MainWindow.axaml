@@ -7,22 +7,27 @@
         x:Class="Hc2000.App.MainWindow"
         Title="HC2000">
   <Window.Styles>
-    <!-- Machine text keys must stay unhandled for native TextInput. Toolbar buttons
-         are pointer actions, not keyboard targets: Space must not click the last one. -->
+    <!-- Machine text keys stay unhandled for native TextInput. Toolbar buttons are
+         pointer actions: Space must not click the last one. Draft fields opt in. -->
     <Style Selector="Button">
       <Setter Property="Focusable" Value="False"/>
     </Style>
+    <Style Selector="Border.section">
+      <Setter Property="Padding" Value="12"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+    </Style>
+    <Style Selector="TextBlock.sectionTitle">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
   </Window.Styles>
-  <ScrollViewer>
-  <StackPanel Margin="16">
-    <TextBlock Text="HC2000" FontSize="24"/>
-    <ContentControl Name="PrestartConfiguration" Margin="0,8,0,8"/>
-    <TextBlock Name="RuntimeStatus" Text="Disconnected: no CPU/machine factory attached" Margin="0,8,0,0"/>
-    <Button Name="MachineReset" Content="Reset" IsEnabled="False" Margin="0,8,0,0"/>
-    <StackPanel Name="Z80DemoControls" IsVisible="False" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-      <Button Name="Z80DemoRerun" AutomationProperties.Name="Reset / Run again" Content="Reset / Run again"/>
-    </StackPanel>
-    <Grid HorizontalAlignment="Stretch">
+  <DockPanel>
+    <!-- The screen owns the client slot left after the chrome: a finite, non-scrolling
+         rectangle. The zoom formula gives it an integer scale at most the requested zoom
+         and at most what fits this slot; everything above it scrolls. -->
+    <Grid Name="ScreenSlot" DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" IsVisible="False">
       <runtime:AspectRatioViewport Name="ScreenViewport" FitToWindow="False">
         <runtime:AspectRatioViewport.Surface>
           <runtime:VideoSurface Name="Screen" AutomationProperties.Name="HC2000 screen" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
@@ -30,20 +35,70 @@
       </runtime:AspectRatioViewport>
       <local:CellBoundaryOverlay Name="CellBoundaries" IsVisible="False" IsHitTestVisible="False"/>
     </Grid>
-    <CheckBox Name="CellOverlayToggle" Content="Show 8×8 cell boundaries (inspection overlay)" Margin="0,8,0,0"/>
-    <media:MediaPanel Name="MediaControls" Margin="0,12,0,0"/>
-    <media:ProfileRomPanel Name="ProfileRomControls" IsVisible="False" IsEnabled="False" Margin="0,12,0,0"/>
-    <snapshots:HcsPanel Name="SnapshotControls" Margin="0,12,0,0"/>
-    <Button Content="Settings…" Click="OpenSettings" Margin="0,16,0,0"/>
-    <Button Content="Debugger…" Click="OpenDebugger" Margin="0,8,0,0"/>
-    <TextBlock Text="Keyboard mapping" Margin="0,16,0,0"/>
-    <ComboBox x:Name="InputModeBox" AutomationProperties.Name="Keyboard mapping">
-      <ComboBoxItem Content="Symbolic (host text)"/>
-      <ComboBoxItem Content="Positional (physical keys)"/>
-    </ComboBox>
-    <TextBox x:Name="PasteTextBox" AutomationProperties.Name="Text to paste into the machine" PlaceholderText="Text to paste into the machine" AcceptsReturn="True" Height="80" Margin="0,8,0,0"/>
-    <Button x:Name="PasteButton" Content="Queue paste" Click="PasteInput" Margin="0,8,0,0"/>
-    <TextBlock x:Name="InputNotice" Text="Input queued only; a connected runtime consumes it. F2: Edit, F3: Graph, Alt: Symbol Shift (positional)." TextWrapping="Wrap" Margin="0,8,0,0"/>
-  </StackPanel>
+  <ScrollViewer Name="ShellScroll" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16" Spacing="12">
+      <StackPanel Spacing="2">
+        <TextBlock Text="HC2000" FontSize="24" FontWeight="SemiBold"/>
+        <TextBlock Text="Configure and run your HC2000 machines" TextWrapping="Wrap"/>
+      </StackPanel>
+      <Border Classes="section">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Name="MachineWorkspaceHeading" Classes="sectionTitle" Text="Machines" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Name="NewMachine" Content="New machine" AutomationProperties.Name="Configure a new machine"/>
+          </Grid>
+          <TextBlock Text="Up to four machines. × closes only that machine; settings topics below are not machines." TextWrapping="Wrap"/>
+          <TextBlock Name="EmptyWorkspace" Text="No machine started. Configure the first machine below." TextWrapping="Wrap"/>
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <StackPanel Name="MachineTabs" Orientation="Horizontal" Spacing="8" IsVisible="False"/>
+          </ScrollViewer>
+        </StackPanel>
+      </Border>
+      <StackPanel Name="SelectedMachineHeading" Spacing="4" IsVisible="False">
+        <TextBlock Text="Selected machine"/>
+        <TextBlock Name="SelectedMachineName" Classes="sectionTitle" Text="No machine selected" TextWrapping="Wrap"/>
+        <TextBlock Name="EffectiveHardware" TextWrapping="Wrap"/>
+        <TextBlock Text="Reset, mounted media, snapshots and guest input affect only this selected machine." TextWrapping="Wrap"/>
+      </StackPanel>
+      <TextBlock Name="RuntimeStatus" Text="Draft: configure, then Start machine. No guest executing." TextWrapping="Wrap"/>
+      <Border Name="ConfigurationCard" Classes="section">
+        <ContentControl Name="PrestartConfiguration"/>
+      </Border>
+      <StackPanel Name="RunningWorkspace" Spacing="12" IsVisible="False">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Name="MachineReset" Content="Reset selected machine" IsEnabled="False"/>
+          <Button Content="Settings…" Click="OpenSettings" ToolTip.Tip="Application preferences; not a new machine"/>
+          <Button Content="Debugger…" Click="OpenDebugger"/>
+        </StackPanel>
+        <StackPanel Name="Z80DemoControls" IsVisible="False" Orientation="Horizontal" Spacing="8">
+          <Button Name="Z80DemoRerun" AutomationProperties.Name="Reset / Run again" Content="Reset / Run again"/>
+        </StackPanel>
+        <CheckBox Name="CellOverlayToggle" Content="Show 8×8 cell boundaries (inspection overlay)"/>
+        <Expander Header="Reconfigure and reset · selected machine">
+          <ContentControl Name="ReconfigureConfiguration" Margin="0,8,0,0"/>
+        </Expander>
+        <Expander Header="Media and disks · selected machine">
+          <media:MediaPanel Name="MediaControls" Margin="0,8,0,0"/>
+        </Expander>
+        <media:ProfileRomPanel Name="ProfileRomControls" IsVisible="False" IsEnabled="False"/>
+        <Expander Header="Snapshots · selected machine">
+          <snapshots:HcsPanel Name="SnapshotControls" Margin="0,8,0,0"/>
+        </Expander>
+        <Border Classes="section">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="sectionTitle" Text="Keyboard and paste · selected machine"/>
+            <TextBlock Text="Keyboard mapping"/>
+            <ComboBox x:Name="InputModeBox" AutomationProperties.Name="Keyboard mapping">
+              <ComboBoxItem Content="Symbolic (host text)"/>
+              <ComboBoxItem Content="Positional (physical keys)"/>
+            </ComboBox>
+            <TextBox x:Name="PasteTextBox" AutomationProperties.Name="Text to paste into the machine" PlaceholderText="Text to paste into the selected machine" AcceptsReturn="True" Height="80"/>
+            <Button x:Name="PasteButton" Content="Queue paste" Click="PasteInput"/>
+            <TextBlock x:Name="InputNotice" Text="Input queued only; the selected runtime consumes it. F2: Edit, F3: Graph, Alt: Symbol Shift (positional)." TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </StackPanel>
   </ScrollViewer>
+  </DockPanel>
 </Window>

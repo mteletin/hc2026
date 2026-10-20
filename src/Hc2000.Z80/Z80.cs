@@ -48,11 +48,19 @@ public sealed partial class Z80
         nmiPending = false;
         eiDelay = 0;
         lastLdAiOrR = false;
+        frontierActive = frontierPrepared = frontierRetired = frontierOpcodePresent = false;
+        frontierImmediate = frontierRefresh = false;
+        frontierStage = FrontierStage.None;
+        frontierFamily = PrefixFamily.Base;
+        frontierOpcode = 0;
+        frontierEffect = default;
+        if (frontierTemps is not null) Array.Clear(frontierTemps);
     }
 
     /// <summary>Execute one instruction. Prefixes are not interrupt boundaries.</summary>
     public int Step()
     {
+        if (frontierActive) throw new InvalidOperationException("A partial frontier instruction cannot use Step.");
         var start = TStates;
         // Interrupt boundary: NMI takes priority, then INT.
         if ((nmiPending || (IntLine && R.IFF1 && eiDelay == 0)) && AcceptInterrupt())

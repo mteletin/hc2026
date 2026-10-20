@@ -16,12 +16,13 @@ public sealed record HddSelectedCaptureReceipt(HddSelectedCaptureError Error, st
 public enum HddSelectedCaptureError
 {
     None, HddDisabled, WrongOwner, InvalidUnit, NullSelection, InvalidImage, ReadOnlySelection,
-    NullExpectation, StaleGeneration, StaleState, DirtyMedia, WriteProtectedMedia
+    NullExpectation, StaleGeneration, StaleState, DirtyMedia, WriteProtectedMedia,
+    GuestSwitchActive = 12, Uncooperated = 13
 }
 
 /// <summary>Opt-in virtual guest ABI v1/v2 (not the faithful 8272 or an upgraded BIOS).
 /// One emulation-thread owner; caller drains device time before each bus operation.</summary>
-public sealed class BlockDiskPort : IPortDevice
+public sealed partial class BlockDiskPort : IPortDevice
 {
     private readonly int owner = Environment.CurrentManagedThreadId;
     private readonly HcMemory memory;
@@ -32,25 +33,43 @@ public sealed class BlockDiskPort : IPortDevice
     private ushort pointer;
     private byte status;
 
-    public BlockDiskPort(HcMemory memory, FloppyController controller, bool hddEnabled = false)
+    public BlockDiskPort(HcMemory memory, FloppyController controller, bool hddEnabled = false, bool guestAckEnabled = false)
     {
         this.memory = memory ?? throw new ArgumentNullException(nameof(memory));
         this.controller = controller ?? throw new ArgumentNullException(nameof(controller));
+        if (guestAckEnabled && !hddEnabled) throw new ArgumentException("Guest ACK requires HDD slots.", nameof(guestAckEnabled));
+        GuestAckEnabled = guestAckEnabled;
         transfer = new(memory, controller.DriveA, controller.DriveB);
         if (hddEnabled) slots = Enumerable.Range(0, 4).Select(_ => new HddSlot()).ToArray();
     }
 
-    /// <summary>Owner-boundary reset affects only the private pointer/status.</summary>
+    /// <summary>Owner-boundary reset retires idle guest binding and pointer/status; refuses undrained work.</summary>
     public void Reset()
     {
         VerifyOwner();
+        RequireNoGuestSwitch();
+        InvalidateGuestAckSession();
         pointer = 0; status = 0;
     }
 
     /// <summary>Host-session byte operations at the emulation owner boundary, never file I/O.</summary>
-    public void AttachHdd(byte drive, ReadOnlySpan<byte> image, bool writeProtected = false, bool discardDirty = false) =>
+    public void AttachHdd(byte drive, ReadOnlySpan<byte> image, bool writeProtected = false, bool discardDirty = false)
+    {
+        VerifyOwner();
+        RequireRestoredCooperation();
+        RequireNoGuestSwitch();
         Slot(drive).Attach(image, writeProtected, discardDirty);
-    public void DetachHdd(byte drive, bool discardDirty = false) => Slot(drive).Detach(discardDirty);
+        completedGuestCooperation = false;
+    }
+    public void DetachHdd(byte drive, bool discardDirty = false)
+    {
+        VerifyOwner();
+        RequireRestoredCooperation();
+        RequireNoGuestSwitch();
+        Slot(drive).Detach(discardDirty);
+        coldRestoreBoundary = false;
+        completedGuestCooperation = false;
+    }
     public byte[] ExportHdd(byte drive) => Slot(drive).Export();
     public HddSlotState CaptureHdd(byte drive) => Slot(drive).Capture();
 
@@ -88,8 +107,12 @@ public sealed class BlockDiskPort : IPortDevice
         if (Environment.CurrentManagedThreadId != owner)
             return new(HddSelectedCaptureError.WrongOwner, "Capture belongs to the emulation owner.");
         if (slots is null) return new(HddSelectedCaptureError.HddDisabled, "disk.hdd is disabled.");
+        if (uncooperated)
+            return new(HddSelectedCaptureError.Uncooperated, "Uncooperated restored binding requires a post-re-arm guest ACK cycle.");
         if (unit is < 2 or > 5)
             return new(HddSelectedCaptureError.InvalidUnit, $"Unit {unit} is not an HDD unit.");
+        if (guestRequest is not null)
+            return new(HddSelectedCaptureError.GuestSwitchActive, "Drain or retire the guest switch before selected capture.");
         if (selection is null)
             return new(HddSelectedCaptureError.NullSelection, "Prepared selection is null.");
         if (selection.Image.Length != HddSlot.ImageBytes)
@@ -121,6 +144,8 @@ public sealed class BlockDiskPort : IPortDevice
             return new(HddSelectedCaptureError.WriteProtectedMedia, "Capture is a write to a write-protected slot.");
         // All expectations are validated before any mutation; validated inputs cannot throw in the core attach.
         slot.AttachSelected(selection.Image.AsSpan(), discardCurrentDirty);
+        coldRestoreBoundary = false;
+        completedGuestCooperation = false;
         return new(HddSelectedCaptureError.None, "");
     }
 
@@ -137,6 +162,7 @@ public sealed class BlockDiskPort : IPortDevice
     {
         VerifyOwner();
         if (!HddEnabled) throw new InvalidOperationException("disk.hdd is disabled.");
+        RequireNoGuestSwitch();
         return new(pointer, status, slots!.Select(s => s.Capture()).ToArray());
     }
 
@@ -144,16 +170,21 @@ public sealed class BlockDiskPort : IPortDevice
     {
         VerifyOwner();
         if (!HddEnabled) throw new InvalidOperationException("disk.hdd is disabled.");
+        RequireNoGuestSwitch();
         if (state is null)
         {
             slots = Enumerable.Range(0, 4).Select(_ => new HddSlot()).ToArray();
+            RetireGuestAckForRestore();
             pointer = 0; status = 0;
+            uncooperated = false;
+            coldRestoreBoundary = true;
             return;
         }
         ArgumentNullException.ThrowIfNull(state.Slots);
         if (state.Slots.Length != 4) throw new ArgumentException("HDD snapshot/profile mismatch.", nameof(state));
         // Validate and copy every slot before adopting any state.
         var restored = state.Slots.Select(HddSlot.Restore).ToArray();
+        RetireGuestAckForRestore();
         slots = restored;
         pointer = state.Pointer; status = state.Status;
     }
@@ -211,6 +242,7 @@ public sealed class BlockDiskPort : IPortDevice
         for (var i = 0; i < command.Length; i++) command[i] = memory.Read((ushort)(pointer + i));
         if (command[0] != 1 || command[7] != 0) return 0x02;
         if (command[1] > 1) return 0x04;
+        if (GuestSwitchHoldsCpu) return 0x0e;
         // ReadStatus can advance byte readiness under fdc.instant. Inspect returns the same
         // current MSR without that programmed-poll effect or any result consumption.
         if (controller.Fdc.Inspect().MainStatus is not (0x00 or 0x80)) return 0x0b;
@@ -245,7 +277,9 @@ public sealed class BlockDiskPort : IPortDevice
         if (command[3] != 0 || command[10] != 0 || command[11] != 0) return 0x02;
         if (command[2] is < 2 or > 5) return 0x04;
         var operation = command[1];
+        if (GuestAckEnabled && operation is 4 or 5) return ExecuteGuestAck(command);
         if (operation is not (1 or 2 or 3)) return 0x01;
+        if (GuestSwitchHoldsCpu) return 0x0e;
         var slot = slots![command[2] - 2];
         var lba = BinaryPrimitives.ReadUInt32LittleEndian(command[4..]);
         var dma = BinaryPrimitives.ReadUInt16LittleEndian(command[8..]);
@@ -281,6 +315,7 @@ public sealed class BlockDiskPort : IPortDevice
     private void VerifyBoundary(long tick)
     {
         VerifyOwner();
+        coldRestoreBoundary = false;
         if (tick != controller.MasterTick)
             throw new InvalidOperationException("Drain shared device time to the bus tick before block disk access.");
     }

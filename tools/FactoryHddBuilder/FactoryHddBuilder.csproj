@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Hc2000.Machine/Hc2000.Machine.csproj" />
+    <Compile Include="../../src/HostShared/HddFactoryImages.cs" Link="HostShared/HddFactoryImages.cs" />
+  </ItemGroup>
+</Project>

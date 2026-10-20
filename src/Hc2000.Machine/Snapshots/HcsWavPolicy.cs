@@ -8,6 +8,8 @@ namespace Hc2000.Machine.Snapshots;
 public sealed record HcsWavPolicy(int MaxInputBytes = 256 * 1024 * 1024, long TransientBytes = 4L * 1024 * 1024 * 1024)
 {
     public static HcsWavPolicy Default { get; } = new();
+    /// <summary>Pure composition admission; this never raises the caller's immutable allowance.</summary>
+    public void ValidateExpansionStep1Admission() => Reserve(0x44000000);
     internal TapeLimits TapeLimits => new() { InputBytes = Math.Min(MaxInputBytes, TapeInputPolicy.WavInputBytes) };
     internal void Reserve(long wireBytes)
     {

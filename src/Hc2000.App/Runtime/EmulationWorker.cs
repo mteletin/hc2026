@@ -1,6 +1,7 @@
 using Hc2000.Machine;
 using Hc2000.Machine.Video;
 using LiveMachine = Hc2000.Machine.Machine;
+using Hc2000.App.Debugging;
 
 namespace Hc2000.App.Runtime;
 
@@ -48,10 +49,18 @@ public sealed class EmulationWorker : IDisposable
     private readonly CancellationTokenSource cancellation = new();
     private readonly TaskCompletionSource completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private VideoFrame? latest;
+    // The retained copy carries the owner generation and capture sequence it was taken at, so a
+    // reader can tell a copy taken after its request from the one retained before it. CPU T-states
+    // are not that token: they freeze while paused and restart at zero after a reset.
+    private DebugEvidence? latestDebug;
+    private int debugRequested;
+    private long debugCaptureSequence;
     private int disposed;
     private long sessionGeneration = 1;
     private int observationSessionAvailable;
     public IHostClock HostClock { get; }
+    // A replacement worker is a different machine-runtime session even if its generation starts at 1.
+    internal Guid DebugSessionId { get; } = Guid.NewGuid();
     internal long SessionGeneration => Interlocked.Read(ref sessionGeneration);
     internal bool ObservationSessionAvailable => Volatile.Read(ref observationSessionAvailable) != 0 && Volatile.Read(ref disposed) == 0;
     // Bounded diagnostic invalidation only; never a UI callback or guest command.
@@ -59,19 +68,38 @@ public sealed class EmulationWorker : IDisposable
     public Task Completion => completion.Task;
     public VideoFrame? TakeLatestFrame() => Interlocked.Exchange(ref latest, null);
 
+    /// <summary>Asks the worker for a debugger boundary copy. The capture runs on the
+    /// emulation owner at the next instruction boundary, or in the paused pump when stopped.
+    /// A second call while one is outstanding does not stack: the flag is a single slot.</summary>
+    public void RequestDebugSnapshot() => Interlocked.CompareExchange(ref debugRequested, 1, 0);
+
+    /// <summary>True while a capture demand is waiting for, or being copied by, the owner.
+    /// Requests coalesce until the owner publishes (0 idle, 1 requested, 2 capturing).</summary>
+    internal bool DebugDemandPending => Volatile.Read(ref debugRequested) != 0;
+
+    /// <summary>Latest published debugger boundary copy; kept so a re-opened window starts with state.</summary>
+    public DebuggerSnapshot? TakeLatestDebugSnapshot() => Volatile.Read(ref latestDebug)?.Snapshot;
+
+    /// <summary>The retained copy with the generation and sequence it was captured at, read atomically
+    /// so the stamps cannot be observed apart from the copy they belong to.</summary>
+    internal DebugEvidence? TakeLatestDebugEvidence() => Volatile.Read(ref latestDebug);
+
     public EmulationWorker(Func<LiveMachine> factory, Action<RuntimeContext> boundary,
         Func<MachineFrameResult, int, CancellationToken, bool>? audio = null,
-        Action<RuntimeContext>? cleanup = null, IHostClock? hostClock = null)
+        Action<RuntimeContext>? cleanup = null, IHostClock? hostClock = null,
+        Func<bool>? executionAllowed = null,
+        Func<RuntimeContext, DebuggerSnapshot?>? debugSnapshot = null)
     {
         ArgumentNullException.ThrowIfNull(factory); ArgumentNullException.ThrowIfNull(boundary);
         HostClock = hostClock ?? new MonotonicHostClock();
-        var thread = new Thread(() => Run(factory, boundary, audio, cleanup, HostClock))
+        var thread = new Thread(() => Run(factory, boundary, audio, cleanup, HostClock, executionAllowed, debugSnapshot))
         { IsBackground = true, Name = "HC2000 emulation" };
         thread.Start();
     }
     private void Run(Func<LiveMachine> factory, Action<RuntimeContext> boundary,
         Func<MachineFrameResult, int, CancellationToken, bool>? audio,
-        Action<RuntimeContext>? cleanup, IHostClock hostClock)
+        Action<RuntimeContext>? cleanup, IHostClock hostClock, Func<bool>? executionAllowed,
+        Func<RuntimeContext, DebuggerSnapshot?>? debugSnapshot)
     {
         RuntimeContext? context = null;
         Exception? failure = null;
@@ -83,7 +111,27 @@ public sealed class EmulationWorker : IDisposable
             bool Boundary()
             {
                 boundary(context);
-                return !cancellation.IsCancellationRequested && context.PermitStep();
+                CaptureDebugSnapshot();
+                // Keep pumping owner controls while the native guest switch is held.
+                // Check before PermitStep: a held CPU must not consume a queued single step.
+                return !cancellation.IsCancellationRequested && (executionAllowed?.Invoke() ?? true) && context.PermitStep();
+            }
+            // Request-gated: at most one 64 KB boundary copy per UI request, owner-thread only.
+            void CaptureDebugSnapshot()
+            {
+                // A reset request must be satisfied by the replacement, not the retiring context.
+                if (context.Resetting || debugSnapshot is null ||
+                    Interlocked.CompareExchange(ref debugRequested, 2, 1) != 1) return;
+                try
+                {
+                    var captured = debugSnapshot(context);
+                    // An unavailable copy consumes the demand without advancing freshness.
+                    if (captured is null) return;
+                    var stamped = new DebugEvidence(captured, DebugSessionId, SessionGeneration,
+                        Interlocked.Increment(ref debugCaptureSequence), context.Paused);
+                    Interlocked.Exchange(ref latestDebug, stamped);
+                }
+                finally { Volatile.Write(ref debugRequested, 0); }
             }
             while (!cancellation.IsCancellationRequested && !context.Stopping)
             {
@@ -98,11 +146,13 @@ public sealed class EmulationWorker : IDisposable
                         var speed = context.Speed;
                         cleanup?.Invoke(context);
                         Interlocked.Exchange(ref latest, null);
+                        Interlocked.Exchange(ref latestDebug, null);
                         context = new(factory());
                         Volatile.Write(ref observationSessionAvailable, 1);
                         context.SetSpeed(speed);
                         if (wasPaused) context.Pause();
                     }
+                    CaptureDebugSnapshot();
                     pacer.Rebase();
                     if (cancellation.Token.WaitHandle.WaitOne(2)) break;
                     continue; // paused queue pumping, no CPU steps/time advancement
@@ -143,3 +193,9 @@ public sealed class EmulationWorker : IDisposable
         }
     }
 }
+
+/// <summary>A debugger boundary copy stamped with the owner generation and capture sequence it was
+/// taken at, and whether the machine was paused when the owner captured it. The sequence advances
+/// once per real capture and is the freshness token; the generation changes on reset or load, so a
+/// copy from the retired machine can be told apart from one of the replacement.</summary>
+internal sealed record DebugEvidence(DebuggerSnapshot Snapshot, Guid SessionId, long Generation, long Sequence, bool Paused);

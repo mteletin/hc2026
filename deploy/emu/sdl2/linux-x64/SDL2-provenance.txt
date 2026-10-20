@@ -1,0 +1,12 @@
+version=2.32.10
+source_commit=5d249570393f7a37e037abf22cd6012a4cc56a71
+source_url=https://www.libsdl.org/release/SDL2-2.32.10.tar.gz
+source_sha256=5f5993c530f084535c65a6879e9b26ad441169b3e25d789d83287040a9ca5165
+rid=linux-x64
+compiler=gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+configure=--disable-video-x11 --disable-video-wayland --disable-joystick --disable-haptic --disable-sensor --disable-static
+cflags=-O2 -DNDEBUG
+cppflags=-I/home/coder-06-pi3/tools/sdl-build-deps-20261016/usr/usr/include
+ldflags=-L/home/coder-06-pi3/tools/sdl-build-deps-20261016/usr/usr/lib/x86_64-linux-gnu
+pkg_config_path=/home/coder-06-pi3/tools/sdl-build-deps-20261016/usr/usr/lib/x86_64-linux-gnu/pkgconfig
+pkg_config_sysroot_dir=/home/coder-06-pi3/tools/sdl-build-deps-20261016/usr/usr

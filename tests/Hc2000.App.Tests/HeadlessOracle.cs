@@ -1102,6 +1102,12 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
         "66b8e4dedc08ddd872607efaecd2c2a4bf4ec8cb3869e7f3e468f966ccf12b87",
         "d8e6e0b34dce8e1236e236e6e1103f6a5c6101b775d3cd22fc58d09fa1ec2aa8", "A0>", "Serial port->set for ");
 
+    // In CP/M (C7), the guest's DF0C/DF0D variable maps to physical FF0C/FF0D.
+    // Firmware calls toggle C5/C7, so a live logical read can see unrelated DF0C.
+    // After the command reaches the prompt, read the stored word, not that transient view.
+    private static ushort ReadBaudDivisor(HcMemory memory) =>
+        BinaryPrimitives.ReadUInt16LittleEndian(memory.Ram.Span.Slice(0xff0c, 2));
+
     private async Task RunBaud(string image, string diskHash, string programHash, string prompt, string message, bool captureBaudOwner = false)
     {
         // hc2000/source-manuals §8: hc-cpm PDF p04 (printed 6): seven rates,
@@ -1140,7 +1146,7 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
             await WaitFrames(ctx.Worker, 40);
         }
         string Text(OracleContext ctx) => new(ctx.Trace.Console.ToArray().Select(value => (char)value).ToArray());
-        ushort Divisor(OracleContext ctx) => (ushort)(ctx.Memory.Read(0xdf0c) | ctx.Memory.Read(0xdf0d) << 8);
+        ushort Divisor(OracleContext ctx) => ReadBaudDivisor(ctx.Memory);
         async Task<string> WaitConsole(OracleContext ctx, int start, string expected)
         {
             var until = DateTime.UtcNow + TimeSpan.FromSeconds(75);
@@ -1150,7 +1156,7 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
                 await Task.Delay(20);
             }
             var seen = Text(ctx)[start..];
-            output.WriteLine($"expected={expected}; seen={seen}; PC={ctx.Cpu.R.PC:X4}; DF0C={Divisor(ctx):X4}");
+            output.WriteLine($"expected={expected}; seen={seen}; PC={ctx.Cpu.R.PC:X4}; physical-FF0C={Divisor(ctx):X4}");
             Assert.Contains(expected, seen);
             Assert.DoesNotContain("ERROR", seen, StringComparison.OrdinalIgnoreCase);
             return seen;
@@ -1173,13 +1179,14 @@ public sealed partial class HeadlessOracle(Xunit.ITestOutputHelper output)
                 var seen = await Send($"BAUD {rate}\n");
                 Assert.Contains(message + rate + " baud", seen); // binary-specific wording, NOT physical oracle.
                 var expected = 3500000 / (26 * rate) - 2;
-                output.WriteLine($"why=manual rate {rate}, independent divider expected={expected}, seen={Divisor(ctx)}");
-                Assert.Equal(expected, Divisor(ctx));
+                var observed = Divisor(ctx);
+                output.WriteLine($"why=manual rate {rate}, independent divider expected={expected}, physical-FF0C={observed}");
+                Assert.Equal(expected, observed);
             }
             var custom = await Send("BAUD @1234\n");
             Assert.Contains(message + "1234 baud", custom);
-            Assert.Equal(3500000 / (26 * 1234) - 2, Divisor(ctx));
             var saved = Divisor(ctx);
+            Assert.Equal(3500000 / (26 * 1234) - 2, saved);
             Assert.Contains("Invalid baud rate", await Send("BAUD 1234\n"));
             Assert.Equal(saved, Divisor(ctx));
             // Default-off: enabling Build's private handle requires a separate diagnostic scope.

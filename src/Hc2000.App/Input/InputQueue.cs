@@ -18,8 +18,11 @@ public sealed record KeyTransition : InputCommand
     }
 }
 public sealed record ReleaseAll : InputCommand;
-public enum InputControlKind { Pause, Resume, Step, Reset, Load, Shutdown, SetSpeed }
-public sealed record RuntimeControl(InputControlKind Kind, string? Path = null, int SpeedPercent = 100) : InputCommand;
+public enum InputControlKind { Pause, Resume, Step, Reset, Load, Shutdown, SetSpeed, SetMainCpuSpeed }
+public sealed record RuntimeControl(InputControlKind Kind, string? Path = null, int SpeedPercent = 100,
+    // hc2000-accelerated-clock-domains: the MainCpuSpeed ordinal (0 faithful .. 4 MHz280) for a live
+    // main-CPU clock switch at the next safe boundary; -1 unless the kind is SetMainCpuSpeed.
+    int MainCpuSpeedIndex = -1) : InputCommand;
 
 public sealed record PasteText : InputCommand
 {
@@ -104,10 +107,11 @@ public sealed class InputQueue
     private long EnqueueCore(InputCommand command, HcsLimits? admission)
     {
         ArgumentNullException.ThrowIfNull(command);
-        if (command is not (KeyTransition or PasteText or ReleaseAll or RuntimeControl or Media.MediaCommand or Snapshots.HcsCommand))
+        if (command is not (KeyTransition or PasteText or ReleaseAll or RuntimeControl or Media.MediaCommand or Snapshots.HcsCommand or Network.CpNetCommand or Network.CpNetServerCommand))
             throw new ArgumentException("Unknown input command.", nameof(command));
         if (command is RuntimeControl control && (!Enum.IsDefined(control.Kind)
-            || control.Kind == InputControlKind.SetSpeed && control.SpeedPercent is not (0 or 100 or 200 or 400)))
+            || control.Kind == InputControlKind.SetSpeed && control.SpeedPercent is not (0 or 100 or 200 or 400)
+            || (control.Kind == InputControlKind.SetMainCpuSpeed) != (control.MainCpuSpeedIndex is >= 0 and <= 4)))
             throw new ArgumentOutOfRangeException(nameof(command));
         if (command is Media.MediaCommand media && (!Enum.IsDefined(media.Action) || !Enum.IsDefined(media.Slot)
             || media.Action == Media.MediaAction.InsertDisk && (media.Bytes.IsDefaultOrEmpty || media.Bytes.Length > Media.MediaFiles.MaxDiskBytes)))

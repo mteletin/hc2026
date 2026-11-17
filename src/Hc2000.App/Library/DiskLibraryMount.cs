@@ -80,7 +80,12 @@ public sealed class DiskLibraryMount(DiskLibraryCatalog catalog, string libraryR
 
             var before = await inspect();
             var beforeView = View(before, slot);
-            var name = Path.GetFileName(copy.RelativePath);
+            // The on-disk working copy is private (copies/<id>.dsk); the drive row identifies what was actually
+            // mounted - the registered entry's name carrying the working-copy marker - never the private file
+            // name and never the source itself (demo #100). The session echoes the dispatched name verbatim
+            // into the view, so the post-dispatch check below still holds; copy.RelativePath stays the
+            // reconcile/save identity.
+            var name = original.Name + " (working copy)";
             MediaReply reply;
             try
             {
@@ -107,7 +112,7 @@ public sealed class DiskLibraryMount(DiskLibraryCatalog catalog, string libraryR
                     Prepared: snapshot, Status: Status(original, copy, snapshot, beforeView, afterView));
 
             return new(DiskLibraryMountOutcome.Mounted,
-                $"working copy {copy.Id} ({name}) is mounted into {slot}; original {original.Id} is never a writable runtime target",
+                $"working copy {copy.Id} of {original.Name} is mounted into {slot}; the registered original is never a writable runtime target",
                 Prepared: snapshot, Status: Status(original, copy, snapshot, beforeView, afterView));
         }
         finally

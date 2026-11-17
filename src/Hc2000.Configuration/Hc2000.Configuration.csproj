@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Hc2000.Machine/Hc2000.Machine.csproj" />
+    <InternalsVisibleTo Include="Hc2000.App" />
+    <InternalsVisibleTo Include="hc" />
+    <InternalsVisibleTo Include="Hc2000.App.Tests" />
+    <InternalsVisibleTo Include="Hc2000.Tools.Tests" />
+  </ItemGroup>
+  <PropertyGroup>
+    <Hc2000FeatureIds>true</Hc2000FeatureIds>
+  </PropertyGroup>
+  <Import Project="../../build/FeatureFlags.targets" />
+</Project>

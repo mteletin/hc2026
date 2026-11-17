@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "features": [
+    "hc2000-feature-flags"
+  ]
+}

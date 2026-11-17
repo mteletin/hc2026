@@ -18,8 +18,8 @@ public sealed class HcsPanel : StackPanel
     private bool busy;
     private readonly Func<string, int, Task<ImmutableArray<byte>>> readSnapshot;
     private readonly TextBlock notice = new() { Text = "Snapshot disconnected. Save/Load .hcs unavailable: no machine runtime attached.", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
-    private readonly Button save = new() { Content = "Save snapshot…" };
-    private readonly Button load = new() { Content = "Load snapshot…" };
+    private readonly Button save = new() { Content = "Save snapshot" };
+    private readonly Button load = new() { Content = "Load snapshot" };
     private readonly CheckBox discard = new() { Content = "Explicitly discard unsaved disk/cassette edits on snapshot Load" };
     private readonly Button refreshList = new() { Content = "Refresh snapshot list" };
     private readonly StackPanel snapshotRows = new() { Spacing = 3 };
@@ -38,6 +38,9 @@ public sealed class HcsPanel : StackPanel
     {
         this.readSnapshot = readSnapshot;
         Spacing = 6;
+        const string profileRule = "A snapshot belongs to one machine profile and can be loaded only into a machine with the same profile.";
+        ToolTip.SetTip(save, profileRule);
+        ToolTip.SetTip(load, profileRule);
         Children.Add(new TextBlock { Text = "Machine snapshot (.hcs)", FontSize = 18 });
         save.Click += async (_, _) => await RunAsync(async () =>
         {

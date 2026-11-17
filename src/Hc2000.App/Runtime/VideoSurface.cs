@@ -10,19 +10,100 @@ using Hc2000.Machine.Video;
 
 namespace Hc2000.App.Runtime;
 
+public enum ScreenBorderMode
+{
+    Thin = 0,
+    None = 1,
+    Full = 2
+}
+
 /// <summary>UI-owned bitmap. Publication copies ARGB values; no worker-owned storage is retained.</summary>
 public sealed class VideoSurface : Image, IDisposable
 {
+    public const int FullFrameWidth = 352;
+    public const int FullFrameHeight = 296;
+    public const int PictureOriginX = 48;
+    public const int PictureOriginY = 40;
+    public const int PictureWidth = 256;
+    public const int PictureHeight = 192;
+    public const int ThinBorderPixels = 8;
+    public const int ThinOriginX = PictureOriginX - ThinBorderPixels;
+    public const int ThinOriginY = PictureOriginY - ThinBorderPixels;
+    public const int ThinWidth = PictureWidth + ThinBorderPixels * 2;
+    public const int ThinHeight = PictureHeight + ThinBorderPixels * 2;
+
+    public static (int X, int Y, int Width, int Height) CropRect(ScreenBorderMode mode) => mode switch
+    {
+        ScreenBorderMode.None => (PictureOriginX, PictureOriginY, PictureWidth, PictureHeight),
+        ScreenBorderMode.Full => (0, 0, FullFrameWidth, FullFrameHeight),
+        _ => (ThinOriginX, ThinOriginY, ThinWidth, ThinHeight)
+    };
+
+    public static Size DefaultLogicalSize(ScreenBorderMode mode)
+    {
+        var (_, _, w, h) = CropRect(mode);
+        return new Size(w, h);
+    }
+
+    public static ScreenBorderMode ParseBorderMode(string? value) => value?.Trim() switch
+    {
+        "None" => ScreenBorderMode.None,
+        "Full" => ScreenBorderMode.Full,
+        _ => ScreenBorderMode.Thin
+    };
+
+    public static string FormatBorderMode(ScreenBorderMode mode) => mode switch
+    {
+        ScreenBorderMode.None => "None",
+        ScreenBorderMode.Full => "Full",
+        _ => "Thin"
+    };
+
     private WriteableBitmap? bitmap;
     // The machine frame's logical size (W x H machine pixels) the surface occupies. The display
     // bitmap is 2W x 2H for the X1 overlay, so its size is not what the control sizes from
     // (hc2000-app-blank-screen-after-cold-start-150).
-    private Size _machineLogical = new(352, 296);
+    private Size _machineLogical = new(ThinWidth, ThinHeight);
     public int Scale { get; private set; } = 2;
     public long? PresentedMasterTick { get; private set; }
+    public VideoFrame? LastFrame { get; private set; }
+    private ScreenBorderMode borderMode = ScreenBorderMode.Thin;
+    public ScreenBorderMode BorderMode
+    {
+        get => borderMode;
+        set
+        {
+            Dispatcher.UIThread.VerifyAccess();
+            if (borderMode == value) return;
+            borderMode = value;
+            if (LastFrame is not null)
+            {
+                Present(LastFrame);
+            }
+            else
+            {
+                _machineLogical = DefaultLogicalSize(borderMode);
+                SetScale(Scale);
+                InvalidateVisual();
+            }
+        }
+    }
+    private PresentationMode presentationMode = PresentationMode.Faithful;
+    public PresentationMode PresentationMode
+    {
+        get => presentationMode;
+        set
+        {
+            Dispatcher.UIThread.VerifyAccess();
+            if (presentationMode == value) return;
+            presentationMode = value;
+            if (LastFrame is not null) Present(LastFrame);
+            else InvalidateVisual();
+        }
+    }
     public VideoSurface()
     {
-        Width = 352 * Scale; Height = 296 * Scale;
+        Width = _machineLogical.Width * Scale; Height = _machineLogical.Height * Scale;
         Stretch = Stretch.None;
         Focusable = true;
         PointerPressed += (_, _) => Focus();
@@ -48,7 +129,9 @@ public sealed class VideoSurface : Image, IDisposable
         Height = _machineLogical.Height * scale;
         Stretch = Stretch.Fill;
     }
-    public void Present(VideoFrame frame)
+    /// <summary>Presents <paramref name="frame"/> on the surface bitmap. Returns the previously presented frame
+    /// if different from <paramref name="frame"/> so the caller can recycle it.</summary>
+    public VideoFrame? Present(VideoFrame frame)
     {
         Dispatcher.UIThread.VerifyAccess();
         if (frame.Width <= 0 || frame.Height <= 0 || frame.Pixels.Length != checked(frame.Width * frame.Height))
@@ -60,36 +143,85 @@ public sealed class VideoSurface : Image, IDisposable
         if (mask is not null && (mask.Width != frame.Width * 2 || mask.Height != frame.Height * 2
             || mask.Pixels.Length != checked(mask.Width * mask.Height) || mask.MasterTick != frame.MasterTick))
             throw new ArgumentException("TextOverlay mask dimensions, pixel count or MasterTick mismatch.", nameof(frame));
-        var width = mask is null ? frame.Width : mask.Width;
-        var height = mask is null ? frame.Height : mask.Height;
+
+        // When presentation mode is CrispText or SplitComparison on a standard 352x296 frame:
+        bool useEnhancement = presentationMode != PresentationMode.Faithful &&
+                              frame.Width == CrispTextEnhancer.FrameWidth &&
+                              frame.Height == CrispTextEnhancer.FrameHeight;
+
+        var (cropX, cropY, cropW, cropH) = frame.Width == FullFrameWidth && frame.Height == FullFrameHeight
+            ? CropRect(borderMode)
+            : (0, 0, frame.Width, frame.Height);
+
+        bool twoX = useEnhancement || mask is not null;
+        var width = twoX ? cropW * 2 : cropW;
+        var height = twoX ? cropH * 2 : cropH;
         // The display bitmap is 96 dpi on both paths: the render path drops the content of
         // non-96-dpi bitmaps (the overlay-ON blank screen at 0.1.150; headless repro in
         // hc2000-app-blank-screen-after-cold-start-150), so the machine-logical W x H the surface
         // occupies rides _machineLogical instead of a 192 dpi display trick. The composed mask
         // bitmap stays 2W x 2H pixels; at scale s it is stretched s/2 onto the s x (W x H) control.
-        _machineLogical = new Size(frame.Width, frame.Height);
+        _machineLogical = new Size(cropW, cropH);
         if (bitmap is null || bitmap.PixelSize != new PixelSize(width, height))
         {
             Source = null; bitmap?.Dispose();
             bitmap = new(new(width, height), new(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
             Source = bitmap; SetScale(Scale);
         }
+        else if (Width != _machineLogical.Width * Scale || Height != _machineLogical.Height * Scale)
+        {
+            SetScale(Scale);
+        }
         // ARGB uint -> BGRA bytes on little-endian hosts; explicit conversion also supports big endian.
         var bytes = new byte[checked(width * height * 4)];
-        for (var y = 0; y < height; y++)
-            for (var x = 0; x < width; x++)
-            {
-                var p = mask is null
-                    ? frame.Pixels.Span[y * frame.Width + x]
-                    : Compose(frame.Pixels.Span[(y / 2) * frame.Width + (x / 2)], mask.Pixels.Span[y * width + x]);
-                int j = (y * width + x) * 4;
-                bytes[j] = (byte)p; bytes[j + 1] = (byte)(p >> 8);
-                bytes[j + 2] = (byte)(p >> 16); bytes[j + 3] = (byte)(p >> 24);
-            }
+        if (useEnhancement)
+        {
+            var enhancedPixels = new uint[CrispTextEnhancer.EnhancedWidth * CrispTextEnhancer.EnhancedHeight];
+            CrispTextEnhancer.Enhance(frame, presentationMode, enhancedPixels);
+            var srcOriginX = cropX * 2;
+            var srcOriginY = cropY * 2;
+            for (var y = 0; y < height; y++)
+                for (var x = 0; x < width; x++)
+                {
+                    var p = enhancedPixels[(srcOriginY + y) * CrispTextEnhancer.EnhancedWidth + (srcOriginX + x)];
+                    int j = (y * width + x) * 4;
+                    bytes[j] = (byte)p; bytes[j + 1] = (byte)(p >> 8);
+                    bytes[j + 2] = (byte)(p >> 16); bytes[j + 3] = (byte)(p >> 24);
+                }
+        }
+        else if (mask is null)
+        {
+            for (var y = 0; y < height; y++)
+                for (var x = 0; x < width; x++)
+                {
+                    var p = frame.Pixels.Span[(cropY + y) * frame.Width + (cropX + x)];
+                    int j = (y * width + x) * 4;
+                    bytes[j] = (byte)p; bytes[j + 1] = (byte)(p >> 8);
+                    bytes[j + 2] = (byte)(p >> 16); bytes[j + 3] = (byte)(p >> 24);
+                }
+        }
+        else
+        {
+            var maskOriginX = cropX * 2;
+            var maskOriginY = cropY * 2;
+            for (var y = 0; y < height; y++)
+                for (var x = 0; x < width; x++)
+                {
+                    var p = Compose(
+                        frame.Pixels.Span[(cropY + (y / 2)) * frame.Width + (cropX + (x / 2))],
+                        mask.Pixels.Span[(maskOriginY + y) * mask.Width + (maskOriginX + x)]);
+                    int j = (y * width + x) * 4;
+                    bytes[j] = (byte)p; bytes[j + 1] = (byte)(p >> 8);
+                    bytes[j + 2] = (byte)(p >> 16); bytes[j + 3] = (byte)(p >> 24);
+                }
+        }
         using (var target = bitmap.Lock())
             for (var y = 0; y < height; y++)
                 Marshal.Copy(bytes, y * width * 4, target.Address + y * target.RowBytes, width * 4);
+        var previous = LastFrame;
+        LastFrame = frame;
         PresentedMasterTick = frame.MasterTick; InvalidateVisual();
+        return ReferenceEquals(previous, frame) ? null : previous;
     }
     /// <summary>Straight (non-premultiplied) alpha blend of the mask pixel over the base pixel.
     /// The shipped producer emits only alpha 0 (transparent paper) or 0xFF (opaque ink); partial
@@ -105,12 +237,18 @@ public sealed class VideoSurface : Image, IDisposable
                    | (Blend((byte)(maskPixel >> 8), (byte)(basePixel >> 8)) << 8)
                    | Blend((byte)maskPixel, (byte)basePixel);
     }
-    /// <summary>Discard the prior session's presentation; this does not synthesize a frame.</summary>
-    public void ClearPresentation()
+    /// <summary>Discard the prior session's presentation; this does not synthesize a frame.
+    /// Returns the previously presented frame if any, so the caller can recycle it.</summary>
+    public VideoFrame? ClearPresentation()
     {
         Dispatcher.UIThread.VerifyAccess();
+        var previous = LastFrame;
         Source = null; bitmap?.Dispose(); bitmap = null; PresentedMasterTick = null;
-        _machineLogical = new Size(352, 296); // back to the default frame, as before 0.1.150
+        LastFrame = null;
+        _machineLogical = DefaultLogicalSize(borderMode);
+        Width = _machineLogical.Width * Scale;
+        Height = _machineLogical.Height * Scale;
+        return previous;
     }
     public void Dispose()
     {

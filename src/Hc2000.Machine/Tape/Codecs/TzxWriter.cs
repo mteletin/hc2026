@@ -29,23 +29,62 @@ public sealed partial class TzxTapeCodec
             void Dword(uint value) { Span<byte> b = stackalloc byte[4]; BinaryPrimitives.WriteUInt32LittleEndian(b, value); output.Write(b); }
             void Text(string text)
             {
+                int byteCount = System.Text.Encoding.Latin1.GetByteCount(text);
+                long blockCount = ((long)byteCount + 254) / 255;
+                if (output.Length + byteCount + 2 * blockCount > options.Limits.InputBytes)
+                    throw new TzxException(TapeError.BoundsExceeded, "TZX output exceeds byte budget.");
                 var bytes = System.Text.Encoding.Latin1.GetBytes(text);
                 for (int i = 0; i < bytes.Length; i += 255)
                 { int count = Math.Min(255, bytes.Length - i); output.WriteByte(0x30); output.WriteByte((byte)count); output.Write(bytes, i, count); CheckSize(); }
             }
+            var batch = new List<(bool Level, uint Rate, uint Samples)>();
+            uint batchRate = 0;
+            ulong maxScaled = 0;
+            void Emit(bool level, uint rate, uint[] counts)
+            {
+                output.WriteByte(0x2B); Dword(1); output.WriteByte(level ? (byte)1 : (byte)0);
+                var payload = options.UseZrle ? encoding.EncodeZrle(counts) : encoding.EncodeRle(counts);
+                if (!payload.Success) throw new TzxException(payload.Failure!.Code, payload.Failure.Detail);
+                output.WriteByte(0x18); Dword(checked((uint)payload.Value.Length + 10)); Word(0);
+                output.WriteByte((byte)rate); output.WriteByte((byte)(rate >> 8)); output.WriteByte((byte)(rate >> 16));
+                output.WriteByte(options.UseZrle ? (byte)2 : (byte)1); Dword((uint)counts.Length); output.Write(payload.Value.AsSpan());
+                CheckSize();
+            }
+            void FlushRuns()
+            {
+                if (batch.Count == 0) return;
+                if (batch.Count < 32)
+                    foreach (var run in batch) Emit(run.Level, run.Rate, [run.Samples]);
+                else
+                {
+                    var counts = batch.Select(run => checked(run.Samples * (batchRate / run.Rate))).ToArray();
+                    Emit(batch[0].Level, batchRate, counts);
+                }
+                batch.Clear(); batchRate = 0; maxScaled = 0;
+            }
             void Runs(bool level, uint rate, BigInteger samples)
             {
-                // Split long constant holds with an absolute level reset, not false audible toggles.
                 while (samples > 0)
                 {
                     uint count = (uint)BigInteger.Min(samples, uint.MaxValue);
-                    output.WriteByte(0x2B); Dword(1); output.WriteByte(level ? (byte)1 : (byte)0);
-                    var payload = options.UseZrle ? encoding.EncodeZrle([count]) : encoding.EncodeRle([count]);
-                    if (!payload.Success) throw new TzxException(payload.Failure!.Code, payload.Failure.Detail);
-                    output.WriteByte(0x18); Dword(checked((uint)payload.Value.Length + 10)); Word(0);
-                    output.WriteByte((byte)rate); output.WriteByte((byte)(rate >> 8)); output.WriteByte((byte)(rate >> 16));
-                    output.WriteByte(options.UseZrle ? (byte)2 : (byte)1); Dword(1); output.Write(payload.Value.AsSpan());
-                    CheckSize(); samples -= count;
+                    if (batch.Count != 0)
+                    {
+                        uint gcd = (uint)BigInteger.GreatestCommonDivisor(batchRate, rate);
+                        ulong commonRate = (ulong)batchRate / gcd * rate;
+                        if (batch.Count == 8192 || batch[^1].Level == level || commonRate > 0xFFFFFF ||
+                            maxScaled * (commonRate / batchRate) > uint.MaxValue ||
+                            (ulong)count * (commonRate / rate) > uint.MaxValue)
+                            FlushRuns();
+                        else
+                        {
+                            maxScaled *= commonRate / batchRate;
+                            batchRate = (uint)commonRate;
+                        }
+                    }
+                    if (batch.Count == 0) batchRate = rate;
+                    batch.Add((level, rate, count));
+                    maxScaled = Math.Max(maxScaled, (ulong)count * (batchRate / rate));
+                    samples -= count;
                 }
             }
             var markers = image.Markers;
@@ -64,6 +103,7 @@ public sealed partial class TzxTapeCodec
             {
                 while (marker < markers.Length && markers[marker].Position == position)
                 {
+                    FlushRuns();
                     Text(markers[marker++].Label); output.WriteByte(0x20); Word(0); CheckSize();
                 }
             }
@@ -148,6 +188,7 @@ public sealed partial class TzxTapeCodec
             }
             if (position != image.Duration || marker != markers.Length)
                 throw new TzxException(TapeError.InvalidFormat, "TZX signal does not cover side/markers.");
+            FlushRuns();
             // Annotations remain human-readable route metadata, not executable CPU actions.
             foreach (var annotation in image.Annotations.Where(a => a.Kind != TapeAnnotationKind.SourceEof)) Text(annotation.Label);
             var changed = image.Annotations; // Includes the source-eof provenance flattened into this file's new extent.

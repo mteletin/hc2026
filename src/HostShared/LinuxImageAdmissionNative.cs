@@ -124,6 +124,53 @@ internal static class LinuxImageAdmissionNative
         }
         catch { handle.Dispose(); throw; }
     }
+    internal static void TightenDirectory(SafeFileHandle directory)
+    {
+        if (Fchmod(directory, 0x1c0) != 0) throw new AdmissionException(ImageAdmissionRefusal.InvalidDomain);
+    }
+    // Walks the account's own state chain from its home directory down to the state directory and,
+    // before the strict walk, tightens every component that is account-owned and group or other
+    // writable to 0700. Every component is opened O_NOFOLLOW against its parent, so a symlink can
+    // never divert the walk; components above the home and components the account does not own are
+    // never touched, so the strict walk still refuses them as before. A component missing from the
+    // home down stops the walk: the creating walk builds it at 0700. Returns the topmost path that
+    // was tightened, or null when nothing needed it or the chain cannot be cleared on its own.
+    internal static string? TightenStateChain(string home, string root)
+    {
+        if (home.Length > 4096 || root.Length > 4096) return null;
+        var parts = Path.GetFullPath(root).Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var homeDepth = Path.GetFullPath(home).Split('/', StringSplitOptions.RemoveEmptyEntries).Length;
+        var current = OpenHandle(-100, "/", DirectoryFlag);
+        string? tightened = null;
+        try
+        {
+            for (var i = 0; i < parts.Length; i++)
+            {
+                var fd = OpenAt(current.DangerousGetHandle().ToInt32(), parts[i], DirectoryFlag | NoFollow | CloseExec, 0);
+                if (fd < 0) return tightened;
+                var handle = new SafeFileHandle(fd, true);
+                try
+                {
+                    var f = Probe(handle);
+                    // Only a real directory that is ours and not already private is tightened; home
+                    // itself counts, its parents never do. Anything else is decided by the strict walk.
+                    if ((f.Mode & 0xf000) == 0x4000 && f.Uid == Uid && (f.Mode & 0x12) != 0 && i + 1 >= homeDepth)
+                    {
+                        TightenDirectory(handle);
+                        var after = Probe(handle);
+                        if (after.Uid != Uid || (after.Mode & 0x1ff) != 0x1c0)
+                            return null;
+                        tightened ??= "/" + string.Join('/', parts[..(i + 1)]);
+                    }
+                }
+                finally { current.Dispose(); }
+                current = handle;
+            }
+            return tightened;
+        }
+        catch { return null; }
+        finally { current.Dispose(); }
+    }
     internal static void FlushDirectory(SafeFileHandle directory)
     {
         if (FSync(directory) != 0) throw new AdmissionException(ImageAdmissionRefusal.IoFailure);
@@ -159,12 +206,15 @@ internal static class LinuxImageAdmissionNative
     [DllImport("libc", EntryPoint = "fstatfs", SetLastError = true)] private static extern int FStatFs(SafeFileHandle fd, byte[] facts);
     [DllImport("libc", EntryPoint = "flock", SetLastError = true)] private static extern int Flock(SafeFileHandle fd, int operation);
     [DllImport("libc", EntryPoint = "fsync", SetLastError = true)] private static extern int FSync(SafeFileHandle fd);
+    [DllImport("libc", EntryPoint = "fchmod")] private static extern int Fchmod(SafeFileHandle fd, uint mode);
     [DllImport("libc", EntryPoint = "geteuid")] private static extern uint GetEuid();
     [DllImport("libc", EntryPoint = "getpwuid_r")] private static extern int GetPwUid(uint uid, out Passwd pwd, IntPtr buffer, nuint size, out IntPtr result);
 }
 
-internal sealed class AdmissionException(ImageAdmissionRefusal refusal, bool missingDirectory = false) : IOException($"Native image admission: {refusal}.")
+internal sealed class AdmissionException(ImageAdmissionRefusal refusal, bool missingDirectory = false, string? diagnostic = null)
+    : IOException($"Native image admission: {refusal}." + (diagnostic is null ? "" : " " + diagnostic))
 {
     internal ImageAdmissionRefusal Refusal { get; } = refusal;
     internal bool MissingDirectory { get; } = missingDirectory;
+    internal string? Diagnostic { get; } = diagnostic;
 }

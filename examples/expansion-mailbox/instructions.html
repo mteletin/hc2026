@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>EXPMAIL — byte-mailbox example</title>
+<style>body{max-width:54em;margin:3em auto;padding:0 1em;font:18px/1.5 system-ui;color:#18232d;background:#fafafa}code,pre{background:#e8edf1;padding:.2em}table{border-collapse:collapse}td,th{padding:.4em;border:1px solid #888}</style>
+<h1>EXPMAIL: a real guest byte-mailbox job</h1>
+<p>This in-house CODE tape submits a finite job from the main Z80 to compute unit 1 through the existing byte-mailbox protocol. It returns a checked numeric result to BASIC; it does not transfer an M window or depend on bulk exchange. Units 2–16 are untouched. Source/regression evidence is not installed live proof.</p>
+<h2>Prerequisites</h2>
+<p>Start a fresh dedicated cold machine with bundled whole-chip HC2000 v2/IF1 ROMs and the existing <code>hc2000-v2-paged-expansion-v1</code> identity: <code>memory=paged</code>, <code>m-view=true</code>, <code>side-z80=16</code>, turbo 1, no <code>m-drive-bytes</code> request or incompatible devices. Use the ordinary activation controls shipped with your release, not a debugger or CP/M. Off/default is a different fresh machine, not a live toggle. Do not reuse a unit containing another job.</p>
+<p>The installed assets are <code>&lt;install&gt;/app/examples/expansion-mailbox/</code> on Windows and <code>&lt;prefix&gt;/examples/expansion-mailbox/</code> on Linux. Keep the shipped tape immutable; use a private location for your snapshot.</p>
+<h2>Ordinary native loading</h2>
+<ol>
+<li>Enter <code>CLEAR 32767</code> in BASIC. CLEAR is the physical X key at the K cursor; this keeps the BASIC stack/heap below the CODE payload.</li>
+<li>Use the cassette panel’s <strong>Insert tape…</strong> to open <code>EXPMAIL.tap</code> beside this guide.</li>
+<li>Enter <code>LOAD "" CODE</code> and press Enter, then <strong>PLAY</strong>. LOAD is J at the K cursor; quotes are SYMBOL SHIFT+P; CODE is extended mode (CAPS SHIFT+SYMBOL SHIFT together, release, then I). Bare LOAD without CODE is not this recipe.</li>
+<li>Wait for normal ROM tape loading completion and the BASIC editor’s OK. Use the ordinary deck Stop/eject control to eject the clean loaded tape before saving. Do not record over it.</li>
+<li>Enter <code>PRINT USR 32768</code>. PRINT is P at the K cursor; USR is extended mode then L. Expect a standalone decimal line <strong>1001</strong>, not just the command echo.</li>
+</ol>
+<p>These are Spectrum BASIC tokens, not literal pasted keyword letters. The default positional keyboard maps host Shift to CAPS SHIFT and Alt to SYMBOL SHIFT. Do not paste the word PRINT as individual letters. No host RAM load, PC edit, prepared HCS, tape acceleration or ROM patch is part of the recipe.</p>
+<h2>Genuine continuation checkpoint</h2>
+<ol>
+<li>After the first <code>1001</code>, release every key, leave no queued command and keep the clean tape ejected. Unit 1 is WaitingMailbox with counter 1; its outbox is acknowledged.</li>
+<li>Use the App’s ordinary selected-machine HCS <strong>Save</strong> control to a private <code>EXPMAIL-R1.hcs</code>. The fixed sixteen-unit arena requires the normal production resource admission; a refusal is a failure to report, not a reason to reduce the arena.</li>
+<li>Run <code>PRINT USR 32768</code> once more: expect <strong>1002</strong>.</li>
+<li>Use the same App HCS <strong>Load</strong> control to load <code>EXPMAIL-R1.hcs</code>.</li>
+<li>Run <code>PRINT USR 32768</code> again: expect <strong>1002</strong> again, from a newly executed mailbox reply, not merely restored screen text.</li>
+</ol>
+<p>Do not reload the TAP, CLEAR, reset/reload/start the job or replay round 1 between rounds or after Load. Without restoring round 1, a third call returns 9003. HCS restores the main scenario and side counter, epochs, mailbox and continuation together.</p>
+<h2>What is checked</h2>
+<p>The first call probes version 1, requires unit 1 ResetStopped, discovers nonzero epochs and performs CLEAR/LOAD, message 1 with challenge 11 hex, then START. The side sets SP=BFFF and counter zero once; its reply is <code>01 EE</code>. It commits and executes WAIT (6), not Idle (7). The main waits for WaitingMailbox, reads 0C as ordinary bytes, validates ID/length/zero padding and both reply bytes, acknowledges 0D and only then returns 1001.</p>
+<p>The second call retains the same epochs and WaitingMailbox continuation. Message 2 with challenge 22 hex wakes WAIT; the side counter is not initialized again. The checked reply <code>02 DD</code> yields 1002. There is no RESET, CLEAR, LOAD, START, RESUME or REPURPOSE between rounds. Every root receipt is drained and released with control verb 5, including refusals. Polling is finite: at most 4096 QUERY transactions per round and 65535 response-ready port reads per RPC; neither wall-clock sleeps nor a host runner execute the job.</p>
+<table><tr><th>Output</th><th>Meaning</th></tr><tr><td>1001 / 1002</td><td>Validated first / second reply</td></tr><tr><td>9001</td><td>No expansion endpoint. A separate fresh faithful/default-off machine loading the same tape must return this, not 1001.</td></tr><tr><td>9002</td><td>Refused/corrupt frame, wrong lifecycle/epochs, counter/challenge mismatch or unexpected job/scenario state</td></tr><tr><td>9003</td><td>Example already completed; load the genuine round-1 save to continue again</td></tr><tr><td>9004</td><td>Finite protocol polling budget exhausted</td></tr></table>
+<p>On any failure, stop and report the observed output or admission refusal; do not label it a successful demo or introduce a workaround. Source, producer, commands, configuration, sizes, SHA-256 and two-build comparison are in <code>provenance.txt</code>. This TAP contains only in-house assembled bytes, no ROM fragments or third-party disk/program. The existing runtime whole-chip M27C512.bin identity is SHA-256 <code>83e3213b049c5b849ee32e04da901eba06992d5aa1f44f76564f312c79748d2b</code>; it is not an input to artifact generation.</p>
+</html>

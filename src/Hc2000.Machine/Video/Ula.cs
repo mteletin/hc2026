@@ -11,12 +11,20 @@ public readonly record struct BeeperEdge(long MasterTick, bool Speaker, bool Mic
     public int MixLevel => (Speaker ? 2 : 0) + (Microphone ? 1 : 0);
 }
 
-public record VideoFrame(long MasterTick, int Width, int Height, ReadOnlyMemory<uint> Pixels);
+public record VideoFrame(long MasterTick, int Width, int Height, ReadOnlyMemory<uint> Pixels)
+{
+    /// <summary>Creates a detached copy of this frame whose pixel arrays are allocated fresh and never recycled.</summary>
+    public virtual VideoFrame Copy() => new(MasterTick, Width, Height, Pixels.ToArray());
+}
 
 /// <summary>An unchanged faithful frame plus a separate, transparent-paper 2x ink surface.
 /// Raster content is preserved verbatim, not recognized or replaced with host fonts.</summary>
 public sealed record TextOverlayVideoFrame(long MasterTick, int Width, int Height,
-    ReadOnlyMemory<uint> Pixels, VideoFrame TextOverlay) : VideoFrame(MasterTick, Width, Height, Pixels);
+    ReadOnlyMemory<uint> Pixels, VideoFrame TextOverlay) : VideoFrame(MasterTick, Width, Height, Pixels)
+{
+    public override TextOverlayVideoFrame Copy() =>
+        new(MasterTick, Width, Height, Pixels.ToArray(), TextOverlay.Copy());
+}
 
 /// <summary>Character-granular ULA on the master clock; no CPU, wall-clock or host I/O.</summary>
 public sealed class Ula : IPortDevice
@@ -165,7 +173,7 @@ public sealed class Ula : IPortDevice
     {
         var width = fullRaster ? RasterWidth : 352;
         var height = fullRaster ? RasterHeight : 296;
-        var pixels = new uint[width * height];
+        var pixels = Buffers.Rent(width * height);
         // A line begins in horizontal blanking in FrameClock. Rotate the cropped view so the
         // display has a 48-pixel left border. Retain lines16..311 (eight blank,32 top,192 display,64 bottom).
         var displayX = (int)(frameClock.Timing.FirstPixelTick % FrameTiming.LineTicks / FrameTiming.CharacterTicks) * 8;
@@ -174,9 +182,9 @@ public sealed class Ula : IPortDevice
             for (var x = 0; x < width; x++)
                 pixels[y * width + x] = raster[(y + (fullRaster ? 0 : 16)) * RasterWidth +
                     (fullRaster ? x : (left + x) % RasterWidth)];
-        var completed = raster.Length == RasterWidth * RasterHeight
+        var completed = Buffers.Lend(raster.Length == RasterWidth * RasterHeight
             ? new VideoFrame(tick, width, height, pixels)
-            : new TextOverlayVideoFrame(tick, width, height, pixels, PublishOverlay(tick, width, height, left));
+            : new TextOverlayVideoFrame(tick, width, height, pixels, PublishOverlay(tick, width, height, left)));
         Array.Fill(raster, palette[0], 0, RasterWidth * RasterHeight);
         if (raster.Length > RasterWidth * RasterHeight)
             Array.Clear(raster, RasterWidth * RasterHeight, RasterWidth * RasterHeight);
@@ -187,7 +195,7 @@ public sealed class Ula : IPortDevice
     private VideoFrame PublishOverlay(long tick, int width, int height, int left)
     {
         var scaledWidth = width * 2;
-        var pixels = new uint[scaledWidth * height * 2];
+        var pixels = Buffers.Rent(scaledWidth * height * 2);
         for (var y = 0; y < height; y++)
             for (var x = 0; x < width; x++)
             {
@@ -196,6 +204,9 @@ public sealed class Ula : IPortDevice
                 var target = y * 2 * scaledWidth + x * 2;
                 pixels[target] = pixels[target + 1] = pixels[target + scaledWidth] = pixels[target + scaledWidth + 1] = ink;
             }
-        return new(tick, scaledWidth, height * 2, pixels);
+        return Buffers.Lend(new VideoFrame(tick, scaledWidth, height * 2, pixels));
     }
+
+    /// <summary>The arrays of the frames this ULA publishes, reused once a consumer hands a frame back (Machine.Recycle).</summary>
+    internal FrameBuffers Buffers { get; } = new();
 }

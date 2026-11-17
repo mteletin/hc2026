@@ -10,6 +10,9 @@ public sealed class SettingsWindow : Window
 {
     private readonly SoundSpeedNotice soundNotice;
     public SoundSpeedNotice SoundNotice => soundNotice;
+    public event Action<string>? ThemeSaved;
+    public event Action<string>? BorderSaved;
+    public event Action<int>? ScaleSaved;
 
     public SettingsWindow(SettingsStore store)
     {
@@ -24,16 +27,39 @@ public sealed class SettingsWindow : Window
             Text = "Preferences are saved for the next startup. Runtime integration is separate.",
             TextWrapping = Avalonia.Media.TextWrapping.Wrap
         });
-        var profile = AddField(form, "Profile", draft.Profile);
-        var rom = AddField(form, "ROM set (path)", draft.RomSet);
-        var speed = AddField(form, "Speed: 100, 200, 400 or 0 (unlimited)", draft.SpeedPercent);
+        Section(form, "Machine");
+        var profile = AddField(form, "Machine profile", draft.Profile, "SettingsProfile");
+        // hc2000-accelerated-clock-domains: the main-Z80 clock choice, saved for the next startup;
+        // the running machine can also switch it live (Reconfigure panel) without a reset.
+        // 280 MHz is a target, not a promise: the running UI shows achieved speed or overload.
+        var mainCpu = new ComboBox
+        {
+            Name = "SettingsMainCpu",
+            ItemsSource = Hc2000.Machine.MainCpuSpeedInfo.All.Select(speed => Hc2000.Machine.MainCpuSpeedInfo.Setting(speed)).ToArray(),
+            SelectedItem = draft.MainCpuTarget
+        };
+        form.Children.Add(new TextBlock
+        {
+            Text = "Main CPU clock (faithful 3.5 MHz class, or 7/14/28/280 MHz target; 280 MHz is a target, not a promise)",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        });
+        form.Children.Add(mainCpu);
+        var rom = AddField(form, "ROM selection (set path)", draft.RomSet, "SettingsRomSet");
+        Section(form, "Display");
+        form.Children.Add(new TextBlock { Text = "Theme" });
+        var theme = new ComboBox { Name = "SettingsTheme", ItemsSource = new[] { "Dark", "Light", "System" }, SelectedItem = draft.Theme };
+        form.Children.Add(theme);
+        var speed = AddField(form, "Speed (percent: 100, 200, 400; 0 = unlimited)", draft.SpeedPercent, "SettingsSpeed");
         // Saved preferences decide the speed the next machine starts at, so the silence they would
         // cause is stated here too; its control puts the saved draft back to 100 before Save.
         soundNotice = new SoundSpeedNotice(speed);
         form.Children.Add(soundNotice);
-        var scale = AddField(form, "Integer scale", draft.Scale);
-        var audio = AddField(form, "Audio preference (opaque; backend not selected here)", draft.AudioPreference);
-        var map = AddField(form, "Key mapping: JSON object of PC key → machine key strings", draft.KeyMapJson);
+        var scale = AddField(form, "Screen zoom (0 = Fit, 1–8 = cap)", draft.Scale, "SettingsScale");
+        form.Children.Add(new TextBlock { Text = "Border" });
+        var border = new ComboBox { Name = "SettingsBorder", ItemsSource = new[] { "Thin", "None", "Full" }, SelectedItem = draft.Border };
+        Avalonia.Automation.AutomationProperties.SetName(border, "Border");
+        form.Children.Add(border);
+        Section(form, "Folders");
         var diskHome = AddField(form, "Disk home (directory; optional, blank clears)", draft.DiskHome);
         var tapeHome = AddField(form, "Tape home (directory; optional, blank clears)", draft.TapeHome);
         var snapshotHome = AddField(form, "Snapshot home (directory; optional, blank clears)", draft.SnapshotHome);
@@ -41,8 +67,12 @@ public sealed class SettingsWindow : Window
         // flag; the field is fenced once on Save, before anything is written.
         var soundDump = AddField(form, "Sound dump: WAV file path (sound-dump; inside your user home; optional, blank clears)", draft.SoundDump);
         soundDump.Name = Audio.SoundDumpGate.Name;
+        var advanced = new StackPanel { Spacing = 8 };
+        var audio = AddField(advanced, "Audio preference (opaque; backend not selected here)", draft.AudioPreference, "SettingsAudio");
+        var map = AddField(advanced, "Key mapping: JSON object of PC key → machine key strings", draft.KeyMapJson, "SettingsKeyMap");
         map.AcceptsReturn = true;
         map.MinHeight = 100;
+        form.Children.Add(new Expander { Name = "SettingsAdvanced", Header = "Advanced", IsExpanded = false, Content = advanced });
         var status = new TextBlock
         {
             Text = loaded.Warning ?? $"Config: {store.FilePath}",
@@ -51,13 +81,36 @@ public sealed class SettingsWindow : Window
         form.Children.Add(status);
         var overwrite = new CheckBox { Content = "Replace unreadable/unsupported original settings", IsVisible = loaded.Warning is not null };
         form.Children.Add(overwrite);
+        border.SelectionChanged += (_, _) =>
+        {
+            if (border.SelectedItem is not string selected || selected == draft.Border) return;
+            draft.Border = selected;
+            BorderSaved?.Invoke(selected);
+            if (loaded.Warning is not null && overwrite.IsChecked != true) return;
+            try
+            {
+                var current = store.Load();
+                if (current.Warning is null || overwrite.IsChecked == true)
+                {
+                    store.Save(current.Settings with { Border = selected });
+                    status.Text = $"Saved to {store.FilePath}.";
+                }
+            }
+            catch (Exception exception) when (exception is ArgumentException or JsonException or IOException or UnauthorizedAccessException)
+            {
+                status.Text = $"Settings not saved: {exception.Message}";
+            }
+        };
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         var save = new Button { Content = "Save" };
         save.Click += (_, _) =>
         {
             try
             {
+                draft.Theme = theme.SelectedItem as string ?? "Dark";
+                draft.Border = border.SelectedItem as string ?? "Thin";
                 draft.Profile = profile.Text ?? "";
+                draft.MainCpuTarget = mainCpu.SelectedItem as string ?? "faithful";
                 draft.RomSet = rom.Text ?? "";
                 draft.SpeedPercent = speed.Text ?? "";
                 draft.Scale = scale.Text ?? "";
@@ -73,7 +126,11 @@ public sealed class SettingsWindow : Window
                 // the CLI flag's (PO ruling board 634859).
                 var dump = Audio.SoundDumpGate.Resolve(draft.SoundDump);
                 if (!dump.Ok) throw new ArgumentException(dump.Refusal!);
-                store.Save(draft.Build());
+                var built = draft.Build();
+                store.Save(built);
+                ThemeSaved?.Invoke(draft.Theme);
+                BorderSaved?.Invoke(draft.Border);
+                ScaleSaved?.Invoke(built.Scale);
                 status.Text = $"Saved to {store.FilePath}.";
             }
             catch (Exception exception) when (exception is ArgumentException or JsonException or IOException or UnauthorizedAccessException)
@@ -89,10 +146,13 @@ public sealed class SettingsWindow : Window
         Content = new ScrollViewer { Content = form };
     }
 
-    private static TextBox AddField(StackPanel form, string label, string value)
+    private static void Section(StackPanel form, string title) =>
+        form.Children.Add(new TextBlock { Text = title, Classes = { "sectionTitle" } });
+
+    private static TextBox AddField(StackPanel form, string label, string value, string? name = null)
     {
         form.Children.Add(new TextBlock { Text = label, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
-        var field = new TextBox { Text = value };
+        var field = new TextBox { Text = value, Name = name };
         form.Children.Add(field);
         return field;
     }

@@ -1,7 +1,7 @@
 namespace Hc2000.App.Audio;
 
 /// <summary>
-/// Virtual-sink capture decorator (owner gate ruling 2026-10-04, wi-116b): forwards every
+/// Virtual-sink capture decorator: forwards every
 /// sample to the inner sink - on the SDL2 <c>dummy</c> driver that is the virtual device,
 /// and its queue success is reported distinctly - and tees the same stream as Wave PCM
 /// 8-bit into a capacity-bounded rolling buffer on disk. The file is pre-allocated at the
@@ -21,6 +21,7 @@ public sealed class CapturingAudioSink : IQueuedAudioSink
     private bool disposed;
 
     public int SampleRate => inner.SampleRate;
+    public int Channels => inner.Channels;
     public int QueuedSamples => inner.QueuedSamples;
     public string Path { get; }
     public long CapacitySamples { get; }
@@ -29,8 +30,8 @@ public sealed class CapturingAudioSink : IQueuedAudioSink
 
     public CapturingAudioSink(IQueuedAudioSink inner, string path, long? capacitySamples = null)
     {
-        var capacity = capacitySamples ?? inner.SampleRate * 3600L; // the ruled on-disk window: one hour
-        if (capacity <= 0 || capacity > int.MaxValue)
+        var capacity = capacitySamples ?? inner.SampleRate * (long)inner.Channels * 3600; // the ruled on-disk window: one hour
+        if (inner.Channels is not (1 or 2) || capacity <= 0 || capacity > int.MaxValue || capacity % inner.Channels != 0)
             throw new ArgumentOutOfRangeException(nameof(capacitySamples));
         this.inner = inner;
         Path = System.IO.Path.GetFullPath(path);
@@ -46,6 +47,7 @@ public sealed class CapturingAudioSink : IQueuedAudioSink
         RequireOpen();
         if (samples.Length > pcm.Length)
             throw new ArgumentException("A batch may not exceed the capture capacity.", nameof(samples));
+        if (samples.Length % Channels != 0) throw new ArgumentException("PCM block must contain complete frames.", nameof(samples));
         inner.Queue(samples); // virtual-sink receipt; its success stays distinct from the capture
         if (samples.Length == 0) return;
         var start = cursor;
@@ -122,10 +124,10 @@ public sealed class CapturingAudioSink : IQueuedAudioSink
         WriteAscii(header, 12, "fmt ");
         WriteInt32(header, 16, 16);
         WriteInt16(header, 20, 1); // PCM
-        WriteInt16(header, 22, 1); // mono
+        WriteInt16(header, 22, Channels);
         WriteInt32(header, 24, SampleRate);
-        WriteInt32(header, 28, SampleRate); // 8 bits: byte rate == sample rate
-        WriteInt16(header, 32, 1);
+        WriteInt32(header, 28, checked(SampleRate * Channels));
+        WriteInt16(header, 32, Channels);
         WriteInt16(header, 34, 8);
         WriteAscii(header, 36, "data");
         WriteInt32(header, 40, (int)dataLength);

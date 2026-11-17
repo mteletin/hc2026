@@ -1,4 +1,4 @@
-; HC2000 wi-124 visual proof, origin 8000h; actual writable screen RAM.
+; HC2000 visual proof, origin 8000h; actual writable screen RAM.
 ; CPU paints 32 alternating bitmap bytes and 32 white-ink attributes. No boot claim.
         org 08000h
 start:  di

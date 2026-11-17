@@ -14,3 +14,9 @@ tests/assets/z80/fuse/tests.expected -text
 tests/assets/z80/zex/*.com -text
 deploy/emu/sdl2/*.dll -text
 deploy/emu/sdl2/linux-x64/*.so.0 -text
+
+# Host folders of CP/M files: byte-exact, never normalized
+disks/host/** -text
+
+# Compiled guest assets are checksum-pinned, including their receipts.
+build/guest-payload/** -text

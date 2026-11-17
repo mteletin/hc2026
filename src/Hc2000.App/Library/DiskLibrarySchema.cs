@@ -5,7 +5,8 @@ using System.Text.Json;
 
 namespace Hc2000.App.Library;
 
-public enum DiskLibraryFormat { StandardDsk, ExtendedDsk }
+public enum DiskLibraryFormat { StandardDsk, ExtendedDsk, Flat512 }
+public enum DiskLibraryKind { Floppy, Hdd }
 public enum DiskLibraryContentState { Unknown, DirectoryListed }
 public sealed record DiskLibraryProvenance(string Source, string Note);
 public sealed record DiskLibraryFileRow(int User, string Name, bool ReadOnly, bool System, int Records, int AllocatedBytes, int DirectoryIndex);
@@ -13,7 +14,7 @@ public sealed record DiskLibraryFileRow(int User, string Name, bool ReadOnly, bo
 /// <summary>Closed contents block: unknown carries an honest reason and never guessed rows; listed rows are bounded copies of the CP/M directory.</summary>
 public sealed record DiskLibraryContents(DiskLibraryContentState State, string? Profile, ImmutableArray<DiskLibraryFileRow> Files, string Reason);
 public sealed record DiskLibraryEntry(string Id, string Name, string SourcePath, long Length, string Sha256, string? FileId,
-    DiskLibraryFormat Format, DiskLibraryProvenance Provenance, DiskLibraryContents Contents);
+    DiskLibraryFormat Format, DiskLibraryProvenance Provenance, DiskLibraryContents Contents, DiskLibraryKind Kind = DiskLibraryKind.Floppy);
 public sealed record DiskLibraryCopy(string Id, string EntryId, string RelativePath, string OriginalSha256, string InitialSha256, long Length);
 public sealed record DiskLibraryDocument(int Version, ImmutableArray<DiskLibraryEntry> Entries, ImmutableArray<DiskLibraryCopy> Copies);
 public sealed record DiskLibrarySearchResult(ImmutableArray<DiskLibraryEntry> Matches, int Remaining);
@@ -23,6 +24,8 @@ public sealed class DiskLibrarySchemaException(string message) : Exception(messa
 public static class DiskLibrarySchema
 {
     public const int Version = 1;
+    public const int HddVersion = 2;
+    public const int HddBytes = 8388608;
     public const int MaxCatalogBytes = 8 * 1024 * 1024;
     public const int MaxJsonDepth = 8;
     public const int MaxEntries = 1024;
@@ -49,10 +52,15 @@ public static class DiskLibrarySchema
             var root = doc.RootElement;
             if (root.ValueKind != JsonValueKind.Object) throw Bad("catalog root must be an object");
             RequireExactKeys(root, 1, "version", "entries", "copies");
-            if (GetProp(root, "version").GetRawText() != "1") throw Bad("version must be the integer 1");
-            var entries = ParseEntries(GetProp(root, "entries"), 2);
+            var version = GetProp(root, "version").GetRawText() switch
+            {
+                "1" => Version,
+                "2" => HddVersion,
+                _ => throw Bad("version must be the integer 1 or 2")
+            };
+            var entries = ParseEntries(GetProp(root, "entries"), 2, version);
             var copies = ParseCopies(GetProp(root, "copies"), 2, entries);
-            return new DiskLibraryDocument(Version, entries, copies);
+            return new DiskLibraryDocument(version, entries, copies);
         }
     }
 
@@ -60,14 +68,18 @@ public static class DiskLibrarySchema
     {
         ArgumentNullException.ThrowIfNull(document);
         ValidateBudgets(document);
+        if (document.Version is not (Version or HddVersion)) throw Bad("unsupported catalog version");
+        if (document.Version == Version && document.Entries.Any(e => e.Kind != DiskLibraryKind.Floppy || e.Format == DiskLibraryFormat.Flat512))
+            throw Bad("HDD metadata requires catalog version 2");
         var sb = new StringBuilder(2048);
-        sb.Append("{\"version\":").Append(Version).Append(",\"entries\":[");
-        for (var i = 0; i < document.Entries.Length; i++) { if (i > 0) sb.Append(','); AppendEntry(sb, document.Entries[i]); }
+        sb.Append("{\"version\":").Append(document.Version).Append(",\"entries\":[");
+        for (var i = 0; i < document.Entries.Length; i++) { if (i > 0) sb.Append(','); AppendEntry(sb, document.Entries[i], document.Version); }
         sb.Append("],\"copies\":[");
         for (var i = 0; i < document.Copies.Length; i++) { if (i > 0) sb.Append(','); AppendCopy(sb, document.Copies[i]); }
         sb.Append("]}");
         var bytes = Encoding.UTF8.GetBytes(sb.ToString());
         if (bytes.Length > MaxCatalogBytes) throw new DiskLibrarySchemaException("encoded catalog exceeds the " + MaxCatalogBytes + " byte budget");
+        if (document.Version == HddVersion) _ = Load(bytes);
         return bytes;
     }
 
@@ -110,13 +122,13 @@ public static class DiskLibrarySchema
             throw new DiskLibrarySchemaException("copies per entry exceed " + MaxCopiesPerEntry);
         if (document.Entries.Any(e => e.Contents.Files.Any(r => r.User is < 0 or > 15
                 || r.Name.Length is < 1 or > 16
-                || r.Records is < 0 or > MaxContainerBytes
-                || r.AllocatedBytes is < 0 or > MaxContainerBytes
-                || r.DirectoryIndex is < 0 or > 127)))
+                || r.Records < 0 || r.Records > (e.Kind == DiskLibraryKind.Hdd ? HddBytes : MaxContainerBytes)
+                || r.AllocatedBytes < 0 || r.AllocatedBytes > (e.Kind == DiskLibraryKind.Hdd ? HddBytes : MaxContainerBytes)
+                || r.DirectoryIndex < 0 || r.DirectoryIndex > (e.Kind == DiskLibraryKind.Hdd ? 1023 : 127))))
             throw new DiskLibrarySchemaException("contents file rows exceed the schema bounds");
     }
 
-    private static ImmutableArray<DiskLibraryEntry> ParseEntries(JsonElement el, int depth)
+    private static ImmutableArray<DiskLibraryEntry> ParseEntries(JsonElement el, int depth, int version)
     {
         if (el.ValueKind != JsonValueKind.Array) throw Bad("entries must be an array");
         var list = new List<DiskLibraryEntry>();
@@ -124,22 +136,32 @@ public static class DiskLibrarySchema
         foreach (var item in el.EnumerateArray())
         {
             if (list.Count == MaxEntries) throw Bad("entries exceed " + MaxEntries);
-            var entry = ParseEntry(item, depth + 1);
+            var entry = ParseEntry(item, depth + 1, version);
             if (!ids.Add(entry.Id)) throw Bad("duplicate entry id " + entry.Id);
             list.Add(entry);
         }
         return list.ToImmutableArray();
     }
 
-    private static DiskLibraryEntry ParseEntry(JsonElement el, int depth)
+    private static DiskLibraryEntry ParseEntry(JsonElement el, int depth, int version)
     {
         if (el.ValueKind != JsonValueKind.Object) throw Bad("entry must be an object");
-        RequireExactKeys(el, depth, "id", "name", "sourcePath", "length", "sha256", "fileId", "format", "provenance", "contents");
+        if (version == Version)
+            RequireExactKeys(el, depth, "id", "name", "sourcePath", "length", "sha256", "fileId", "format", "provenance", "contents");
+        else
+            RequireExactKeys(el, depth, "id", "name", "sourcePath", "length", "sha256", "fileId", "format", "provenance", "contents", "kind");
+        var kind = version == Version ? DiskLibraryKind.Floppy : RequireString(GetProp(el, "kind"), "entry kind", 1, 16, true) switch
+        {
+            "floppy" => DiskLibraryKind.Floppy,
+            "hdd" => DiskLibraryKind.Hdd,
+            _ => throw Bad("entry kind must be floppy or hdd")
+        };
         var id = RequireGuidD(RequireString(GetProp(el, "id"), "entry id", 36, 36, true));
         var name = RequireString(GetProp(el, "name"), "entry name", 1, 256);
         var sourcePath = RequireString(GetProp(el, "sourcePath"), "entry sourcePath", 1, 4096);
         if (!sourcePath.StartsWith('/')) throw Bad("entry sourcePath must be an absolute path");
-        var length = RequireInt64(GetProp(el, "length"), "entry length", 1, MaxContainerBytes);
+        var length = RequireInt64(GetProp(el, "length"), "entry length", kind == DiskLibraryKind.Hdd ? HddBytes : 1,
+            kind == DiskLibraryKind.Hdd ? HddBytes : MaxContainerBytes);
         var sha256 = RequireSha256(GetProp(el, "sha256"), "entry sha256");
         var fileIdEl = GetProp(el, "fileId");
         string? fileId = fileIdEl.ValueKind == JsonValueKind.Null ? null
@@ -149,10 +171,12 @@ public static class DiskLibrarySchema
         {
             "standard-dsk" => DiskLibraryFormat.StandardDsk,
             "extended-dsk" => DiskLibraryFormat.ExtendedDsk,
+            "flat512" when kind == DiskLibraryKind.Hdd => DiskLibraryFormat.Flat512,
             _ => throw Bad("entry format must be standard-dsk or extended-dsk")
         };
+        if (kind == DiskLibraryKind.Hdd && format != DiskLibraryFormat.Flat512) throw Bad("HDD format must be flat512");
         return new DiskLibraryEntry(id, name, sourcePath, length, sha256, fileId, format,
-            ParseProvenance(GetProp(el, "provenance"), depth + 1), ParseContents(GetProp(el, "contents"), depth + 1));
+            ParseProvenance(GetProp(el, "provenance"), depth + 1), ParseContents(GetProp(el, "contents"), depth + 1, kind), kind);
     }
 
     private static DiskLibraryProvenance ParseProvenance(JsonElement el, int depth)
@@ -163,7 +187,7 @@ public static class DiskLibrarySchema
             RequireString(GetProp(el, "note"), "provenance note", 0, 2048, true));
     }
 
-    private static DiskLibraryContents ParseContents(JsonElement el, int depth)
+    private static DiskLibraryContents ParseContents(JsonElement el, int depth, DiskLibraryKind kind)
     {
         if (el.ValueKind != JsonValueKind.Object) throw Bad("contents must be an object");
         RequireExactKeys(el, depth, "state", "profile", "files", "reason");
@@ -171,7 +195,7 @@ public static class DiskLibrarySchema
         var profileEl = GetProp(el, "profile");
         string? profile = profileEl.ValueKind == JsonValueKind.Null ? null
             : RequireString(profileEl, "contents profile", 1, 32, true);
-        if (profile is not null && PresetProfiles.All(p => p != profile))
+        if (profile is not null && (kind == DiskLibraryKind.Hdd ? profile != "hdd-volume-8m" : PresetProfiles.All(p => p != profile)))
             throw Bad("contents profile must be null or one of " + string.Join(", ", PresetProfiles));
         var filesEl = GetProp(el, "files");
         if (filesEl.ValueKind != JsonValueKind.Array) throw Bad("contents files must be an array");
@@ -179,7 +203,7 @@ public static class DiskLibrarySchema
         foreach (var item in filesEl.EnumerateArray())
         {
             if (files.Count == MaxDirectoryRows) throw Bad("contents files exceed " + MaxDirectoryRows);
-            files.Add(ParseFileRow(item, depth + 1));
+            files.Add(ParseFileRow(item, depth + 1, kind));
         }
         var reason = RequireString(GetProp(el, "reason"), "contents reason", 1, 32, true);
         if (stateText == "unknown")
@@ -198,7 +222,7 @@ public static class DiskLibrarySchema
         throw Bad("contents state must be unknown or directory-listed");
     }
 
-    private static DiskLibraryFileRow ParseFileRow(JsonElement el, int depth)
+    private static DiskLibraryFileRow ParseFileRow(JsonElement el, int depth, DiskLibraryKind kind)
     {
         if (el.ValueKind != JsonValueKind.Object) throw Bad("file row must be an object");
         RequireExactKeys(el, depth, "user", "name", "readOnly", "system", "records", "allocatedBytes", "directoryIndex");
@@ -207,9 +231,9 @@ public static class DiskLibrarySchema
             RequireString(GetProp(el, "name"), "row name", 1, 16),
             RequireBool(GetProp(el, "readOnly"), "row readOnly"),
             RequireBool(GetProp(el, "system"), "row system"),
-            RequireInt32(GetProp(el, "records"), "row records", 0, MaxContainerBytes),
-            RequireInt32(GetProp(el, "allocatedBytes"), "row allocatedBytes", 0, MaxContainerBytes),
-            RequireInt32(GetProp(el, "directoryIndex"), "row directoryIndex", 0, 127));
+            RequireInt32(GetProp(el, "records"), "row records", 0, kind == DiskLibraryKind.Hdd ? HddBytes : MaxContainerBytes),
+            RequireInt32(GetProp(el, "allocatedBytes"), "row allocatedBytes", 0, kind == DiskLibraryKind.Hdd ? HddBytes : MaxContainerBytes),
+            RequireInt32(GetProp(el, "directoryIndex"), "row directoryIndex", 0, kind == DiskLibraryKind.Hdd ? 1023 : 127));
     }
 
     private static ImmutableArray<DiskLibraryCopy> ParseCopies(JsonElement el, int depth, ImmutableArray<DiskLibraryEntry> entries)
@@ -228,12 +252,14 @@ public static class DiskLibrarySchema
             var entryId = RequireString(GetProp(item, "entryId"), "copy entryId", 36, 36, true);
             if (!byId.TryGetValue(entryId, out var entry)) throw Bad("copy " + id + " references unknown entry " + entryId);
             var relativePath = RequireString(GetProp(item, "relativePath"), "copy relativePath", 1, 4096, true);
-            if (relativePath != "copies/" + id + ".dsk") throw Bad("copy relativePath must be copies/<copy-id>.dsk");
+            var suffix = entry.Kind == DiskLibraryKind.Hdd ? ".img" : ".dsk";
+            if (relativePath != "copies/" + id + suffix) throw Bad("copy relativePath must be copies/<copy-id>" + suffix);
             if (RequireSha256(GetProp(item, "originalSha256"), "copy originalSha256") != entry.Sha256)
                 throw Bad("copy originalSha256 must equal the entry sha256");
             if (RequireSha256(GetProp(item, "initialSha256"), "copy initialSha256") != entry.Sha256)
                 throw Bad("copy initialSha256 must equal the entry sha256");
-            if (RequireInt64(GetProp(item, "length"), "copy length", 1, MaxContainerBytes) != entry.Length)
+            if (RequireInt64(GetProp(item, "length"), "copy length", entry.Kind == DiskLibraryKind.Hdd ? HddBytes : 1,
+                    entry.Kind == DiskLibraryKind.Hdd ? HddBytes : MaxContainerBytes) != entry.Length)
                 throw Bad("copy length must equal the entry length");
             if (!ids.Add(id)) throw Bad("duplicate copy id " + id);
             perEntry.TryGetValue(entryId, out var count);
@@ -399,16 +425,27 @@ public static class DiskLibrarySchema
         sb.Append('"');
     }
 
-    private static void AppendEntry(StringBuilder sb, DiskLibraryEntry e)
+    private static void AppendEntry(StringBuilder sb, DiskLibraryEntry e, int version)
     {
         sb.Append("{\"id\":"); AppendString(sb, e.Id);
+        if (version == HddVersion)
+        {
+            if (e.Kind is not (DiskLibraryKind.Floppy or DiskLibraryKind.Hdd)) throw Bad("unsupported entry kind");
+            sb.Append(",\"kind\":\"").Append(e.Kind == DiskLibraryKind.Hdd ? "hdd" : "floppy").Append('"');
+        }
         sb.Append(",\"name\":"); AppendString(sb, e.Name);
         sb.Append(",\"sourcePath\":"); AppendString(sb, e.SourcePath);
         sb.Append(",\"length\":").Append(e.Length);
         sb.Append(",\"sha256\":"); AppendString(sb, e.Sha256);
         sb.Append(",\"fileId\":");
         if (e.FileId is null) sb.Append("null"); else AppendString(sb, e.FileId);
-        sb.Append(",\"format\":\"").Append(e.Format == DiskLibraryFormat.ExtendedDsk ? "extended-dsk" : "standard-dsk").Append('"');
+        sb.Append(",\"format\":\"").Append(e.Format switch
+        {
+            DiskLibraryFormat.StandardDsk => "standard-dsk",
+            DiskLibraryFormat.ExtendedDsk => "extended-dsk",
+            DiskLibraryFormat.Flat512 => "flat512",
+            _ => throw Bad("unsupported entry format")
+        }).Append('"');
         sb.Append(",\"provenance\":{\"source\":"); AppendString(sb, e.Provenance.Source);
         sb.Append(",\"note\":"); AppendString(sb, e.Provenance.Note);
         sb.Append('}');

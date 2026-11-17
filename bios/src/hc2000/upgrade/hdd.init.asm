@@ -62,21 +62,21 @@ HddOpcodeGuard:
     PUSH AF
     DI
     LD HL,HddPayload
-    LD DE,0x9000
+    LD DE,0x9D00
     LD BC,HddPayloadEnd-HddPayload
     LDIR
     ; Zero only assigned data; code partitions never overlap these ranges.
-    LD HL,0xA000
-    LD DE,0xA001
+    LD HL,0xA500
+    LD DE,0xA501
     LD BC,0x14FF
     LD (HL),0
     LDIR
     LD A,0xA5
     LD (HddStack),A
     ; Nonzero stack/slack guards make accidental writes observable.
-    LD HL,0xB800
-    LD DE,0xB801
-    LD BC,0x04FF
+    LD HL,0xBB80
+    LD DE,0xBB81
+    LD BC,0x017F
     LD (HL),0xA5
     LDIR
     LD HL,HddDphBytes
@@ -126,11 +126,11 @@ HddOpcodeSites:
     DW 0xD303,0xD318,0xD31B,0xD31E,0xD321,0xD327,0xD32A,0xD300
 HddPatchTable:
     ; operand address, original target, resident target
-    DW 0x0006,HddOriginalBdos,0x9006
-    DW 0xC3F5,0xBD00,0x9000
+    DW 0x0006,HddOriginalBdos,0x9D06
+    DW 0xC3F5,0xBD00,0x9D00
     DW 0xC407,0xC166,HddEof
-    DW 0xD467,0xBD00,0x9000
-    DW 0xD304,0xD3C1,0x900C
+    DW 0xD467,0xBD00,0x9D00
+    DW 0xD304,0xD3C1,0x9D0C
     DW 0xD319,0xD52D,HddHome
     DW 0xD31C,0xD492,HddSelect
     DW 0xD31F,0xD52F,HddTrack
@@ -139,14 +139,14 @@ HddPatchTable:
     DW 0xD32B,0xD53E,HddWrite
     DW 0
 HddDphBytes:
-    DW 0,0,0,0,HddDirectory,HddDpb,0xA400,0xA000
-    DW 0,0,0,0,HddDirectory,HddDpb,0xA500,0xA100
-    DW 0,0,0,0,HddDirectory,HddDpb,0xA600,0xA200
-    DW 0,0,0,0,HddDirectory,HddDpb,0xA700,0xA300
+    DW 0,0,0,0,HddDirectory,HddDpb,0xA900,0xA500
+    DW 0,0,0,0,HddDirectory,HddDpb,0xAA00,0xA600
+    DW 0,0,0,0,HddDirectory,HddDpb,0xAB00,0xA700
+    DW 0,0,0,0,HddDirectory,HddDpb,0xAC00,0xA800
     DB 0x40,0,5,0x1F,1,0xFF,7,0xFF,3,0xFF,0,0,1,0,0,0
 HddPayload:
-PHASE 0x9000
+PHASE 0x9D00
 INCLUDE "hdd.resident.asm"
 DEPHASE
 HddPayloadEnd:
-ASSERT HddPayloadEnd < 0x9000
+ASSERT HddPayloadEnd < 0x9D00

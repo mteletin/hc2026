@@ -6,7 +6,9 @@ namespace Hc2000.App.Audio;
 public interface IQueuedAudioSink : IDisposable
 {
     int SampleRate { get; }
+    int Channels => 1;
     int QueuedSamples { get; }
+    int QueuedFrames => QueuedSamples / Channels;
     void Queue(ReadOnlySpan<float> samples);
     void Pause(bool paused);
     void Clear();

@@ -1,6 +1,7 @@
 using Hc2000.App.Configuration;
 using Hc2000.App.Input;
 using Hc2000.App.Media;
+using Hc2000.App.Network;
 
 namespace Hc2000.App.Workspace;
 
@@ -30,20 +31,36 @@ internal sealed class MachineSession
     }
 
     public InputQueue InputQueue { get; }
+    public CpNetHostGate CpNetHostGate { get; } = new();
+    public CpNetHostGate CpNetInboundHostGate { get; } = new();
+    public CpNetServerSettings NetworkServerSettings { get; } = new();
+    // The X6 network card's one door out (hc2000-ssh-terminal): off until the owner switches it on for this machine.
+    public OutboundGateway OutboundGateway { get; } = new();
+    public bool HasX6Net { get; set; }
+    public bool GatewayLogKept { get; set; }
+    /// <summary>The drive share of this machine's open SSH session, when it names one (hc2000-remote-drive-mount).</summary>
+    public Network.DriveShareState? DriveShare { get; set; }
+    public event Action? DriveShareChanged;
+    public void RaiseDriveShareChanged() => DriveShareChanged?.Invoke();
     public KeyboardInputAdapter KeyboardInput { get; }
     public bool Closed => closed;
     public Runtime.EmulationWorker? Worker => Volatile.Read(ref worker);
     public long RuntimeGeneration => Volatile.Read(ref runtimeGeneration);
+    public Runtime.VideoFrameRouter Video { get; } = new();
+    public long ObservedVideoGeneration { get; set; } = -1;
     public DiskWritebackHost? WritebackHost { get; set; }
     public DiskReadReservation.Operation? HeldOperation => Volatile.Read(ref heldOp);
     public bool HasRuntime => worker is not null;
     public MachineConfiguration? StartingConfiguration { get; set; }
+    public Hc2000.Machine.Video.PresentationMode PresentationMode { get; set; } = Hc2000.Machine.Video.PresentationMode.Faithful;
     public Task BasicReplacementCompletion { get; set; } = Task.CompletedTask;
     public bool BasicRuntimeActive { get; set; }
     public bool ReplacingRuntime { get; set; }
     public int MediaPollTicks { get; set; }
     public MediaBridge? MediaBridge { get; set; }
     public Snapshots.HcsBridge? SnapshotBridge { get; set; }
+    public CpNetBridge? NetworkBridge { get; set; }
+    public CpNetServerBridge? NetworkServerBridge { get; set; }
     public Explorer.ExplorerPaneState Explorer { get; } = new();
     public string InputEvidenceWindowId { get; } = Guid.NewGuid().ToString("N");
     public long ObservedWorkerSession { get; set; } = -1;
@@ -53,6 +70,8 @@ internal sealed class MachineSession
     public void AttachWorker(Runtime.EmulationWorker runtime)
     {
         if (worker is not null || closed) throw new InvalidOperationException("Runtime already attached.");
+        Video.Reset(worker);
+        ObservedVideoGeneration = -1;
         worker = runtime;
         Interlocked.Increment(ref runtimeGeneration);
         runtime.SessionRetired += KeyboardInput.Evidence.EndSession;
@@ -60,10 +79,14 @@ internal sealed class MachineSession
         // bridges: its delayed completion must never retire a replacement worker's bridges.
         var media = MediaBridge;
         var snapshots = SnapshotBridge;
+        var network = NetworkBridge;
+        var networkServer = NetworkServerBridge;
         _ = runtime.Completion.ContinueWith(_ =>
         {
             media?.Disconnect();
             snapshots?.Disconnect();
+            network?.Disconnect();
+            networkServer?.Disconnect();
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
@@ -73,6 +96,7 @@ internal sealed class MachineSession
         if (closed) return;
         closed = true;
         Interlocked.Increment(ref runtimeGeneration);
+        NetworkServerSettings.Dispose();
         KeyboardInput.ReleaseFocus(InputReleaseOrigin.SessionEnd);
         KeyboardInput.Evidence.EndSession();
         InputQueue.Enqueue(new RuntimeControl(InputControlKind.Shutdown));
@@ -80,7 +104,12 @@ internal sealed class MachineSession
 
     internal void MarkClosed() => closed = true;
     internal void BumpGeneration() => Interlocked.Increment(ref runtimeGeneration);
-    internal void DetachWorker() => worker = null;
+    internal void DetachWorker()
+    {
+        Video.Reset(worker);
+        worker = null;
+        ObservedVideoGeneration = -1;
+    }
 
     // Host-held disk read admission (panel insert): one bounded operation that owns the single
     // native cold-read fence for this one frozen member. The operation is acknowledged by the actual

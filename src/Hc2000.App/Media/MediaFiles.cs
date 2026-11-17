@@ -6,7 +6,7 @@ namespace Hc2000.App.Media;
 /// <summary>Explicit host-side file actions, never called by the emulation boundary.</summary>
 public static class MediaFiles
 {
-    public const int MaxDiskBytes = 4 * 1024 * 1024;
+    public const int MaxDiskBytes = MediaImageDescriptor.MaxDiskBytes;
     public const int MaxTapeBytes = 16 * 1024 * 1024;
     // Compatibility/default callers only. Bound snapshot views use the adopted runtime's HcsLimits.
     public const int MaxSnapshotBytes = 256 * 1024 * 1024;
@@ -44,7 +44,8 @@ public static class MediaFiles
         bool moveStarted = false, moved = false;
         try
         {
-            await File.WriteAllBytesAsync(temporary, bytes.ToArray());
+            // Preserve the owner's immutable buffer instead of copying a GiB-sized snapshot.
+            await File.WriteAllBytesAsync(temporary, bytes.AsMemory());
             admission?.ValidatePublicationTargetStillCurrent();
             moveStarted = true;
             File.Move(temporary, fullPath, overwrite: true);

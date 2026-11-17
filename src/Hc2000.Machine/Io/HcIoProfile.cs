@@ -83,7 +83,14 @@ public static class HcIoProfile
         if (blockDisk.HddEnabled != (profile.BlockDisk is BlockDiskPolicy.HddV1 or BlockDiskPolicy.HddGuestV1) ||
             blockDisk.GuestAckEnabled != (profile.BlockDisk == BlockDiskPolicy.HddGuestV1))
             throw new ArgumentException("Block-disk device and profile policy disagree.", nameof(blockDisk));
-        return [.. Faithful(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf),
+        if (profile.Name == "hc2000-v2-paged-expansion-x5-hdd-guest-v1" &&
+            (!blockDisk.CompositeSwitchRefused || !blockDisk.HasDescriptorMemoryGuard || !blockDisk.UsesMemory(memory) ||
+             profile.Memory with { RomProvenance = memory.Profile.RomProvenance } != memory.Profile))
+            throw new ArgumentException("X5/HDD requires composite switch refusal and descriptor-map preflight.", nameof(blockDisk));
+        var core = memory.Profile.RamPaged is null
+            ? Faithful(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf)
+            : WithPagedRam(memory, ula, driveLatch, fdcStatus, fdcData, serialF7, handshakeEf);
+        return [.. core,
             .. blockDisk.Mappings()];
     }
 

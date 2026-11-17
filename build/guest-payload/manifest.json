@@ -1,0 +1,183 @@
+{
+  "schema": 1,
+  "guestSourceCommit": "1c739b98a3d883a37acf14dd4da0b172d622d546",
+  "privateSourceSha256": "7539dc6156f3764728fd3ce65e04ca9d99eb7e3dbed9f20faeba7297085756e3",
+  "groups": {
+    "utilities": [
+      {
+        "path": "CPM22-HC-ram-paged-upgrade.DSK",
+        "bytes": 778496,
+        "sha256": "fc36f11ab405d41f3d700ca7e269cd2057fc16c2306e4b7438396743d714e085"
+      },
+      {
+        "path": "HC2000-UTIL-8M.DSK",
+        "bytes": 8388608,
+        "sha256": "116173c69dcbd11236cffb9edfe158d110f8bd56984830711cd7f2b2a69e31ce"
+      },
+      {
+        "path": "HC2000-UTIL.DSK",
+        "bytes": 778496,
+        "sha256": "e04e57ebc8ba52819dcf6d1d5d02cae58496d91631a800dff79029a2778a7eca"
+      },
+      {
+        "path": "m-v1-source-fit.txt",
+        "bytes": 4290,
+        "sha256": "442b8ddd2b69631738657ab6e9fd2aedfc269972dd9730e15ac4c567b6e89946"
+      },
+      {
+        "path": "utilities-content/CCP.COM",
+        "bytes": 260,
+        "sha256": "6ab3a39b6c5e8cbbf378730aaa6fd65ea343aa654db7d6e1da15b32ea0316989"
+      },
+      {
+        "path": "utilities-content/CURL.COM",
+        "bytes": 9550,
+        "sha256": "4a4c330ee0f3320ecacc84f85492d76b88fb84f0191430f0716a74bd28d74531"
+      },
+      {
+        "path": "utilities-content/D.COM",
+        "bytes": 4608,
+        "sha256": "fb8e4d11948e9b8c068f72a6527e9fb0b5264597fc94873fe85408a999d2767a"
+      },
+      {
+        "path": "utilities-content/DDT.COM",
+        "bytes": 4864,
+        "sha256": "bc4b0f085f8d1e37caf2a13850c70afa07acb626b22b1a7cb63368b3334dd448"
+      },
+      {
+        "path": "utilities-content/DRVSEL.COM",
+        "bytes": 353,
+        "sha256": "82fa6adecf4f6ec6ecbd4e133755f4266fe72d47beaaa76498b5447f1ca2a6c9"
+      },
+      {
+        "path": "utilities-content/FOLDERS.COM",
+        "bytes": 2008,
+        "sha256": "b2e8c0f6d3fbfec2805d0e5216caccca35345b4f64c921b7f232dd0d4c729fd1"
+      },
+      {
+        "path": "utilities-content/HDFMT.COM",
+        "bytes": 475,
+        "sha256": "e3ab7daeedf01823499b6bdea78c2ff8c862b1e4114283d14005a49961f29622"
+      },
+      {
+        "path": "utilities-content/LOAD.COM",
+        "bytes": 1792,
+        "sha256": "c885d061a5dcb3830ab1c29a13e34d3c0560cc3faf569bc55b195c0330a9cbd6"
+      },
+      {
+        "path": "utilities-content/MBASIC.COM",
+        "bytes": 24320,
+        "sha256": "e6412bb1d8fcb2638b169dcde79741a4346975dae2de46272ce394d233ee2ada"
+      },
+      {
+        "path": "utilities-content/MFMT.COM",
+        "bytes": 420,
+        "sha256": "d1328c89cc93d73e386343fe90024ed9c237cb4403fe88bdb51c1e08b4984bef"
+      },
+      {
+        "path": "utilities-content/MKDIR.COM",
+        "bytes": 1981,
+        "sha256": "34ac61a232dc290b54a10e4534cc6f6e19ea62eb851c6a692a1fc5b04f79d5d1"
+      },
+      {
+        "path": "utilities-content/NETECHO.COM",
+        "bytes": 3073,
+        "sha256": "5b034648db919a110ba2df49bb0f758b8becd3de93844700fd95141736863a95"
+      },
+      {
+        "path": "utilities-content/NETX6.COM",
+        "bytes": 2618,
+        "sha256": "39d20331f33ab2d93cdafe3048692bf8ecc742c223769ce35cf9c5a766c7462d"
+      },
+      {
+        "path": "utilities-content/PIP.COM",
+        "bytes": 7424,
+        "sha256": "7f9e12a92e2bcfd814b5b680a2f7d5c2a2c50c9a5ef94a6891dcaa3527f08ec2"
+      },
+      {
+        "path": "utilities-content/RAMSTAT.COM",
+        "bytes": 221,
+        "sha256": "88e46063c080f4a40ca11a2722249c93e81bdd2412fdcbdaeebe0a26a27ab353"
+      },
+      {
+        "path": "utilities-content/RMDIR.COM",
+        "bytes": 1981,
+        "sha256": "eb0c525ae6cfe81c7e556c44333e81df795c7763a37b10025637ff52cf67a79a"
+      },
+      {
+        "path": "utilities-content/SHELL.COM",
+        "bytes": 248,
+        "sha256": "a53adf1b2cd04278c989fb687bbe32a891f584a33b02a4d450cc56cc5a149092"
+      },
+      {
+        "path": "utilities-content/SSH.COM",
+        "bytes": 17024,
+        "sha256": "70aa5d04dc0beb8d6bb4d3b6c0fcd01f5ac68c93a9edca32a029ea57e731e135"
+      },
+      {
+        "path": "utilities-content/STAT.COM",
+        "bytes": 5248,
+        "sha256": "614d0b1d66466177e5b2bf585251d53d1e24eda34ada136b4ae178ab5944dc73"
+      },
+      {
+        "path": "utilities-content/SUBMIT.COM",
+        "bytes": 1280,
+        "sha256": "4c3fec22ebca595b03c279eb21b19aa4b2dab139741ed29172ca6fa4c43e7066"
+      },
+      {
+        "path": "utilities-content/SUM.COM",
+        "bytes": 394,
+        "sha256": "01aadcc541c989f29560f320f9a86cadceef86c35318695c93861b9315d563a7"
+      },
+      {
+        "path": "utilities-content/SYSINFO.COM",
+        "bytes": 2215,
+        "sha256": "6fab752cc2930ff73c15f4f4880018683659696b8e7473f97b4d0efe0f366965"
+      },
+      {
+        "path": "utilities-content/TAPEINIT.COM",
+        "bytes": 5604,
+        "sha256": "003d59478a380515f1d0d641867922c76a0f34954673f04ba2387d2b4bb8e876"
+      },
+      {
+        "path": "utilities-content/TIME.COM",
+        "bytes": 726,
+        "sha256": "c8f9301d20425a4ebd102e793ec744acd96b9ddf4b3fab8d1e76172f83fde894"
+      },
+      {
+        "path": "utilities-content/X2INST.COM",
+        "bytes": 1132,
+        "sha256": "12e4d3482948c341730d4c7a98c9d24fd8500f423d26384236e1bb0cbe10bb86"
+      },
+      {
+        "path": "utilities-content/XSUB.COM",
+        "bytes": 768,
+        "sha256": "817a16b595ea6de8df0dd5e808f89a49e85dea546673283d759d01e960598bed"
+      },
+      {
+        "path": "utilities-manifest.json",
+        "bytes": 20489,
+        "sha256": "27e2ff1a9f2e468ab8b43bcc5c34713973af3a6a97357c66522ad6255a845a15"
+      }
+    ],
+    "cpnet": [
+      {
+        "path": "HC2000-CPNET.DSK",
+        "bytes": 778496,
+        "sha256": "85cea5afd088179521aa5449f90a4b742903cccab312cd94595e24b92b8cf7bc"
+      }
+    ],
+    "workstation": [
+      {
+        "path": "CPM22-HC-ram-paged-v2-workstation.DSK",
+        "bytes": 778496,
+        "sha256": "f50e04773a76148f3809eabcdd2a63a37e3cfe1cd73afb7f6804328c86325801"
+      },
+      {
+        "path": "workstation-manifest.json",
+        "bytes": 926,
+        "sha256": "47e75e03131e7f859ac7346671c8549171ad1299d767a2ce0d112095135a15ef"
+      }
+    ]
+  }
+}

@@ -25,6 +25,10 @@ public static class ProfileRomSelection
     public const string WholeChipSourcePath = "roms/hc2000/eprom-dump-hc2k-2/M27C512.bin";
     public const int WholeChipLength = 0x10000;
     private const string WholeChipSha256 = "83e3213b049c5b849ee32e04da901eba06992d5aa1f44f76564f312c79748d2b";
+    /// <summary>C:-boot whole-chip identity (MANIFEST): the dump carrying the direct-C:-boot CP/M upper
+    /// ROM; only its CP/M upper span differs from the canonical dump. hc2000-direct-c-boot.</summary>
+    public const string WholeChipCbootSourcePath = "roms/hc2000/eprom-dump-hc2k-2/M27C512-cboot-v1.bin";
+    private const string WholeChipCbootSha256 = "7c27e3be4abd43e45b14a54e1283d37b45b4bea3db73cbdbabd65df58262b797";
     // Physical offsets of each mapped half inside the whole-chip image.
     private const int WholeChipBasicOffset = 0x8000; // main ROM 0x0000 (BASIC), identical to v2/basic.rom
     private const int WholeChipCpmOffset = 0xc000;   // main ROM 0x4000 (CP/M lower+upper)
@@ -76,21 +80,36 @@ public static class ProfileRomSelection
         /// slice hash. No path is read after this returns.
         /// </summary>
         public static (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) LoadWholeChipV2(string assetRoot)
+            => SliceChip(LoadChip(assetRoot, WholeChipSourcePath, WholeChipSha256,
+                "Use the canonical whole-chip EPROM dump; same size is not enough."), MachineProfile.Hc2000V2);
+
+        /// <summary>The C:-boot machine's ROM map: the whole chip carrying the direct-C:-boot CP/M upper
+        /// ROM, sliced at the same physical offsets. The machine enters CP/M at the 0xF800 stub.
+        /// hc2000-direct-c-boot.</summary>
+        public static (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) LoadWholeChipCbootV1(string assetRoot)
+            => SliceChip(LoadChip(assetRoot, WholeChipCbootSourcePath, WholeChipCbootSha256,
+                "Use the canonical C:-boot whole-chip EPROM dump; same size is not enough."), MachineProfile.Hc2000V2HddCbootV1);
+
+        private static byte[] LoadChip(string assetRoot, string sourcePath, string expectedSha, string mismatchAdvice)
         {
             if (string.IsNullOrWhiteSpace(assetRoot)) throw new ArgumentException("Choose the asset root containing roms/hc2000/.", nameof(assetRoot));
             var root = Path.GetFullPath(assetRoot);
-            var path = Path.Combine(root, WholeChipSourcePath.Replace('/', Path.DirectorySeparatorChar));
+            var path = Path.Combine(root, sourcePath.Replace('/', Path.DirectorySeparatorChar));
             byte[] chip;
             try { chip = MediaFiles.ReadAsync(path, WholeChipLength).GetAwaiter().GetResult().ToArray(); }
-            catch (FileNotFoundException ex) { throw new InvalidDataException($"ROM unavailable: {WholeChipSourcePath}.", ex); }
-            catch (DirectoryNotFoundException ex) { throw new InvalidDataException($"ROM unavailable: {WholeChipSourcePath}.", ex); }
-            catch (InvalidDataException ex) { throw new InvalidDataException($"ROM size mismatch: {WholeChipSourcePath}, larger than {WholeChipLength} bytes. {ex.Message}", ex); }
+            catch (FileNotFoundException ex) { throw new InvalidDataException($"ROM unavailable: {sourcePath}.", ex); }
+            catch (DirectoryNotFoundException ex) { throw new InvalidDataException($"ROM unavailable: {sourcePath}.", ex); }
+            catch (InvalidDataException ex) { throw new InvalidDataException($"ROM size mismatch: {sourcePath}, larger than {WholeChipLength} bytes. {ex.Message}", ex); }
             if (chip.Length != WholeChipLength)
-                throw new InvalidDataException($"ROM size mismatch: {WholeChipSourcePath}, expected {WholeChipLength} bytes; got {chip.Length}. LFS pointers are not ROMs.");
+                throw new InvalidDataException($"ROM size mismatch: {sourcePath}, expected {WholeChipLength} bytes; got {chip.Length}. LFS pointers are not ROMs.");
             var hash = Convert.ToHexString(SHA256.HashData(chip)).ToLowerInvariant();
-            if (hash != WholeChipSha256)
-                throw new InvalidDataException($"ROM identity mismatch: {WholeChipSourcePath}. Use the canonical whole-chip EPROM dump; same size is not enough.");
-            var profile = MachineProfile.Hc2000V2;
+            if (hash != expectedSha)
+                throw new InvalidDataException($"ROM identity mismatch: {sourcePath}. {mismatchAdvice}");
+            return chip;
+        }
+
+        private static (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) SliceChip(byte[] chip, MachineProfile profile)
+        {
             profile.Validate();
             var basic = chip[WholeChipBasicOffset..(WholeChipBasicOffset + 0x4000)];
             var cpm = chip[WholeChipCpmOffset..(WholeChipCpmOffset + 0x4000)];

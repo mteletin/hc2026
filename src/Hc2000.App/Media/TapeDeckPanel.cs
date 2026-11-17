@@ -28,9 +28,9 @@ public sealed class TapeDeckPanel : StackPanel
     private readonly CheckBox monitor = new() { Content = "EAR monitor (uncalibrated BEL + inverted EAR, DC-blocked)", IsChecked = true };
     private readonly CheckBox discard = new() { Content = "Explicitly discard dirty cassette on replacement/eject" };
     private readonly Dictionary<MediaAction, Button> buttons = [];
-    private readonly Button open = new() { Content = "Insert tape…" };
-    private readonly Button save = new() { Content = "Export active side…" };
-    private readonly Button saveBoth = new() { Content = "Save cassette A + B as two TZX files…" };
+    private readonly Button open = new() { Content = "Insert tape" };
+    private readonly Button save = new() { Content = "Export active side" };
+    private readonly Button saveBoth = new() { Content = "Save cassette A + B as two TZX files" };
     private readonly Button inspect = new() { Content = "Inspect blocks / route" };
     internal bool IsBusy => busy;
     internal bool CanCloseSafely => state?.Deck is not { } d || !(d.A.Dirty || d.B.Dirty) || discard.IsChecked == true;
@@ -224,12 +224,12 @@ public sealed class TapeDeckPanel : StackPanel
         return result.Success ? $"{f} read={result.Value.Capabilities.CanRead}, write={result.Value.Capabilities.CanWrite}: {result.Value.Capabilities.UnavailableReason}"
             : $"{f} disabled: {result.Failure!.Detail}";
     }
-    private void Add(StackPanel row, MediaAction action, string label)
+    private void Add(WrapPanel row, MediaAction action, string label)
     {
         var button = new Button { Content = label, Focusable = false }; buttons.Add(action, button); row.Children.Add(button);
         button.Click += async (_, _) => await CommandAsync(action);
     }
-    private static StackPanel Row() => new() { Orientation = Orientation.Horizontal, Spacing = 6 };
+    private static WrapPanel Row() => new() { Orientation = Orientation.Horizontal };
     private async Task<string?> PickAsync(bool saving, string title, TapeFormat? target)
     {
         var provider = TopLevel.GetTopLevel(this)?.StorageProvider ?? throw new InvalidOperationException("File picker unavailable.");

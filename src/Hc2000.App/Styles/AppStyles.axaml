@@ -1,32 +1,68 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Styles.Resources>
-    <!-- 3.1 Colour Tokens -->
-    <SolidColorBrush x:Key="AppSurfaceBrush" Color="#181A1F"/>
-    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#1F232B"/>
-    <SolidColorBrush x:Key="AppCardBorderBrush" Color="#333945"/>
-    <SolidColorBrush x:Key="AppAccentBrush" Color="#2B6CB0"/>
-    <SolidColorBrush x:Key="AppMutedTextBrush" Color="#8C95A5"/>
-    <SolidColorBrush x:Key="AppStatusNoticeBrush" Color="#2D3748"/>
+    <!-- 3.1 Colour Tokens: the eleven contract keys and the five sanctioned additions, one value per theme
+         (hc2000-app-frame-and-visual-system doc palette-light-values-20261023; design v3 section 2). Consumers use
+         DynamicResource, so a theme switch repaints open windows. The screen surround stays dark in both themes. -->
+    <ResourceDictionary>
+    <ResourceDictionary.ThemeDictionaries>
+      <ResourceDictionary x:Key="Light">
+        <SolidColorBrush x:Key="AppSurfaceBrush" Color="#F3F3F3"/>
+        <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AppCardBorderBrush" Color="#C6CBD4"/>
+        <SolidColorBrush x:Key="AppAccentBrush" Color="#0B57D0"/>
+        <SolidColorBrush x:Key="AppAccentHoverBrush" Color="#0947A1"/>
+        <SolidColorBrush x:Key="AppMutedTextBrush" Color="#5D6675"/>
+        <SolidColorBrush x:Key="AppStatusNoticeBrush" Color="#EAECEF"/>
+        <SolidColorBrush x:Key="AppScreenSurroundBrush" Color="#0B0C0F"/>
+        <SolidColorBrush x:Key="AppStatusRunningBrush" Color="#218A54"/>
+        <SolidColorBrush x:Key="AppStatusStoppedBrush" Color="#C42B1C"/>
+        <SolidColorBrush x:Key="AppIconBrush" Color="#5F6B7A"/>
+        <SolidColorBrush x:Key="AppBadgeBackgroundBrush" Color="#E2ECF8"/>
+        <SolidColorBrush x:Key="AppBadgeTextBrush" Color="#2B6CB0"/>
+        <SolidColorBrush x:Key="AppBannerBackgroundBrush" Color="#FFF5F5"/>
+        <SolidColorBrush x:Key="AppTileSelectedBackgroundBrush" Color="#EBF4FF"/>
+        <SolidColorBrush x:Key="AppWarningBrush" Color="#B7791F"/>
+      </ResourceDictionary>
+      <ResourceDictionary x:Key="Dark">
+        <SolidColorBrush x:Key="AppSurfaceBrush" Color="#181A1F"/>
+        <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#1F232B"/>
+        <SolidColorBrush x:Key="AppCardBorderBrush" Color="#333945"/>
+        <SolidColorBrush x:Key="AppAccentBrush" Color="#2B6CB0"/>
+        <SolidColorBrush x:Key="AppAccentHoverBrush" Color="#3182CE"/>
+        <SolidColorBrush x:Key="AppMutedTextBrush" Color="#8C95A5"/>
+        <SolidColorBrush x:Key="AppStatusNoticeBrush" Color="#2D3748"/>
+        <SolidColorBrush x:Key="AppScreenSurroundBrush" Color="#0B0C0F"/>
+        <SolidColorBrush x:Key="AppStatusRunningBrush" Color="#2F855A"/>
+        <SolidColorBrush x:Key="AppStatusStoppedBrush" Color="#9B2C2C"/>
+        <SolidColorBrush x:Key="AppIconBrush" Color="#A0AEC0"/>
+        <SolidColorBrush x:Key="AppBadgeBackgroundBrush" Color="#243650"/>
+        <SolidColorBrush x:Key="AppBadgeTextBrush" Color="#90CDF4"/>
+        <SolidColorBrush x:Key="AppBannerBackgroundBrush" Color="#3B1F22"/>
+        <SolidColorBrush x:Key="AppTileSelectedBackgroundBrush" Color="#1C2F47"/>
+        <SolidColorBrush x:Key="AppWarningBrush" Color="#B7791F"/>
+      </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
   </Styles.Resources>
 
   <!-- 3.3 Base Overrides and Compact Density Rules -->
   <Style Selector="Button">
     <Setter Property="Focusable" Value="False"/>
     <Setter Property="MinHeight" Value="26"/>
-    <Setter Property="Padding" Value="8,3"/>
+    <Setter Property="Padding" Value="8,4"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="CornerRadius" Value="3"/>
   </Style>
   <Style Selector="TextBox">
     <Setter Property="MinHeight" Value="26"/>
-    <Setter Property="Padding" Value="6,3"/>
+    <Setter Property="Padding" Value="8,4"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="CornerRadius" Value="3"/>
   </Style>
   <Style Selector="ComboBox">
     <Setter Property="MinHeight" Value="26"/>
-    <Setter Property="Padding" Value="6,3"/>
+    <Setter Property="Padding" Value="8,4"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="CornerRadius" Value="3"/>
   </Style>
@@ -45,10 +81,10 @@
     <Setter Property="FontWeight" Value="SemiBold"/>
   </Style>
   <Style Selector="TextBlock.body">
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="13"/>
   </Style>
   <Style Selector="TextBlock.caption">
-    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontSize" Value="12"/>
     <Setter Property="TextWrapping" Value="Wrap"/>
   </Style>
   <Style Selector="TextBlock.notice">
@@ -58,47 +94,86 @@
 
   <!-- 3.4 Shared Control Style Classes -->
   <Style Selector="Border.shellHeader">
-    <Setter Property="Padding" Value="8,6"/>
-    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Padding" Value="8"/>
+    <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="BorderThickness" Value="0,0,0,1"/>
-    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}"/>
   </Style>
   <Style Selector="Border.section">
     <Setter Property="Padding" Value="8"/>
-    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="BorderThickness" Value="1"/>
-    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}"/>
   </Style>
   <Style Selector="Border.listRow">
-    <Setter Property="Padding" Value="6,3"/>
+    <Setter Property="Padding" Value="8,4"/>
     <Setter Property="MinHeight" Value="24"/>
     <Setter Property="CornerRadius" Value="3"/>
   </Style>
   <Style Selector="Button.tabStripItem">
-    <Setter Property="Padding" Value="10,4"/>
+    <Setter Property="Padding" Value="8,4"/>
     <Setter Property="MinHeight" Value="28"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="FontWeight" Value="Medium"/>
     <Setter Property="CornerRadius" Value="4"/>
   </Style>
-  <Style Selector="Button.tabStripItem.selected">
-    <Setter Property="FontWeight" Value="SemiBold"/>
+  <Style Selector="Border.tab">
+    <Setter Property="Padding" Value="8,0,0,0"/>
     <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+  </Style>
+  <Style Selector="Border.tab.selected">
     <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
   </Style>
-  <Style Selector="Button.primaryAction">
-    <Setter Property="Padding" Value="10,4"/>
-    <Setter Property="MinHeight" Value="26"/>
+  <Style Selector="Button.tabStripItem.selected">
     <Setter Property="FontWeight" Value="SemiBold"/>
-    <Setter Property="FontSize" Value="12"/>
-    <Setter Property="CornerRadius" Value="3"/>
   </Style>
-  <Style Selector="Button.toolbarAction">
-    <Setter Property="Padding" Value="8,3"/>
+  <Style Selector="Button.addTab">
+    <Setter Property="Width" Value="32"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="FontSize" Value="16"/>
+    <Setter Property="Background" Value="Transparent"/>
+  </Style>
+  <Style Selector="Button.primaryAction">
+    <Setter Property="Padding" Value="8,4"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+  </Style>
+  <Style Selector="Button.primaryAction:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AppAccentHoverBrush}"/>
+  </Style>
+  <Style Selector="Button.secondaryAction">
+    <Setter Property="Padding" Value="8,4"/>
     <Setter Property="MinHeight" Value="26"/>
     <Setter Property="FontSize" Value="12"/>
     <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}"/>
+  </Style>
+  <!-- Kept for one release as the alias of secondaryAction (design §2), then deleted. -->
+  <Style Selector="Button.toolbarAction">
+    <Setter Property="Padding" Value="8,4"/>
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}"/>
+  </Style>
+  <Style Selector="Button.ghostAction">
+    <Setter Property="Padding" Value="8,4"/>
+    <Setter Property="MinHeight" Value="26"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppIconBrush}"/>
   </Style>
   <Style Selector="ContextMenu.surfaceMenu">
   </Style>
+  <StyleInclude Source="avares://Hc2000.App/Styles/PickerStyles.axaml"/>
 </Styles>

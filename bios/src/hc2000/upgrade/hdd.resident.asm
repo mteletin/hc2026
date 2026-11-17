@@ -1,4 +1,4 @@
-; Logical PHASE9000 payload, hc2000-hdd-guest-ack-v1 ADR2 / ABI3.
+; Logical PHASE9D00 payload, hc2000-hdd-guest-ack-v1 ADR2 / ABI3.
 ; Not yet qualified with the genuine native successor receiver.
 HddResidentStart:
     JP HddWarmResume
@@ -6,7 +6,7 @@ HddResidentStart:
     JP HddBdos
     JP HddSwitch
     JP HddWarm
-    DEFS 0x9040-$,0
+    DEFS 0x9D40-$,0
 HddCodeStart:
 HddFinalize:
     ; Require the new opt-in profile before exposing any vectors. Old HDD
@@ -90,6 +90,16 @@ HddBdos:
     LD A,(HddDepth)
     OR A
     JP NZ,HddGuestFailure
+    ; CCP submit batch FCB at 0xC4AC is strictly floppy (drive A:),
+    ; with only a 16-byte CCP stack (0xC49B..0xC4AB). Forward directly
+    ; to HddOriginalBdos to prevent stack overflow into CCP code.
+    LD A,D
+    CP 0xC4
+    JR NZ,HddCheckFunction
+    LD A,E
+    CP 0xAC
+    JP Z,HddOriginalBdos
+HddCheckFunction:
     LD A,C
     CP 15
     JR Z,HddTrackedCall
@@ -109,6 +119,8 @@ HddBdos:
     JR Z,HddTrackedCall
     JP HddOriginalBdos
 HddTrackedCall:
+    LD (HddTrackedSavedSP),SP
+    LD SP,HddTrackedStackTop
     PUSH AF
     PUSH BC
     PUSH DE
@@ -130,7 +142,7 @@ HddTrackedCall:
     OR A
     SBC HL,DE
     JP NC,HddCheckDefaultFcb
-    LD HL,0x8FDC
+    LD HL,0x9CDC
     OR A
     SBC HL,DE
     JP C,HddGateRefused
@@ -331,6 +343,7 @@ HddGateFinish:
     POP DE
     POP BC
     POP AF
+    LD SP,(HddTrackedSavedSP)
     RET
 HddGateUntracked:
     XOR A
@@ -341,6 +354,7 @@ HddGateUntracked:
     POP DE
     POP BC
     POP AF
+    LD SP,(HddTrackedSavedSP)
     JP HddOriginalBdos
 HddGateRefused:
     XOR A
@@ -351,12 +365,15 @@ HddGateRefused:
     POP DE
     POP BC
     POP AF
+    LD SP,(HddTrackedSavedSP)
 HddGuestFailure:
     LD A,0xFF
     LD HL,0xFFFF
     RET
 HddEof:
     ; CCP C406 successful EOF, BEFORE C166 rewrites the load FCB.
+    LD (HddEofSavedSP),SP
+    LD SP,HddEofStackTop
     PUSH AF
     PUSH BC
     PUSH DE
@@ -397,6 +414,7 @@ HddEofChain:
     POP DE
     POP BC
     POP AF
+    LD SP,(HddEofSavedSP)
     JP 0xC166
 HddEofRefused:
     POP IY
@@ -405,6 +423,7 @@ HddEofRefused:
     POP DE
     POP BC
     POP AF
+    LD SP,(HddEofSavedSP)
     INC SP
     INC SP
     JP 0xC471
@@ -518,7 +537,7 @@ HddLogicalTransfer:
     OR A
     SBC HL,DE
     JP C,HddIoRefused
-    LD HL,0x8F80
+    LD HL,0x9C80
     LD DE,(HddLogicalDma)
     OR A
     SBC HL,DE
@@ -548,7 +567,7 @@ HddDmaValid:
     RRCA
     LD L,A
     AND 1
-    ADD A,0xA9
+    ADD A,0xAE
     LD H,A
     LD A,L
     AND 0x80
@@ -693,7 +712,14 @@ HddDoorbell:
 HddIoRefused:
     LD A,1
     RET
+HddVectors:
+    JP HddWarmResume
+    JP HddFinalize
 HddWarm:
+    LD HL,HddVectors
+    LD DE,0x9D00
+    LD BC,6
+    LDIR
     CALL HddFlush
     OR A
     JR Z,HddWarmFlushed
@@ -717,7 +743,10 @@ HddWarmUnsafe:
     LD (HddUnsafe),A
     JP 0xD3C1
 HddWarmResume:
-    ; WBOOT reloads CCP/BDOS; restore only verified operands/opcodes.
+    ; WBOOT reloads CCP/BDOS; restore only verified operands/opcodes. The
+    ; operands may also carry the resident's own patches (0x9D00/HddEof):
+    ; a warm re-entry without a disk reload sees that guarded state and
+    ; must not refuse it.
     LD A,(0xC3F4)
     CP 0x11
     JR NZ,HddWarmRefused
@@ -728,18 +757,43 @@ HddWarmResume:
     LD DE,0xBD00
     OR A
     SBC HL,DE
+    JR Z,HddOperandOk
+    LD HL,(0xC3F5)
+    LD DE,0x9D00
+    OR A
+    SBC HL,DE
     JR NZ,HddWarmRefused
+HddOperandOk:
     LD HL,(0xC407)
     LD DE,0xC166
     OR A
     SBC HL,DE
+    JR Z,HddEofOk
+    LD HL,(0xC407)
+    LD DE,HddEof
+    OR A
+    SBC HL,DE
     JR NZ,HddWarmRefused
-    LD HL,0x9000
+HddEofOk:
+    LD HL,HddVectors
+    LD DE,0x9D00
+    LD BC,6
+    LDIR
+    LD HL,0x9D00
     LD (0xC3F5),HL
     LD HL,HddEof
     LD (0xC407),HL
-    LD HL,0x9006
+    LD HL,0x9D06
     LD (0x0006),HL
+    ; Persist a dirty C: cache before the CCP resumes; HddWarmResume is
+    ; the re-entry path that would otherwise reach the prompt unflushed.
+    CALL HddFlush
+    OR A
+    JR Z,HddResumeDone
+    ; Same genuine console retry as HddWarm; resume is idempotent.
+    CALL 0xD309
+    JP HddWarmResume
+HddResumeDone:
     JP 0xBD00
 HddWarmRefused:
     ; Do not enter an unguarded/reloaded CCP or drop retained state.
@@ -894,7 +948,7 @@ HddCheckStack:
     RET
 HddCodeEnd:
 ASSERT HddCodeEnd <= HddCodeLimit
-    DEFS 0xB500-$,0
+    DEFS 0xBA00-$,0
 HddSwitch:
     CALL HddCheckStack
     OR A

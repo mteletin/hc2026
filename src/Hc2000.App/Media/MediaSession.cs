@@ -9,7 +9,7 @@ namespace Hc2000.App.Media;
 public enum MediaAction { Inspect, InsertDisk, EjectDisk, WriteProtect, ExportDisk, QueueTape, PlayTape, StopTape, EjectTape,
     InsertCassette, BlankTape, FlipTape, TabTape, RecordTape, RewindTape, ForwardTape, PauseTape,
     CounterTape, FastWindTape, StopEjectTape, ExportTape, AcknowledgeTape, MonitorTape, Hdd, Writeback,
-    MountTapeVolume, UnmountTapeVolume, DiscardTapeVolume }
+    MountTapeVolume, UnmountTapeVolume, DiscardTapeVolume, HoldDisk, PrepareWorkstationDisk }
 public enum DiskSlot { A, B }
 public sealed record MediaCommand(MediaAction Action, DiskSlot Slot = DiskSlot.A,
     ImmutableArray<byte> Bytes = default, string? Name = null, bool Value = false,
@@ -17,8 +17,10 @@ public sealed record MediaCommand(MediaAction Action, DiskSlot Slot = DiskSlot.A
     MediaImageDescriptor? Descriptor = null,
     TapeCapacity Capacity = TapeCapacity.C60, TapeSide Side = TapeSide.A,
     TapeSaveAcknowledgement? Acknowledgement = null, HddRequest? Hdd = null,
-    WritebackOwnerRequest? Writeback = null) : InputCommand;
-public sealed record DriveView(string? Name, bool Present, bool WriteProtected, int DirtySectors, bool Busy, long Generation);
+    WritebackOwnerRequest? Writeback = null, long HoldKey = 0, Action<string>? HoldRefused = null) : InputCommand;
+/// <summary><paramref name="HeldBy"/> names what holds the drive (an open read-write drive share), or null.</summary>
+public sealed record DriveView(string? Name, bool Present, bool WriteProtected, int DirtySectors, bool Busy, long Generation,
+    string? HeldBy = null);
 public sealed record MediaReply(long RequestId, DriveView A, DriveView B,
     ImmutableArray<byte> Export = default, string? Error = null, TapeView? Tape = null,
     TapeExportSnapshot? TapeExport = null, TapeFailure? TapeFailure = null, HddReply? Hdd = null,
@@ -89,6 +91,14 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
     private string? nameB;
     private long generationA;
     private long generationB;
+
+    /// <summary>A drive held by an open read-write drive share (decision hc2000-drive-sharing-sftp-v1 §1d): queued
+    /// inserts and ejects for it are refused unless they carry the hold's key, so only the share's own close (or its
+    /// stop sharing) gives the drive back. The owner-ledger eject stays exempt: it is how the share takes a drive that
+    /// is bound to its file.</summary>
+    private sealed record DriveHold(long Key, string Holder, Action<string>? Refused);
+    private DriveHold? holdA;
+    private DriveHold? holdB;
 
     /// <summary>Owner-ledger only. A queued command cannot set this; DiscardChanges remains the explicit user discard.</summary>
     internal MediaReply EjectCovered(DiskSlot slot)
@@ -163,8 +173,12 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
                     }
                     else { RequireTape().Eject(); tapeName = null; }
                     break;
+                case MediaAction.HoldDisk:
+                    ApplyHold(command);
+                    break;
                 case MediaAction.InsertDisk:
                 case MediaAction.EjectDisk:
+                    RefuseHeld(command);
                     if (drive.DirtySectors.Count != 0 && !command.DiscardChanges && !receiptCoveredEject)
                         throw new InvalidOperationException("Unsaved changes: save a copy or explicitly allow discard before replacing media.");
                     // Parse into a detached container first; invalid input never ejects the old disk.
@@ -191,6 +205,15 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
                 case MediaAction.DiscardTapeVolume:
                     ApplyTapeVolume(command);
                     break;
+                case MediaAction.PrepareWorkstationDisk:
+                    if (hdd?.SupportsCombinedWorkstation != true)
+                        throw new InvalidOperationException("Workstation preparation requires the combined workstation profile.");
+                    if (driveA.Image is not null)
+                        throw new InvalidOperationException("Workstation preparation requires an empty A: drive.");
+                    var currentVolume = volume?.Invoke() ?? throw new InvalidOperationException("Tape volume binding unavailable on this machine.");
+                    var preparedDisk = ImmutableArray.CreateRange(WorkstationMedia.ComposeSystemDisk(command.Bytes.AsSpan(), currentVolume));
+                    return Apply(new MediaCommand(MediaAction.InsertDisk, DiskSlot.A, preparedDisk,
+                        WorkstationMedia.PreparedDiskName, RequestId: command.RequestId));
                 case MediaAction.Writeback:
                     throw new InvalidOperationException("Writeback is applied by the owner ledger, not as a drive mutation.");
             }
@@ -200,7 +223,7 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
             error = ex.Message;
         }
         var deckView = transport is not null && useDeck ? ((ITapeDeck)transport).Observe() : null;
-        return new(command.RequestId, View(driveA, nameA, generationA), View(driveB, nameB, generationB), export, error,
+        return new(command.RequestId, View(driveA, nameA, generationA, holdA), View(driveB, nameB, generationB, holdB), export, error,
             transport is null ? null : new(tapeName, transport.Cursor, deckView, SourceFormat: deckView?.ActiveSide == TapeSide.B ? formatB : formatA),
             tapeExport, failure, hddReply, TapeVolume: VolumeView());
 
@@ -209,6 +232,29 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
             if (!result.Success) SetFailure(result.Failure!);
         }
         void SetFailure(TapeFailure value) { failure = value; error = $"{value.Code}: {value.Detail}"; }
+    }
+
+    private void ApplyHold(MediaCommand command)
+    {
+        if (command.HoldKey == 0) throw new ArgumentException("A drive hold needs its key.");
+        ref var hold = ref command.Slot == DiskSlot.A ? ref holdA : ref holdB;
+        if (!command.Value)
+        {
+            if (hold?.Key == command.HoldKey) hold = null;
+            return;
+        }
+        if (hold is not null && hold.Key != command.HoldKey)
+            throw new InvalidOperationException($"{command.Slot}: is already held by {hold.Holder}.");
+        hold = new(command.HoldKey, command.Name ?? "a drive share", command.HoldRefused);
+    }
+
+    private void RefuseHeld(MediaCommand command)
+    {
+        var hold = command.Slot == DiskSlot.A ? holdA : holdB;
+        if (hold is null || hold.Key == command.HoldKey || receiptCoveredEject) return;
+        var why = $"{command.Slot}: is held by {hold.Holder}; it comes back when the share closes or sharing is stopped.";
+        hold.Refused?.Invoke($"{(command.Action == MediaAction.InsertDisk ? "insert" : "eject")} refused: {why}");
+        throw new InvalidOperationException(why);
     }
 
     /// <summary>The mount lane: mount binds the first free letter; unmount commits (writeback-then-unmount);
@@ -276,6 +322,6 @@ public sealed class MediaSession(FloppyDrive driveA, FloppyDrive driveB, TapeTra
 
     private TapeTransport RequireTape() => transport ?? throw new InvalidOperationException("Tape runtime unavailable.");
 
-    private static DriveView View(FloppyDrive drive, string? name, long generation) => new(name, drive.Image is not null,
-        drive.WriteProtected, drive.DirtySectors.Count, drive.MotorOn || drive.HeadLoaded, generation);
+    private static DriveView View(FloppyDrive drive, string? name, long generation, DriveHold? hold) => new(name, drive.Image is not null,
+        drive.WriteProtected, drive.DirtySectors.Count, drive.MotorOn || drive.HeadLoaded, generation, hold?.Holder);
 }

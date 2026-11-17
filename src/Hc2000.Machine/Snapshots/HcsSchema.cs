@@ -15,9 +15,9 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
     protected abstract void ValidateModels(JsonElement manifest);
     protected virtual bool UsesCpuFrontiers => false;
     protected internal virtual bool HasLargeBlobPolicy => false;
-    protected virtual void ValidateBlobModels(JsonElement manifest, byte[][] blobs, HcsLimits limits) { }
+    protected virtual void ValidateBlobModels(JsonElement manifest, HcsBlob[] blobs, HcsLimits limits) { }
     protected internal virtual bool AdmitLargeBlob(JsonElement manifest, uint blobId, int length,
-        HcsReadWindow read, IReadOnlyList<byte[]> blobs, HcsLimits limits) => false;
+        HcsReadWindow read, IReadOnlyList<HcsBlob> blobs, HcsLimits limits) => false;
     protected internal virtual void ReserveCopies(long wireBytes) { }
     protected static void Error(HcsError error, string field) => HcsCodec.Fail(error, field);
     protected static void Fields(JsonElement e, params string[] fields)
@@ -70,7 +70,7 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
             prior = id;
         }
     }
-    internal void Validate(JsonElement root, byte[][] blobs, HcsLimits limits)
+    internal void Validate(JsonElement root, HcsBlob[] blobs, HcsLimits limits)
     {
         try { ValidateCore(root, blobs, blobs.Length, limits); ValidateBlobModels(root, blobs, limits); }
         catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
@@ -82,7 +82,7 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
         catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException)
         { throw new HcsException(HcsError.InvalidFormat, "manifest"); }
     }
-    private void ValidateCore(JsonElement root, byte[][]? blobs, int blobCount, HcsLimits limits)
+    private void ValidateCore(JsonElement root, HcsBlob[]? blobs, int blobCount, HcsLimits limits)
     {
         Fields(root, "profile", "assets", "cpu", "clock", "stores", "components", "events", "pendingOutput");
         var profile = root.GetProperty("profile");
@@ -105,7 +105,7 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
             var declaredLength = Counter(a.GetProperty("byteLength"));
             var declaredHash = Hash(a.GetProperty("sha256"));
             if (blobs is not null && (declaredLength != blobs[id - 1].Length
-                || declaredHash != Convert.ToHexStringLower(SHA256.HashData(blobs[id - 1]))))
+                || declaredHash != blobs[id - 1].Sha256Hex()))
                 Error(HcsError.AssetMismatch, "asset length/hash");
             if (Text(a.GetProperty("format")) != "raw" && a.GetProperty("rawGeometry").ValueKind != JsonValueKind.Null)
                 Error(HcsError.InvalidFormat, "rawGeometry");
@@ -123,15 +123,28 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
         }
         ValidateCpu(root.GetProperty("cpu"));
         var clock = root.GetProperty("clock");
-        Fields(clock, "epoch", "now", "masterHz", "dividerNumerator", "dividerDenominator", "mapperWhole", "mapperRemainder", "lastCpuTStates", "nextSequence", "deviceGenerations");
+        // mapperRemainderDenominator is the versioned clock (hc2000-accelerated-clock-domains): the
+        // remainder carries its own denominator, a multiple of the ratio denominator. A legacy document
+        // omits it and the remainder shares the ratio denominator.
+        var versionedClock = clock.TryGetProperty("mapperRemainderDenominator", out _);
+        Fields(clock, versionedClock
+            ? ["epoch", "now", "masterHz", "dividerNumerator", "dividerDenominator", "mapperWhole", "mapperRemainder", "mapperRemainderDenominator", "lastCpuTStates", "nextSequence", "deviceGenerations"]
+            : ["epoch", "now", "masterHz", "dividerNumerator", "dividerDenominator", "mapperWhole", "mapperRemainder", "lastCpuTStates", "nextSequence", "deviceGenerations"]);
         foreach (var p in clock.EnumerateObject()) if (p.Name != "deviceGenerations") Counter(p.Value);
         long now = Counter(clock.GetProperty("now")), pnum = Counter(clock.GetProperty("dividerNumerator")), den = Counter(clock.GetProperty("dividerDenominator"));
         long remainder = Counter(clock.GetProperty("mapperRemainder")), whole = Counter(clock.GetProperty("mapperWhole"));
+        long remainderDenominator = versionedClock ? Counter(clock.GetProperty("mapperRemainderDenominator")) : den;
         static long Gcd(long a, long b) { while (b != 0) (a, b) = (b, a % b); return a; }
-        if (pnum == 0 || den == 0 || Gcd(pnum, den) != 1 || Counter(clock.GetProperty("masterHz")) == 0 || remainder >= den
-            || (UsesCpuFrontiers
-                ? (System.Numerics.BigInteger)whole + (remainder == 0 ? 0 : 1) > now
-                : (System.Numerics.BigInteger)whole + (remainder == 0 ? 0 : 1) != now)
+        var ceiling = (System.Numerics.BigInteger)whole + (remainder == 0 ? 0 : 1);
+        if (pnum == 0 || den == 0 || Gcd(pnum, den) != 1 || Counter(clock.GetProperty("masterHz")) == 0
+            || remainderDenominator <= 0 || remainderDenominator % den != 0 || remainder >= remainderDenominator
+            || (versionedClock
+                // A versioned anchor sits at or before the drained boundary: its floor never exceeds
+                // the boundary's floor (scheduler.Now); a partial save may have advanced devices past
+                // the committed CPU, so whole < now is admitted. The fraction is carried by the
+                // remainder, never rounded up. This holds for the frontier and legacy machines alike.
+                ? (System.Numerics.BigInteger)whole > now
+                : UsesCpuFrontiers ? ceiling > now : ceiling != now)
             || Counter(clock.GetProperty("lastCpuTStates")) != Counter(root.GetProperty("cpu").GetProperty("tStates")))
             Error(HcsError.StateInconsistent, "clock");
         var gens = Array(clock.GetProperty("deviceGenerations")); Sorted(gens);
@@ -140,12 +153,32 @@ public abstract class HcsSchema(string profileId, uint profileVersion, JsonEleme
         var sequences = new HashSet<long>(); (long, uint, string, long)? previous = null;
         foreach (var e in Array(root.GetProperty("events")))
         {
-            Fields(e, "dueTick", "phase", "deviceId", "kind", "generation", "sequence", "payload");
+            // dueLogical is the exact due of a CPU frontier event (floor + fraction). A versioned
+            // document writes it on every event (null for a device event, which stays at its integer
+            // tick); a legacy document omits it.
+            var hasDueKey = e.TryGetProperty("dueLogical", out var dueLogical);
+            Fields(e, hasDueKey
+                ? ["dueTick", "phase", "deviceId", "kind", "generation", "sequence", "payload", "dueLogical"]
+                : ["dueTick", "phase", "deviceId", "kind", "generation", "sequence", "payload"]);
             long due = Counter(e.GetProperty("dueTick")), sequence = Counter(e.GetProperty("sequence"));
+            if (hasDueKey && dueLogical.ValueKind != JsonValueKind.Null)
+            {
+                if (dueLogical.ValueKind != JsonValueKind.Object) Error(HcsError.InvalidFormat, "event");
+                Fields(dueLogical, "whole", "numerator", "denominator");
+                var dueWhole = Counter(dueLogical.GetProperty("whole"));
+                var dueNumerator = Counter(dueLogical.GetProperty("numerator"));
+                var dueDenominator = Counter(dueLogical.GetProperty("denominator"));
+                if (dueWhole != due || dueDenominator <= 0 || dueNumerator >= dueDenominator)
+                    Error(HcsError.StateInconsistent, "event");
+            }
             string device = Id(e.GetProperty("deviceId")); Id(e.GetProperty("kind"));
             uint phase = UInt(e.GetProperty("phase"), UsesCpuFrontiers ? 5u : 4u);
             var tuple = (due, phase, device, sequence);
-            if (due <= now || !generations.TryGetValue(device, out var gen) || gen != Counter(e.GetProperty("generation"))
+            // A versioned CPU frontier event may carry an exact due whose floor equals the boundary
+            // (the anchor's floor is now); its floor must be at least now, and the exact ordering is
+            // proven by the schema's dueLogical check plus the driver's own due identity.
+            var frontierDueOk = due > now || (versionedClock && hasDueKey && dueLogical.ValueKind == JsonValueKind.Object && due == now);
+            if (!frontierDueOk || !generations.TryGetValue(device, out var gen) || gen != Counter(e.GetProperty("generation"))
                 || !sequences.Add(sequence) || sequence >= Counter(clock.GetProperty("nextSequence"))
                 || (previous.HasValue && Compare(previous.Value, tuple) >= 0)) Error(HcsError.StateInconsistent, "event");
             previous = tuple;

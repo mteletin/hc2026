@@ -6,7 +6,8 @@ public enum PortAccess { Read = 1, Write = 2, ReadWrite = Read | Write }
 public enum CpuPortRole { Main, Compute, Driver }
 
 /// <summary>Host-owned identity, not a guest selector or a permission capability.</summary>
-public readonly record struct CpuPortOrigin(uint UnitId, ulong Epoch, CpuPortRole Role);
+public readonly record struct CpuPortOrigin(uint UnitId, ulong Epoch, CpuPortRole Role,
+    ulong OwnershipEpoch = 0, ulong Incarnation = 0);
 
 /// <summary>
 /// Pure, bounded owner-thread admission. Implementations validate current identity,
@@ -59,6 +60,9 @@ public sealed class PortDevice(Func<ushort, long, byte>? read = null,
 
 public sealed record PortMapping(ushort Match, ushort Mask, IPortDevice Device, PortAccess Access);
 
+/// <summary>One admitted port access as a device saw it: who, which port, the byte and when.</summary>
+public readonly record struct PortAccessRecord(CpuPortOrigin Origin, ushort Port, byte Value, long MasterTick, PortAccess Access);
+
 /// <summary>Profile-supplied partial decode. Directional overlaps are construction errors, not priority rules.</summary>
 public sealed class PortDecoder
 {
@@ -97,6 +101,10 @@ public sealed class PortDecoder
 
     public CpuPortView CreateView(CpuPortOrigin origin) => new(this, origin);
 
+    /// <summary>Measurement and diagnosis only (hc2000-x2-visual-benchmark): told of every access a
+    /// device admitted, after the device handled it. It must not touch the machine. Null by default.</summary>
+    public Action<PortAccessRecord>? Observer { get; set; }
+
     public byte Read(ushort port, long masterTick, bool m1 = false) =>
         Read(in mainOrigin, port, masterTick, m1);
 
@@ -111,9 +119,11 @@ public sealed class PortDecoder
                     {
                         // Forward the exact admitted origin exactly once; never fall back to the
                         // legacy overload after an origin-aware delivery (see IOriginPortDevice).
-                        if (row.Device is IOriginPortDevice originDevice)
-                            return originDevice.Read(in origin, port, masterTick);
-                        return row.Device.Read(port, masterTick);
+                        var value = row.Device is IOriginPortDevice originDevice
+                            ? originDevice.Read(in origin, port, masterTick)
+                            : row.Device.Read(port, masterTick);
+                        Observer?.Invoke(new(origin, port, value, masterTick, PortAccess.Read));
+                        return value;
                     }
                     return (byte)0xff;
                 }
@@ -138,6 +148,7 @@ public sealed class PortDecoder
                         originDevice.Write(in origin, port, value, masterTick);
                     else
                         row.Device.Write(port, value, masterTick);
+                    Observer?.Invoke(new(origin, port, value, masterTick, PortAccess.Write));
                 }
                 return;
             }

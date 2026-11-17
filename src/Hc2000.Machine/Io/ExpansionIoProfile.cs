@@ -12,7 +12,10 @@ public static class ExpansionIoProfile
         ArgumentNullException.ThrowIfNull(profile); ArgumentNullException.ThrowIfNull(memory);
         ArgumentNullException.ThrowIfNull(existing); ArgumentNullException.ThrowIfNull(controller);
         profile.Validate();
-        if (profile.Name != "hc2000-v2-paged-expansion-v1" ||
+        if (profile.Name is not ("hc2000-v2-paged-expansion-v1" or "hc2000-v2-paged-expansion-x5-v1"
+            or "hc2000-v2-paged-expansion-x5-hdd-guest-v1"
+            or "hc2000-v2-cpnet-v1" or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2"
+            or "hc2000-v2-full-workstation-v1") ||
             profile.Memory with { RomProvenance = memory.Profile.RomProvenance } != memory.Profile)
             throw new ArgumentException("Expansion ports require their explicit matching profile.", nameof(profile));
         return [.. existing, .. controller.Mappings()];

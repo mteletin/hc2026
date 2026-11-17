@@ -11,7 +11,7 @@ public sealed record PagedRamDevice(string PolicyId = PagedRamPolicy.PolicyId)
 
     internal void Validate()
     {
-        if (PolicyId is not (PagedRamPolicy.PolicyId or PagedRamPolicy.MTransferPolicyId or PagedRamPolicy.MTransferV2PolicyId)) throw new ArgumentException("Unknown paged-RAM policy.", nameof(PolicyId));
+        if (PolicyId is not (PagedRamPolicy.PolicyId or PagedRamPolicy.MTransferPolicyId or PagedRamPolicy.MTransferV2PolicyId or PagedRamPolicy.WorkstationPolicyId)) throw new ArgumentException("Unknown paged-RAM policy.", nameof(PolicyId));
         if (BoundCpmWindow && PolicyId != PagedRamPolicy.PolicyId)
             throw new ArgumentException("The bound CP/M window requires plain paging.");
     }
@@ -22,13 +22,20 @@ public static class PagedRamPolicy
     public const string PolicyId = "hc2000-ram-paged-16k65536-v1";
     public const string MTransferPolicyId = "hc2000-ram-paged-m-transfer-16k65536-v1";
     public const string MTransferV2PolicyId = "hc2000-ram-paged-m-transfer-16k65536-v2";
+    /// <summary>Combined CP/M workstation (hc2000-combined-cpm-workstation): the M-transfer v2 store and port
+    /// ABI under its own identity, so the tape window can open through an engaged session without widening
+    /// any existing policy (map v2: M 0-511, compute 512-575, tape 576-831).</summary>
+    public const string WorkstationPolicyId = "hc2000-ram-paged-workstation-16k65536-v1";
     public const int PageBytes = 0x4000;
     public const int PageCount = 65536;
     public const int ExtraBytes = 0x40000000;
     public const int RamBytes = 0x40010000;
 
-    /// <summary>M-transfer view under either identity (v1's 256-page M: or v2's 512-page M:); host wiring is identical.</summary>
-    public static bool IsMTransfer(string? policyId) => policyId is MTransferPolicyId or MTransferV2PolicyId;
+    /// <summary>M-transfer view under either identity (v1's 256-page M: or v2's 512-page M:), or the workstation
+    /// identity, which keeps the same 0x7CFD port ABI; host wiring is identical.</summary>
+    public static bool IsMTransfer(string? policyId) => policyId is MTransferPolicyId or MTransferV2PolicyId or WorkstationPolicyId;
+
+    public static bool IsWorkstation(string? policyId) => policyId == WorkstationPolicyId;
 }
 
 /// <summary>

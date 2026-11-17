@@ -101,7 +101,7 @@ public sealed record CpuLogicalState(
 }
 
 /// <summary>The CPU snapshot seam: capture and restore the logical register file at a drained
-/// instruction boundary. The Z80 (wi-111) implements it; the .hcs file never depends on the
+/// instruction boundary. The Z80 core implements it; the .hcs file never depends on the
 /// CPU's raw memory or host objects, only on the <c>cpu</c> section.</summary>
 public interface ICpuSnapshotSeam
 {

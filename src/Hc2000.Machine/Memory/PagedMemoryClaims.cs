@@ -9,18 +9,20 @@ public sealed partial class HcMemory
     private readonly List<Claim> pagedClaims = [];
     public IReadOnlyList<PagedMemoryRange> ClaimedPagedRanges => pagedClaims.Select(c => c.Range).ToArray();
 
-    /// <summary>First 256 pages are permanently reserved for M:v1; claims never overlap them.</summary>
+    /// <summary>First 256 pages are permanently reserved for M:v1 (576 under the workstation identity, which
+    /// also carries M:v2 pages 0-511 and the fixed compute arena 512-575); claims never overlap them.</summary>
     public PagedMemoryRange ClaimPagedPages(object owner, int pages, Action<ulong, byte> store, int? firstPage = null)
     {
         ArgumentNullException.ThrowIfNull(owner); ArgumentNullException.ThrowIfNull(store);
-        if (Profile.RamPaged?.PolicyId != PagedRamPolicy.PolicyId)
+        if (Profile.RamPaged?.PolicyId is not (PagedRamPolicy.PolicyId or PagedRamPolicy.WorkstationPolicyId))
             throw new InvalidOperationException("Plain paged storage is required.");
         if (pages is < 1 or > 512) throw new ArgumentOutOfRangeException(nameof(pages));
         if (pagedClaims.Any(c => ReferenceEquals(c.Owner, owner))) throw new InvalidOperationException("Owner already has a range.");
-        int first = 256;
+        int floor = PagedRamPolicy.IsWorkstation(Profile.RamPaged.PolicyId) ? 576 : 256;
+        int first = floor;
         if (firstPage is { } requested)
         {
-            if (requested < 256 || requested > 65536 - pages || pagedClaims.Any(c => requested < c.Range.FirstPage + c.Range.PageCount && c.Range.FirstPage < requested + pages))
+            if (requested < floor || requested > 65536 - pages || pagedClaims.Any(c => requested < c.Range.FirstPage + c.Range.PageCount && c.Range.FirstPage < requested + pages))
                 throw new InvalidOperationException("Restored range is reserved or already owned.");
             var restored = new PagedMemoryRange(requested, pages);
             pagedClaims.Add(new(owner, restored, store)); return restored;

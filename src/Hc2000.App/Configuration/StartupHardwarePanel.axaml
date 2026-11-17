@@ -1,0 +1,102 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Hc2000.App.Configuration.StartupHardwarePanel">
+  <!-- Pick a machine, not switches. The cards and options share the available column. -->
+  <Grid Name="HardwareLayout" RowDefinitions="Auto,Auto" ColumnDefinitions="*" RowSpacing="12" ColumnSpacing="12">
+    <StackPanel Name="MachineChoices" Spacing="2">
+      <TextBlock Classes="sectionTitle" Text="Choose a machine"/>
+      <TextBlock Classes="muted" Text="Pick a machine, then choose its options." TextWrapping="Wrap" Margin="0,0,0,10"/>
+      <StackPanel Name="MachineGroups"/>
+    </StackPanel>
+
+    <StackPanel Name="MachineDetails" Grid.Row="1" Spacing="12">
+      <Border Classes="panelCard">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="subsectionTitle" Text="Options"/>
+          <StackPanel Name="TurboRow" Spacing="6">
+            <TextBlock Classes="muted" Text="CPU turbo"/>
+            <StackPanel Name="TurboSegments" Orientation="Horizontal" Spacing="6"/>
+          </StackPanel>
+          <TextBlock Name="TurboUnavailable" Classes="muted"
+                     Text="CPU turbo: original speed only. Turbo is available on the 64 KiB machines."/>
+          <TextBlock Name="TurboResetNote" Classes="muted" IsVisible="False"
+                     Text="Turbo is only available on the 64 KiB machines, so it was set back to 1x."/>
+          <StackPanel Name="DriverRow" Spacing="10" IsVisible="False">
+            <TextBlock Classes="subsectionTitle" Text="Expansion cards (X0–X5)"/>
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="This machine ships the X0–X5 expansion family. The optional cards are off by default; the cards are cold, so start a new machine after changing them."/>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <Border Classes="tileBadge" VerticalAlignment="Top"><TextBlock Text="X0"/></Border>
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Text="Shared platform"/>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="Guest services and shared DMA over the existing 1 GiB address space. Included with this machine."/>
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <Border Classes="tileBadge" VerticalAlignment="Top"><TextBlock Text="X1"/></Border>
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Text="Text overlay"/>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="A display choice, not a card: set it for this machine in the Display options."/>
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <Border Classes="tileBadge" VerticalAlignment="Top"><TextBlock Text="X2"/></Border>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <CheckBox Name="X2Vga" Content="Command VGA accelerator"/>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="Adds a separate 320×240 X2 surface; guest software must invoke its driver."/>
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <Border Classes="tileBadge" VerticalAlignment="Top"><TextBlock Text="X3"/></Border>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <CheckBox Name="X3Sound" Content="Four-channel stereo sound"/>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="Guest software must invoke the X3 sound service."/>
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <Border Classes="tileBadge" VerticalAlignment="Top"><TextBlock Text="X4"/></Border>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <CheckBox Name="X4Math" Content="Math accelerator"/>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="Guest software must invoke the X4 math service."/>
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <Border Classes="tileBadge" VerticalAlignment="Top"><TextBlock Text="X6"/></Border>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <CheckBox Name="X6Net" Content="Network card"/>
+                <CheckBox Name="X6Gateway" Content="Network gateway on at start" Margin="20,0,0,0"/>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="Owned by a driver Z80 (needs two). It reaches out only through this machine's network gateway, which stays off until you switch it on."/>
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+              <Border Classes="tileBadge" VerticalAlignment="Top"><TextBlock Text="X5"/></Border>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Classes="muted" VerticalAlignment="Center" Text="Driver CPUs (0–8)"/>
+                  <ComboBox Name="DriverCount" Width="70"/>
+                </StackPanel>
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="Driver CPUs that own their devices; the sixteen compute CPUs are included with this machine."/>
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+          <StackPanel Name="ExtraOptions" Spacing="10"/>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panelCard">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="subsectionTitle" Text="Your machine"/>
+          <TextBlock Name="SelectedMachineTitle" Classes="tileTitle"/>
+          <TextBlock Name="PrestartHardwareDescription" TextWrapping="Wrap" FontSize="12"/>
+          <StackPanel Name="ExtraDetails" Spacing="4"/>
+          <TextBlock Classes="muted" Text="Same machine from the command line" Margin="0,4,0,0"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Name="HardwareCommandLine" Classes="mono" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            <Button Name="CopyCommandLine" Grid.Column="1" Content="Copy" Classes="ghostAction"
+                    ToolTip.Tip="Copy the hc2000 flags that start this same machine"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Grid>
+</UserControl>

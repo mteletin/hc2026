@@ -11,26 +11,31 @@ public sealed class BeeperAudioOutput : IDisposable
     private readonly Action<string>? diagnostic;
     private readonly BeeperResampler resampler;
     private readonly BeeperResampler? earResampler;
+    private readonly X3StereoResampler? x3Resampler;
     public bool TapeMonitoringEnabled { get; set; } = true;
     private IQueuedAudioSink? sink;
     private bool playing, disposed, reported;
     private long cursor;
     private BeeperEdge pins;
+    /// <summary>Maximum queued PCM frames, equal to scalar samples in mono.</summary>
     public int QueueHighWaterSamples { get; private set; }
     public int SoftwareStarvations { get; private set; }
     public bool Available => sink is not null && !disposed;
     public int SampleRate => resampler.SampleRate;
 
     public BeeperAudioOutput(long masterHz, IQueuedAudioSink? sink,
-        IAudioWait? wait = null, Action<string>? diagnostic = null, bool physicalChannels = false)
+        IAudioWait? wait = null, Action<string>? diagnostic = null, bool physicalChannels = false, bool stereo = false)
     {
         if (sink is not null && sink.SampleRate is not (44100 or 48000))
             throw new ArgumentException("Unsupported PCM rate.", nameof(sink));
+        if (sink is not null && sink.Channels != (stereo ? 2 : 1))
+            throw new ArgumentException("Sink channels do not match the configured audio output.", nameof(sink));
         this.sink = sink;
         this.wait = wait ?? new AudioWait();
         this.diagnostic = diagnostic;
         resampler = new(masterHz, sink?.SampleRate ?? 48000, channel: physicalChannels ? BeeperChannel.Bel : BeeperChannel.LegacyMix);
         if (physicalChannels) earResampler = new(masterHz, resampler.SampleRate, channel: BeeperChannel.EarMonitor);
+        if (stereo) x3Resampler = new(masterHz, resampler.SampleRate);
         if (sink is not null) TrySink(() => sink.Pause(true));
     }
 
@@ -40,13 +45,13 @@ public sealed class BeeperAudioOutput : IDisposable
     /// live sink the file is still written - silent, and saying why it is. A capture failure keeps
     /// the machine's sound; only the dump is reported.</summary>
     public static BeeperAudioOutput Open(long masterHz, bool enabled, Action<string>? diagnostic = null,
-        string? capturePath = null)
+        string? capturePath = null, bool stereo = false)
     {
         IQueuedAudioSink? sink = null;
         string? unavailable = null;
         if (enabled)
         {
-            try { sink = SdlQueuedAudioSink.Open(); }
+            try { sink = SdlQueuedAudioSink.Open(channels: stereo ? (byte)2 : (byte)1); }
             catch (Exception ex) when (IsSinkError(ex))
             {
                 unavailable = ex.Message;
@@ -68,11 +73,19 @@ public sealed class BeeperAudioOutput : IDisposable
                 diagnostic?.Invoke($"Sound dump unavailable: {ex.Message}");
             }
         }
-        return new(masterHz, sink, diagnostic: diagnostic, physicalChannels: true);
+        return new(masterHz, sink, diagnostic: diagnostic, physicalChannels: true, stereo: stereo);
     }
 
     public bool ProcessFrame(long startTick, long endTick, ReadOnlySpan<BeeperEdge> edges,
-        int speedPercent, CancellationToken cancellationToken, ReadOnlySpan<BeeperEdge> earEdges = default)
+        int speedPercent, CancellationToken cancellationToken, ReadOnlySpan<BeeperEdge> earEdges = default) =>
+        ProcessFrameCore(startTick, endTick, edges, speedPercent, cancellationToken, earEdges, []);
+
+    internal bool ProcessFrameWithX3(long startTick, long endTick, ReadOnlySpan<BeeperEdge> edges,
+        int speedPercent, CancellationToken cancellationToken, ReadOnlySpan<BeeperEdge> earEdges, ReadOnlySpan<X3PcmEdge> x3Edges) =>
+        ProcessFrameCore(startTick, endTick, edges, speedPercent, cancellationToken, earEdges, x3Edges);
+
+    private bool ProcessFrameCore(long startTick, long endTick, ReadOnlySpan<BeeperEdge> edges,
+        int speedPercent, CancellationToken cancellationToken, ReadOnlySpan<BeeperEdge> earEdges, ReadOnlySpan<X3PcmEdge> x3Edges)
     {
         RequireOwner();
         ObjectDisposedException.ThrowIf(disposed, this);
@@ -93,6 +106,8 @@ public sealed class BeeperAudioOutput : IDisposable
                 last = edge.MasterTick;
             }
         }
+        if (x3Resampler is null && !x3Edges.IsEmpty) throw new ArgumentException("X3 requires stereo audio.", nameof(x3Edges));
+        x3Resampler?.Validate(endTick, x3Edges);
         var nextPins = edges.Length > 0 ? edges[^1] : pins;
         if (speedPercent != 100 || sink is null)
         {
@@ -100,6 +115,7 @@ public sealed class BeeperAudioOutput : IDisposable
             resampler.Reset(endTick, nextPins.Speaker, nextPins.Microphone);
             var earPins = earEdges.Length > 0 ? earEdges[^1] : earResampler?.Pins ?? default;
             earResampler?.Reset(endTick, earPins.Speaker, earPins.Microphone);
+            x3Resampler?.Skip(endTick, x3Edges);
             pins = nextPins;
             cursor = endTick;
             return false;
@@ -111,6 +127,18 @@ public sealed class BeeperAudioOutput : IDisposable
             var ear = earResampler.Render(endTick, earEdges, TapeMonitoringEnabled ? 1 : 0);
             for (var i = 0; i < pcm.Length; i++) pcm[i] = Math.Clamp(pcm[i] + ear[i], -1, 1);
         }
+        var channels = x3Resampler is null ? 1 : 2;
+        if (x3Resampler is not null)
+        {
+            var stereoPcm = x3Resampler.Render(endTick, x3Edges);
+            if (stereoPcm.Length != pcm.Length * 2) throw new InvalidOperationException("Audio frame clocks diverged.");
+            for (var i = 0; i < pcm.Length; i++)
+            {
+                stereoPcm[2 * i] = Math.Clamp(stereoPcm[2 * i] + pcm[i], -1, 1);
+                stereoPcm[2 * i + 1] = Math.Clamp(stereoPcm[2 * i + 1] + pcm[i], -1, 1);
+            }
+            pcm = stereoPcm;
+        }
         pins = nextPins;
         cursor = endTick;
         try
@@ -119,14 +147,14 @@ public sealed class BeeperAudioOutput : IDisposable
             var target = rate * 40 / 1000;
             var high = rate * 60 / 1000;
             var cap = rate * 100 / 1000;
-            if (playing && sink.QueuedSamples == 0) SoftwareStarvations++;
+            if (playing && sink.QueuedFrames == 0) SoftwareStarvations++;
             var offset = 0;
-            while (offset < pcm.Length)
+            while (offset < pcm.Length / channels)
             {
                 WaitBelow(cap - 1, cancellationToken);
                 var queued = CheckedDepth();
-                var length = Math.Min(pcm.Length - offset, cap - queued);
-                sink.Queue(pcm.AsSpan(offset, length));
+                var length = Math.Min(pcm.Length / channels - offset, cap - queued);
+                sink.Queue(pcm.AsSpan(offset * channels, length * channels));
                 QueueHighWaterSamples = Math.Max(QueueHighWaterSamples, checked(queued + length));
                 offset += length;
                 if (!playing && CheckedDepth() >= target)
@@ -152,6 +180,7 @@ public sealed class BeeperAudioOutput : IDisposable
         Flush();
         resampler.Reset(cursor, pins.Speaker, pins.Microphone);
         if (earResampler is not null) earResampler.Reset(cursor, earResampler.Pins.Speaker, earResampler.Pins.Microphone);
+        x3Resampler?.Reset(cursor, preserveLevels: true);
     }
 
     public void Reset(long epochTick = 0, bool speaker = false, bool microphone = false)
@@ -164,11 +193,13 @@ public sealed class BeeperAudioOutput : IDisposable
         pins = new(epochTick, speaker, microphone);
         resampler.Reset(epochTick, speaker, microphone);
         earResampler?.Reset(epochTick);
+        x3Resampler?.Reset(epochTick);
     }
 
     private int CheckedDepth()
     {
-        var depth = sink!.QueuedSamples;
+        if (sink!.QueuedSamples % sink.Channels != 0) throw new IOException("Incomplete audio frame in queue.");
+        var depth = sink.QueuedFrames;
         if (depth < 0 || depth > SampleRate / 10) throw new IOException("Invalid/excessive audio queue depth.");
         return depth;
     }

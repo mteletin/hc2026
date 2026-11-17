@@ -15,8 +15,8 @@ public sealed class AspectRatioViewport : Decorator
     public static readonly StyledProperty<VideoSurface?> SurfaceProperty =
         AvaloniaProperty.Register<AspectRatioViewport, VideoSurface?>(nameof(Surface));
     public static readonly StyledProperty<int> RequestedScaleProperty =
-        AvaloniaProperty.Register<AspectRatioViewport, int>(nameof(RequestedScale), 2,
-            validate: value => value is >= 1 and <= 8);
+        AvaloniaProperty.Register<AspectRatioViewport, int>(nameof(RequestedScale), 0,
+            validate: value => value is >= 0 and <= 8);
     public static readonly StyledProperty<bool> FitToWindowProperty =
         AvaloniaProperty.Register<AspectRatioViewport, bool>(nameof(FitToWindow), true);
 
@@ -53,10 +53,32 @@ public sealed class AspectRatioViewport : Decorator
         set => SetValue(FitToWindowProperty, value);
     }
 
+    /// <summary>Size the machine frame was last arranged at inside this viewport (the Viewbox's
+    /// arranged rect). Presentation evidence for the zoom chords and the frame layout acceptance;
+    /// zero until the first arrange. The effective zoom is DisplayedSize / FrameSize.</summary>
+    public Size DisplayedSize { get; private set; }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == SurfaceProperty) viewbox.Child = Surface;
+        if (change.Property == SurfaceProperty)
+        {
+            if (change.OldValue is VideoSurface oldSurface)
+                oldSurface.PropertyChanged -= OnSurfacePropertyChanged;
+            var newSurface = change.NewValue as VideoSurface;
+            viewbox.Child = newSurface;
+            if (newSurface is not null)
+                newSurface.PropertyChanged += OnSurfacePropertyChanged;
+        }
+    }
+
+    private void OnSurfacePropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs change)
+    {
+        if (change.Property == WidthProperty || change.Property == HeightProperty)
+        {
+            InvalidateMeasure();
+            InvalidateArrange();
+        }
     }
 
     // The frame the viewport fits to is the machine frame, not the display bitmap's logical
@@ -74,13 +96,14 @@ public sealed class AspectRatioViewport : Decorator
         double fit = Math.Min(available.Width / frame.Width, available.Height / frame.Height);
         // An unbounded parent still gets a finite preferred size.
         double scale;
+        var preferred = RequestedScale == 0 ? 1 : RequestedScale;
         if (FitToWindow)
-            scale = double.IsFinite(fit) ? fit : RequestedScale;
+            scale = double.IsFinite(fit) ? fit : preferred;
         else if (double.IsFinite(fit))
             // Integer zoom only; keep the request even when a smaller scale must be displayed.
-            scale = Math.Max(1, Math.Min(RequestedScale, Math.Floor(fit)));
+            scale = Math.Max(1, Math.Min(RequestedScale == 0 ? double.PositiveInfinity : RequestedScale, Math.Floor(fit)));
         else
-            scale = RequestedScale;
+            scale = preferred;
         return new(frame.Width * scale, frame.Height * scale);
     }
 
@@ -93,6 +116,7 @@ public sealed class AspectRatioViewport : Decorator
     protected override Size ArrangeOverride(Size finalSize)
     {
         var size = DisplaySize(finalSize);
+        DisplayedSize = size;
         viewbox.Arrange(new Rect((finalSize.Width - size.Width) / 2,
             (finalSize.Height - size.Height) / 2, size.Width, size.Height));
         return finalSize;

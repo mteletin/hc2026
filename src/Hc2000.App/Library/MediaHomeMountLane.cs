@@ -24,9 +24,13 @@ public sealed class MediaHomeMountLane(DiskLibraryCatalog catalog, string librar
     /// A refusal at any step is closed: nothing is mounted and the scanned row stays.</summary>
     public async Task<MediaHomeMountResult> MountFromScannedRowAsync(string scannedPath, DiskSlot slot, CancellationToken cancellation = default)
     {
-        // Step 1: the existing closed admission decides the row. If it refuses, nothing mounts and
-        // the row stays exactly as it was - no kind-guessing here.
-        var registered = await catalog.RegisterAsync(scannedPath, "media-home-scan");
+        // Reuse only an exact registered path, as the explorer does. Working-copy admission below
+        // still checks ownership, aliases and source bytes; a different path must pass registration.
+        var full = Path.GetFullPath(scannedPath);
+        var existing = catalog.Entries.FirstOrDefault(entry => entry.SourcePath == full);
+        var registered = existing is null
+            ? await catalog.RegisterAsync(full, "media-home-scan")
+            : new DiskLibraryRegisterResult(existing, DiskLibraryRefusal.Accepted, "already registered");
         if (registered.Reason != DiskLibraryRefusal.Accepted || registered.Entry is null)
             return new(MediaHomeMountOutcome.RegisterRefused,
                 $"registration refused at the existing admission ({registered.Reason}): {registered.Message}",

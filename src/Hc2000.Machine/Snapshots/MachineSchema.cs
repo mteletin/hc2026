@@ -2,19 +2,22 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Hc2000.Machine.Expansion;
 using Hc2000.Machine.Tape;
 using Hc2000.Machine.Tape.Snapshots;
 
 namespace Hc2000.Machine.Snapshots;
 
-/// <summary>The compiled HC2000 machine schema (KB hc2000 doc spec-04-machine): the exact rosters of
+/// <summary>The compiled HC2000 machine schema: the exact rosters of
 /// stores, components and state tables the logical .hcs file carries, plus their field and value
 /// checks. Composition-dependent consistency (rom binding, event/state pairing, device rosters)
 /// is enforced by <see cref="MachineSnapshot.Load"/> against the live machine.</summary>
 public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? wavPolicy = null)
     : HcsSchema(profile.Name, checked((uint)profile.Version), Definition(profile))
 {
-    protected override bool UsesCpuFrontiers => ExpansionSchema.Enabled(profile);
+    // Both frontier identities validate CPU frontier events and admit the expansion components;
+    // the full-X5 file additionally requires the expansion-x5 component, admitted after the loop.
+    protected override bool UsesCpuFrontiers => ExpansionSchema.Enabled(profile) || ExpansionSchema.X5(profile);
     private static readonly string[] Components =
         ["drive-a", "drive-b", "fdc", "frame-clock", "keyboard", "memory", "tape", "ula"];
 
@@ -66,6 +69,8 @@ public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? 
             }
         };
         if (p.Memory.RamPaged is { } paged) o["memory"]!["pagedPolicy"] = paged.PolicyId;
+        if (ExpansionSchema.X5(p))
+            o["expansionDriverCount"] = p.ExpansionDriverCount;
         return JsonDocument.Parse(o.ToJsonString()).RootElement.Clone();
     }
 
@@ -90,19 +95,63 @@ public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? 
 
     protected override void ValidateModels(JsonElement manifest)
     {
+        ValidateHddModel(manifest);
+        var isX5 = ExpansionSchema.X5(profile);
+        ExpansionX5State? x5State = null;
+        if (profile.CpNet && !Arr(manifest.GetProperty("components")).Any(c => Id(c.GetProperty("id")) == CpNetStagingSchema.ComponentId))
+            Error(HcsError.StateUnsupported, "legacy cpnet staging layout");
         foreach (var o in Arr(manifest.GetProperty("components")))
         {
             string id = Id(o.GetProperty("id"));
-            if (!Components.Contains(id) && !(UsesCpuFrontiers && id == ExpansionSchema.ComponentId)) Error(HcsError.UnsupportedVersion, "component");
+            if (!Components.Contains(id)
+                && !(HasHdd(profile) && id == HddComponentId)
+                && !(profile.CpNet && id == CpNetStagingSchema.ComponentId)
+                && !(UsesCpuFrontiers && (id == ExpansionSchema.ComponentId || id == ExpansionX0Schema.ComponentId
+                     || (isX5 && (id == ExpansionX5Schema.ComponentId || id == ExpansionX2Schema.ComponentId || id == ExpansionX3Schema.ComponentId || id == ExpansionX4Schema.ComponentId)))))
+                Error(HcsError.UnsupportedVersion, "component");
             if (Id(o.GetProperty("modelId")) != id)
                 Error(HcsError.UnsupportedVersion, "component");
             var mv = UInt(o.GetProperty("modelVersion"));
             if (id == "fdc" ? mv != 2 : id == "tape" ? mv is not (1 or 2) : mv != 1)
                 Error(HcsError.UnsupportedVersion, "component");
             var s = o.GetProperty("state");
+            if (id == HddComponentId) continue;
+            if (id == CpNetStagingSchema.ComponentId)
+            {
+                if (!CpNetStagingSchema.Matches(s)) Error(HcsError.StateInconsistent, "cpnet staging layout");
+                continue;
+            }
             if (id == ExpansionSchema.ComponentId)
             {
-                _ = ExpansionSchema.Read(manifest);
+                // The compatibility profile validates the step-1 state at the component's position
+                // so a malformed state is refused before later components are examined; a full-X5
+                // file validates both expansion components together after the loop.
+                if (!isX5) _ = ExpansionSchema.Read(manifest);
+                continue;
+            }
+            if (id == ExpansionX5Schema.ComponentId)
+            {
+                x5State = ExpansionX5Schema.Read(s);
+                continue;
+            }
+            if (id == ExpansionX0Schema.ComponentId)
+            {
+                _ = ExpansionX0Schema.Read(s);
+                continue;
+            }
+            if (id == ExpansionX2Schema.ComponentId)
+            {
+                _ = ExpansionX2Schema.Read(s);
+                continue;
+            }
+            if (id == ExpansionX3Schema.ComponentId)
+            {
+                _ = ExpansionX3Schema.Read(s);
+                continue;
+            }
+            if (id == ExpansionX4Schema.ComponentId)
+            {
+                _ = ExpansionX4Schema.Read(s);
                 continue;
             }
             if (id == "tape" && mv == 2)
@@ -192,8 +241,26 @@ public sealed partial class MachineSchema(MachineProfile profile, HcsWavPolicy? 
                     break;
             }
         }
-        if (UsesCpuFrontiers && !Arr(manifest.GetProperty("components")).Any(c => Id(c.GetProperty("id")) == ExpansionSchema.ComponentId))
+        var step1Present = Arr(manifest.GetProperty("components")).Any(c => Id(c.GetProperty("id")) == ExpansionSchema.ComponentId);
+        if (UsesCpuFrontiers && !step1Present)
             Error(HcsError.StateInconsistent, "expansion component");
+        if (UsesCpuFrontiers && step1Present && isX5)
+        {
+            // The full-X5 file is admitted only once BOTH components pass: the step-1
+            // component with the X5 context (main event bound to the main map's fault,
+            // driver events excluded, root pending checked against the driver roster) and
+            // the cross-component ownership/timing admission. The compatibility profile
+            // already validated the step-1 state at the component's position above.
+            if (x5State is null) Error(HcsError.StateInconsistent, "expansion-x5 component");
+            if (x5State!.Drivers.Length != profile.ExpansionDriverCount)
+                Error(HcsError.StateInconsistent, "expansion-x5 roster");
+            try
+            {
+                var step1 = ExpansionSchema.Read(manifest, true, x5State);
+                ExpansionX5Schema.ValidateHcs(step1, x5State!, manifest);
+            }
+            catch (HcsException e) { Error(e.Error, "expansion-x5 admission"); }
+        }
         if (Arr(manifest.GetProperty("pendingOutput")).Length != 0)
             Error(HcsError.StateUnsupported, "pendingOutput");
     }

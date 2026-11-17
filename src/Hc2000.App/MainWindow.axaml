@@ -4,111 +4,266 @@
         xmlns:local="using:Hc2000.App"
         xmlns:media="using:Hc2000.App.Media"
         xmlns:snapshots="using:Hc2000.App.Snapshots"
+        xmlns:network="using:Hc2000.App.Network"
         x:Class="Hc2000.App.MainWindow"
-        Title="HC2000">
+        Title="HC2000"
+        MinWidth="900"
+        MinHeight="560">
   <Window.Styles>
-    <!-- Machine text keys stay unhandled for native TextInput. Toolbar buttons are
+    <!-- Machine text keys stay unhandled for native TextInput. Toolbar and rail buttons are
          pointer actions: Space must not click the last one. Draft fields opt in. -->
     <Style Selector="Button">
       <Setter Property="Focusable" Value="False"/>
     </Style>
-    <Style Selector="Border.section">
-      <Setter Property="Padding" Value="8"/>
-      <Setter Property="CornerRadius" Value="4"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+    <!-- F2: the screen pane owns its cell and is centred on the dark surround. -->
+    <Style Selector="Grid.screenPane">
+      <Setter Property="Background" Value="{DynamicResource AppScreenSurroundBrush}"/>
     </Style>
-    <Style Selector="TextBlock.sectionTitle">
-      <Setter Property="FontSize" Value="14"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
+    <!-- F4: the side rail is a 44 px icon rail plus a 340 px panel. -->
+    <Style Selector="Grid.sideRail">
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
+    </Style>
+    <Style Selector="Button.railIcon">
+      <Setter Property="Width" Value="26"/>
+      <Setter Property="Height" Value="26"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="CornerRadius" Value="3"/>
+    </Style>
+    <Style Selector="Button.railIcon.selected">
+      <Setter Property="BorderThickness" Value="0,0,0,2"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
+    </Style>
+    <!-- F5: one-line status bar. -->
+    <Style Selector="Grid.statusBar">
+      <Setter Property="Background" Value="{DynamicResource AppStatusNoticeBrush}"/>
+      <Setter Property="MinHeight" Value="24"/>
     </Style>
   </Window.Styles>
-  <DockPanel>
-    <!-- The screen owns the client slot left after the chrome: a finite, non-scrolling
-         rectangle. The zoom formula gives it an integer scale at most the requested zoom
-         and at most what fits this slot; everything above it scrolls. -->
-    <Grid Name="ScreenSlot" DockPanel.Dock="Bottom" HorizontalAlignment="Stretch" IsVisible="False">
-      <runtime:AspectRatioViewport Name="ScreenViewport" FitToWindow="False">
-        <runtime:AspectRatioViewport.Surface>
-          <runtime:VideoSurface Name="Screen" AutomationProperties.Name="HC2000 screen" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        </runtime:AspectRatioViewport.Surface>
-      </runtime:AspectRatioViewport>
-      <local:CellBoundaryOverlay Name="CellBoundaries" IsVisible="False" IsHitTestVisible="False"/>
-    </Grid>
 
-    <!-- Top Shell Bar / Unified Tab Strip -->
-    <Border Classes="shellHeader" DockPanel.Dock="Top">
+  <!-- The frame (hc2000-app-frame-and-visual-system §1): three rows - header / body / one-line
+       status bar. The body is the screen pane (*) plus the collapsible side rail. The screen is
+       never docked and never inside a ScrollViewer: the viewport picks the largest integer zoom
+       that fits, floor 1x, centred on the surround. -->
+  <Grid Name="ShellGrid" RowDefinitions="Auto,*,Auto">
+
+    <!-- F6: app title, the tab strip in the * column, the action strip right. The + new-machine
+         tab is the last item inside the strip, so a wide strip can never cover it. -->
+    <Border Name="ShellHeader" Grid.Row="0" Classes="shellHeader">
       <Grid ColumnDefinitions="Auto,*,Auto">
-        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
           <TextBlock Classes="appTitle" Text="HC2000" VerticalAlignment="Center"/>
-          <TextBlock Classes="caption" Text="·" VerticalAlignment="Center" Margin="2,0"/>
+          <TextBlock Classes="caption" Text="·" VerticalAlignment="Center" Margin="1,0"/>
           <TextBlock Name="MachineWorkspaceHeading" Classes="sectionTitle" Text="Machines" VerticalAlignment="Center"/>
         </StackPanel>
 
-        <!-- Machine Tabs in the primary strip -->
-        <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="12,0">
-          <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-            <StackPanel Name="MachineTabs" Orientation="Horizontal" Spacing="6" IsVisible="False"/>
-            <Button Name="NewMachine" Classes="toolbarAction" Content="New machine" AutomationProperties.Name="Configure a new machine" ToolTip.Tip="Configure a new machine (Ctrl+Shift+N)"/>
-          </StackPanel>
-        </ScrollViewer>
+        <!-- Machine tabs in the primary strip; the + tab is the last item inside it. -->
+        <Grid Grid.Column="1" ColumnDefinitions="*,Auto" Margin="4,0">
+          <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <StackPanel Name="MachineTabs" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Left" IsVisible="False" VerticalAlignment="Center"/>
+          </ScrollViewer>
+          <Button Name="NewMachine" Grid.Column="1" Classes="addTab" Content="+" AutomationProperties.Name="Configure a new machine" ToolTip.Tip="Configure a new machine (Ctrl+Shift+N)"/>
+        </Grid>
 
         <!-- Right action strip -->
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-          <Button Name="MachineReset" Classes="toolbarAction" Content="Reset selected machine" IsEnabled="False" ToolTip.Tip="Reset selected machine (Ctrl+Shift+R)"/>
-          <Button Name="OpenSettingsButton" Classes="toolbarAction" Content="Settings…" Click="OpenSettings" ToolTip.Tip="Application preferences (Ctrl+Shift+,)"/>
-          <Button Name="OpenDebuggerButton" Classes="toolbarAction" Content="Debugger…" Click="OpenDebugger" ToolTip.Tip="Open debugger (Ctrl+Shift+D)"/>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+          <Button Name="MachineReset" Classes="toolbarAction" Content="Reset selected machine" Padding="6,4" IsEnabled="False" ToolTip.Tip="Reset selected machine (Ctrl+Shift+R)"/>
+          <Button Name="BenchmarksMenuButton" Classes="toolbarAction" Content="Benchmarks" Padding="6,4" ToolTip.Tip="Built-in hardware benchmarks (Ctrl+Shift+B)">
+            <Button.ContextMenu>
+              <ContextMenu Name="BenchmarksMenu">
+                <MenuItem Name="RunX2BenchmarkMenuItem" Header="Run X2 VGA benchmark"/>
+                <MenuItem Name="ShowX2BenchmarkResultsMenuItem" Header="Show X2 benchmark results" IsEnabled="False"/>
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+          <Button Name="OpenSettingsButton" Classes="toolbarAction" Content="Settings" Click="OpenSettings" ToolTip.Tip="Application preferences (Ctrl+Shift+,)"/>
+          <Button Name="OpenDebuggerButton" Classes="toolbarAction" Content="Debugger" Padding="6,4" Click="OpenDebugger" ToolTip.Tip="Open debugger (Ctrl+Shift+D)"/>
+          <Button Name="KeyboardReferenceButton" Classes="toolbarAction" Content="Keyboard reference" Padding="6,4" Click="OpenKeyboardReference" ToolTip.Tip="Offline keyboard reference (Ctrl+Shift+K)"/>
         </StackPanel>
       </Grid>
     </Border>
 
-    <!-- Scrollable workspace body -->
-    <ScrollViewer Name="ShellScroll" HorizontalScrollBarVisibility="Disabled">
-      <StackPanel Margin="12,8" Spacing="8">
-        <TextBlock Name="EmptyWorkspace" Classes="caption" Text="No machine started. Configure the first machine below." TextWrapping="Wrap"/>
-        <StackPanel Name="SelectedMachineHeading" Spacing="4" IsVisible="False">
-          <TextBlock Classes="caption" Text="Selected machine:"/>
-          <TextBlock Name="SelectedMachineName" Classes="sectionTitle" Text="No machine selected" TextWrapping="Wrap"/>
-          <TextBlock Name="EffectiveHardware" Classes="caption" TextWrapping="Wrap"/>
-          <TextBlock Classes="caption" Text="Reset, mounted media, snapshots and guest input affect only this selected machine." TextWrapping="Wrap"/>
-        </StackPanel>
-        <TextBlock Name="RuntimeStatus" Classes="caption" Text="Draft: configure, then Start machine. No guest executing." TextWrapping="Wrap"/>
-        <Border Name="ConfigurationCard" Classes="section">
-          <ContentControl Name="PrestartConfiguration"/>
-        </Border>
-        <StackPanel Name="RunningWorkspace" Spacing="8" IsVisible="False">
-          <StackPanel Name="Z80DemoControls" IsVisible="False" Orientation="Horizontal" Spacing="8">
-            <Button Name="Z80DemoRerun" Classes="primaryAction" AutomationProperties.Name="Reset / Run again" Content="Reset / Run again"/>
+    <!-- F1/F2/F4: body = screen pane (*) + side rail (44 px icons + 340 px panel). -->
+    <Grid Name="ShellBody" Grid.Row="1" ColumnDefinitions="*,Auto">
+
+      <!-- The screen stays left. Configuration and media never enter this cell. -->
+      <Grid Name="ScreenPane" Grid.Column="0" Classes="screenPane">
+        <Border Name="PoweredOffScreen" Background="#101418">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+            <TextBlock Name="PoweredOffName" Classes="sectionTitle" HorizontalAlignment="Center"/>
+            <TextBlock Name="EmptyWorkspace" Classes="caption" Text="Powered off" HorizontalAlignment="Center"/>
+            <Button Name="PoweredOffStart" Classes="primaryAction" Content="Start machine" HorizontalAlignment="Center"/>
           </StackPanel>
-          <CheckBox Name="CellOverlayToggle" Content="Show 8×8 cell boundaries (inspection overlay)"/>
-          <Expander Header="Reconfigure and reset · selected machine">
-            <ContentControl Name="ReconfigureConfiguration" Margin="0,4,0,0"/>
-          </Expander>
-          <Expander Header="Media and disks · selected machine">
-            <media:MediaPanel Name="MediaControls" Margin="0,4,0,0"/>
-          </Expander>
-          <Expander Header="Media homes · scanned images">
-            <media:MediaHomeListPanel Name="MediaHomeList" Margin="0,4,0,0"/>
-          </Expander>
-          <media:ProfileRomPanel Name="ProfileRomControls" IsVisible="False" IsEnabled="False"/>
-          <Expander Header="Snapshots · selected machine">
-            <snapshots:HcsPanel Name="SnapshotControls" Margin="0,4,0,0"/>
-          </Expander>
-          <Border Classes="section">
-            <StackPanel Spacing="6">
-              <TextBlock Classes="sectionTitle" Text="Keyboard and paste · selected machine"/>
-              <TextBlock Classes="caption" Text="Keyboard mapping"/>
-              <ComboBox x:Name="InputModeBox" AutomationProperties.Name="Keyboard mapping">
-                <ComboBoxItem Content="Symbolic (host text)"/>
-                <ComboBoxItem Content="Positional (physical keys)"/>
-              </ComboBox>
-              <TextBox x:Name="PasteTextBox" AutomationProperties.Name="Text to paste into the machine" PlaceholderText="Text to paste into the selected machine" AcceptsReturn="True" Height="70"/>
-              <Button x:Name="PasteButton" Classes="toolbarAction" Content="Queue paste" Click="PasteInput"/>
-              <TextBlock x:Name="InputNotice" Classes="caption" Text="Input queued only; the selected runtime consumes it. F2: Edit, F3: Graph, Alt: Symbol Shift (positional)." TextWrapping="Wrap"/>
-            </StackPanel>
-          </Border>
+        </Border>
+        <!-- Running screen: the viewport picks the integer zoom; the overlay sits on top. -->
+        <Grid Name="ScreenHost" IsVisible="False">
+          <runtime:AspectRatioViewport Name="ScreenViewport" FitToWindow="False">
+            <runtime:AspectRatioViewport.Surface>
+              <runtime:VideoSurface Name="Screen" AutomationProperties.Name="HC2000 screen" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+            </runtime:AspectRatioViewport.Surface>
+          </runtime:AspectRatioViewport>
+          <local:CellBoundaryOverlay Name="CellBoundaries" IsVisible="False" IsHitTestVisible="False"/>
+        </Grid>
+      </Grid>
+
+      <!-- Side rail: always-visible 44 px icon rail plus a 340 px panel (0 when collapsed). -->
+      <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource AppCardBorderBrush}">
+        <Grid Name="SideRail" Classes="sideRail">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="44"/>
+          <ColumnDefinition Width="340"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0" Orientation="Vertical" Spacing="4" Margin="0,8" HorizontalAlignment="Center">
+        <!-- Rail icons: one 16 px filled-geometry set in AppIconBrush; the letters are gone (slice C). -->
+          <Button Name="RailMachine" Classes="railIcon selected" AutomationProperties.Name="Machine panel" ToolTip.Tip="Reconfigure and reset the selected machine">
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource AppIconBrush}" Data="M2,2 H14 V10 H2 Z M5,11 H11 V13 H5 Z"/>
+          </Button>
+          <Button Name="RailMedia" Classes="railIcon" AutomationProperties.Name="Media panel" ToolTip.Tip="Media and disks of the selected machine">
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource AppIconBrush}" Data="M2,2 H11 L14,5 V14 H2 Z M5,3 H9 V6.5 H5 Z M4,9.5 H12 V13 H4 Z"/>
+          </Button>
+          <Button Name="RailSnapshots" Classes="railIcon" AutomationProperties.Name="Snapshots panel" ToolTip.Tip="Snapshots of the selected machine">
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource AppIconBrush}" Data="M2,5 H5.5 L7,3 H9 L10.5,5 H14 V13 H2 Z M8,7 A1.6,1.6 0 1 0 8,10.2 A1.6,1.6 0 1 0 8,7 Z"/>
+          </Button>
+          <Button Name="RailInput" Classes="railIcon" AutomationProperties.Name="Input panel" ToolTip.Tip="Keyboard and paste for the selected machine">
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource AppIconBrush}" Data="M1.5,4.5 H14.5 V12 H1.5 Z M3.5,6.5 H4.5 V7.5 H3.5 Z M6.5,6.5 H7.5 V7.5 H6.5 Z M9.5,6.5 H10.5 V7.5 H9.5 Z M12.5,6.5 H13.5 V7.5 H12.5 Z M4.5,9.5 H11.5 V10.5 H4.5 Z"/>
+          </Button>
+          <Button Name="RailDebug" Classes="railIcon" AutomationProperties.Name="Debugger" ToolTip.Tip="Open debugger (Ctrl+Shift+D)" Click="OpenDebugger">
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource AppIconBrush}" Data="M8,3.5 A1.5,1.5 0 1 0 8,6.5 A1.5,1.5 0 1 0 8,3.5 Z M5.5,7 H10.5 V11 A2.5,2.5 0 0 1 5.5,11 Z M3,5.5 L5.5,7 L4.5,8 L2,6.5 Z M3,9.5 L2,11.5 L4.5,12 L5.5,10.5 Z M13,5.5 L11,7 L11.5,8 L14,6.5 Z M13,9.5 L14,11.5 L11.5,12 L10.5,10.5 Z"/>
+          </Button>
+          <Button Name="RailToggle" Classes="railIcon" AutomationProperties.Name="Toggle side rail" ToolTip.Tip="Show or hide the side rail (Ctrl+B)">
+            <PathIcon Width="16" Height="16" Foreground="{DynamicResource AppIconBrush}" Data="M5,3.5 L9.5,8 L5,12.5 L3.5,11 L6.5,8 L3.5,5 Z"/>
+          </Button>
         </StackPanel>
-      </StackPanel>
-    </ScrollViewer>
-  </DockPanel>
+        <Grid Name="RightPanelHost" Grid.Column="1" ClipToBounds="True">
+          <ScrollViewer Name="DraftScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <Border Name="ConfigurationCard" Classes="section" Margin="8">
+              <ContentControl Name="PrestartConfiguration"/>
+            </Border>
+          </ScrollViewer>
+          <Grid Name="MediaFullView" Classes="fullView" IsVisible="False" Background="{DynamicResource AppCardBackgroundBrush}" RowDefinitions="Auto,*" Margin="8">
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+              <TextBlock Classes="sectionTitle" Text="Media explorer" VerticalAlignment="Center"/>
+              <Button Name="CloseMediaExplorer" Grid.Column="1" Classes="ghostAction" Content="Back to controls"/>
+            </Grid>
+            <ScrollViewer Name="MediaExplorerScroll" Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="8">
+                <media:MediaExplorerLayout>
+                  <StackPanel Spacing="8">
+                    <media:MediaHomeListPanel Name="MediaHomeList"/>
+                    <ContentControl Name="MediaHomeCopyHost"/>
+                  </StackPanel>
+                  <ContentControl Name="MediaFileHost" Grid.Column="1"/>
+                </media:MediaExplorerLayout>
+                <Expander Header="Disk library, tape and device controls" HorizontalAlignment="Stretch">
+                  <media:MediaPanel Name="MediaControls"/>
+                </Expander>
+                <media:ProfileRomPanel Name="ProfileRomControls" IsVisible="False" IsEnabled="False"/>
+              </StackPanel>
+            </ScrollViewer>
+          </Grid>
+          <!-- Machine panel: reconfigure, demo controls, cell overlay and the effective-hardware caption. -->
+          <Grid Name="RailMachinePanel" Margin="8">
+            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+              <TextBlock Classes="sectionTitle" Text="Reconfigure · selected machine"/>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="8">
+                  <StackPanel Name="Z80DemoControls" IsVisible="False" Orientation="Horizontal" Spacing="8">
+                    <Button Name="Z80DemoRerun" Classes="primaryAction" AutomationProperties.Name="Reset / Run again" Content="Reset / Run again"/>
+                  </StackPanel>
+                  <!-- hc2000-x2-second-screen: the X2 VGA surface shows in its own window beside the
+                       unchanged main screen, or becomes the main screen with ULA beside or hidden;
+                       offered only while the selected machine runs the card. -->
+                  <StackPanel Name="X2ScreenChoice" IsVisible="False" Spacing="4">
+                    <TextBlock Classes="caption" Text="VGA screen (X2)"/>
+                    <CheckBox Name="VgaMainScreenToggle" Content="VGA as main screen" ToolTip.Tip="Set VGA as primary screen"/>
+                    <Button Name="X2ScreenToggle" Classes="secondaryAction" Content="Hide VGA screen" ToolTip.Tip="Show or hide the second screen window (Ctrl+Shift+G)"/>
+                  </StackPanel>
+                  <CheckBox Name="CellOverlayToggle" Content="Show 8×8 cell boundaries (inspection overlay)"/>
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="caption" Text="Display presentation mode (opt-in heuristic)"/>
+                    <ComboBox Name="PresentationModeSelector" AutomationProperties.Name="Display presentation mode" HorizontalAlignment="Stretch">
+                      <ComboBoxItem Content="Faithful (original pixels)"/>
+                      <ComboBoxItem Content="Crisp text (finer BASIC &amp; CP/M fonts)"/>
+                      <ComboBoxItem Content="Split comparison (50/50 faithful / crisp)"/>
+                    </ComboBox>
+                    <TextBlock Name="PresentationHeuristicNotice" Classes="caption" Text="Known-font heuristic for ZX 32-col BASIC &amp; HC2000 64-col CP/M. Unmatched cells and graphics use faithful pixels. Cold hardware overlay is configured before Start." TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <ContentControl Name="ReconfigureConfiguration" Margin="0,4,0,0"/>
+                  <!-- Decision #245: the selected running machine's explicit CP/NET host controls.
+                       Hidden until a machine runs; it binds only that session's bridge. -->
+                  <network:CpNetPanel Name="CpNetControls" IsVisible="False"/>
+                  <!-- hc2000-ssh-terminal: the running machine's X6 network gateway, shown when it has the card. -->
+                  <network:OutboundGatewayPanel Name="X6GatewayControls" IsVisible="False"/>
+                  <TextBlock Name="EffectiveHardware" Classes="caption" TextWrapping="Wrap"/>
+                  <TextBlock Name="EffectiveOverlay" Classes="caption" TextWrapping="Wrap"/>
+                  <TextBlock Classes="caption" Text="Reset, mounted media, snapshots and guest input affect only this selected machine." TextWrapping="Wrap"/>
+                </StackPanel>
+              </ScrollViewer>
+            </Grid>
+          </Grid>
+          <!-- Media panel: media, scanned media homes and the (disabled) profile-ROM registry. -->
+          <Grid Name="RailMediaPanel" Margin="8" IsVisible="False">
+            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="sectionTitle" Text="Media and disks · selected machine" TextWrapping="Wrap"/>
+                <ContentControl Name="MediaNoticeHost"/>
+              </StackPanel>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="8">
+                  <Button Name="OpenMediaExplorer" Classes="secondaryAction" Content="Browse media"/>
+                  <ContentControl Name="MediaDriveStrip"/>
+                </StackPanel>
+              </ScrollViewer>
+            </Grid>
+          </Grid>
+          <!-- Snapshots panel -->
+          <Grid Name="RailSnapshotsPanel" Margin="8" IsVisible="False">
+            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+              <TextBlock Classes="sectionTitle" Text="Snapshots · selected machine"/>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <snapshots:HcsPanel Name="SnapshotControls"/>
+              </ScrollViewer>
+            </Grid>
+          </Grid>
+          <!-- Input panel: keyboard mapping and paste. -->
+          <Grid Name="RailInputPanel" Margin="8" IsVisible="False">
+            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+              <TextBlock Classes="sectionTitle" Text="Keyboard and paste · selected machine"/>
+              <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Name="InputPanelBody" Spacing="6">
+                  <TextBlock Classes="caption" Text="Keyboard mapping"/>
+                  <ComboBox Name="InputModeBox" AutomationProperties.Name="Keyboard mapping">
+                    <ComboBoxItem Content="Symbolic (host text)"/>
+                    <ComboBoxItem Content="Positional (physical keys)"/>
+                  </ComboBox>
+                  <TextBox Name="PasteTextBox" AutomationProperties.Name="Text to paste into the machine" PlaceholderText="Text to paste into the selected machine" AcceptsReturn="True" Height="70"/>
+                  <Button Name="PasteButton" Classes="toolbarAction" Content="Queue paste" Click="PasteInput"/>
+                </StackPanel>
+              </ScrollViewer>
+            </Grid>
+          </Grid>
+        </Grid>
+        </Grid>
+      </Border>
+      <ContentControl Name="X2BenchmarkResultsHost" Grid.ColumnSpan="2" IsVisible="False"/>
+    </Grid>
+
+    <!-- F5: one-line status bar - the machine state left, the selected machine name right. -->
+    <Grid Name="StatusBar" Grid.Row="2" Classes="statusBar" ColumnDefinitions="*,2*,Auto,Auto">
+      <TextBlock Name="StatusLine" Grid.Column="0" Classes="caption" Text="Set up this machine, then start it." VerticalAlignment="Center" Margin="8,2"
+                 TextWrapping="NoWrap" MaxLines="1" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+      <!-- hc2000-accelerated-clock-domains: the honest main-CPU rate line (requested choice, achieved T/s
+           and frame cadence over the meter's stated window, or warm-up/overload); owned by the
+           presentation tick, visible while a machine runs. -->
+      <TextBlock Name="RateLine" Grid.Column="1" Classes="caption" IsVisible="False" VerticalAlignment="Center" Margin="8,2"
+                 TextWrapping="NoWrap" MaxLines="1" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+      <!-- hc2000-ssh-terminal: the selected machine's X6 network gateway, always in view while it runs with the card
+           (the owner could not find the panel's switch, manual test #22). One click switches it. -->
+      <ToggleButton Name="X6GatewayStatus" Grid.Column="2" IsVisible="False" Margin="4,1" Padding="8,1"
+                    AutomationProperties.Name="X6 network gateway" ToolTip.Tip="Switch this machine's X6 network gateway on or off (Ctrl+Shift+O)"/>
+      <TextBlock Name="SelectedMachineName" Grid.Column="3" Classes="caption" Text="HC2000" VerticalAlignment="Center" Margin="8,2" MaxWidth="180"
+                 TextWrapping="NoWrap" MaxLines="1" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+    </Grid>
+  </Grid>
 </Window>

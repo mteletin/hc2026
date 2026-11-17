@@ -13,7 +13,7 @@ internal sealed class DiskExplorerPanel : StackPanel
     {
         Children.Clear();
         Spacing = 4;
-        Children.Add(new TextBlock { Text = $"Disk explorer — {state.MachineName}", FontSize = 18 });
+        Children.Add(new TextBlock { Text = $"Disk explorer — {state.MachineName}", FontSize = 18, TextWrapping = TextWrapping.Wrap });
         Children.Add(new TextBlock { Name = "ExplorerNotice", Text = state.Notice, TextWrapping = TextWrapping.Wrap });
         var image = state.Image;
         if (state.Refresh is { } refresh)
@@ -45,28 +45,28 @@ internal sealed class DiskExplorerPanel : StackPanel
         Children.Add(new TextBlock { Text = "Stored records only: sizes are rounded to 128 bytes; terminal 0x00 / 0x1A are kept.", TextWrapping = TextWrapping.Wrap });
         foreach (var entry in image.Entries)
         {
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            var row = new StackPanel { Spacing = 6 };
             row.Children.Add(new TextBlock
             {
                 Text = $"user {entry.User} · {entry.Name} · {entry.Records} records / {entry.Size} bytes" +
                     (entry.ReadOnly ? " · R/O" : "") + (entry.System ? " · SYS" : "") +
                     (entry.Refused ? $" · REFUSED: {entry.Refusal}" : ""), TextWrapping = TextWrapping.Wrap
             });
-            var button = new Button { Content = $"Copy out {entry.Name}…", IsEnabled = !entry.Refused };
+            var button = new Button { Content = $"Copy out {entry.Name}", IsEnabled = !entry.Refused };
             button.Click += async (_, _) => await export(image, entry);
             row.Children.Add(button);
             Children.Add(row);
         }
         if (image.Entries.Count == 0) Children.Add(new TextBlock { Text = "No files in this valid directory." });
-        var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        var controls = new WrapPanel { Orientation = Orientation.Horizontal };
         var name = new TextBox { Name = "ExplorerImportName", Text = state.Name, PlaceholderText = "CP/M 8.3 name", Width = 160 };
         // TextChanged is deferred by Avalonia: preserve edits even if a tab is switched immediately.
         name.PropertyChanged += (_, e) => { if (e.Property == TextBox.TextProperty) state.Name = name.Text ?? ""; };
-        var user = new NumericUpDown { Name = "ExplorerImportUser", Minimum = 0, Maximum = 15, Value = state.User, Width = 90 };
+        var user = new NumericUpDown { Name = "ExplorerImportUser", Minimum = 0, Maximum = 15, Value = state.User, Width = 110 };
         user.ValueChanged += (_, _) => state.User = (int)(user.Value ?? 0);
         var replace = new CheckBox { Content = "Explicitly replace existing CP/M file", IsChecked = state.Replace };
         replace.IsCheckedChanged += (_, _) => state.Replace = replace.IsChecked == true;
-        var copy = new Button { Content = "Copy in host file…", IsEnabled = image.CanImport || image.CanImportVolume };
+        var copy = new Button { Content = "Copy in host file", IsEnabled = image.CanImport || image.CanImportVolume };
         copy.Click += async (_, _) => await import(image);
         controls.Children.Add(new TextBlock { Text = "User 0–15:" }); controls.Children.Add(user);
         controls.Children.Add(name); controls.Children.Add(replace); controls.Children.Add(copy);

@@ -92,7 +92,7 @@ public static class DiskLibraryCopySnapshot
 
         // The guarded native surface is mandatory: legacy hosts keep no native identity, so their bytes
         // cannot be bound to a fresh file identity; report the exact gap and stay fail-closed.
-        if (NativeImageAdmission.PlatformMode != ImageAdmissionPlatformMode.GuardedLinux)
+        if (!NativeImageAdmission.IsGuarded)
             return Ownership("the host has no guarded native image admission (legacy platform); a fresh file identity and read exclusion are unavailable");
 
         // Claim the single host cold-read fence: the authoritative host-held admission for this read.
@@ -145,13 +145,13 @@ public static class DiskLibraryCopySnapshot
             LinuxImageAdmissionNative.Facts native;
             try
             {
-                native = LinuxImageAdmissionNative.FileAt(full, false);
+                native = ImageAdmissionNative.FileAt(full, false);
             }
             catch (AdmissionException ex)
             {
                 return Refused(DiskLibraryRefusal.Unreadable, "native admission refused the copy file: " + ex.Message);
             }
-            if (native.Length > (ulong)DiskLibrarySchema.MaxContainerBytes)
+            if (native.Length > (ulong)(entry.Kind == DiskLibraryKind.Hdd ? DiskLibrarySchema.HddBytes : DiskLibrarySchema.MaxContainerBytes))
                 return Refused(DiskLibraryRefusal.Budget, "copy file exceeds the container budget");
 
             string original;
@@ -168,6 +168,12 @@ public static class DiskLibraryCopySnapshot
             var originalFacts = LinuxFileFacts.Inspect(original);
             if (originalFacts.Known && string.Equals(originalFacts.FileId, facts.FileId, StringComparison.Ordinal))
                 return Refused(DiskLibraryRefusal.RepeatOrAlias, "copy path aliases the protected original (same file identity)");
+            foreach (var protectedEntry in catalog.Entries.Where(e => e.Id != entry.Id))
+            {
+                var protectedFacts = LinuxFileFacts.Inspect(protectedEntry.SourcePath);
+                if (protectedFacts.Known && string.Equals(protectedFacts.FileId, facts.FileId, StringComparison.Ordinal))
+                    return Refused(DiskLibraryRefusal.RepeatOrAlias, "copy aliases another protected original");
+            }
             foreach (var other in catalog.Copies.Where(c => !string.Equals(c.Id, copy.Id, StringComparison.Ordinal)))
             {
                 var otherPath = Path.Combine(root, other.RelativePath);
@@ -177,6 +183,9 @@ public static class DiskLibraryCopySnapshot
                 if (otherFacts.Known && string.Equals(otherFacts.FileId, facts.FileId, StringComparison.Ordinal))
                     return Refused(DiskLibraryRefusal.RepeatOrAlias, $"copy path aliases managed copy {other.Id}");
             }
+
+            if (native.Links != 1)
+                return Refused(DiskLibraryRefusal.RepeatOrAlias, "copy file has hardlink aliases");
 
             foreach (var accounted in admission.Accounted)
             {
@@ -188,7 +197,9 @@ public static class DiskLibraryCopySnapshot
             // The admitted bounded read through the existing surface: a guarded native open plus bounded
             // read, or the plain bounded read on legacy hosts (unreachable here: the guarded platform is
             // required above).
-            var reservation = await operation.ReadMemberAsync(CopySlot, full, cancellation);
+            var reservation = entry.Kind == DiskLibraryKind.Hdd
+                ? await operation.ReadHddSeedAsync(CopySlot, full, cancellation)
+                : await operation.ReadMemberAsync(CopySlot, full, cancellation);
             var bytes = reservation.Bytes;
             var identity = reservation.Identity!;
 
@@ -197,7 +208,7 @@ public static class DiskLibraryCopySnapshot
             LinuxImageAdmissionNative.Facts current;
             try
             {
-                current = LinuxImageAdmissionNative.FileAt(reservation.CanonicalPath, false);
+                current = ImageAdmissionNative.FileAt(reservation.CanonicalPath, false);
             }
             catch (AdmissionException ex)
             {
@@ -247,17 +258,26 @@ public static class DiskLibraryCopySnapshot
     {
         ArgumentNullException.ThrowIfNull(original);
         ArgumentNullException.ThrowIfNull(copy);
-        if (bytes.IsDefaultOrEmpty || bytes.Length > DiskLibrarySchema.MaxContainerBytes)
+        if (bytes.IsDefaultOrEmpty || bytes.Length > (original.Kind == DiskLibraryKind.Hdd ? DiskLibrarySchema.HddBytes : DiskLibrarySchema.MaxContainerBytes))
             return new(null, DiskLibraryRefusal.Budget, "current bytes are empty or exceed the container budget");
 
         // Reuse the strict schema's metadata/provenance rules rather than another catalog validator.
         try
         {
-            var metadata = new DiskLibraryDocument(DiskLibrarySchema.Version, [original], [copy]);
+            var metadata = new DiskLibraryDocument(original.Kind == DiskLibraryKind.Hdd ? DiskLibrarySchema.HddVersion : DiskLibrarySchema.Version, [original], [copy]);
             _ = DiskLibrarySchema.Load(DiskLibrarySchema.Encode(metadata));
         }
         catch (DiskLibrarySchemaException ex)
         { return new(null, DiskLibraryRefusal.ReconciliationNeeded, ex.Message); }
+
+        if (original.Kind == DiskLibraryKind.Hdd)
+        {
+            if (original.Format != DiskLibraryFormat.Flat512 || bytes.Length != DiskLibrarySchema.HddBytes)
+                return new(null, DiskLibraryRefusal.UnsupportedContainer, "HDD seeds require exact flat512 length");
+            var hash = Convert.ToHexStringLower(SHA256.HashData(bytes.AsSpan()));
+            return new(new(original, copy, bytes, hash, DiskLibraryFormat.Flat512), DiskLibraryRefusal.Accepted,
+                "owned current raw seed observed only; no mount or publication authority");
+        }
 
         Dsk disk;
         try { disk = Dsk.Load(bytes.AsSpan()); }

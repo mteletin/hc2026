@@ -8,11 +8,80 @@ public enum FdcPhase { Reset, Command, Execution, Result }
 /// <summary>Polled non-DMA 8272. RDY/DACK are tied high; INT/DRQ do not reach the CPU. No host I/O or memory access.</summary>
 public sealed class Fdc8272
 {
-    private const int SearchDone = 1, ByteDeadline = 2, NoData = 3, IdDone = 4, Unload = 5, FormatStart = 6, SectorEnd = 7;
+    private const int SearchDone = 1, ByteDeadline = 2, NoData = 3, IdDone = 4, Unload = 5, FormatStart = 6, SectorEnd = 7, NoAddressMark = 8;
     private readonly DeviceScheduler scheduler;
     private readonly int deviceId;
     private readonly Func<int, FloppyDrive?> selectedDrive;
     private readonly FdcTiming timing;
+    private bool resultInterrupt, interruptLevel;
+
+    /// <summary>The chip's INT output (non-DMA mode, the only mode this core models): high while a
+    /// data byte waits for the CPU in the execution phase, from the end of an execution phase until
+    /// the first result byte is read, and while a seek/recalibrate or reset status waits for SENSE
+    /// INTERRUPT STATUS. The HC2000 board leaves INT unconnected; the COBRA floppy board takes it to
+    /// its Z80-CTC (cobra-core-8272-ctc).</summary>
+    public bool Interrupt => (Phase == FdcPhase.Execution && byteReady) || resultInterrupt || interrupts.Count > 0;
+
+    /// <summary>Raised when <see cref="Interrupt"/> changes: the new level and the scheduler tick.</summary>
+    public event Action<bool, long>? InterruptChanged;
+
+    /// <summary>The RDY input per unit. Null: tied high, the HC2000 wiring. A unit that is not ready reads
+    /// RDY = 0 in SENSE DRIVE STATUS, and a data command on it ends abnormally with NR (ST0 0x48).
+    /// The chip polls RDY between commands and interrupts when a unit's line changes state, either
+    /// polarity (8272A data sheet, SENSE INTERRUPT STATUS, table 11: ST0 IC = 11, SE = 0); RDY reads
+    /// not ready during reset, so leaving reset reports every unit that is ready then, and only those.</summary>
+    public Func<int, bool>? DriveReady { get; set; }
+
+    /// <summary>The chip's RDY poll between commands: a unit whose line changed since the last poll queues
+    /// a ready-change status (ST0 0xC0 | unit, NR set when it went not ready) and raises INT. A board
+    /// calls it when a drive's RDY may have changed (a disk in or out); the HC2000's tied-high RDY never
+    /// changes. Outside the command phase's idle state the poll waits for the next call.</summary>
+    public void PollReady()
+    {
+        if (Phase != FdcPhase.Command || command.Count != 0 || result.Count != 0) return;
+        try
+        {
+            for (var i = 0; i < 4; i++)
+            {
+                var ready = Ready(i);
+                if (ready == polledReady[i]) continue;
+                polledReady[i] = ready;
+                interrupts.Enqueue(((byte)(0xc0 | i | (ready ? 0 : 0x08)), pcn[i]));
+            }
+        }
+        finally { NotifyInterrupt(); }
+    }
+
+    private readonly bool[] polledReady = new bool[4];
+
+    /// <summary>The recording density of a track side as the medium holds it: (unit, physical cylinder, side) ->
+    /// true MFM, false FM, null not known. A read, READ ID or scan whose MF bit names the other density finds
+    /// no ID address mark: after the second index hole it ends with MA (ST0 0x40, ST1 0x01; 8272A data sheet,
+    /// READ ID and READ A TRACK). Null: no check, the HC2000 board's behaviour. FORMAT writes either density.</summary>
+    public Func<int, int, int, bool?>? TrackIsMfm { get; set; }
+
+    /// <summary>Per-unit timing, for a board that clocks the chip by the selected drive (the COBRA floppy
+    /// board: 8 or 4 MHz per drive). Null: one <see cref="FdcTiming"/> for every unit. Every unit's
+    /// MasterHz must be the controller's (the scheduler's tick rate).</summary>
+    public Func<int, FdcTiming>? TimingForUnit { get; set; }
+
+    private bool Ready(int driveUnit) => DriveReady?.Invoke(driveUnit) ?? true;
+
+    private FdcTiming TimingOf(int driveUnit)
+    {
+        if (TimingForUnit?.Invoke(driveUnit) is not { } own) return timing;
+        if (own.MasterHz != timing.MasterHz) throw new InvalidOperationException("A unit's FdcTiming must keep the controller's MasterHz.");
+        own.Validate();
+        return own;
+    }
+
+    private void NotifyInterrupt()
+    {
+        var level = Interrupt;
+        if (level == interruptLevel) return;
+        interruptLevel = level;
+        InterruptChanged?.Invoke(level, scheduler.Now);
+    }
     private readonly bool instant;
     private readonly List<byte> command = new(9);
     private readonly Queue<byte> result = new();
@@ -50,8 +119,8 @@ public sealed class Fdc8272
     public byte Specify2 => specify2;
     public IReadOnlyList<byte> PresentCylinders => pcn.ToArray();
     public bool HeadLoaded => activeDrive?.HeadLoaded == true;
-    /// <summary>Diagnostic only: whether the currently selected drive's motor is on (last transfer's drive).</summary>
-    public bool DiagActiveDriveMotorOn => activeDrive?.MotorOn == true;
+    /// <summary>Diagnostic only: whether the last transfer's drive is motor-on (its unit binding).</summary>
+    public bool DiagActiveDriveMotorOn => loadedDrives[unit]?.MotorOn == true;
     public int DiagReads => diagReads;
     public int DiagStatusPolls => diagStatusPolls;
     public int DiagReadReturns => diagReadReturns;
@@ -69,15 +138,21 @@ public sealed class Fdc8272
     internal Fdc8272(DeviceScheduler scheduler, int deviceId, Func<int, FloppyDrive?> selectedDrive, FdcTiming timing, bool instant)
     {
         this.scheduler = scheduler; this.deviceId = deviceId; this.selectedDrive = selectedDrive; this.timing = timing; this.instant = instant;
-        scheduler.RegisterDevice(deviceId, Dispatch);
+        scheduler.RegisterDevice(deviceId, item => { Dispatch(item); NotifyInterrupt(); });
         for (var i = 0; i < 4; i++)
         {
             var drive = i;
-            scheduler.RegisterDevice(checked(deviceId + 2 + i), _ => SeekStep(drive));
+            scheduler.RegisterDevice(checked(deviceId + 2 + i), _ => { SeekStep(drive); NotifyInterrupt(); });
         }
     }
 
     public byte ReadStatus()
+    {
+        try { return ReadStatusCore(); }
+        finally { NotifyInterrupt(); }
+    }
+
+    private byte ReadStatusCore()
     {
         // The instant upgrade has no byte deadline. Advance only on a programmed MSR
         // poll, retaining the final-byte/TC window used by the unmodified ROM.
@@ -106,8 +181,15 @@ public sealed class Fdc8272
 
     public byte ReadData()
     {
+        try { return ReadDataCore(); }
+        finally { NotifyInterrupt(); }
+    }
+
+    private byte ReadDataCore()
+    {
         if (Phase == FdcPhase.Result)
         {
+            resultInterrupt = false;
             var value = result.Dequeue();
             diagLog.AppendLine($"RRES@{scheduler.Now:X6} op={opcode} val={value:X2} remain={result.Count}");
             if (result.Count == 0) Phase = FdcPhase.Command;
@@ -125,6 +207,12 @@ public sealed class Fdc8272
     }
 
     public void WriteData(byte value)
+    {
+        try { WriteDataCore(value); }
+        finally { NotifyInterrupt(); }
+    }
+
+    private void WriteDataCore(byte value)
     {
         if (Phase == FdcPhase.Command)
         {
@@ -148,6 +236,12 @@ public sealed class Fdc8272
 
     public void SetReset(bool asserted)
     {
+        try { SetResetCore(asserted); }
+        finally { NotifyInterrupt(); }
+    }
+
+    private void SetResetCore(bool asserted)
+    {
         if (asserted)
         {
             if (Phase == FdcPhase.Reset) return;
@@ -160,7 +254,7 @@ public sealed class Fdc8272
                 loadedDrives[i] = null;
             }
             if (activeDrive is not null) activeDrive.HeadLoaded = false;
-            command.Clear(); result.Clear(); interrupts.Clear();
+            command.Clear(); result.Clear(); interrupts.Clear(); resultInterrupt = false;
             lastCommand = []; lastSt0 = lastSt1 = lastSt2 = lastSt3 = null;
             sector = null; activeDrive = null; byteReady = terminal = false;
             specify1 = 0xdf; specify2 = 0xff;
@@ -169,11 +263,21 @@ public sealed class Fdc8272
         else if (Phase == FdcPhase.Reset)
         {
             Phase = FdcPhase.Command;
-            for (var i = 0; i < 4; i++) interrupts.Enqueue(((byte)(0xc0 | i), 0));
+            for (var i = 0; i < 4; i++)
+            {
+                polledReady[i] = Ready(i);
+                if (polledReady[i]) interrupts.Enqueue(((byte)(0xc0 | i), 0));
+            }
         }
     }
 
     public void TerminalCount()
+    {
+        try { TerminalCountCore(); }
+        finally { NotifyInterrupt(); }
+    }
+
+    private void TerminalCountCore()
     {
         if (Phase != FdcPhase.Execution || opcode == 10) return;
         if (activeDrive?.WriteProtected == true && (WritesMedia || opcode == 13)) { Finish(2, 0); return; }
@@ -184,12 +288,10 @@ public sealed class Fdc8272
             return;
         }
         terminal = true;
-        if (byteReady)
-        {
-            if (WritesMedia) Consume(0); // finish the current field with zeroes, per datasheet
-            else byteIndex++;
-            byteReady = false;
-        }
+        // A byte already requested is the last one transferred: the CPU still reads or writes it, and
+        // the chip requests no more (it reads or fills the rest of the field itself). On the COBRA
+        // board TC is channel 2 of the CTC counting INT edges, so it rises with the last byte's own
+        // request; on the HC2000 board it is a latch bit the ROM writes after its last transfer.
     }
 
     private void Execute()
@@ -204,8 +306,9 @@ public sealed class Fdc8272
             case 4:
                 unit = command[1] & 3; side = (command[1] >> 2) & 1;
                 var sensed = selectedDrive(unit);
-                // RDY is tied high, not media-presence. Track zero/WP/two-side are drive signals.
-                SetResult((byte)(unit | (side << 2) | 0x20 | (sensed?.HeadPosition == 0 ? 0x10 : 0) |
+                // RDY is tied high on the HC2000 (not media-presence); a board may wire it (DriveReady).
+                // Track zero/WP/two-side are drive signals.
+                SetResult((byte)(unit | (side << 2) | (Ready(unit) ? 0x20 : 0) | (sensed?.HeadPosition == 0 ? 0x10 : 0) |
                     (sensed?.WriteProtected == true ? 0x40 : 0) | (sensed?.Profile.Sides == 2 ? 8 : 0)));
                 return;
             case 8:
@@ -272,7 +375,7 @@ public sealed class Fdc8272
             while (seeking[driveUnit]) SeekStep(driveUnit);
             return;
         }
-        seekClocks[driveUnit] = new(scheduler.Now, checked(timing.MasterHz * StepCycles), timing.FdcHz);
+        seekClocks[driveUnit] = new(scheduler.Now, checked(TimingOf(driveUnit).MasterHz * StepCycles), TimingOf(driveUnit).FdcHz);
         if (diagLog != null) diagLog.AppendLine($"SEEK-START@{scheduler.Now:X6} unit={driveUnit} target={(opcode == 7 ? -1 : command[2])} pcn={pcn[driveUnit]:x2} latch={diagLatch:X2}");
         scheduler.Schedule(new(seekClocks[driveUnit]!.Advance(), EventPhase.Controller,
             deviceId + 2 + driveUnit, 0, scheduler.Generation(deviceId + 2 + driveUnit)));
@@ -299,6 +402,7 @@ public sealed class Fdc8272
         if (done)
         {
             seeking[driveUnit] = false;
+            seekClocks[driveUnit] = null; // the seek is over; the idle-snapshot guard must see no clock
             var failed = target < 0 && drive?.HeadPosition != 0;
             interrupts.Enqueue(((byte)(0x20 | driveUnit | (seekHeads[driveUnit] << 2) | (failed ? 0x50 : 0)), pcn[driveUnit]));
         }
@@ -319,17 +423,18 @@ public sealed class Fdc8272
         n = opcode == 10 ? (byte)0 : opcode == 13 ? command[2] : command[5];
         eot = opcode is 10 or 13 ? (byte)1 : command[6];
         Phase = FdcPhase.Execution;
+        if (!Ready(unit)) { Finish(0, 0, notReady: true); return; }
         if (activeDrive?.WriteProtected == true && (WritesMedia || opcode == 13)) { Finish(2, 0); return; }
         if (n > 6 || (Scanning && command[8] is not (1 or 2)) || (opcode == 13 && command[3] is < 1 or > 29))
         { Finish(4, 0); return; }
         if (activeDrive is null || !activeDrive.MotorOn || activeDrive.Image is null || side >= activeDrive.Profile.Sides)
-        { Enqueue(checked(scheduler.Now + timing.Revolutions(2)), NoData); return; }
+        { Enqueue(checked(scheduler.Now + TimingOf(unit).Revolutions(2)), NoData); return; }
         scheduler.Cancel(unloadTokens[unit]);
         headLoadedAtStart = activeDrive.HeadLoaded;
         activeDrive.HeadLoaded = true;
         loadedDrives[unit] = activeDrive;
-        var start = checked(scheduler.Now + (headLoadedAtStart ? 0 : timing.ControlCycles(HeadLoadCycles)));
-        if (opcode == 13) Enqueue(activeDrive.NextIndex(start, timing), FormatStart);
+        var start = checked(scheduler.Now + (headLoadedAtStart ? 0 : TimingOf(unit).ControlCycles(HeadLoadCycles)));
+        if (opcode == 13) Enqueue(activeDrive.NextIndex(start, TimingOf(unit)), FormatStart);
         else Search(start);
     }
 
@@ -339,14 +444,19 @@ public sealed class Fdc8272
         if (track is null || track.Sectors.Count == 0)
         {
             diagLog.AppendLine($"SRCH@{scheduler.Now:X6} c={c} h={h} r={r} n={n} eot={eot} track=NULL or empty -> NoData");
-            Enqueue(checked(start + timing.Revolutions(2)), NoData); return;
+            Enqueue(checked(start + TimingOf(unit).Revolutions(2)), NoData); return;
+        }
+        if (TrackIsMfm?.Invoke(unit, activeDrive!.HeadPosition, side) is { } recordedMfm && recordedMfm != ((command[0] & 0x40) != 0))
+        {
+            diagLog.AppendLine($"SRCH@{scheduler.Now:X6} c={c} h={h} r={r} mf={(command[0] & 0x40) != 0} recorded mfm={recordedMfm} -> no address mark");
+            Enqueue(checked(start + TimingOf(unit).Revolutions(2)), NoAddressMark); return;
         }
         if (opcode == 10)
         {
             // READ ID reports the next actual angular ID, not a geometry-generated CHRN.
-            sectorIndex = Enumerable.Range(0, track.Sectors.Count).MinBy(i => activeDrive!.NextSector(start, timing, i, track.Sectors.Count));
+            sectorIndex = Enumerable.Range(0, track.Sectors.Count).MinBy(i => activeDrive!.NextSector(start, TimingOf(unit), i, track.Sectors.Count));
             sector = track.Sectors[sectorIndex];
-            Enqueue(activeDrive!.NextSector(start, timing, sectorIndex, track.Sectors.Count), IdDone);
+            Enqueue(activeDrive!.NextSector(start, TimingOf(unit), sectorIndex, track.Sectors.Count), IdDone);
             return;
         }
         if (opcode == 2)
@@ -388,7 +498,7 @@ public sealed class Fdc8272
                 else
                 {
                     diagLog.AppendLine($"SRCH@{scheduler.Now:X6} c={c} h={h} r={r} n={n} eot={eot} track={track.Sectors.Count} NOT FOUND [{string.Join(",", track.Sectors.Select(s => $"R{s.R}"))}]");
-                    Enqueue(checked(start + timing.Revolutions(2)), NoData); return;
+                    Enqueue(checked(start + TimingOf(unit).Revolutions(2)), NoData); return;
                 }
             }
             else
@@ -397,8 +507,8 @@ public sealed class Fdc8272
             }
         }
         sector = track.Sectors[sectorIndex];
-        var due = opcode == 2 && trackCount == 0 ? activeDrive!.NextIndex(start, timing) :
-            activeDrive!.NextSector(start, timing, sectorIndex, track.Sectors.Count);
+        var due = opcode == 2 && trackCount == 0 ? activeDrive!.NextIndex(start, TimingOf(unit)) :
+            activeDrive!.NextSector(start, TimingOf(unit), sectorIndex, track.Sectors.Count);
         Enqueue(due, SearchDone);
     }
 
@@ -416,6 +526,7 @@ public sealed class Fdc8272
         switch (item.Kind)
         {
             case NoData: Finish(4, st2); break;
+            case NoAddressMark: Finish(1, 0); break;
             case IdDone:
                 if (sector is null) { Finish(1, 0); break; }
                 (c, h, r, n) = (sector.C, sector.H, sector.R, sector.N);
@@ -426,13 +537,20 @@ public sealed class Fdc8272
                 transferLength = command[3] * 4; byteIndex = 0;
                 StartBytes(); break;
             case ByteDeadline:
+                if (byteReady && terminal)
+                {
+                    // The last byte, requested when TC came, was not taken in time: after TC it is
+                    // abandoned, not an overrun.
+                    if (WritesMedia) Consume(0); else byteIndex++;
+                    byteReady = false;
+                }
                 if (byteReady) { diagLog.AppendLine($"BD@{item.DueTick:X6} bidx={byteIndex} br=T -> Finish(10)"); Finish(0x10, st2); break; }
                 if (byteIndex >= transferLength)
                 {
                     diagLog.AppendLine($"BD@{item.DueTick:X6} bidx={byteIndex} len={transferLength} -> SectorEnd");
                     // The two on-medium CRC bytes still belong to this sector. ROM TC after its
                     // final INI/OUTI must not accidentally terminate the next sector's ID search.
-                    Enqueue(opcode == 13 ? activeDrive!.NextIndex(scheduler.Now, timing) : byteClock!.Advance(2), SectorEnd);
+                    Enqueue(opcode == 13 ? activeDrive!.NextIndex(scheduler.Now, TimingOf(unit)) : byteClock!.Advance(2), SectorEnd);
                     break;
                 }
                 if (terminal)
@@ -468,8 +586,8 @@ public sealed class Fdc8272
 
     private void StartBytes()
     {
-        var rate = (command[0] & 0x40) != 0 ? timing.MfmBitsPerSecond : timing.MfmBitsPerSecond / 2;
-        byteClock = new(scheduler.Now, checked(timing.MasterHz * 8), rate);
+        var rate = (command[0] & 0x40) != 0 ? TimingOf(unit).MfmBitsPerSecond : TimingOf(unit).MfmBitsPerSecond / 2;
+        byteClock = new(scheduler.Now, checked(TimingOf(unit).MasterHz * 8), rate);
         byteReady = !terminal;
         if (byteReady) { diagBrSet++; diagLog.AppendLine($"SB@{scheduler.Now:X6} bidx=0 br=T term={terminal} len={transferLength}"); }
         if (terminal)
@@ -544,21 +662,29 @@ public sealed class Fdc8272
         Search(scheduler.Now);
     }
 
-    private void Finish(byte status1, byte status2)
+    private void Finish(byte status1, byte status2, bool notReady = false)
     {
         diagLog.AppendLine($"FIN@{scheduler.Now:X6} st1={status1:X2} st2={status2:X2} term={terminal} r={r} eot={eot} ph={Phase} latch={diagLatch:X2} motorTimer={diagMotorTimer} drive={(activeDrive is null ? "null" : activeDrive.GetType().Name)} motorOn={(bool?)(activeDrive?.MotorOn)} headPos={(int?)(activeDrive?.HeadPosition)} wp={(bool?)(activeDrive?.WriteProtected)}");
         // Cancel only pending execution events; unloading and other units' seekers keep their independent clocks.
         foreach (var item in scheduler.PendingEvents.Where(e => e.DeviceId == deviceId && e.Kind != Unload))
             scheduler.Cancel(item.InsertionSequence);
-        var status0 = (byte)(unit | (side << 2) | (status1 != 0 || (status2 & ~8) != 0 ? 0x40 : 0));
+        var status0 = (byte)(unit | (side << 2) | (notReady ? 0x48 : status1 != 0 || (status2 & ~8) != 0 ? 0x40 : 0));
         SetResult(status0, status1, status2, c, h, r, n);
+        resultInterrupt = true;
         if (activeDrive is not null)
         {
             scheduler.Cancel(unloadTokens[unit]);
             if (instant || HeadUnloadCycles == 0) activeDrive.HeadLoaded = false;
-            else unloadTokens[unit] = scheduler.Schedule(new(checked(scheduler.Now + timing.ControlCycles(HeadUnloadCycles)),
+            else unloadTokens[unit] = scheduler.Schedule(new(checked(scheduler.Now + TimingOf(unit).ControlCycles(HeadUnloadCycles)),
                 EventPhase.Controller, deviceId, Unload, scheduler.Generation(deviceId), unit));
         }
+        // The operation is over: drop the op-scoped state (ruling note-20261021-165706) so the
+        // controller is back in the idle Command-phase shape. Clear AFTER the head-unload block
+        // above: it reads activeDrive and schedules the Unload token. Drive head/media state,
+        // the loaded-drive bindings and pcn stay; the unload deadline stays with the scheduler.
+        byteClock = null; sector = null; activeDrive = null;
+        formatIds.Clear(); formattedIds.Clear();
+        scanEqual = scanSatisfied = false;
     }
 
     /// <summary>True when the controller is in a state a logical snapshot may carry: reset phase,
@@ -593,8 +719,9 @@ public sealed class Fdc8272
         pcn = snapshot.PresentCylinders.ToArray();
         lastCommand = snapshot.LastCommand.ToArray();
         lastSt0 = snapshot.LastSt0; lastSt1 = snapshot.LastSt1; lastSt2 = snapshot.LastSt2; lastSt3 = snapshot.LastSt3;
-        for (var i = 0; i < 4; i++) loadedDrives[i] = loaded[i];
+        for (var i = 0; i < 4; i++) { loadedDrives[i] = loaded[i]; polledReady[i] = Ready(i); }
         if (snapshot.PendingInterrupts is { Count: > 0 })
             foreach (var (st, cyl) in snapshot.PendingInterrupts) interrupts.Enqueue((st, cyl));
+        NotifyInterrupt();
     }
 }

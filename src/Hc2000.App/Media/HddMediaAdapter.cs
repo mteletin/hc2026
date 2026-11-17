@@ -7,7 +7,7 @@ namespace Hc2000.App.Media;
 /// Unguarded attach/detach are refused; named remapping requires the native guest-issued hold.</summary>
 public sealed partial class HddMediaAdapter
 {
-    public const int ImageLength = 8_388_608;
+    public const int ImageLength = MediaImageDescriptor.HddImageLength;
     public const string SwitchUnavailable = "Guest-safe HDD switching is unavailable; upgrade BIOS close/flush/reset integration is not present.";
     private readonly int owner = Environment.CurrentManagedThreadId;
     private BlockDiskPort controller;
@@ -20,6 +20,8 @@ public sealed partial class HddMediaAdapter
     private PendingSwitch? pendingSwitch;
     private HddSwitchView? switchView;
     private HddColdVolume? unresolvedSource;
+
+    internal bool SupportsCombinedWorkstation => controller.GuestAckEnabled && controller.CompositeSwitchRefused;
 
     public HddMediaAdapter(BlockDiskPort controller, IEnumerable<HddInitialMedia>? initial = null)
     {
@@ -142,6 +144,7 @@ public sealed partial class HddMediaAdapter
     {
         if (boundSave is not null) throw new InvalidOperationException("HDD save fence is held.");
         if (!controller.GuestAckEnabled) throw new InvalidOperationException(SwitchUnavailable);
+        if (controller.CompositeSwitchRefused) throw new InvalidOperationException(BlockDiskPort.CompositeSwitchRefusal);
         if (pendingSwitch is not null) throw new InvalidOperationException("An HDD switch is already pending.");
         var target = request.Target ?? throw new ArgumentException("A named HDD selection is required.");
         if (target.Identity is null || string.IsNullOrWhiteSpace(target.Identity.Name) || string.IsNullOrWhiteSpace(target.Path))

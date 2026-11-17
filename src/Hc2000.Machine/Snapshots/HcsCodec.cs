@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
@@ -5,7 +6,7 @@ using System.Text.Json;
 
 namespace Hc2000.Machine.Snapshots;
 
-public enum HcsError { InvalidFormat, Checksum, UnsupportedVersion, LimitExceeded, ProfileMismatch, AssetMismatch, StateInconsistent, StateUnsupported }
+public enum HcsError { InvalidFormat, Checksum, UnsupportedVersion, LimitExceeded, ProfileMismatch, AssetMismatch, StateInconsistent, StateUnsupported, ExternalStateUnsupported }
 public sealed class HcsException(HcsError error, string field) : Exception($"{error}: {field}")
 {
     public HcsError Error { get; } = error;
@@ -26,15 +27,120 @@ public sealed record HcsLimits(int TotalBytes = 256 * 1024 * 1024, int ManifestB
     public bool AllowsFileLength(long length) => length >= 0 && length <= TotalBytes;
 }
 
-/// <summary>Owned detached data. No runtime object creation or Machine adoption is performed.</summary>
+/// <summary>Owned detached data from the public codec. The internal synchronous machine-load
+/// path may borrow large blobs from its source until adoption completes; those documents never
+/// escape the load call. No runtime object creation or adoption is performed by the codec.</summary>
 public sealed class HcsDocument
 {
     public JsonElement Manifest { get; }
-    private readonly byte[][] blobs;
-    internal HcsDocument(JsonElement manifest, byte[][] blobs) { Manifest = manifest.Clone(); this.blobs = blobs; }
+    private readonly HcsBlob[] blobs;
+    internal HcsDocument(JsonElement manifest, HcsBlob[] blobs) { Manifest = manifest.Clone(); this.blobs = blobs; }
     public int BlobCount => blobs.Length;
-    internal ReadOnlyMemory<byte> BlobView(uint id) => blobs[checked((int)id - 1)];
-    public byte[] CopyBlob(uint id) => (byte[])blobs[checked((int)id - 1)].Clone();
+    public byte[] CopyBlob(uint id) => blobs[checked((int)id - 1)].Copy();
+
+    /// <summary>Streams a blob into the caller's span without an intermediate whole-blob array
+    /// (pooled 1 MiB chunks for a deferred payload).</summary>
+    internal void CopyBlobTo(uint id, Span<byte> destination) => blobs[checked((int)id - 1)].CopyTo(destination);
+}
+
+/// <summary>One container blob: either the owned materialized array, or a deferred reference into
+/// the source stream that is resolved in bounded pooled chunks, never as one whole-image array.
+/// The type is public because the schema's virtual members name it; all state is internal.</summary>
+public sealed class HcsBlob
+{
+    private const int ChunkBytes = 1024 * 1024;
+    private readonly byte[]? data;
+    private readonly Stream? source;
+    private readonly long offset;
+    internal int Length { get; }
+    internal HcsBlob(byte[] data) { this.data = data; Length = data.Length; }
+    internal HcsBlob(Stream source, long offset, int length) { this.source = source; this.offset = offset; Length = length; }
+    internal bool IsDeferred => source is not null;
+    internal byte[] Copy() => data is not null ? (byte[])data.Clone() : Materialize();
+
+    /// <summary>The blob's bytes: the owned array as-is, a fresh array for a deferred payload.</summary>
+    internal byte[] Materialize()
+    {
+        if (data is not null) return data;
+        var bytes = new byte[Length];
+        CopyTo(bytes);
+        return bytes;
+    }
+
+    internal void CopyTo(Span<byte> destination)
+    {
+        if (data is not null) { data.AsSpan().CopyTo(destination); return; }
+        var chunk = ArrayPool<byte>.Shared.Rent(ChunkBytes);
+        try
+        {
+            source!.Position = offset;
+            int remaining = Length;
+            while (remaining > 0)
+            {
+                var n = Math.Min(chunk.Length, remaining);
+                try { source.ReadExactly(chunk.AsSpan(0, n)); } catch (EndOfStreamException) { Fail(HcsError.InvalidFormat, "blob payload"); }
+                chunk.AsSpan(0, n).CopyTo(destination);
+                destination = destination[n..];
+                remaining -= n;
+            }
+        }
+        finally { ArrayPool<byte>.Shared.Return(chunk); }
+    }
+
+    internal void ReadWindow(long offset, Span<byte> destination)
+    {
+        if (offset < 0 || (ulong)offset + (ulong)destination.Length > (ulong)Length)
+            Fail(HcsError.LimitExceeded, "blob window");
+        if (data is not null) { data.AsSpan((int)offset, destination.Length).CopyTo(destination); return; }
+        source!.Position = this.offset + offset;
+        try { source.ReadExactly(destination); } catch (EndOfStreamException) { Fail(HcsError.InvalidFormat, "blob window"); }
+    }
+
+    internal string Sha256Hex(int start = 0)
+    {
+        if ((uint)start > (uint)Length) throw new ArgumentOutOfRangeException(nameof(start));
+        if (data is not null) return Convert.ToHexStringLower(SHA256.HashData(data.AsSpan(start)));
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var chunk = ArrayPool<byte>.Shared.Rent(ChunkBytes);
+        long previous = source!.Position;
+        try
+        {
+            source.Position = offset + start;
+            int remaining = Length - start;
+            while (remaining > 0)
+            {
+                int count = Math.Min(chunk.Length, remaining);
+                source.ReadExactly(chunk.AsSpan(0, count));
+                hash.AppendData(chunk.AsSpan(0, count));
+                remaining -= count;
+            }
+            return Convert.ToHexStringLower(hash.GetHashAndReset());
+        }
+        finally { source.Position = previous; ArrayPool<byte>.Shared.Return(chunk); }
+    }
+
+    /// <summary>Folds the payload into the running file checksum in pooled chunks, ending with the
+    /// stream positioned just past the payload (the read path's checksum accounting).</summary>
+    internal void AppendTo(IncrementalHash hash)
+    {
+        if (data is not null) { hash.AppendData(data); return; }
+        var chunk = ArrayPool<byte>.Shared.Rent(ChunkBytes);
+        try
+        {
+            source!.Position = offset;
+            int remaining = Length;
+            while (remaining > 0)
+            {
+                var n = Math.Min(chunk.Length, remaining);
+                try { source.ReadExactly(chunk.AsSpan(0, n)); } catch (EndOfStreamException) { Fail(HcsError.InvalidFormat, "blob checksum"); }
+                hash.AppendData(chunk.AsSpan(0, n));
+                remaining -= n;
+            }
+        }
+        finally { ArrayPool<byte>.Shared.Return(chunk); }
+    }
+
+    private static void Fail(HcsError error, string what) => HcsCodec.Fail(error, what);
 }
 
 /// <summary>Pure HCS1 framing. A mandatory trusted schema validates selected profile/device models.
@@ -43,7 +149,14 @@ public static class HcsCodec
 {
     private static ReadOnlySpan<byte> Magic => [0x48, 0x43, 0x53, 0x0d, 0x0a, 0x1a, 0x0a, 0x00];
     internal static void Fail(HcsError error, string field) => throw new HcsException(error, field);
-    public static HcsDocument Read(Stream source, HcsSchema schema, HcsLimits? limits = null)
+    public static HcsDocument Read(Stream source, HcsSchema schema, HcsLimits? limits = null) =>
+        ReadCore(source, schema, limits, false);
+
+    // The machine consumes this document before returning; no deferred source escapes the load.
+    internal static HcsDocument ReadForLoad(Stream source, HcsSchema schema, HcsLimits limits) =>
+        ReadCore(source, schema, limits, true);
+
+    private static HcsDocument ReadCore(Stream source, HcsSchema schema, HcsLimits? limits, bool deferLargeBlobs)
     {
         ArgumentNullException.ThrowIfNull(schema);
         var l = limits ?? new();
@@ -71,7 +184,7 @@ public static class HcsCodec
         schema.ReserveCopies((long)total);
         var json = Take((int)manifestLength);
         using var manifest = Parse(json, l);
-        var blobs = new byte[(int)count][];
+        var blobs = new HcsBlob[(int)count];
         for (int i = 0; i < blobs.Length; i++)
         {
             if ((ulong)consumed + 44 > total) Fail(HcsError.InvalidFormat, "blob header");
@@ -94,15 +207,22 @@ public static class HcsCodec
                     source.Position = checked(payloadStart + offset);
                     try { source.ReadExactly(destination); } catch (EndOfStreamException) { Fail(HcsError.InvalidFormat, "blob probe"); }
                 }
-                try
-                {
-                    if (!schema.AdmitLargeBlob(manifest.RootElement, (uint)i + 1, (int)length, Window, blobs, l))
-                        Fail(HcsError.LimitExceeded, "blob length");
-                }
-                finally { source.Position = payloadStart; }
+                if (!schema.AdmitLargeBlob(manifest.RootElement, (uint)i + 1, (int)length, Window, blobs, l))
+                    Fail(HcsError.LimitExceeded, "blob length");
+                // Deferred: no whole-image array. The payload is accounted into the file checksum
+                // in pooled chunks, which also leaves the stream just past the payload for the next record.
+                blobs[i] = new HcsBlob(source, payloadStart, (int)length);
+                // Public Read owns its bytes: freeze before the second admission check,
+                // so that check validates the actual payload, not another source probe.
+                // Synchronous machine loads retain the bounded deferred path.
+                if (!deferLargeBlobs) blobs[i] = new HcsBlob(blobs[i].Materialize());
+                blobs[i].AppendTo(hash);
+                consumed += (long)length;
             }
-            blobs[i] = Take((int)length);
+            else blobs[i] = new HcsBlob(Take((int)length));
+            long payloadEnd = source.CanSeek ? source.Position : 0;
             CheckOwnedBlob(schema, manifest.RootElement, blobs, (uint)i + 1, l);
+            if (source.CanSeek) source.Position = payloadEnd;
         }
         if ((ulong)consumed + 32 != total) Fail(HcsError.InvalidFormat, "totalFileLength");
         var checksum = Take(32, false);
@@ -116,8 +236,9 @@ public static class HcsCodec
     public static void Write(Stream destination, JsonElement manifest, IReadOnlyList<byte[]> blobs, HcsSchema schema, HcsLimits? limits = null) =>
         WriteCore(destination, manifest, blobs, schema, limits, false);
 
-    // Only MachineSnapshot's private capture arrays may take this path. They are already
-    // detached from live stores and never exposed to a caller; public Write still freezes inputs.
+    // Only MachineSnapshot may take this path: detached captures for external streams,
+    // or synchronous RAM borrowing into its private output buffer (no caller callbacks).
+    // Public Write still freezes inputs.
     internal static void WriteOwned(Stream destination, JsonElement manifest, IReadOnlyList<byte[]> blobs, HcsSchema schema, HcsLimits limits) =>
         WriteCore(destination, manifest, blobs, schema, limits, true);
 
@@ -134,11 +255,13 @@ public static class HcsCodec
         if (total > l.TotalBytes) Fail(HcsError.LimitExceeded, "file");
         schema.ReserveCopies(total);
         schema.Prevalidate(parsed.RootElement, blobs.Count, l);
-        for (int i = 0; i < blobs.Count; i++) CheckOwnedBlob(schema, parsed.RootElement, blobs, (uint)i + 1, l);
-        schema.Validate(parsed.RootElement, blobs.ToArray(), l);
+        var handles = blobs.Select(b => new HcsBlob(b)).ToArray();
+        for (int i = 0; i < handles.Length; i++) CheckOwnedBlob(schema, parsed.RootElement, handles, (uint)i + 1, l);
+        schema.Validate(parsed.RootElement, handles, l);
         var owned = ownsBlobs ? blobs.ToArray() : blobs.Select(b => (byte[])b.Clone()).ToArray();
-        for (int i = 0; i < owned.Length; i++) CheckOwnedBlob(schema, parsed.RootElement, owned, (uint)i + 1, l);
-        schema.Validate(parsed.RootElement, owned, l);
+        var ownedHandles = owned.Select(b => new HcsBlob(b)).ToArray();
+        for (int i = 0; i < ownedHandles.Length; i++) CheckOwnedBlob(schema, parsed.RootElement, ownedHandles, (uint)i + 1, l);
+        schema.Validate(parsed.RootElement, ownedHandles, l);
         byte[] header = new byte[32]; Magic.CopyTo(header);
         BinaryPrimitives.WriteUInt16LittleEndian(header.AsSpan(8), 1);
         BinaryPrimitives.WriteUInt64LittleEndian(header.AsSpan(16), (ulong)total);
@@ -157,17 +280,17 @@ public static class HcsCodec
         destination.Write(hash.GetHashAndReset());
     }
 
-    private static void CheckOwnedBlob(HcsSchema schema, JsonElement manifest, IReadOnlyList<byte[]> blobs, uint id, HcsLimits limits)
+    private static void CheckOwnedBlob(HcsSchema schema, JsonElement manifest, IReadOnlyList<HcsBlob> blobs, uint id, HcsLimits limits)
     {
-        var bytes = blobs[(int)id - 1];
-        if (bytes.Length <= limits.BlobBytes) return;
+        var blob = blobs[(int)id - 1];
+        if (blob.Length <= limits.BlobBytes) return;
         void Window(long offset, Span<byte> destination)
         {
-            if (offset < 0 || destination.Length > 18 || offset > bytes.Length - destination.Length)
+            if (offset < 0 || destination.Length > 18 || (ulong)offset + (ulong)destination.Length > (ulong)blob.Length)
                 Fail(HcsError.LimitExceeded, "owned blob probe window");
-            bytes.AsSpan((int)offset, destination.Length).CopyTo(destination);
+            blob.ReadWindow(offset, destination);
         }
-        if (!schema.AdmitLargeBlob(manifest, id, bytes.Length, Window, blobs, limits)) Fail(HcsError.LimitExceeded, "blob");
+        if (!schema.AdmitLargeBlob(manifest, id, blob.Length, Window, blobs, limits)) Fail(HcsError.LimitExceeded, "blob");
     }
 
     private static JsonDocument Parse(byte[] json, HcsLimits l)

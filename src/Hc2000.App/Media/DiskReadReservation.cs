@@ -159,9 +159,9 @@ internal static class DiskReadReservation
         /// protection in either case.</summary>
         private static LinuxImageAdmissionNative.Facts FileAt(string path)
         {
-            try { return LinuxImageAdmissionNative.FileAt(path, false); }
+            try { return ImageAdmissionNative.FileAt(path, false); }
             catch (AdmissionException ex) when (ex.Refusal == ImageAdmissionRefusal.InvalidDomain)
-            { return LinuxImageAdmissionNative.FileAt(path, true); }
+            { return ImageAdmissionNative.FileAt(path, true); }
         }
 
         /// <summary>Explicit no-reply acknowledgement: the owner refused or the reply was lost, and the host
@@ -215,15 +215,15 @@ internal static class DiskReadReservation
     }
 
     // Reads the already-opened, already-validated source so the dispatched bytes are the validated inode's bytes.
-    private static async Task<ImmutableArray<byte>> ReadBoundedAsync(FileStream source)
+    private static async Task<ImmutableArray<byte>> ReadBoundedAsync(FileStream source, int maxBytes)
     {
-        if (source.Length > MediaFiles.MaxDiskBytes) throw new InvalidDataException("Media file exceeds the size limit.");
+        if (source.Length > maxBytes) throw new InvalidDataException("Media file exceeds the size limit.");
         using var output = new MemoryStream();
         var buffer = new byte[65536];
         int length;
         while ((length = await source.ReadAsync(buffer)) != 0)
         {
-            if (output.Length + length > MediaFiles.MaxDiskBytes) throw new InvalidDataException("Media file exceeds the size limit.");
+            if (output.Length + length > maxBytes) throw new InvalidDataException("Media file exceeds the size limit.");
             output.Write(buffer, 0, length);
         }
         return ImmutableArray.CreateRange(output.ToArray());
@@ -270,12 +270,12 @@ internal static class DiskReadReservation
                 for (var j = i + 1; j < slots.Length; j++)
                     if (slots[i] == slots[j])
                         throw new ArgumentException("The configured membership names a disk twice.", nameof(configured));
-            var guarded = NativeImageAdmission.PlatformMode == ImageAdmissionPlatformMode.GuardedLinux;
+            var guarded = NativeImageAdmission.IsGuarded;
             NativeImageAdmission? admission = null;
             if (guarded)
             {
                 var result = NativeImageAdmission.TryAcquireColdRead(cancellationToken);
-                admission = result.Admission ?? throw new AdmissionException(result.Refusal!.Value);
+                admission = result.RequireAdmission();
             }
             return new Operation(slots, admission);
         }
@@ -316,7 +316,14 @@ internal static class DiskReadReservation
         /// returned reservation borrows the parent fence and never disposes it. A failed member is terminal
         /// (pre-enqueue), the fence stays held by the operation, and the host aborts the whole configured
         /// start before any enqueue instead of dispatching a partial set.</summary>
-        internal async Task<Reservation> ReadMemberAsync(DiskSlot slot, string path, CancellationToken cancellationToken = default)
+        internal Task<Reservation> ReadMemberAsync(DiskSlot slot, string path, CancellationToken cancellationToken = default)
+            => ReadMemberBoundedAsync(slot, path, MediaFiles.MaxDiskBytes, cancellationToken);
+
+        // Content observation only: this does not grant A/B dispatch of raw HDD bytes.
+        internal Task<Reservation> ReadHddSeedAsync(DiskSlot slot, string path, CancellationToken cancellationToken = default)
+            => ReadMemberBoundedAsync(slot, path, 8_388_608, cancellationToken);
+
+        private async Task<Reservation> ReadMemberBoundedAsync(DiskSlot slot, string path, int maxBytes, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var index = IndexOf(slot);
@@ -339,7 +346,7 @@ internal static class DiskReadReservation
                 // concurrent named drain (machine reset, window close, worker completion) awaits this
                 // read before the fence goes away: the source descriptor and its async I/O are always
                 // drained before the fence is released.
-                read = ReadMemberCoreAsync(reservation, canonical, cancellationToken);
+                read = ReadMemberCoreAsync(reservation, canonical, maxBytes, cancellationToken);
                 inFlight[index] = read;
             }
             try
@@ -356,7 +363,7 @@ internal static class DiskReadReservation
             }
         }
 
-        private async Task<Reservation> ReadMemberCoreAsync(Reservation reservation, string canonical, CancellationToken cancellationToken)
+        private async Task<Reservation> ReadMemberCoreAsync(Reservation reservation, string canonical, int maxBytes, CancellationToken cancellationToken)
         {
             FileStream? source = null;
             try
@@ -382,8 +389,8 @@ internal static class DiskReadReservation
                 try
                 {
                     var bytes = guarded
-                        ? await ReadBoundedAsync(source!)
-                        : await MediaFiles.ReadAsync(canonical, MediaFiles.MaxDiskBytes);
+                        ? await ReadBoundedAsync(source!, maxBytes)
+                        : await MediaFiles.ReadAsync(canonical, maxBytes);
                     reservation.ReadCurrent(bytes);
                 }
                 catch

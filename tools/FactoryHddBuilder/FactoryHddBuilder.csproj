@@ -4,6 +4,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Hc2000.Machine/Hc2000.Machine.csproj" />
+    <Compile Include="../../src/HostShared/PublicGuestPayload.cs" Link="HostShared/PublicGuestPayload.cs" />
     <Compile Include="../../src/HostShared/HddFactoryImages.cs" Link="HostShared/HddFactoryImages.cs" />
+    <Compile Include="../../src/HostShared/CBootImages.cs" Link="HostShared/CBootImages.cs" />
+    <Compile Include="../../src/HostShared/DiskInventory.cs" Link="HostShared/DiskInventory.cs" />
+    <Compile Include="../../src/HostShared/WorkstationLayout.cs" Link="HostShared/WorkstationLayout.cs" />
   </ItemGroup>
 </Project>

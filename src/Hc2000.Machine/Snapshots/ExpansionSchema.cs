@@ -20,7 +20,14 @@ internal static class ExpansionSchema
         IncludeFields = true, UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         RespectRequiredConstructorParameters = true
     };
-    internal static bool Enabled(MachineProfile profile) => profile.Name == "hc2000-v2-paged-expansion-v1";
+    internal static bool Enabled(MachineProfile profile) =>
+        profile.Name is "hc2000-v2-paged-expansion-v1" or "hc2000-v2-cpnet-v1" or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2";
+
+    /// <summary>The full-X5 identity: the step-1 component keeps its 16 compute units, the
+    /// separate expansion-x5 component carries the driver roster and the managed maps, and the
+    /// main event binds to the main map's recorded fault.</summary>
+    internal static bool X5(MachineProfile profile) => profile.Name is "hc2000-v2-paged-expansion-x5-v1"
+        or "hc2000-v2-paged-expansion-x5-hdd-guest-v1" or "hc2000-v2-full-workstation-v1";
 
     internal static JsonElement Encode(ExpansionSnapshotState state)
     {
@@ -31,7 +38,7 @@ internal static class ExpansionSchema
     }
 
     internal static JsonElement ValidateCaptured(ExpansionSnapshotState state, CpuLogicalState cpu,
-        DeviceScheduler scheduler, CpuTimeMapper mapper, ushort mainBank)
+        DeviceScheduler scheduler, CpuTimeMapper mapper, ushort mainBank, ExpansionX5State? x5 = null)
     {
         var encoded = Encode(state);
         CheckCpuSize(encoded.GetProperty("Main"));
@@ -46,19 +53,31 @@ internal static class ExpansionSchema
                 now = Number(scheduler.Now), dividerNumerator = Number(mapper.Numerator),
                 dividerDenominator = Number(mapper.Denominator), mapperWhole = Number(mapper.WholeTicks),
                 mapperRemainder = Number(mapper.Remainder),
+                mapperRemainderDenominator = Number(mapper.RemainderDenominator),
+                lastCpuTStates = Number(mapper.CpuTStates),
                 deviceGenerations = scheduler.DeviceGenerations.Select(g => new { id = "device-" + g.DeviceId })
             },
             events = scheduler.PendingEvents.Select(e => new
             {
                 deviceId = "device-" + e.DeviceId, dueTick = Number(e.DueTick), phase = (uint)e.Phase,
-                kind = "kind-" + e.Kind, payload = new { value = Number(e.Payload) }
+                kind = "kind-" + e.Kind, payload = new { value = Number(e.Payload) },
+                dueLogical = e.DueTime is { } due ? new { whole = Number(due.WholeTicks), numerator = Number(due.FractionNumerator), denominator = Number(due.FractionDenominator) } : null
             })
         });
-        Validate(state, manifest);
+        if (x5 is not null)
+        {
+            // The capture path admits the full-X5 file the same way the load path does: the step-1
+            // component with the X5 context (main fault, driver events) plus the cross-component
+            // admission, before Save writes anything.
+            var decoded = ExpansionX5Schema.Read(ExpansionX5Schema.Encode(x5));
+            Validate(state, manifest, decoded, true);
+            ExpansionX5Schema.ValidateHcs(state, decoded, manifest);
+        }
+        else Validate(state, manifest);
         return encoded;
     }
 
-    internal static ExpansionSnapshotState Read(JsonElement manifest)
+    internal static ExpansionSnapshotState Read(JsonElement manifest, bool x5Profile = false, ExpansionX5State? x5 = null)
     {
         try
         {
@@ -66,6 +85,8 @@ internal static class ExpansionSchema
             var element = component.GetProperty("state");
             if (Encoding.UTF8.GetByteCount(element.GetRawText()) > MetadataBytes) throw Invalid();
             var units = element.GetProperty("Units");
+            // The step-1 component keeps its 16 compute units; driver units 17..16+n belong to the
+            // separate expansion-x5 component (design x5-slice-design v2).
             if (units.GetArrayLength() != ExpansionArena.ComputeCount) throw Invalid();
             CheckCpuSize(element.GetProperty("Main"));
             foreach (var unit in units.EnumerateArray())
@@ -81,7 +102,7 @@ internal static class ExpansionSchema
             // Reject missing/redundant contradictory register aliases, duplicate or ignored fields,
             // and any noncanonical dead state rather than silently repairing an input document.
             if (!JsonElement.DeepEquals(element, Encode(s))) throw Invalid();
-            Validate(s, manifest);
+            Validate(s, manifest, x5, x5Profile);
             return s;
         }
         catch (Exception e) when (e is JsonException or ArgumentException or InvalidOperationException or
@@ -108,25 +129,42 @@ internal static class ExpansionSchema
             s.NmiPending, s.LdAirPending, s.InterruptBug, r.IM, (byte)s.EiDelay, s.TStates);
     }
 
-    private static void Validate(ExpansionSnapshotState s, JsonElement manifest)
+    private static void Validate(ExpansionSnapshotState s, JsonElement manifest, ExpansionX5State? x5 = null, bool x5Profile = false)
     {
         if (s.Version != 1 || s.MainKind != "main" || s.Units is not { Length: ExpansionArena.ComputeCount }) throw Invalid();
         Cpu.ValidateFrontierState(s.Main);
         if (s.Main.Pending is null || Logical(s.Main) != CpuLogicalState.FromJson(manifest.GetProperty("cpu"), true)) throw Invalid();
         var clock = manifest.GetProperty("clock"); var now = Counter(clock, "now");
-        if (Counter(clock, "dividerNumerator") != 5 || Counter(clock, "dividerDenominator") != 1 ||
-            Counter(clock, "mapperRemainder") != 0 || Counter(clock, "mapperWhole") != checked(s.Main.TStates * 5) ||
-            checked(s.Main.TStates * 5) > now) throw Invalid();
+        var pnum = Counter(clock, "dividerNumerator"); var den = Counter(clock, "dividerDenominator");
+        var mapperWhole = Counter(clock, "mapperWhole"); var mapperRemainder = Counter(clock, "mapperRemainder");
+        var mapperDen = clock.TryGetProperty("mapperRemainderDenominator", out var mapperDenElement)
+            ? Counter(clock, "mapperRemainderDenominator") : den;
+        var lastCpuT = Counter(clock, "lastCpuTStates");
+        // The main frontier runs at the admitted rate, not a hardcoded 5/1. The clock section is the
+        // anchor: exact time at the committed counter. A legacy document is the zero epoch (5/1,
+        // integer), so the checks below reduce to the original integer identity for it.
+        var mapper = new CpuTimeMapper(pnum, den);
+        try { mapper.Restore(lastCpuT, mapperWhole, mapperRemainder, mapperDen); }
+        catch (ArgumentOutOfRangeException) { throw Invalid(); }
+        if (lastCpuT != s.Main.TStates || mapper.ExactTime().WholeTicks > now) throw Invalid();
+        var mainPendingDue = mapper.ExactTimeAt(s.Main.Pending.Value.AtCpuTState);
+        if (mainPendingDue <= mapper.ExactTime()) throw Invalid();
         var memory = manifest.GetProperty("components").EnumerateArray().Single(c => c.GetProperty("id").GetString() == "memory").GetProperty("state");
-        var mainBank = memory.GetProperty("paged").GetProperty("bank").GetUInt16();
+        // A session that has not engaged its paged window saves without the paged latches (the
+        // tape reservation is disengaged); the restore path treats the absent block as bank 0, so
+        // the admission cross-check must read it the same way instead of refusing the document.
+        var mainBank = memory.TryGetProperty("paged", out var paged) && paged.ValueKind == JsonValueKind.Object
+            ? paged.GetProperty("bank").GetUInt16() : (ushort)0;
         var pages = new HashSet<ushort>();
         var live = s.Units.Where(u => u.ExchangeOwner != 0).ToArray();
         if (live.Length > 1) throw Invalid();
-        var expected = new Dictionary<int, long> { [ExpansionFrontierDriver.FirstCpuDeviceId] = checked(s.Main.Pending.Value.AtCpuTState * 5) };
+        var expected = new Dictionary<int, long>();
+        if (x5?.Maps[0].Fault is null)
+            expected.Add(ExpansionFrontierDriver.FirstCpuDeviceId, mainPendingDue.WholeTicks);
         for (var index = 0; index < s.Units.Length; index++)
         {
             var u = s.Units[index]; var grant = u.Grant;
-            if (u.Kind != "compute" || grant.UnitId != index + 1 || grant.ResourceEpoch == 0 || grant.MapEpoch == 0 ||
+            if (u.Kind is not ("compute" or "driver") || grant.UnitId != index + 1 || grant.ResourceEpoch == 0 || grant.MapEpoch == 0 ||
                 u.ExecutionEpoch == 0 || !Enum.IsDefined(u.Lifecycle) || !Enum.IsDefined(u.SavedLifecycle) ||
                 u.SavedLifecycle is ExpansionLifecycle.Paused or ExpansionLifecycle.Faulted ||
                 !Enum.IsDefined(u.RequestedMailboxEffect) || u.HandoverHalt ||
@@ -155,25 +193,44 @@ internal static class ExpansionSchema
             }
         }
         if (live.Length == 1 && pages.Contains(live[0].ExchangePreviousBank)) throw Invalid();
-        ValidateRoot(s.Root, s.Units);
+        ValidateRoot(s.Root, s.Units, x5);
         var generationIds = clock.GetProperty("deviceGenerations").EnumerateArray().Select(g => g.GetProperty("id").GetString()).ToHashSet();
-        for (var id = 1000; id <= 1016; id++) if (!generationIds.Contains("device-" + id)) throw Invalid();
+        for (var id = 1000; id <= ExpansionFrontierDriver.FirstCpuDeviceId + ExpansionArena.ComputeCount; id++) if (!generationIds.Contains("device-" + id)) throw Invalid();
         foreach (var e in manifest.GetProperty("events").EnumerateArray())
         {
             var id = e.GetProperty("deviceId").GetString()!;
-            var cpu = int.TryParse(id.AsSpan("device-".Length), NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n is >= 1000 and <= 1016;
-            if (!cpu) { if (e.GetProperty("phase").GetUInt32() == 5) throw Invalid(); continue; }
-            if (!expected.Remove(n, out var tick) || tick <= now || tick != Counter(e, "dueTick") ||
+            var cpu = int.TryParse(id.AsSpan("device-".Length), NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n is >= ExpansionFrontierDriver.FirstCpuDeviceId and <= ExpansionFrontierDriver.FirstCpuDeviceId + ExpansionArena.ComputeCount;
+            if (!cpu)
+            {
+                if (x5Profile && x5 is not null && n >= ExpansionFrontierDriver.FirstCpuDeviceId + ExpansionArena.DriverFirst &&
+                    n < ExpansionFrontierDriver.FirstCpuDeviceId + ExpansionArena.DriverFirst + x5.Drivers.Length) continue;
+                if (e.GetProperty("phase").GetUInt32() == 5) throw Invalid();
+                continue;
+            }
+            // The main frontier's exact due may sit mid-tick at a fractional rate, so its floor can
+            // equal the boundary's floor: compare the exact dueLogical to the boundary. Side units
+            // keep their faithful integer tick, so their floor must be strictly later.
+            if (!expected.Remove(n, out var tick) || tick != Counter(e, "dueTick") ||
                 e.GetProperty("phase").GetUInt32() != 5 || e.GetProperty("kind").GetString() != "kind-0" ||
                 Counter(e.GetProperty("payload"), "value") != 0) throw Invalid();
+            // The main frontier's exact due may sit mid-tick at a fractional rate, so its floor can
+            // equal the boundary's floor: compare the exact dueLogical to the boundary. Side units
+            // keep their faithful integer tick, so their floor must be strictly later.
+            LogicalTime? exactDue = null;
+            if (n == ExpansionFrontierDriver.FirstCpuDeviceId && e.TryGetProperty("dueLogical", out var dueEl) && dueEl.ValueKind == JsonValueKind.Object)
+                exactDue = new LogicalTime(Counter(dueEl, "whole"), Counter(dueEl, "numerator"), Counter(dueEl, "denominator"));
+            var dueAdmitted = exactDue is { } due
+                ? due.WholeTicks == tick && due > LogicalTime.Tick(now) && due == mainPendingDue
+                : tick > now;
+            if (!dueAdmitted) throw Invalid();
         }
         if (expected.Count != 0) throw Invalid();
     }
 
-    private static void ValidateRoot(ExpansionRootState r, ExpansionUnitState[] units)
+    private static void ValidateRoot(ExpansionRootState r, ExpansionUnitState[] units, ExpansionX5State? x5)
     {
         if (r.Staging is null || r.Staging.Length > ExpansionController.HeaderBytes + ExpansionController.MaxRequestPayload ||
-            r.ResponseCursor < 0 || !Enum.IsDefined(r.LastResult) || r.PendingId > ExpansionArena.ComputeCount ||
+            r.ResponseCursor < 0 || !Enum.IsDefined(r.LastResult) || r.PendingId > units.Length + (x5?.Drivers.Length ?? 0) ||
             r.Overflow && r.Staging.Length != ExpansionController.HeaderBytes + ExpansionController.MaxRequestPayload ||
             r.Response is null && r.ResponseCursor != 0 || r.Collecting && (r.Response is not null || r.PendingId != 0)) throw Invalid();
         if (r.Response is { } response)
@@ -183,7 +240,7 @@ internal static class ExpansionSchema
                 BinaryPrimitives.ReadUInt32LittleEndian(response.AsSpan(4)) != response.Length - 40) throw Invalid();
         }
         if (r.PendingId == 0) { if (r.PendingOperation != 0) throw Invalid(); return; }
-        var u = units[r.PendingId - 1];
+        var u = r.PendingId <= units.Length ? units[r.PendingId - 1] : x5!.Drivers[r.PendingId - 1 - units.Length];
         if (r.Latched != r.PendingId || r.Collecting || r.Response is not null || r.Overflow ||
             r.PendingOperation is not (2 or 6) || r.Staging.Length != 40 || r.Staging[0] != 1 ||
             r.Staging[1] != r.PendingOperation || r.Staging[2] != 0 || r.Staging[3] != 0 ||

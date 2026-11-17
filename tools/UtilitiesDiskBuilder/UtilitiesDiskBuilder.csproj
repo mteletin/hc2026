@@ -7,5 +7,7 @@
     <ProjectReference Include="../../src/Hc2000.Asm/Hc2000.Asm.csproj" />
     <ProjectReference Include="../UpgradeBiosBuilder/UpgradeBiosBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
     <Compile Include="../../src/HostShared/CpmUtilitiesImages.cs" Link="HostShared/CpmUtilitiesImages.cs" />
+    <Compile Include="../../src/HostShared/HddFactoryImages.cs" Link="HostShared/HddFactoryImages.cs" />
+    <Compile Include="../../src/HostShared/CBootImages.cs" Link="HostShared/CBootImages.cs" />
   </ItemGroup>
 </Project>

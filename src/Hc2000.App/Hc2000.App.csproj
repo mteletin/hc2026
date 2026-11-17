@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <Hc2000PublicDistribution Condition="'$(Hc2000PublicDistribution)' == '' And !Exists('$(MSBuildProjectDirectory)/../../src-library')">true</Hc2000PublicDistribution>
+    <PublicGuestPayloadRoot>$(MSBuildProjectDirectory)/../../build/guest-payload</PublicGuestPayloadRoot>
+    <PublicFactoryArgument Condition="'$(Hc2000PublicDistribution)' == 'true'">--public</PublicFactoryArgument>
     <!-- Match the target, not the build host: installers are cross-built on Linux.
          Keep an explicit Linux RID a console executable even on a Windows host. -->
     <OutputType Condition="$(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows')))">WinExe</OutputType>
@@ -18,31 +21,39 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hc2000.Machine\Hc2000.Machine.csproj" />
+    <ProjectReference Include="../Hc2000.Configuration/Hc2000.Configuration.csproj" />
     <ProjectReference Include="..\Hc2000.Disasm\Hc2000.Disasm.csproj" />
     <!-- This is a build-host tool, even when cross-publishing the App. -->
     <ProjectReference Include="../../tools/FactoryHddBuilder/FactoryHddBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
     <ProjectReference Include="../../tools/UtilitiesDiskBuilder/UtilitiesDiskBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
+    <ProjectReference Include="../../tools/CpNetSprBuilder/CpNetSprBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
+    <ProjectReference Include="../../tools/WorkstationSystemDiskBuilder/WorkstationSystemDiskBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
     <EmbeddedResource Include="..\..\software\demos\z80-visual.bin" LogicalName="Hc2000.App.Demos.z80-visual.bin" />
     <EmbeddedResource Include="..\..\software\demos\z80-visual-negative.bin" LogicalName="Hc2000.App.Demos.z80-visual-negative.bin" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../HostShared/CBootImages.cs" Link="HostShared/CBootImages.cs" />
     <Compile Include="../HostShared/HddFactoryImages.cs" Link="HostShared/HddFactoryImages.cs" />
     <Compile Include="../HostShared/HddContainerPublication.cs" Link="HostShared/HddContainerPublication.cs" />
     <Compile Include="../HostShared/MediaHomeCreate.cs" Link="HostShared/MediaHomeCreate.cs" />
     <Compile Include="../HostShared/NativeImageAdmission.cs" Link="HostShared/NativeImageAdmission.cs" />
+    <Compile Include="../HostShared/WindowsImageAdmissionNative.cs" Link="HostShared/WindowsImageAdmissionNative.cs" />
+    <Compile Include="../HostShared/ImageAdmissionNative.cs" Link="HostShared/ImageAdmissionNative.cs" />
     <Compile Include="../HostShared/LinuxImageAdmissionNative.cs" Link="HostShared/LinuxImageAdmissionNative.cs" />
     <Compile Include="../HostShared/ImageAdmissionRecord.cs" Link="HostShared/ImageAdmissionRecord.cs" />
+    <Compile Include="../HostShared/CpmFileLocator.cs" Link="HostShared/CpmFileLocator.cs" />
   </ItemGroup>
   <PropertyGroup>
     <FactoryHddOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/factory-hdd/</FactoryHddOutput>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="$(FactoryHddOutput)HC2000-HDD.hdd;$(FactoryHddOutput)factory-hdd.sha256"
+    <Content Include="$(FactoryHddOutput)HC2000-HDD.hdd;$(FactoryHddOutput)factory-hdd.sha256;$(FactoryHddOutput)factory-c-tools-manifest.json;$(FactoryHddOutput)HC2000-CBOOT-C.DSK;$(FactoryHddOutput)HC2000-WORKSTATION.hdd"
              Link="disks/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-  <Target Name="GenerateFactoryHddImages" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
-    <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/FactoryHddBuilder/bin/$(Configuration)/$(TargetFramework)/FactoryHddBuilder.dll&quot; &quot;$(FactoryHddOutput)&quot;" />
+  <Target Name="GenerateFactoryHddImages" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences;GenerateUtilitiesDisks" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/FactoryHddBuilder/bin/$(Configuration)/$(TargetFramework)/FactoryHddBuilder.dll&quot; &quot;$(FactoryHddOutput)&quot; &quot;$(UtilitiesDiskOutput)&quot; &quot;$(MSBuildProjectDirectory)/../../disks/cpm/BOOTIMG.000&quot; &quot;$(MSBuildProjectDirectory)/../../disks/cpm/SHELL.SYS&quot; &quot;$(MSBuildProjectDirectory)/../../disks/cpm/BOOTIMG-WS.000&quot; &quot;$(MSBuildProjectDirectory)/../../disks/cpm/SHELL-WS.SYS&quot; &quot;$(MSBuildProjectDirectory)/../../disks/cpm/BDOS-WS.SYS&quot; &quot;$(MSBuildProjectDirectory)/../..&quot; $(PublicFactoryArgument)" />
   </Target>
+  <Import Project="ExpansionMailbox.targets" />
   <PropertyGroup>
     <UtilitiesDiskOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/utilities-disks/</UtilitiesDiskOutput>
   </PropertyGroup>
@@ -50,7 +61,39 @@
     <Content Include="$(UtilitiesDiskOutput)HC2000-UTIL.DSK;$(UtilitiesDiskOutput)HC2000-UTIL-8M.DSK;$(UtilitiesDiskOutput)CPM22-HC-ram-paged-upgrade.DSK;$(UtilitiesDiskOutput)utilities-manifest.json;$(UtilitiesDiskOutput)m-v1-source-fit.txt"
              Link="disks/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <!-- The producer runs on each build; include its source inputs in IDE fast up-to-date checks too. -->
+  <ItemGroup>
+    <UpToDateCheckInput Include="../../bios/src/hc2000/upgrade/*.asm;../../bios/src/hc2000/upgrade/*.inc;../../software/tools/cpm-stress/*.asm" />
+  </ItemGroup>
   <Target Name="GenerateUtilitiesDisks" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
-    <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/UtilitiesDiskBuilder/bin/$(Configuration)/$(TargetFramework)/UtilitiesDiskBuilder.dll&quot; &quot;$(MSBuildProjectDirectory)/../..&quot; &quot;$(UtilitiesDiskOutput)&quot;" />
+    <Exec Condition="'$(Hc2000PublicDistribution)' != 'true'" Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/UtilitiesDiskBuilder/bin/$(Configuration)/$(TargetFramework)/UtilitiesDiskBuilder.dll&quot; &quot;$(MSBuildProjectDirectory)/../..&quot; &quot;$(UtilitiesDiskOutput)&quot;" />
+    <Exec Condition="'$(Hc2000PublicDistribution)' == 'true'" Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/FactoryHddBuilder/bin/$(Configuration)/$(TargetFramework)/FactoryHddBuilder.dll&quot; copy-public &quot;$(PublicGuestPayloadRoot)&quot; utilities &quot;$(UtilitiesDiskOutput)&quot;" />
   </Target>
+  <PropertyGroup>
+    <CpNetDiskOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/cpnet-disks/</CpNetDiskOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="$(CpNetDiskOutput)HC2000-CPNET.DSK" Link="disks/HC2000-CPNET.DSK" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="GenerateCpNetDisk" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Condition="'$(Hc2000PublicDistribution)' != 'true'" Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/CpNetSprBuilder/bin/$(Configuration)/$(TargetFramework)/CpNetSprBuilder.dll&quot; &quot;$(MSBuildProjectDirectory)/../..&quot; &quot;$(CpNetDiskOutput)&quot;" />
+    <Exec Condition="'$(Hc2000PublicDistribution)' == 'true'" Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/FactoryHddBuilder/bin/$(Configuration)/$(TargetFramework)/FactoryHddBuilder.dll&quot; copy-public &quot;$(PublicGuestPayloadRoot)&quot; cpnet &quot;$(CpNetDiskOutput)&quot;" />
+  </Target>
+  <PropertyGroup>
+    <WorkstationDiskOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)/$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/workstation-disks/</WorkstationDiskOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The shipped unbound-template base media for the combined-workstation A: launch
+         preparation (the workstation flag): its TAPEINIT binds at launch to the live tape session. -->
+    <Content Include="$(WorkstationDiskOutput)CPM22-HC-ram-paged-v2-workstation.DSK;$(WorkstationDiskOutput)workstation-manifest.json"
+             Link="disks/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="GenerateWorkstationDisk" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences;GenerateUtilitiesDisks" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Condition="'$(Hc2000PublicDistribution)' != 'true'" Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/WorkstationSystemDiskBuilder/bin/$(Configuration)/$(TargetFramework)/WorkstationSystemDiskBuilder.dll&quot; &quot;$(MSBuildProjectDirectory)/../..&quot; &quot;$(UtilitiesDiskOutput)HC2000-UTIL.DSK&quot; &quot;$(WorkstationDiskOutput)&quot;" />
+    <Exec Condition="'$(Hc2000PublicDistribution)' == 'true'" Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/FactoryHddBuilder/bin/$(Configuration)/$(TargetFramework)/FactoryHddBuilder.dll&quot; copy-public &quot;$(PublicGuestPayloadRoot)&quot; workstation &quot;$(WorkstationDiskOutput)&quot;" />
+  </Target>
+  <PropertyGroup>
+    <Hc2000FeaturePayload>true</Hc2000FeaturePayload>
+  </PropertyGroup>
+  <Import Project="../../build/FeatureFlags.targets" />
 </Project>

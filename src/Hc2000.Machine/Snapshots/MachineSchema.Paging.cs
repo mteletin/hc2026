@@ -44,15 +44,16 @@ public sealed partial class MachineSchema
         return stores.Length == 1 && Text(stores[0].GetProperty("id")) == "ram";
     }
 
-    private void ValidatePagedBlobModel(JsonElement manifest, byte[][] blobs)
+    private void ValidatePagedBlobModel(JsonElement manifest, HcsBlob[] blobs)
     {
         if (profile.Memory.RamPaged is null) return;
         var memory = manifest.GetProperty("components").EnumerateArray().Single(c => Text(c.GetProperty("id")) == "memory").GetProperty("state");
         if (!memory.TryGetProperty("paged", out var paged) || paged.ValueKind == JsonValueKind.Null) return;
         var ram = manifest.GetProperty("assets").EnumerateArray().Single(a => Text(a.GetProperty("id")) == "ram");
-        var data = blobs[UInt(ram.GetProperty("blobId")) - 1];
-        if (data.Length != PagedRamPolicy.RamBytes || Text(paged.GetProperty("ramSha256")) !=
-            Convert.ToHexStringLower(SHA256.HashData(data.AsSpan(0x10000))))
+        var blob = blobs[UInt(ram.GetProperty("blobId")) - 1];
+        // The paged identity excludes the base 64 KiB, exactly as on capture.
+        if (blob.Length != PagedRamPolicy.RamBytes || Text(paged.GetProperty("ramSha256")) !=
+            blob.Sha256Hex(0x10000))
             Error(HcsError.AssetMismatch, "ram.paged identity");
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Security.Cryptography;
 using Hc2000.App.Media;
+using Hc2000.HostFiles;
 using Hc2000.Machine.Storage;
 using System.Linq;
 
@@ -20,7 +21,7 @@ public sealed class DiskLibraryHostAdmission
 }
 
 /// <summary>Register outcome: Accepted carries the entry; the rest are closed, honest refusals (no guessed content).</summary>
-public enum DiskLibraryRefusal { Accepted, NotRegularFile, FinalLink, RepeatOrAlias, OwnershipUnknown, ActiveWriter, Unreadable, TooLarge, GrewDuringRead, UnsupportedContainer, Budget, ReconciliationNeeded }
+public enum DiskLibraryRefusal { Accepted, NotRegularFile, FinalLink, RepeatOrAlias, OwnershipUnknown, ActiveWriter, Unreadable, TooLarge, GrewDuringRead, UnsupportedContainer, Budget, ReconciliationNeeded, PublicationFailed, Cancelled }
 public sealed record DiskLibraryRegisterResult(DiskLibraryEntry? Entry, DiskLibraryRefusal Reason, string Message);
 
 /// <summary>Verify outcome for one entry: only Available is content-proven (hash matches); nothing else is reported as clean.</summary>
@@ -74,17 +75,18 @@ public sealed partial class DiskLibraryCatalog
     private volatile DiskLibraryHostAdmission? _admission;
     private readonly SemaphoreSlim _mutation = new(1, 1);
     private DiskLibraryDocument _document;
+    private DiskLibraryDocument? _pendingHddRegistration;
 
     /// <summary>Settlement of an unknown publication that retained its stage; register/save refuse until <see cref="ReconcileAsync"/> clears it from fresh facts. At most one, because the mutation gate serializes attempts.</summary>
     private (string Stage, byte[] Intended, bool PriorAbsent, byte[]? Prior)? _pendingUnknown;
 
     public string CatalogPath { get; }
-    public DiskLibraryHostAdmission? Admission { get; }
+    public DiskLibraryHostAdmission? Admission => _admission;
     public IReadOnlyList<DiskLibraryEntry> Entries => _document.Entries;
     public IReadOnlyList<DiskLibraryCopy> Copies => _document.Copies;
 
     private DiskLibraryCatalog(string path, DiskLibraryDocument document, DiskLibraryHostAdmission? admission)
-        => (CatalogPath, _document, _admission, Admission) = (path, document, admission, admission);
+        => (CatalogPath, _document, _admission) = (path, document, admission);
 
     /// <summary>Load the catalog file (missing file = empty in-memory catalog); a file that violates the schema throws DiskLibrarySchemaException. admission may stay null: without it register refuses ownership-unknown and verify reports ownership unknown; the stopped host must be injected explicitly (DiskLibraryHostAdmission.StoppedHost).</summary>
     public static DiskLibraryCatalog Load(string catalogPath, DiskLibraryHostAdmission? admission = null)
@@ -109,7 +111,19 @@ public sealed partial class DiskLibraryCatalog
     public bool AdmissionMissing => _admission is null;
 
     /// <summary>Register one host .dsk. listContents observes the CP/M directory read-only; otherwise contents stay unknown/not-scanned. Refusals are closed and honest; the in-memory document changes only on Accepted.</summary>
-    public async Task<DiskLibraryRegisterResult> RegisterAsync(string path, string provenanceSource, string? provenanceNote = null, bool listContents = false)
+    public Task<DiskLibraryRegisterResult> RegisterAsync(string path, string provenanceSource, string? provenanceNote = null, bool listContents = false)
+        => RegisterCoreAsync(path, provenanceSource, provenanceNote, listContents, DiskLibraryKind.Floppy, null, default);
+
+    /// <summary>Explicit flat512 declaration, never inferred from a filename or scan. Publishes a complete v2 catalog through the existing transaction; no HDD copy or mount is authorized.</summary>
+    public async Task<DiskLibraryRegisterResult> RegisterHddAsync(string path, string provenanceSource, string? provenanceNote = null,
+        bool listContents = false, DiskLibraryPublication? publication = null, CancellationToken cancellation = default)
+    {
+        try { return await RegisterCoreAsync(path, provenanceSource, provenanceNote, listContents, DiskLibraryKind.Hdd, publication, cancellation); }
+        catch (OperationCanceledException) { return Refuse(DiskLibraryRefusal.Cancelled, "HDD registration cancelled before publication"); }
+    }
+
+    private async Task<DiskLibraryRegisterResult> RegisterCoreAsync(string path, string provenanceSource, string? provenanceNote,
+        bool listContents, DiskLibraryKind kind, DiskLibraryPublication? publication, CancellationToken cancellation)
     {
         if (path is null || path.Length == 0) throw new ArgumentException("path is required", nameof(path));
         if (provenanceSource is null || provenanceSource.Length == 0 || provenanceSource.Length > 2048 || HasControl(provenanceSource))
@@ -119,7 +133,7 @@ public sealed partial class DiskLibraryCatalog
 
         if (_pendingUnknown is not null || _pendingCopy is not null)
             return Refuse(DiskLibraryRefusal.ReconciliationNeeded, "an unknown catalog publication is pending; reconcile it before registering another mutation");
-        if (!await _mutation.WaitAsync(TimeSpan.FromSeconds(30)))
+        if (!await _mutation.WaitAsync(TimeSpan.FromSeconds(30), cancellation))
             return Refuse(DiskLibraryRefusal.ActiveWriter, "a catalog mutation is still in flight after the 30 second gate timeout");
         try
         {
@@ -130,6 +144,12 @@ public sealed partial class DiskLibraryCatalog
             var admission = _admission;
             if (admission is null) return Refuse(DiskLibraryRefusal.OwnershipUnknown, "no host admission was provided; inject the host admission snapshot before registering");
             if (admission.KnownWriters) return Refuse(DiskLibraryRefusal.ActiveWriter, "host admission reports a known cooperating writer");
+
+            cancellation.ThrowIfCancellationRequested();
+            var cold = kind == DiskLibraryKind.Hdd ? NativeImageAdmission.TryAcquireColdRead(cancellation) : null;
+            using var native = cold?.Admission;
+            if (cold is not null && native is null)
+                return Refuse(DiskLibraryRefusal.ActiveWriter, "native HDD read admission refused: " + cold.Refusal);
 
             var pre = LinuxFileFacts.Inspect(full);
             if (!pre.Known) return Refuse(DiskLibraryRefusal.OwnershipUnknown, File.Exists(full) ? "host file facts are unknown on this platform" : "source file is missing; host file facts are unavailable");
@@ -145,11 +165,24 @@ public sealed partial class DiskLibraryCatalog
             long preSize;
             try { preSize = new FileInfo(full).Length; }
             catch (IOException) { return Refuse(DiskLibraryRefusal.Unreadable, "file size is unreadable"); }
-            if (preSize > MediaFiles.MaxDiskBytes) return Refuse(DiskLibraryRefusal.TooLarge, "file exceeds the 4 MiB container limit");
+            var maxBytes = kind == DiskLibraryKind.Hdd ? DiskLibrarySchema.HddBytes : MediaFiles.MaxDiskBytes;
+            if (preSize > maxBytes) return Refuse(DiskLibraryRefusal.TooLarge, "file exceeds the per-kind container limit");
+            if (kind == DiskLibraryKind.Hdd && preSize != DiskLibrarySchema.HddBytes)
+                return Refuse(DiskLibraryRefusal.UnsupportedContainer, "flat512 HDD must be exactly 8388608 bytes");
 
             ImmutableArray<byte> bytes;
-            try { bytes = await MediaFiles.ReadAsync(full, MediaFiles.MaxDiskBytes); }
-            catch (InvalidDataException) { return Refuse(DiskLibraryRefusal.TooLarge, "file exceeded the 4 MiB container limit while reading"); }
+            try
+            {
+                if (native is null) bytes = await MediaFiles.ReadAsync(full, maxBytes);
+                else
+                {
+                    using var source = native.OpenColdSource(full);
+                    var opened = native.ValidateOpenedSource(source, full);
+                    bytes = await MediaFiles.ReadAsync(source, maxBytes);
+                    native.ValidateSourceStillCurrent(source, opened);
+                }
+            }
+            catch (InvalidDataException) { return Refuse(DiskLibraryRefusal.TooLarge, "file exceeded the per-kind container limit while reading"); }
             catch (FileNotFoundException) { return Refuse(DiskLibraryRefusal.Unreadable, "file disappeared before the read completed"); }
             catch (IOException) { return Refuse(DiskLibraryRefusal.Unreadable, "file is unreadable"); }
 
@@ -160,26 +193,37 @@ public sealed partial class DiskLibraryCatalog
             if (!post.Known || !post.Regular || post.Link || post.FileId != pre.FileId || preSize != postSize || postSize != bytes.Length)
                 return Refuse(DiskLibraryRefusal.GrewDuringRead, "file identity or size changed during the read");
 
-            Dsk disk;
-            try { disk = Dsk.Load(bytes.AsSpan()); }
-            catch (InvalidDataException ex) { return Refuse(DiskLibraryRefusal.UnsupportedContainer, ex.Message); }
-            if (disk.Format == DiskFormat.Raw) return Refuse(DiskLibraryRefusal.UnsupportedContainer, "raw images require geometry and are not registered");
-            var format = disk.Format == DiskFormat.Extended ? DiskLibraryFormat.ExtendedDsk : DiskLibraryFormat.StandardDsk;
+            Dsk? disk = null;
+            var format = DiskLibraryFormat.Flat512;
+            if (kind == DiskLibraryKind.Floppy)
+            {
+                try { disk = Dsk.Load(bytes.AsSpan()); }
+                catch (InvalidDataException ex) { return Refuse(DiskLibraryRefusal.UnsupportedContainer, ex.Message); }
+                if (disk.Format == DiskFormat.Raw) return Refuse(DiskLibraryRefusal.UnsupportedContainer, "raw images require geometry and are not registered");
+                format = disk.Format == DiskFormat.Extended ? DiskLibraryFormat.ExtendedDsk : DiskLibraryFormat.StandardDsk;
+            }
+            else if (bytes.AsSpan().StartsWith("MV - CPCEMU Disk-File\r\nDisk-Info\r\n"u8)
+                || bytes.AsSpan().StartsWith("EXTENDED CPC DSK File\r\nDisk-Info\r\n"u8))
+                return Refuse(DiskLibraryRefusal.UnsupportedContainer, "DSK container headers are not flat512 HDD images");
 
             var name = Path.GetFileName(full);
             if (name.Length is < 1 or > 256 || HasControl(name) || name.Trim().Length == 0)
                 return Refuse(DiskLibraryRefusal.Budget, "file name is not representable as an entry name");
 
             var contents = listContents
-                ? ObserveContents(disk)
+                ? kind == DiskLibraryKind.Hdd ? ObserveHddContents(bytes) : ObserveContents(disk!)
                 : new DiskLibraryContents(DiskLibraryContentState.Unknown, null, ImmutableArray<DiskLibraryFileRow>.Empty, "not-scanned");
             if (_document.Entries.Length == DiskLibrarySchema.MaxEntries)
                 return Refuse(DiskLibraryRefusal.Budget, $"entries reach the {DiskLibrarySchema.MaxEntries} bound");
 
             var entry = new DiskLibraryEntry(
                 Guid.NewGuid().ToString("d"), name, full, bytes.Length, Sha256Hex(bytes), pre.FileId, format,
-                new DiskLibraryProvenance(provenanceSource, provenanceNote ?? string.Empty), contents);
-            var candidate = _document with { Entries = _document.Entries.Add(entry) };
+                new DiskLibraryProvenance(provenanceSource, provenanceNote ?? string.Empty), contents, kind);
+            var candidate = _document with
+            {
+                Version = kind == DiskLibraryKind.Hdd ? DiskLibrarySchema.HddVersion : _document.Version,
+                Entries = _document.Entries.Add(entry)
+            };
             try
             {
                 if (DiskLibrarySchema.Encode(candidate).Length > DiskLibrarySchema.MaxCatalogBytes)
@@ -187,6 +231,17 @@ public sealed partial class DiskLibraryCatalog
             }
             catch (DiskLibrarySchemaException) { return Refuse(DiskLibraryRefusal.Budget, "encoded catalog exceeds its budget"); }
 
+            if (kind == DiskLibraryKind.Hdd)
+            {
+                var saved = await SaveUnderGateAsync(publication, candidate, cancellation);
+                if (saved.Status == DiskLibrarySaveStatus.Unknown)
+                {
+                    _pendingHddRegistration = candidate;
+                    return Refuse(DiskLibraryRefusal.ReconciliationNeeded, saved.Message);
+                }
+                if (saved.Status != DiskLibrarySaveStatus.Published)
+                    return Refuse(cancellation.IsCancellationRequested ? DiskLibraryRefusal.Cancelled : DiskLibraryRefusal.PublicationFailed, saved.Message);
+            }
             _document = candidate;
             return new DiskLibraryRegisterResult(entry, DiskLibraryRefusal.Accepted, "registered");
         }
@@ -221,13 +276,34 @@ public sealed partial class DiskLibraryCatalog
 
         try
         {
-            var bytes = await MediaFiles.ReadAsync(entry.SourcePath, MediaFiles.MaxDiskBytes);
+            var cold = entry.Kind == DiskLibraryKind.Hdd ? NativeImageAdmission.TryAcquireColdRead(default) : null;
+            using var native = cold?.Admission;
+            if (cold is not null && native is null)
+                return new(DiskLibraryAvailability.ActiveWriter, "native HDD read admission refused: " + cold.Refusal);
+            if (entry.Kind == DiskLibraryKind.Hdd && (new FileInfo(entry.SourcePath).Length != DiskLibrarySchema.HddBytes || fact.FileId != entry.FileId))
+                return new(DiskLibraryAvailability.Changed, "HDD identity or exact length differs from registration");
+            ImmutableArray<byte> bytes;
+            if (native is null) bytes = await MediaFiles.ReadAsync(entry.SourcePath, MediaFiles.MaxDiskBytes);
+            else
+            {
+                using var source = native.OpenColdSource(entry.SourcePath);
+                var opened = native.ValidateOpenedSource(source, entry.SourcePath);
+                bytes = await MediaFiles.ReadAsync(source, DiskLibrarySchema.HddBytes);
+                native.ValidateSourceStillCurrent(source, opened);
+            }
+            if (entry.Kind == DiskLibraryKind.Hdd)
+            {
+                var post = LinuxFileFacts.Inspect(entry.SourcePath);
+                if (!post.Known || !post.Regular || post.Link || post.FileId != fact.FileId
+                    || bytes.Length != DiskLibrarySchema.HddBytes || new FileInfo(entry.SourcePath).Length != bytes.Length)
+                    return new(DiskLibraryAvailability.Changed, "HDD identity or exact length changed during verification");
+            }
             return Sha256Hex(bytes) == entry.Sha256
                 ? new DiskLibraryVerifyResult(DiskLibraryAvailability.Available, "content hash matches the registered sha256")
                 : new DiskLibraryVerifyResult(DiskLibraryAvailability.Changed, "content hash differs from the registered sha256");
         }
         catch (FileNotFoundException) { return new DiskLibraryVerifyResult(DiskLibraryAvailability.Missing, "file is missing"); }
-        catch (InvalidDataException) { return new DiskLibraryVerifyResult(DiskLibraryAvailability.Unreadable, "file exceeds the 4 MiB container limit"); }
+        catch (InvalidDataException) { return new DiskLibraryVerifyResult(DiskLibraryAvailability.Unreadable, "file exceeds the per-kind container limit"); }
         catch (IOException) { return new DiskLibraryVerifyResult(DiskLibraryAvailability.Unreadable, "file is unreadable"); }
     }
 
@@ -249,7 +325,8 @@ public sealed partial class DiskLibraryCatalog
         finally { _mutation.Release(); }
     }
 
-    private async Task<DiskLibrarySaveResult> SaveUnderGateAsync(DiskLibraryPublication? publication, DiskLibraryDocument? candidate = null)
+    private async Task<DiskLibrarySaveResult> SaveUnderGateAsync(DiskLibraryPublication? publication, DiskLibraryDocument? candidate = null,
+        CancellationToken cancellation = default)
     {
         var pub = publication ?? new DiskLibraryPublication();
         pub.Begin();
@@ -273,11 +350,13 @@ public sealed partial class DiskLibraryCatalog
             var publishFailed = false;
             try
             {
+                cancellation.ThrowIfCancellationRequested();
                 await pub.WriteStage(stage, encoded);
                 var readBack = await pub.ReadBack(stage);
                 var reloaded = DiskLibrarySchema.Load(readBack.AsSpan());
                 if (!DiskLibrarySchema.Encode(reloaded).AsSpan().SequenceEqual(encoded))
                     throw new DiskLibrarySchemaException("stage read-back does not round-trip through the schema");
+                cancellation.ThrowIfCancellationRequested();
                 try { pub.Publish(stage, CatalogPath); }
                 catch (Exception ex) { stepFailure = ex.Message; publishFailed = true; }
             }
@@ -357,7 +436,11 @@ public sealed partial class DiskLibraryCatalog
         {
             if (_pendingCopy is not null || _pendingUnknown is null)
                 return new(DiskLibrarySaveStatus.Unknown, "pending state changed; use working-copy reconciliation if applicable");
-            return await ReconcileUnderGateAsync();
+            var result = await ReconcileUnderGateAsync();
+            if (_pendingHddRegistration is { } candidate && result.Status == DiskLibrarySaveStatus.Published)
+                _document = candidate;
+            if (result.Status != DiskLibrarySaveStatus.Unknown) _pendingHddRegistration = null;
+            return result;
         }
         finally { _mutation.Release(); }
     }
@@ -437,6 +520,20 @@ public sealed partial class DiskLibraryCatalog
                 : "unsupported-directory";
             return new DiskLibraryContents(DiskLibraryContentState.Unknown, null, ImmutableArray<DiskLibraryFileRow>.Empty, reason);
         }
+        return ObserveDirectory(fs);
+    }
+
+    private static DiskLibraryContents ObserveHddContents(ImmutableArray<byte> bytes)
+    {
+        try { return ObserveDirectory(CpmFs.OpenHddVolume(bytes.AsSpan())); }
+        catch (InvalidDataException)
+        {
+            return new(DiskLibraryContentState.Unknown, "hdd-volume-8m", [], "unsupported-directory");
+        }
+    }
+
+    private static DiskLibraryContents ObserveDirectory(CpmFs fs)
+    {
         try
         {
             var rows = fs.List();

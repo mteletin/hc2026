@@ -17,7 +17,7 @@ public static class HddContainerPublication
         ulong TransferBufferBytes);
 
     // Shared synchronous whole-container publication engine. CLI argument parsing is not part of this seam.
-    public enum OfflineOutcome { Refused, KnownOld, KnownNew, Unknown }
+    public enum OfflineOutcome { Refused, KnownOld, KnownNew, Unknown, KnownAbsent }
     public enum OfflineError {
         None, InvalidRequest, UnsupportedStore, Busy, AbandonedLease,
         ReadOnly, Protected, StaleIdentity, InvalidImageSize,
@@ -33,6 +33,8 @@ public static class HddContainerPublication
     public readonly record struct OfflineIoEvent(OfflineIoPoint Point, ulong Offset, int Count);
     public sealed record OfflineOwnership(bool LocalDisposable, bool ExclusivelyOwned, bool Unbound,
         bool SameHostSecurityDomain);
+    public sealed record OfflineCreateRequest(string TargetPath, Guid OwnerEpoch, Guid AttemptId,
+        OfflineOwnership Ownership, PublicationLimits Limits, PublicationUsage Usage, bool ReadOnly = false);
     public sealed record OfflineReplaceRequest(string TargetPath, VolumeIdentity ExpectedVolume,
         Guid OwnerEpoch, Guid AttemptId, OfflineOwnership Ownership, PublicationLimits Limits, PublicationUsage Usage);
     public sealed record OfflineCharge(ulong MetadataBytes, ulong CopyWorkBytes, ulong TotalLiveBytes,
@@ -41,7 +43,10 @@ public static class HddContainerPublication
         VolumeIdentity ExpectedVolume, VolumeIdentity? IntendedVolume,
         ImmutableArray<byte> ExpectedFileSha256, ImmutableArray<byte> IntendedFileSha256,
         bool RenameMayHaveStarted, bool WriterDrained, OfflineOutcome Outcome, OfflineError Error,
-        OfflineCharge Charge, Guid? BlockingAttemptId);
+        OfflineCharge Charge, Guid? BlockingAttemptId)
+    {
+        public bool TargetExpectedAbsent { get; init; }
+    };
     public sealed record OfflineAbandonReceipt(Guid AttemptId, bool Abandoned, OfflineError Fault, DateTimeOffset Utc);
 
     private const int OfflineBufferBytes = 32768;
@@ -72,7 +77,9 @@ public static class HddContainerPublication
 
     public sealed class OfflineAttempt : IDisposable
     {
-        internal readonly OfflineReplaceRequest Request;
+        internal readonly PublicationLimits Limits;
+        internal readonly PublicationUsage Usage;
+        internal bool ExpectedAbsent;
         internal readonly Action<OfflineIoEvent>? Fault;
         internal readonly long Sequence;
         internal byte[] Buffer = [];
@@ -88,12 +95,24 @@ public static class HddContainerPublication
 
         internal OfflineAttempt(OfflineReplaceRequest request, Action<OfflineIoEvent>? fault)
         {
-            Request = request;
+            Limits = request?.Limits!;
+            Usage = request?.Usage!;
             Fault = fault;
             Sequence = Interlocked.Increment(ref offlineSequence);
             receipt = new(request?.TargetPath ?? "", request?.OwnerEpoch ?? Guid.Empty, request?.AttemptId ?? Guid.Empty,
                 OfflineUnvalidatedIdentity, null, [], [], false, true, OfflineOutcome.Refused, OfflineError.None,
                 new(0, 0, 0, 0, 0, 0, 0), null);
+        }
+        internal OfflineAttempt(OfflineCreateRequest request, Action<OfflineIoEvent>? fault)
+        {
+            Limits = request?.Limits!;
+            Usage = request?.Usage!;
+            ExpectedAbsent = true;
+            Fault = fault;
+            Sequence = Interlocked.Increment(ref offlineSequence);
+            receipt = new(request?.TargetPath ?? "", request?.OwnerEpoch ?? Guid.Empty, request?.AttemptId ?? Guid.Empty,
+                OfflineUnvalidatedIdentity, null, [], [], false, true, OfflineOutcome.Refused, OfflineError.None,
+                new(0, 0, 0, 0, 0, 0, 0), null) { TargetExpectedAbsent = true };
         }
         internal FileStream OpenSource(string path) => NativeAdmission?.OpenPublicationSource(path) ?? OfflineOpen(path);
         internal void Set(OfflineReceipt value) { lock (offlineState) receipt = value; }
@@ -202,7 +221,7 @@ public static class HddContainerPublication
             try
             {
                 var r = Receipt;
-                OfflineRequire(OfflineHash(r.ExpectedFileSha256), OfflineError.ReconciliationFailed);
+                OfflineRequire(ExpectedAbsent || OfflineHash(r.ExpectedFileSha256), OfflineError.ReconciliationFailed);
                 using var stream = OpenSource(r.TargetPath);
                 var facts = NativeAdmission?.ValidateOpenedSource(stream, r.TargetPath);
                 OfflineRequire((ulong)stream.Length == FileBytes, OfflineError.ReconciliationFailed);
@@ -220,6 +239,21 @@ public static class HddContainerPublication
                 else if (OfflineEqual(actual, r.ExpectedFileSha256)) Finish(OfflineOutcome.KnownOld, cause);
                 else Finish(r.RenameMayHaveStarted ? OfflineOutcome.Unknown : OfflineOutcome.Refused, OfflineError.ReconciliationFailed);
             }
+            catch (AdmissionException) when (ExpectedAbsent && NativeAdmission is not null)
+            {
+                // Native no-follow open intentionally does not translate errno into FileNotFoundException.
+                // Only a positive absent-target check under the retained fence can clear quarantine.
+                try
+                {
+                    NativeAdmission.ValidateCreationTargetAbsent();
+                    Finish(OfflineOutcome.KnownAbsent, cause);
+                }
+                catch (Exception) { Finish(OfflineOutcome.Unknown, OfflineError.ReconciliationFailed); }
+            }
+            catch (FileNotFoundException) when (ExpectedAbsent)
+            {
+                Finish(OfflineOutcome.KnownAbsent, cause);
+            }
             catch (Exception ex)
             {
                 var error = ex is OfflineRefusal refusal ? refusal.Error : OfflineError.ReconciliationFailed;
@@ -235,6 +269,130 @@ public static class HddContainerPublication
 
     private static FileStream OfflineOpen(string path) => new(path, FileMode.Open, FileAccess.Read,
         FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.SequentialScan);
+
+    /// <summary>Publishes one new private working container. Payload is a caller-stabilized current
+    /// snapshot; the absent-target receipt is evidence only, never cold/live mount authority.</summary>
+    public static OfflineAttempt CreateOffline(OfflineCreateRequest request, ReadOnlySpan<byte> payload,
+        CancellationToken cancellationToken = default, Action<OfflineIoEvent>? fault = null)
+    {
+        var attempt = new OfflineAttempt(request, fault);
+        string? temporary = null;
+        try
+        {
+            OfflineRequire(request is not null && request.Limits is not null && request.Usage is not null
+                && request.Ownership is { LocalDisposable: true, ExclusivelyOwned: true, Unbound: true,
+                    SameHostSecurityDomain: true }, OfflineError.InvalidRequest);
+            OfflineRequire(payload.Length == VolumeCatalogMetadata.SlotBytes, OfflineError.InvalidImageSize);
+            OfflineRequire(request.OwnerEpoch != Guid.Empty && request.AttemptId != Guid.Empty,
+                OfflineError.InvalidRequest);
+            OfflineRequire(!string.IsNullOrWhiteSpace(request.TargetPath)
+                && !request.TargetPath.StartsWith("\\\\", StringComparison.Ordinal)
+                && !request.TargetPath.StartsWith("//", StringComparison.Ordinal), OfflineError.UnsupportedStore);
+            var full = Path.GetFullPath(request.TargetPath);
+            attempt.Set(attempt.Receipt with { TargetPath = full });
+            var prior = Interlocked.CompareExchange(ref offlineAdmission, attempt, null);
+            if (prior is not null)
+            {
+                attempt.Finish(OfflineOutcome.Refused, prior.Retained
+                    ? OfflineError.QuarantinePoisoned : OfflineError.AlreadyInFlight);
+                attempt.Set(attempt.Receipt with { BlockingAttemptId = prior.Receipt.AttemptId });
+                return attempt;
+            }
+            attempt.OwnsAdmission = true;
+            OfflineRequire(!offlineTerminalPoison, OfflineError.QuarantinePoisoned);
+            if (NativeImageAdmission.IsGuarded)
+            {
+                var native = NativeImageAdmission.TryBeginPublication(full, request.AttemptId, cancellationToken);
+                OfflineRequire(native.Admission is not null, native.Refusal switch {
+                    ImageAdmissionRefusal.Busy => OfflineError.Busy,
+                    ImageAdmissionRefusal.Quarantined => OfflineError.QuarantinePoisoned,
+                    ImageAdmissionRefusal.Cancelled => OfflineError.Cancelled,
+                    ImageAdmissionRefusal.Unsupported or ImageAdmissionRefusal.InvalidDomain => OfflineError.UnsupportedStore,
+                    _ => OfflineError.IoFailure });
+                attempt.NativeAdmission = native.Admission;
+            }
+            for (DirectoryInfo? directory = new FileInfo(full).Directory; directory is not null; directory = directory.Parent)
+                OfflineRequire(directory.Exists && (directory.Attributes & FileAttributes.ReparsePoint) == 0,
+                    OfflineError.UnsupportedStore);
+            // Move(false) is the actual no-overwrite boundary, including competing creators.
+            OfflineRequire(!Path.Exists(full), OfflineError.StaleIdentity);
+            cancellationToken.ThrowIfCancellationRequested();
+            const ulong fileBytes = VolumeCatalogMetadata.SlotBytes + 100UL;
+            var usage = request.Usage;
+            OfflineRequire(usage.ConcurrentSelectedImages is >= 1 and <= 4
+                && usage.SnapshotBytes >= VolumeCatalogMetadata.SlotBytes
+                && usage.ResidentBytes <= 4UL * VolumeCatalogMetadata.SlotBytes
+                && usage.TransferBufferBytes <= 65536 - OfflineBufferBytes, OfflineError.ResourceLimit);
+            attempt.FileBytes = fileBytes;
+            var codecLimits = OfflineCodecLimits(request.Limits);
+            // The fixed single-entry shape is admitted before payload hashing or encoding.
+            OfflineBudget(attempt, new HddFooterView(new byte[16], 1, 1, VolumeCatalogMetadata.SlotBytes,
+                36, 0, VolumeCatalogMetadata.SlotBytes, fileBytes - 64, fileBytes));
+            var entries = ImmutableArray.Create(new HddCatalogEntry("LIBRARY.DSK", request.ReadOnly,
+                VolumeCatalogMetadata.SlotBytes, new(0), VolumeCatalogMetadata.Crc32(payload)));
+            var encoded = HddCatalogCodec.EncodeHdd(Guid.NewGuid().ToByteArray(), 1, entries, codecLimits);
+            OfflineRequire(encoded.Success, OfflineError.InvalidContainer);
+            var metadata = encoded.Value!;
+            var inspected = HddCatalogCodec.InspectHddFooter(metadata.Footer.AsSpan(), fileBytes, codecLimits);
+            OfflineRequire(inspected.Success && HddCatalogCodec.DecodeHdd(metadata.Footer.AsSpan(),
+                metadata.Index.AsSpan(), fileBytes, codecLimits).Success, OfflineError.InvalidContainer);
+            using var token = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            token.AppendData(metadata.Index.AsSpan()); token.AppendData(metadata.Footer.AsSpan());
+            var intended = new VolumeIdentity(new([.. inspected.Value!.ContainerId], 1,
+                [.. token.GetHashAndReset()]), "LIBRARY.DSK", OfflineDigest(payload));
+            attempt.Set(attempt.Receipt with { IntendedVolume = intended });
+            attempt.Buffer = new byte[OfflineBufferBytes];
+            temporary = full + ".hc-" + Guid.NewGuid().ToString("N");
+            attempt.Observe(OfflineIoPoint.TempCreate);
+            var options = new FileStreamOptions {
+                Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None,
+                BufferSize = 1, Options = FileOptions.SequentialScan };
+            if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            using (var stage = new FileStream(temporary, options))
+            {
+                for (var offset = 0; offset < payload.Length; offset += OfflineBufferBytes)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    attempt.Write(stage, payload.Slice(offset, Math.Min(OfflineBufferBytes, payload.Length - offset)));
+                }
+                attempt.Write(stage, metadata.Index.AsSpan());
+                attempt.Write(stage, metadata.Footer.AsSpan());
+                stage.Flush(true);
+            }
+            using (var verify = OfflineOpen(temporary))
+                attempt.Set(attempt.Receipt with { IntendedFileSha256 = OfflineValidate(attempt, verify,
+                    entries, metadata.Index.AsSpan(), metadata.Footer.AsSpan(), new(0),
+                    intended.PayloadSha256, OfflineIoPoint.TempVerifyRead) });
+            attempt.Observe(OfflineIoPoint.BeforeMove);
+            cancellationToken.ThrowIfCancellationRequested();
+            attempt.NativeAdmission?.ValidatePublicationTargetStillCurrent();
+            OfflineRequire(!Path.Exists(full), OfflineError.StaleIdentity);
+            attempt.Set(attempt.Receipt with { RenameMayHaveStarted = true });
+            File.Move(temporary, full, false);
+            attempt.Observe(OfflineIoPoint.AfterMove);
+            attempt.Resolve(OfflineError.None);
+        }
+        catch (Exception ex)
+        {
+            var error = ex switch {
+                OfflineRefusal refusal => refusal.Error,
+                OperationCanceledException => OfflineError.Cancelled,
+                OverflowException or OutOfMemoryException => OfflineError.ResourceLimit,
+                UnauthorizedAccessException => OfflineError.ReadOnly,
+                _ => OfflineError.IoFailure };
+            if (attempt.Receipt.RenameMayHaveStarted) attempt.Resolve(error);
+            else attempt.Finish(OfflineOutcome.Refused, error);
+        }
+        finally
+        {
+            if (temporary is not null)
+                try { attempt.Observe(OfflineIoPoint.TempDelete); File.Delete(temporary); }
+                catch (Exception) { /* Never delete the target or rewrite an unknown outcome. */ }
+            lock (offlineState) attempt.WriterActive = false;
+            attempt.DrainNative();
+        }
+        return attempt;
+    }
 
     public static OfflineAttempt ReplaceOffline(OfflineReplaceRequest request, ReadOnlySpan<byte> replacement,
         CancellationToken cancellationToken = default, Action<OfflineIoEvent>? fault = null)
@@ -278,7 +436,7 @@ public static class HddContainerPublication
             OfflineRequire(!offlineTerminalPoison, OfflineError.QuarantinePoisoned);
             var full = Path.GetFullPath(request.TargetPath);
             attempt.Set(attempt.Receipt with { TargetPath = full });
-            if (NativeImageAdmission.PlatformMode == ImageAdmissionPlatformMode.GuardedLinux)
+            if (NativeImageAdmission.IsGuarded)
             {
                 var native = NativeImageAdmission.TryBeginPublication(full, request.AttemptId, cancellationToken);
                 if (native.Admission is null)
@@ -374,6 +532,8 @@ public static class HddContainerPublication
                     attempt.Write(target, metadata.Index.AsSpan());
                     attempt.Write(target, metadata.Footer.AsSpan());
                 }
+                // UMask=0002 guard (builder units): the writer's own output must not land group-writable.
+                if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(temporary, UnixFileMode.UserRead | UnixFileMode.UserWrite);
                 using (var verify = OfflineOpen(temporary))
                 {
                     var newHash = OfflineValidate(attempt, verify, entries, metadata.Index.AsSpan(), metadata.Footer.AsSpan(),
@@ -467,7 +627,7 @@ public static class HddContainerPublication
         (uint)Math.Min(limits.MaxIndexBytes, int.MaxValue), (uint)Math.Min(limits.MaxMetadataBytes, uint.MaxValue));
     private static void OfflineBudget(OfflineAttempt a, HddFooterView view)
     {
-        var l = a.Request.Limits; var u = a.Request.Usage;
+        var l = a.Limits; var u = a.Usage;
         checked
         {
             var n = (ulong)view.Entries; var i = (ulong)view.IndexBytes; var f = view.FileLength;

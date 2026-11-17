@@ -23,6 +23,14 @@ public sealed partial class BlockDiskPort
     private GuestSwitchTicket? guestTicket;
     private GuestPhase guestPhase;
     public bool GuestAckEnabled { get; }
+
+    /// <summary>Composite (multi-CPU) machines admit the guest driver without host switch authority
+    /// (decision hc2000-combined-workstation-hdd-guest-v2): no native session, switch or restored
+    /// re-arm, while the idle QUERY4 doorbell for the HDINST resident still answers.</summary>
+    public bool CompositeSwitchRefused { get; }
+
+    public const string CompositeSwitchRefusal =
+        "Native HDD switching is refused on this machine: the combined workstation composes the guest driver without host session, switch or re-arm authority.";
     public bool GuestSwitchHoldsCpu
     {
         get { VerifyOwner(); return guestPhase is GuestPhase.Held or GuestPhase.CommittedHeld or GuestPhase.CancelledHeld; }
@@ -41,6 +49,7 @@ public sealed partial class BlockDiskPort
 
     public void BindGuestAckSession(Guid sessionNonce)
     {
+        if (CompositeSwitchRefused) throw new InvalidOperationException(CompositeSwitchRefusal);
         RequireGuestAck();
         RequireNoGuestSwitch();
         if (guestRestored) throw new InvalidOperationException("Restored guests are ineligible for guest ACK.");
@@ -70,6 +79,7 @@ public sealed partial class BlockDiskPort
 
     public GuestSwitchRequest BeginGuestSwitch(byte primaryUnit, ushort resetMask)
     {
+        if (CompositeSwitchRefused) throw new InvalidOperationException(CompositeSwitchRefusal);
         RequireGuestAck();
         coldRestoreBoundary = false;
         RequireNoGuestSwitch();

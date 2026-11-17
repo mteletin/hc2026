@@ -72,12 +72,67 @@ public static class TapeNativeCodec
         { return TapeResult<byte[]>.Fail(TapeError.InvalidFormat, e.Message); }
     }
     private static TapeSideDto Side(TapeSideImage image) => new(
-        image.Chunks.Select(c => new TapeChunkDto(Decimal(c.Repeat), c.Runs.Select(r => new TapeRunDto(r.Level, Rational(r.Duration))).ToImmutableArray())).ToImmutableArray(),
+        NativeChunks(image),
         image.Markers.Select(m => new TapeMarkerDto(Rational(m.Position), m.Ordinal, "format-stop", m.Label, m.SourceId, m.SourceBlock)).ToImmutableArray(),
         WithSourceExtent(image).Select(m => new TapeMarkerDto(Rational(m.Position), m.Ordinal, AnnotationName(m.Kind), m.Label, m.SourceId, m.SourceBlock)).ToImmutableArray(),
         image.SourceRoute.Select(r => new TapeRouteVisitDto(r.SourceId, r.BlockIndex, r.Visit)).ToImmutableArray(),
         new(FormatName(image.ImportOptions.Format), image.ImportOptions.Channel?.ToString().ToLowerInvariant(), image.ImportOptions.Target48K,
             image.ImportOptions.Selections.Select(s => new TapeSelectionDto(s.Occurrence, s.Option)).ToImmutableArray(), image.ImportOptions.ComparatorModel));
+    private static ImmutableArray<TapeChunkDto> NativeChunks(TapeSideImage image)
+    {
+        var result = ImmutableArray.CreateBuilder<TapeChunkDto>();
+        foreach (var chunk in image.Chunks)
+        {
+            TapeChunkDto Encode(int start, int count, ulong repeat)
+            {
+                var runs = ImmutableArray.CreateBuilder<TapeRunDto>(count);
+                for (var i = start; i < start + count; i++)
+                    runs.Add(new(chunk.Runs[i].Level, Rational(chunk.Runs[i].Duration)));
+                return new(Decimal(repeat), runs.MoveToImmutable());
+            }
+            if (chunk.Repeat != 1)
+            {
+                result.Add(Encode(0, chunk.Runs.Length, chunk.Repeat));
+                continue;
+            }
+            var literal = 0;
+            var position = 0;
+            while (position < chunk.Runs.Length)
+            {
+                var bestWidth = 0;
+                var bestCount = 0;
+                long bestSaving = 128; // Pay for both possible literal/chunk boundaries, not just the motif.
+                for (var width = 2; width <= 16; width *= 2)
+                {
+                    var end = position + width;
+                    while (end <= chunk.Runs.Length - width)
+                    {
+                        var equal = true;
+                        for (var i = 0; i < width; i++)
+                            if (chunk.Runs[position + i] != chunk.Runs[end + i]) { equal = false; break; }
+                        if (!equal) break;
+                        end += width;
+                    }
+                    var count = (end - position) / width;
+                    if (count < 2 || (long)(count - 1) * width < 2) continue;
+                    var motif = Encode(position, width, checked((ulong)count));
+                    var arrayBytes = JsonSerializer.SerializeToUtf8Bytes(motif.Runs).Length;
+                    // Literal array = count concatenated motif arrays, with one comma at each join.
+                    var saving = checked((long)count * (arrayBytes - 1) + 1
+                        - JsonSerializer.SerializeToUtf8Bytes(motif).Length);
+                    if (saving <= bestSaving) continue;
+                    bestSaving = saving; bestWidth = width; bestCount = count;
+                }
+                if (bestWidth == 0) { position++; continue; }
+                if (literal != position) result.Add(Encode(literal, position - literal, 1));
+                result.Add(Encode(position, bestWidth, checked((ulong)bestCount)));
+                position = checked(position + bestWidth * bestCount);
+                literal = position;
+            }
+            if (literal < chunk.Runs.Length) result.Add(Encode(literal, chunk.Runs.Length - literal, 1));
+        }
+        return result.ToImmutable();
+    }
     private static IEnumerable<TapeAnnotation> WithSourceExtent(TapeSideImage image)
     {
         var entries = image.Annotations.Where(a => a.Kind == TapeAnnotationKind.SourceEof).ToArray();

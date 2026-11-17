@@ -24,6 +24,9 @@ public sealed record DriveProfile(int Cylinders = 80, int Sides = 2)
 {
     internal void Validate()
     {
-        if (Cylinders is not (40 or 80) || Sides is not (1 or 2)) throw new ArgumentOutOfRangeException(nameof(Cylinders));
+        // 40/80: the 3.5" mechanisms. 86: the COBRA 5.25" reference-drive profile the shared 8272 core
+        // serves (the 860K format is 86 tracks, cpm860k-ro.html); a supported virtual capacity, not a
+        // claim that every stock mechanism had 86 physical steps.
+        if (Cylinders is not (40 or 80 or 86) || Sides is not (1 or 2)) throw new ArgumentOutOfRangeException(nameof(Cylinders));
     }
 }

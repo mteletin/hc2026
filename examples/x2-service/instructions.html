@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>X2 VGA command service</title>
+<style>body{max-width:54em;margin:3em auto;padding:0 1em;font:18px/1.5 system-ui;color:#18232d;background:#fafafa}code,pre{background:#e8edf1;padding:.2em}</style>
+<h1>X2 VGA: explicit guest command service</h1>
+<p>This in-house tape loads a BASIC-callable example and a bounded, main-owned X2 command service. It is not a console hook: normal BASIC and CP/M output remain on the ULA. It does not install into BIOS or reserve common RAM.</p>
+<h2>Start and load</h2>
+<ol>
+<li>Start a new full-X5 machine with the X2 command VGA accelerator enabled. The equivalent flags are <code>--memory paged --m-view --side-z80 16 --driver-z80 0 --x2-vga</code>. The fresh card must be main-owned, with no other program using its ports.</li>
+<li>In BASIC enter <code>CLEAR 32767</code>, insert the supplied <code>X2VGA.tap</code>, enter <code>LOAD "" CODE</code> and press PLAY. Wait for the BASIC editor to return; eject the clean tape.</li>
+<li>Enter <code>PRINT USR 32768</code>. BASIC returns <code>0</code> on the ULA when the palette, Clear and Present commands complete. Then choose <strong>X2 VGA</strong> in the machine's display selector to see the white surface. Any nonzero result is a refusal or timeout, not success.</li>
+</ol>
+<p>These are Spectrum BASIC tokens, not pasted keyword letters. CLEAR is X at the K cursor; LOAD is J; quotes are SYMBOL SHIFT+P; CODE is extended mode then I; PRINT is P; USR is extended mode then L. This uses ordinary tape loading, not a host memory edit.</p>
+<h2>Calling from guest code</h2>
+<p>After loading, <code>CALL 0x8003</code> with HL pointing to a complete 1–32 byte X2 command frame and D holding its length. A=0 means the card completed; A=1–4 is an admission refusal, A=FE is a bounded timeout or non-Done terminal, A=FF an invalid length. AF, BC, DE and HL are clobbered. The caller owns and must preserve the code at 0x8000, its frame, stack and RAM placement; serialize access to the card. Do not use this entry when an exclusive driver Z80 owns the data port. The source <code>x2.service.asm</code> is supplied so a program can assemble the service into its own verified placement.</p>
+<h2>Version 1 frames</h2>
+<p>A frame begins with eight bytes: version <code>1</code>, opcode, payload length, reserved zero, then a four-byte little-endian tag. The total is eight plus the payload length. Coordinates, sizes and scroll distance below are unsigned little-endian 16-bit values; colour and palette components are bytes. Use valid rectangles inside the 320×240 surface; invalid commands are refused.</p>
+<ul>
+<li><code>1 Clear</code>: colour (1 byte).</li>
+<li><code>2 FillRectangle</code>: x, y, width, height, colour (9 bytes).</li>
+<li><code>3 CopyRectangle</code>: destination x, y, width, height, source x, y (12 bytes).</li>
+<li><code>4 SetPalette</code>: index, red, green, blue (4 bytes).</li>
+<li><code>5 Present</code>: empty payload. Presents the accumulated back plane at the next video boundary.</li>
+<li><code>6 DrawGlyph</code>: x, y, foreground, background, four little-endian bytes of glyph rows (10 bytes).</li>
+<li><code>7 ScrollUp</code>: x, y, width, height, scroll distance, background (11 bytes).</li>
+</ul>
+<p>The complete Clear example with tag 1 and colour 7 is <code>01 01 01 00 01 00 00 00 07</code>; Present with tag 2 is <code>01 05 00 00 02 00 00 00</code>. A failed or timed-out request may still be active: quiesce or reset the machine before reusing the service. This example does not prove a BIOS/common-RAM fit or install a resident driver.</p>
+</html>

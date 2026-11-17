@@ -1,0 +1,32 @@
+<Project>
+  <ItemGroup>
+    <!-- Artifact generation only, using repository-built hc asm/tap; build-host tool even for Windows publish. -->
+    <ProjectReference Include="../../tools/ExpansionMailboxBuilder/ExpansionMailboxBuilder.csproj" ReferenceOutputAssembly="false" Private="false" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ExpansionMailboxOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/expansion-mailbox/</ExpansionMailboxOutput>
+    <X2ServiceOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x2-service/</X2ServiceOutput>
+    <X2BulkOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x2-bulk/</X2BulkOutput>
+    <X2BenchmarkOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x2-benchmark/</X2BenchmarkOutput>
+    <X3ServiceOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x3-service/</X3ServiceOutput>
+    <X4ServiceOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x4-service/</X4ServiceOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="$(ExpansionMailboxOutput)EXPMAIL.tap;$(ExpansionMailboxOutput)instructions.html;$(ExpansionMailboxOutput)provenance.txt"
+             Link="examples/expansion-mailbox/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(X2ServiceOutput)X2VGA.tap;$(X2ServiceOutput)instructions.html;$(X2ServiceOutput)main.asm;$(X2ServiceOutput)x2.service.asm;$(X2ServiceOutput)provenance.txt"
+             Link="examples/x2-service/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(X2BulkOutput)X2BULK.tap;$(X2BulkOutput)instructions.html;$(X2BulkOutput)main.asm;$(X2BulkOutput)x2.bulk.asm;$(X2BulkOutput)provenance.txt"
+             Link="examples/x2-bulk/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(X2BenchmarkOutput)benchmark.bin;$(X2BenchmarkOutput)manifest.json"
+             Link="examples/x2-benchmark/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Include="$(X2BenchmarkOutput)benchmark.bin" LogicalName="Hc2000.App.Examples.X2Benchmark.benchmark.bin" />
+    <Content Include="$(X3ServiceOutput)X3SOUND.tap;$(X3ServiceOutput)X3MOD.tap;$(X3ServiceOutput)X3-sentinel.mod;$(X3ServiceOutput)instructions.html;$(X3ServiceOutput)main.asm;$(X3ServiceOutput)x3.service.asm;$(X3ServiceOutput)player.asm;$(X3ServiceOutput)sentinel.asm;$(X3ServiceOutput)sentinel.data.asm;$(X3ServiceOutput)provenance.txt"
+             Link="examples/x3-service/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(X4ServiceOutput)X4MATH.tap;$(X4ServiceOutput)instructions.html;$(X4ServiceOutput)main.asm;$(X4ServiceOutput)x4.service.asm;$(X4ServiceOutput)provenance.txt"
+             Link="examples/x4-service/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="GenerateExpansionMailboxExample" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="dotnet &quot;$(MSBuildProjectDirectory)/../../tools/ExpansionMailboxBuilder/bin/$(Configuration)/$(TargetFramework)/ExpansionMailboxBuilder.dll&quot; &quot;$(MSBuildProjectDirectory)/../..&quot; &quot;$(ExpansionMailboxOutput)&quot; &quot;$(Configuration)&quot;" />
+  </Target>
+</Project>

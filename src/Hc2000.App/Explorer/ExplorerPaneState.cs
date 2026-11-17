@@ -25,7 +25,7 @@ internal sealed class ExplorerPaneState
 }
 
 internal sealed record ExplorerImage(string Label, string? Path, MediaImageDescriptor Descriptor,
-    ImmutableArray<byte> Bytes, IReadOnlyList<CpmEntry> Entries)
+    ImmutableArray<byte> Bytes, IReadOnlyList<CpmEntry> Entries, string? ReadOnlyReason = null)
 {
     private static readonly DriveProfile Floppy = new(80, 2);
     public bool CanImport => Path is not null && Descriptor.Kind != MediaImageKind.HddRaw8MiB;
@@ -33,13 +33,13 @@ internal sealed record ExplorerImage(string Label, string? Path, MediaImageDescr
     /// opened, written volume-shaped (CpmFs.OpenHddVolume + volume bytes export), published only
     /// by WriteExplorerImage. CheckExplorerOwnership and CanImport are unchanged (amendment 1).</summary>
     public bool CanImportVolume => Path is not null && Descriptor.Kind == MediaImageKind.HddRaw8MiB;
-    public static ExplorerImage Parse(string label, string? path, MediaImageDescriptor descriptor, ImmutableArray<byte> bytes)
+    public static ExplorerImage Parse(string label, string? path, MediaImageDescriptor descriptor, ImmutableArray<byte> bytes, string? readOnlyReason = null)
     {
         descriptor.ValidateLength(bytes.Length);
         var entries = descriptor.Kind == MediaImageKind.HddRaw8MiB
             ? CpmExplorer.OpenHddVolume(bytes.AsSpan()).List()
             : CpmExplorer.Open(RawFloppyAdapter.Load(bytes.AsSpan(), descriptor, Floppy)).List();
-        return new(label, path, descriptor, bytes, entries);
+        return new(label, path, descriptor, bytes, entries, readOnlyReason);
     }
 
     public CpmFs Open() => Descriptor.Kind == MediaImageKind.HddRaw8MiB

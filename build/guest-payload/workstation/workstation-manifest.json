@@ -1,0 +1,15 @@
+{
+  "artifact": "CPM22-HC-ram-paged-v2-workstation.DSK",
+  "state": "unbound TAPEINIT template; session-bound at launch by --workstation",
+  "git": "1c739b98a3d883a37acf14dd4da0b172d622d546",
+  "gitDirty": "true",
+  "base": "CPM22-HC-ram-paged-v2-upgrade.DSK (UpgradeBiosBuilder m-paged-v2)",
+  "baseSha256": "5523a58735474072609be6254f5e8024a1e25310b8643c3b5d372ffb74d4ffc2",
+  "utilities": "HC2000-UTIL.DSK",
+  "utilitiesSha256": "e04e57ebc8ba52819dcf6d1d5d02cae58496d91631a800dff79029a2778a7eca",
+  "hddInstCom": "0dcda9b401fa22c80986a48e7737a7af233c096ec3efdd1724802de62d20f204",
+  "mfmtCom": "d1328c89cc93d73e386343fe90024ed9c237cb4403fe88bdb51c1e08b4984bef",
+  "xjobCom": "afd21c7a3f3e7aa24e5a3e0e6549359ec5fbb9883d7839e37edeabb0a4b3ecaa",
+  "tapeInitTemplateSha256": "003d59478a380515f1d0d641867922c76a0f34954673f04ba2387d2b4bb8e876",
+  "diskSha256": "f50e04773a76148f3809eabcdd2a63a37e3cfe1cd73afb7f6804328c86325801"
+}

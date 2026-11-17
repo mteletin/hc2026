@@ -114,22 +114,46 @@ public sealed partial class TapCodec
     }
 
     private static TapeResult<TapeWriteResult> WriteFail(TapeError error, string message) => TapeResult<TapeWriteResult>.Fail(error, message);
-    private static bool Within(TapeTime actual, int referenceTicks, uint percent)
+    private static readonly (TapeTime Min, TapeTime Max) PilotWindow = Window(2168, 10);
+    private static readonly (TapeTime Min, TapeTime Max) FirstSyncWindow = Window(667, 20);
+    private static readonly (TapeTime Min, TapeTime Max) SecondSyncWindow = Window(735, 20);
+    private static readonly (TapeTime Min, TapeTime Max) ZeroWindow = Window(855, 10);
+    private static readonly (TapeTime Min, TapeTime Max) OneWindow = Window(1710, 10);
+
+    private static (TapeTime Min, TapeTime Max) Window(int referenceTicks, uint percent)
     {
         var nominal = new TapeTime(referenceTicks, TapeTransport.ReferenceHz);
-        return actual >= nominal * (100 - percent) / 100 && actual <= nominal * (100 + percent) / 100;
+        return (nominal * (100 - percent) / 100, nominal * (100 + percent) / 100);
+    }
+    private static bool Within(TapeTime actual, int referenceTicks, uint percent)
+    {
+        // The recognizer's exact rational bounds do not change between pulses.
+        var window = (referenceTicks, percent) switch
+        {
+            (2168, 10) => PilotWindow,
+            (667, 20) => FirstSyncWindow,
+            (735, 20) => SecondSyncWindow,
+            (855, 10) => ZeroWindow,
+            (1710, 10) => OneWindow,
+            _ => Window(referenceTicks, percent)
+        };
+        return actual >= window.Min && actual <= window.Max;
     }
     private static int Bit(TapeTime width) => Within(width, 855, 10) ? 0 : Within(width, 1710, 10) ? 1 : -1;
     private sealed class PulseCursor
     {
         private readonly ITapeSignalIndex signal;
-        private TapeTime position, next;
+        private TapeTime position, next, width;
         public bool End => position == signal.Image.Duration;
         public bool Level => signal.Sample(position);
-        public TapeTime Width => next - position;
+        public TapeTime Width => width;
         public TapeTime Position => position;
         internal PulseCursor(ITapeSignalIndex signal) { this.signal = signal; SetNext(); }
         public void Move() { position = next; SetNext(); }
-        private void SetNext() => next = End ? position : signal.NextEdge(position) ?? signal.Image.Duration;
+        private void SetNext()
+        {
+            next = End ? position : signal.NextEdge(position) ?? signal.Image.Duration;
+            width = next - position;
+        }
     }
 }

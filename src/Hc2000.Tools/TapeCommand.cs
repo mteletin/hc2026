@@ -12,6 +12,7 @@ public static class TapeCommand
     {
         try
         {
+            if (args.Length > 0 && args[0] == "archive") return Archive(args, output, error);
             var options = Options.Parse(args);
             if (options.Capabilities)
             {
@@ -45,7 +46,7 @@ public static class TapeCommand
             {
                 // Writer consumes exactly the imported core image, including its route and trailing blank.
                 var written = Require(target.Write(read.Image, options.Export!));
-                AtomicWrite(options.Output!, written.Bytes.AsSpan(), options.Force);
+                AtomicWrite(options.Output!, written.Bytes.AsSpan(), options.Force, error);
                 var report = written.Report;
                 if (options.Json) WriteJson(output, new { Target = report.Target.ToString(), Signal = report.Signal.ToString(),
                     Bytes = report.Bytes.ToString(), Amplitude = report.Amplitude.ToString(), report.Rate,
@@ -152,16 +153,19 @@ public static class TapeCommand
         if (stream.ReadByte() != -1) throw new TapeCommandFailure(TapeError.BoundsExceeded, "Input grew while reading.");
         return bytes;
     }
-    private static void AtomicWrite(string path, ReadOnlySpan<byte> bytes, bool overwrite)
+    private static void AtomicWrite(string path, ReadOnlySpan<byte> bytes, bool overwrite, TextWriter? error = null)
     {
         var destination = Path.GetFullPath(path);
         var temporary = destination + ".hc-" + Guid.NewGuid().ToString("N");
         var admission = Hc2000.HostFiles.NativeImageAdmission.BeginExistingPublication(destination);
+        if (admission?.TightenedStateDirectory is { } tightened) error?.WriteLine($"hc tape: tightened {tightened} to 0700.");
         bool moveStarted = false, moved = false;
         try
         {
             using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             { stream.Write(bytes); stream.Flush(true); }
+            // UMask=0002 guard (builder units): the writer's own output must not land group-writable.
+            if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(temporary, UnixFileMode.UserRead | UnixFileMode.UserWrite);
             admission?.ValidatePublicationTargetStillCurrent();
             moveStarted = true;
             File.Move(temporary, destination, overwrite);
@@ -178,6 +182,165 @@ public static class TapeCommand
             }
         }
     }
+
+    private static int Archive(string[] args, TextWriter output, TextWriter error)
+    {
+        if (args.Length < 3 || args[1] is not ("list" or "unpack" or "import"))
+            throw new ArgumentException("usage: hc tape archive <list|unpack|import> <file> [-o <path>] [--name <text>] [--json] [--force]");
+        var verb = args[1];
+        string? outPath = null, name = null;
+        var json = false;
+        var force = false;
+        for (var i = 3; i < args.Length; i++)
+        {
+            var key = args[i];
+            if (key == "--json") { json = true; continue; }
+            if (key == "--force") { force = true; continue; }
+            if (key is "-o" or "--name")
+            {
+                if (++i == args.Length) throw new ArgumentException($"Missing value for {key}.");
+                if (key == "-o") outPath = args[i]; else name = args[i];
+                continue;
+            }
+            throw new ArgumentException($"Unknown option {key}.");
+        }
+        if (verb != "list" && string.IsNullOrWhiteSpace(outPath))
+            throw new ArgumentException($"{verb} requires -o <path>.");
+        var bytes = ReadArchiveInput(args[2]);
+        if (verb == "import")
+        {
+            if (File.Exists(outPath) && !force) throw new IOException("Output already exists; use --force to replace it.");
+            var archiveName = string.IsNullOrWhiteSpace(name) ? Path.GetFileNameWithoutExtension(args[2]) : name;
+            var created = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var imported = CpmTapeArchive.ImportSpectrum(bytes, archiveName, created);
+            if (!imported.Success) throw new TapeCommandFailure(imported.Failure!.Code, imported.Failure.Detail);
+            AtomicWrite(outPath!, CpmTapeArchive.Build(imported.Value), force, error);
+            if (json) WriteJson(output, Summary(imported.Value));
+            else output.WriteLine($"imported {imported.Value.Files.Length} files into {outPath}");
+            return 0;
+        }
+        var read = CpmTapeArchive.Read(bytes);
+        if (!read.Success) throw new TapeCommandFailure(read.Failure!.Code, read.Failure.Detail);
+        foreach (var warning in read.Value.Warnings) error.WriteLine($"hc tape: warning: {warning}");
+        if (verb == "list")
+        {
+            if (json) WriteJson(output, Summary(read.Value));
+            else WriteList(output, read.Value);
+            return 0;
+        }
+        Unpack(read.Value, outPath!, force, output);
+        return 0;
+    }
+
+    private static byte[] ReadArchiveInput(string path)
+    {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        const int limit = 64 * 1024 * 1024;
+        if (stream.Length > limit) throw new TapeCommandFailure(TapeError.BoundsExceeded, $"Input exceeds {limit} bytes.");
+        var bytes = new byte[stream.Length];
+        stream.ReadExactly(bytes);
+        return bytes;
+    }
+
+    private static void Unpack(CpmArchive archive, string directory, bool force, TextWriter output)
+    {
+        directory = Path.GetFullPath(directory);
+        CheckUnpackPath(directory);
+        Directory.CreateDirectory(directory);
+        CheckUnpackPath(directory);
+        foreach (var file in archive.Files)
+        {
+            if (file.User > 15)
+            {
+                output.WriteLine($"skipped {file.Name}: user {file.User} is outside 0-15");
+                continue;
+            }
+            var folder = Path.Combine(directory, file.User.ToString(CultureInfo.InvariantCulture));
+            CheckUnpackPath(folder);
+            Directory.CreateDirectory(folder);
+            CheckUnpackPath(folder);
+            var fileName = CpmTapeArchive.HostFileName(file.Name);
+            var target = Path.Combine(folder, fileName);
+            CheckUnpackPath(target);
+            if (File.Exists(target) && !force) throw new IOException($"Output already exists: {target}; use --force to replace it.");
+            if (!force)
+            {
+                using var stream = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                stream.Write(file.Data);
+            }
+            else
+            {
+                var temporary = Path.Combine(folder, ".hc-" + Guid.NewGuid().ToString("N"));
+                var created = false;
+                try
+                {
+                    using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        created = true;
+                        stream.Write(file.Data);
+                    }
+                    CheckUnpackPath(target);
+                    File.Move(temporary, target, true);
+                }
+                finally { if (created) File.Delete(temporary); }
+            }
+            output.WriteLine($"wrote {file.User}/{fileName} ({file.Data.Length} bytes)");
+        }
+    }
+
+    // Static-path hardening only: concurrent directory swaps can still race these checks.
+    private static void CheckUnpackPath(string path)
+    {
+        var full = Path.GetFullPath(path);
+        var root = Path.GetPathRoot(full)!;
+        var current = root;
+        foreach (var part in full[root.Length..].Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+        {
+            if (part.Length == 0) continue;
+            current = Path.Combine(current, part);
+            try
+            {
+                if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+                    throw new IOException($"Output exists as a link or reparse point: {current}");
+            }
+            catch (FileNotFoundException) { }
+            catch (DirectoryNotFoundException) { }
+        }
+    }
+
+    private static void WriteList(TextWriter output, CpmArchive archive)
+    {
+        output.WriteLine($"HCTA v1  {archive.Name}  {archive.Created}  files={archive.Files.Length}");
+        foreach (var file in archive.Files)
+        {
+            var flags = (file.ReadOnly ? "R" : "") + (file.System ? "S" : "")
+                + (file.DateStamp is not null ? "D" : "") + (file.LoadAddress is not null ? "L" : "");
+            if (flags.Length == 0) flags = "-";
+            var load = file.LoadAddress is ushort address ? $"  load={address}" : "";
+            output.WriteLine($"{file.User,2}  {file.Name,-12}  ex={file.Extent}/{file.ExtentHigh}  rc={file.RecordCount}  bytes={file.Data.Length}  alloc={file.AllocatedBytes}  {flags}{load}");
+        }
+    }
+
+    private static object Summary(CpmArchive archive) => new
+    {
+        archive.Name,
+        archive.Created,
+        Files = archive.Files.Select(file => new
+        {
+            file.User,
+            file.Name,
+            file.Extent,
+            file.ExtentHigh,
+            file.RecordCount,
+            Bytes = file.Data.Length,
+            file.AllocatedBytes,
+            file.ReadOnly,
+            file.System,
+            Date = file.DateStamp is null ? null : Convert.ToHexString(file.DateStamp),
+            file.LoadAddress
+        }),
+        archive.Warnings
+    };
 
     private sealed record Options(string Operation, string? Input, string? Output, TapeFormat InputFormat,
         TapeFormat? Target, TapeImportOptions Import, TapeExportOptions? Export, bool Json, bool Force, bool Capabilities)

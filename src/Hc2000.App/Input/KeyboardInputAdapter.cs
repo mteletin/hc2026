@@ -112,7 +112,23 @@ public sealed class KeyboardInputAdapter(InputQueue queue)
 
     private void Observe(string stage, string origin, Key? key, KeyModifiers modifiers,
         string outcome, KeyChord? chord = null, long? sequence = null)
-        => Evidence.Record(stage, origin, key, modifiers, mode, outcome, chord, sequence);
+    {
+        Evidence.Record(stage, origin, key, modifiers, mode, outcome, chord, sequence);
+        // Diagnosis-only trace for hc2000-signon-wedge-live-0-1-171: every UI-side input event
+        // with its stage/outcome, so a manual run shows whether the app saw a delivered key.
+        if (InputTracePath is not null)
+        {
+            try
+            {
+                System.IO.File.AppendAllText(InputTracePath,
+                    $"{DateTime.UtcNow:HH:mm:ss.fff} {stage}/{origin} key={key} mod={modifiers} mode={mode} outcome={outcome} chord={chord?.Keys.FirstOrDefault()} seq={sequence}\n");
+            }
+            catch { /* trace must never disturb input */ }
+        }
+    }
+
+    private static readonly string? InputTracePath =
+        Environment.GetEnvironmentVariable("HC2000_INPUT_TRACE");
 
     private void Handoff(InputCommand command, string origin, Key? key = null,
         KeyModifiers modifiers = KeyModifiers.None)

@@ -6,10 +6,13 @@ namespace Hc2000.App.Settings;
 /// <summary>Detached draft: invalid edits or Cancel never change the saved preferences.</summary>
 public sealed class SettingsEditor
 {
+    public string Theme { get; set; }
     public string Profile { get; set; }
+    public string MainCpuTarget { get; set; }
     public string RomSet { get; set; }
     public string SpeedPercent { get; set; }
     public string Scale { get; set; }
+    public string Border { get; set; }
     public string AudioPreference { get; set; }
     public string KeyMapJson { get; set; }
     public string DiskHome { get; set; }
@@ -21,10 +24,13 @@ public sealed class SettingsEditor
     public SettingsEditor(AppSettings settings)
     {
         workspace = settings.Workspace;
+        Theme = settings.Theme;
         Profile = settings.Profile;
+        MainCpuTarget = settings.MainCpuTarget;
         RomSet = settings.RomSet;
         SpeedPercent = settings.SpeedPercent.ToString(CultureInfo.InvariantCulture);
         Scale = settings.Scale.ToString(CultureInfo.InvariantCulture);
+        Border = settings.Border;
         AudioPreference = settings.AudioPreference;
         DiskHome = settings.DiskHome ?? "";
         TapeHome = settings.TapeHome ?? "";
@@ -41,10 +47,13 @@ public sealed class SettingsEditor
         var settings = new AppSettings
         {
             Workspace = workspace,
+            Theme = Theme.Trim(),
             Profile = Profile.Trim(),
+            MainCpuTarget = MainCpuTarget.Trim(),
             RomSet = RomSet.Trim(),
             SpeedPercent = speed,
             Scale = scale,
+            Border = Border.Trim(),
             AudioPreference = AudioPreference.Trim(),
             DiskHome = Home(DiskHome),
             TapeHome = Home(TapeHome),

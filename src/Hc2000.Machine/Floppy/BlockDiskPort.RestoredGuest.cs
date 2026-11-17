@@ -10,6 +10,7 @@ public sealed partial class BlockDiskPort
 
     public void ValidateRestoredGuestAckRearm()
     {
+        if (CompositeSwitchRefused) throw new InvalidOperationException(CompositeSwitchRefusal);
         RequireGuestAck();
         RequireNoGuestSwitch();
         if (!guestRestored || !coldRestoreBoundary || pointer != 0 || status != 0)

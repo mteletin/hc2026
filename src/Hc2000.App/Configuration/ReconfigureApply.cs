@@ -1,3 +1,5 @@
+using Hc2000.Machine.Capabilities;
+
 namespace Hc2000.App.Configuration;
 
 /// <summary>Apply-running-configuration policy: the running machine may receive a live configuration
@@ -18,16 +20,18 @@ public static class ReconfigureApply
         try
         {
             draft.Validate();
-            if (current.TextOverlay != draft.TextOverlay)
-            {
-                error = "The text overlay is a cold hardware choice; a new machine draft is required. Use New machine; selected Reset keeps the adopted choice.";
-                return false;
-            }
-            if (current.Profile != draft.Profile || current.RomSet != draft.RomSet
+            if (current.TextOverlay != draft.TextOverlay || current.Profile != draft.Profile
+                || current.CpuTurboMultiplier != draft.CpuTurboMultiplier
+                || current.ExpansionDriverCount != draft.ExpansionDriverCount
+                || current.X2Vga != draft.X2Vga
+                || current.X3Sound != draft.X3Sound
+                || current.X4Math != draft.X4Math
+                || current.X6Net != draft.X6Net
+                || current.RomSet != draft.RomSet
                 || current.Hdd.IsDefault
                 || !current.Hdd.OrderBy(h => h.Slot).SequenceEqual(draft.Hdd.OrderBy(h => h.Slot)))
             {
-                error = $"Hardware or HDD attachment changed from {current.Profile}; a new cold machine is required. Use New machine; selected Reset keeps the adopted hardware.";
+                error = CapabilityCatalog.Cold(current.Profile);
                 return false;
             }
             draft.ValidateEffective();

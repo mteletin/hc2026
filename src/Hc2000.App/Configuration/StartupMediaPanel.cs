@@ -21,23 +21,58 @@ public sealed class StartupMediaPanel : UserControl
     private readonly Dictionary<string, (TextBox Path, CheckBox Protection, TextBox Volume)> hddFields = new();
     private readonly StackPanel rows = new() { Name = "StartupMediaRows", Spacing = 6 };
     private readonly TextBlock status = new() { Name = "StartupMediaStatus", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+    /// <summary>Shown when the draft names C:-F: images but the chosen machine has no hard disk controller: the images
+    /// are not attached or saved with this machine, and the user may remove them here instead of meeting a refusal at Start.</summary>
+    private readonly Border hddBanner = new() { Name = "HddNotAttachedBanner", IsVisible = false, Classes = { "blockingBanner" }, Padding = new Avalonia.Thickness(8) };
     private readonly Dictionary<string, FloppyConfiguration> floppyChoices = new();
     private readonly Dictionary<string, HddConfiguration> hddChoices = new();
     private DiskLibraryCatalog? library;
     private string? catalogPath;
+    private readonly string hddCatalogPath;
     private string catalogDiagnostic = "Disk library not configured; load an existing catalog or configure local paths below.";
     private bool hddEnabled, selecting, factoryDefaultsConsidered;
+    private string? selectedProfile;
     private int selectionRevision;
     private InlineMediaRow? selectedRowA, selectedRowB;
     public ImmutableArray<InlineMediaRow> Listed { get; private set; } = [];
     public string? Status => status.Text;
+    private Func<InlineMediaRow, string, Task<string>>? libraryHddAction;
+    private bool librarySelecting;
+    public Func<InlineMediaRow, string, Task<string>>? LibraryHddAction
+    {
+        get => libraryHddAction;
+        set { libraryHddAction = value; Render(); }
+    }
+
+    public void ApplyLibraryHdd(ImmutableArray<HddConfiguration> selections)
+    {
+        foreach (var (slot, field) in hddFields)
+        {
+            var selected = selections.SingleOrDefault(h => h.Slot == slot);
+            field.Path.Text = selected?.Path ?? "";
+            field.Volume.Text = selected?.Volume ?? "";
+            field.Protection.IsChecked = selected?.WriteProtected ?? true;
+        }
+        Refresh();
+    }
+
+    public async Task SelectLibraryHddAsync(InlineMediaRow row, string slot)
+    {
+        if (librarySelecting || !hddEnabled || LibraryHddAction is not { } action) return;
+        librarySelecting = true;
+        try { status.Text = await action(row, slot); }
+        catch (Exception ex) when (Expected(ex)) { status.Text = "Library HDD selection refused: " + ex.Message; }
+        finally { librarySelecting = false; Render(); }
+    }
 
     public StartupMediaPanel(MachineConfiguration original, SettingsStore store, DiskLibraryCatalog? diskLibrary = null,
         string? assetRoot = null, IReadOnlyList<string>? configDirectories = null, string? baseDirectory = null)
     {
         this.original = original;
+        this.selectedProfile = original.Profile;
         this.assetRoot = assetRoot;
         var settingsDirectory = Path.GetDirectoryName(Path.GetFullPath(store.FilePath))!;
+        hddCatalogPath = Path.Combine(settingsDirectory, "hdd-library", "catalog.json");
         this.configDirectories = configDirectories ?? new[] { settingsDirectory }.Concat(InstalledLayout.ConfigDirectories()).Distinct().ToArray();
         this.baseDirectory = baseDirectory ?? AppContext.BaseDirectory;
         if (diskLibrary is not null) { library = diskLibrary; catalogPath = diskLibrary.CatalogPath; }
@@ -52,7 +87,24 @@ public sealed class StartupMediaPanel : UserControl
         }
         selectedA = original.DiskA; selectedB = original.DiskB;
         var form = new StackPanel { Spacing = 6 };
-        form.Children.Add(new TextBlock { Text = "Available media — choices remain drafts until Start", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+        var bannerText = new StackPanel { Spacing = 6 };
+        bannerText.Children.Add(new TextBlock
+        {
+            Text = "This machine has no hard-disk controller: the C: to F: disks you chose won't be used with it.",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        });
+        var removeHdd = new Button { Name = "RemoveHddFromDraft", Content = "Remove them", Classes = { "secondaryAction" } };
+        removeHdd.Click += (_, _) => { foreach (var slot in hddFields.Keys) ClearHdd(slot); };
+        bannerText.Children.Add(removeHdd);
+        hddBanner.Child = bannerText;
+        form.Children.Add(hddBanner);
+        form.Children.Add(new TextBlock
+        {
+            Text = "To search or browse CP/M floppy images without starting, click Open Explorer workspace above.",
+            Classes = { "caption" },
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        });
+        form.Children.Add(new TextBlock { Text = "Available media — the choices take effect when you start", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
         form.Children.Add(rows);
         var refresh = new Button { Content = "Refresh available media" };
         refresh.Click += (_, _) => Refresh();
@@ -64,40 +116,42 @@ public sealed class StartupMediaPanel : UserControl
         var load = new Button { Content = "Load disk library" };
         load.Click += (_, _) => LoadCatalog(catalog.Text ?? "");
         advanced.Children.Add(load);
-        diskA = PathField(advanced, "A: configured path", "PrestartDiskA", original.DiskA?.Path);
-        diskB = PathField(advanced, "B: configured path", "PrestartDiskB", original.DiskB?.Path);
-        advanced.Children.Add(new TextBlock { Text = "Enabling HDD on an empty draft selects D.DSK/E.DSK/F.DSK from one bundled HCVD container (guest-writable private copies; no host writeback). No C: image or HDD boot is supplied. Existing raw 8 MiB inputs use a blank volume name; named volumes require one container and no A/B disks at cold Start.", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+        diskA = PathField(advanced, "Floppy drive A (image path)", "PrestartDiskA", original.DiskA?.Path);
+        diskB = PathField(advanced, "Floppy drive B (image path)", "PrestartDiskB", original.DiskB?.Path);
+        advanced.Children.Add(new TextBlock { Text = "Turning on the hard disk picks C.DSK, D.DSK, E.DSK and F.DSK from one bundled drive container. The machine works on private copies, so your disk files are never changed; C: contains utilities. CP/M boot is not included. Drives given as plain 8 MiB files use a blank name; named drives all come from one container and cannot be mixed with floppy A or B disks.", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
         foreach (var slot in new[] { "C", "D", "E", "F" })
         {
             var hdd = original.Hdd.FirstOrDefault(h => h.Slot == slot);
-            var field = PathField(advanced, slot + ": existing HDD path", "PrestartHdd" + slot, hdd?.Path);
-            var volume = PathField(advanced, slot + ": named HCVD volume (blank for raw)", "PrestartHdd" + slot + "Volume", hdd?.Volume);
-            var protection = new CheckBox { Name = "PrestartHdd" + slot + "Protected", Content = slot + ": write-protected (guest writes never grant host writeback)", IsChecked = hdd?.WriteProtected ?? true };
+            var field = PathField(advanced, "Hard drive " + slot + " (image path)", "PrestartHdd" + slot, hdd?.Path);
+            var volume = PathField(advanced, "Hard drive " + slot + " volume (HCVD name; blank for raw 8 MiB image)", "PrestartHdd" + slot + "Volume", hdd?.Volume);
+            var protection = new CheckBox { Name = "PrestartHdd" + slot + "Protected", Content = new TextBlock { Text = slot + ": write-protected (guest writes never grant host writeback)", TextWrapping = Avalonia.Media.TextWrapping.Wrap }, IsChecked = hdd?.WriteProtected ?? true };
             field.IsEnabled = false; protection.IsEnabled = false; volume.IsEnabled = false;
             advanced.Children.Add(protection); hddFields[slot] = (field, protection, volume);
+            field.TextChanged += (_, _) => UpdateHddBanner();
         }
         // Keep the existing path controls in the logical tree (automation/settings compatibility).
-        form.Children.Add(new Expander { Header = "Existing library / advanced media configuration", Content = advanced });
-        var clear = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        form.Children.Add(new Expander { Header = new TextBlock { Text = "Existing library / advanced media configuration", TextWrapping = Avalonia.Media.TextWrapping.Wrap }, Content = advanced });
+        var clear = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var slot in new[] { DiskSlot.A, DiskSlot.B })
         {
-            var button = new Button { Content = $"Clear {slot}:" };
+            var button = new Button { Content = $"Clear {slot}:", Margin = new Avalonia.Thickness(0, 0, 6, 6) };
             button.Click += (_, _) => Clear(slot);
             clear.Children.Add(button);
         }
         foreach (var slot in new[] { "C", "D", "E", "F" })
         {
-            var button = new Button { Content = $"Clear {slot}:" };
+            var button = new Button { Content = $"Clear {slot}:", Margin = new Avalonia.Thickness(0, 0, 6, 6) };
             button.Click += (_, _) => ClearHdd(slot);
             clear.Children.Add(button);
         }
         form.Children.Add(clear); form.Children.Add(status); Content = form;
         Refresh();
+        UpdateHddBanner();
     }
 
     private static TextBox PathField(StackPanel parent, string label, string name, string? value)
     {
-        parent.Children.Add(new TextBlock { Text = label });
+        parent.Children.Add(new TextBlock { Text = label, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
         var field = new TextBox { Name = name, Text = value ?? "" };
         parent.Children.Add(field); return field;
     }
@@ -128,8 +182,27 @@ public sealed class StartupMediaPanel : UserControl
         if (info.Length > DiskLibrarySchema.MaxCatalogBytes) throw new IOException("Catalog exceeds the existing disk-library byte limit.");
         return DiskLibraryCatalog.Load(path);
     }
-    public void SetHddEnabled(bool enabled)
+    public void SetSelectedProfile(string? profile)
     {
+        var before = selectedProfile;
+        selectedProfile = profile;
+        if (!hddEnabled) return;
+        if (!factoryDefaultsConsidered)
+        {
+            SetHddEnabled(true, profile);
+            return;
+        }
+        // Moving between machines with different default disks swaps the defaults, never a selection of the user's own.
+        if (profile != before && SelectedDefault() is { } current && current != DefaultFor(profile))
+        {
+            ApplyDefault(profile);
+            Refresh();
+        }
+    }
+
+    public void SetHddEnabled(bool enabled, string? profile = null)
+    {
+        if (profile is not null) selectedProfile = profile;
         hddEnabled = enabled;
         if (enabled && !factoryDefaultsConsidered)
         {
@@ -137,20 +210,89 @@ public sealed class StartupMediaPanel : UserControl
             // Never replace an existing selection, a typed draft, or a deliberate
             // clear when hardware is toggled again. Defaults are all-or-nothing.
             if (original.Hdd.IsEmpty && hddFields.Values.All(field => string.IsNullOrWhiteSpace(field.Path.Text)))
-            {
-                if (LaunchStartup.TryResolveDisk(HddFactoryImages.ContainerName, configDirectories, baseDirectory, out var path, out _))
-                    foreach (var slot in new[] { "D", "E", "F" })
-                    {
-                        hddFields[slot].Path.Text = Path.GetFullPath(path);
-                        hddFields[slot].Volume.Text = slot + ".DSK";
-                        hddFields[slot].Protection.IsChecked = false;
-                    }
-            }
+                ApplyDefault(selectedProfile ?? original.Profile);
             Refresh();
         }
         foreach (var field in hddFields.Values) { field.Path.IsEnabled = enabled; field.Protection.IsEnabled = enabled; field.Volume.IsEnabled = enabled; }
+        UpdateHddBanner();
         Render();
     }
+
+    // The default disks of each HDD machine: the C:-boot machine its bootable C: alone, the full workstation
+    // (hc2000-full-workstation-default) C:-F: of its own container, every other one C:-F: of the factory container.
+    private static string DefaultFor(string? profile) => profile switch
+    {
+        "hc2000-v2-hdd-cboot-v1" => HddFactoryImages.CBootVolumeName,
+        "hc2000-v2-full-workstation-v1" => HddFactoryImages.WorkstationContainerName,
+        _ => HddFactoryImages.ContainerName
+    };
+
+    private void ApplyDefault(string? profile)
+    {
+        var name = DefaultFor(profile);
+        if (name == HddFactoryImages.CBootVolumeName) ApplyCBootDefault();
+        else ApplyContainerDefaults(name);
+    }
+
+    /// <summary>Which default the draft's C: holds, or null for a selection of the user's own.</summary>
+    private string? SelectedDefault() =>
+        new[] { HddFactoryImages.ContainerName, HddFactoryImages.WorkstationContainerName }.FirstOrDefault(IsContainerDefaultSelected)
+            ?? (IsCBootDefaultSelected() ? HddFactoryImages.CBootVolumeName : null);
+
+    private bool IsContainerDefaultSelected(string containerName)
+    {
+        if (!LaunchStartup.TryResolveDisk(containerName, [], baseDirectory, out var path, out _)
+            && !LaunchStartup.TryResolveDisk(containerName, configDirectories, baseDirectory, out path, out _))
+            return false;
+        var full = Path.GetFullPath(path);
+        return hddFields.TryGetValue("C", out var c) && c.Path.Text == full && c.Volume.Text == "C.DSK";
+    }
+
+    private bool IsCBootDefaultSelected()
+    {
+        if (!LaunchStartup.TryResolveDisk(HddFactoryImages.CBootVolumeName, [], baseDirectory, out var path, out _)
+            && !LaunchStartup.TryResolveDisk(HddFactoryImages.CBootVolumeName, configDirectories, baseDirectory, out path, out _))
+            return false;
+        var full = Path.GetFullPath(path);
+        return hddFields.TryGetValue("C", out var c) && c.Path.Text == full && string.IsNullOrWhiteSpace(c.Volume.Text);
+    }
+
+    private void ApplyCBootDefault()
+    {
+        if (LaunchStartup.TryResolveDisk(HddFactoryImages.CBootVolumeName, [], baseDirectory, out var cbootPath, out _)
+            || LaunchStartup.TryResolveDisk(HddFactoryImages.CBootVolumeName, configDirectories, baseDirectory, out cbootPath, out _))
+        {
+            hddFields["C"].Path.Text = Path.GetFullPath(cbootPath);
+            hddFields["C"].Volume.Text = "";
+            hddFields["C"].Protection.IsChecked = false;
+            foreach (var slot in new[] { "D", "E", "F" })
+            {
+                hddFields[slot].Path.Text = "";
+                hddFields[slot].Volume.Text = "";
+                hddFields[slot].Protection.IsChecked = false;
+            }
+        }
+    }
+
+    private void ApplyContainerDefaults(string containerName)
+    {
+        if (LaunchStartup.TryResolveDisk(containerName, [], baseDirectory, out var path, out _)
+            || LaunchStartup.TryResolveDisk(containerName, configDirectories, baseDirectory, out path, out _))
+        {
+            foreach (var slot in new[] { "C", "D", "E", "F" })
+            {
+                hddFields[slot].Path.Text = Path.GetFullPath(path);
+                hddFields[slot].Volume.Text = slot + ".DSK";
+                hddFields[slot].Protection.IsChecked = false;
+            }
+        }
+    }
+
+    /// <summary>True when C:-F: images are named in the draft but the machine cannot attach them.</summary>
+    public bool HddNotAttached => hddBanner.IsVisible;
+
+    private void UpdateHddBanner() =>
+        hddBanner.IsVisible = !hddEnabled && hddFields.Values.Any(field => !string.IsNullOrWhiteSpace(field.Path.Text));
 
     private ImmutableArray<HddConfiguration> HddDraft(bool canonicalPaths = true) => original.Hdd.Select(h => h.Slot)
         .Concat(hddFields.Keys).Distinct().Where(slot => !string.IsNullOrWhiteSpace(hddFields[slot].Path.Text))
@@ -196,8 +338,20 @@ public sealed class StartupMediaPanel : UserControl
             floppyChoices[row.Handle] = new(row.Path);
             listed.Add(row with { Detail = row.Detail + " · protected library source; read-only draft" });
         }
+        if (File.Exists(hddCatalogPath))
+        {
+            try
+            {
+                var hddLibrary = LoadExistingCatalog(hddCatalogPath);
+                foreach (var entry in hddLibrary.Entries.Where(e => e.Kind == DiskLibraryKind.Hdd && e.Format == DiskLibraryFormat.Flat512))
+                    listed.Add(new("library-hdd:" + entry.Id, "library-hdd", entry.Name, entry.SourcePath, entry.Length,
+                        "flat512 library · saved working medium reused when unique; fresh admission on selection, original is provenance only", InlineMediaStatus.Ready));
+            }
+            catch (Exception ex) when (Expected(ex))
+            { listed.Add(InlineMediaRow.Unavailable("library-hdd", "HDD library unavailable: " + ex.Message)); }
+        }
         if (hddDraft.IsEmpty)
-            listed.Add(InlineMediaRow.Unavailable("hdd", "No HDD media selected; enabling HDD on an empty draft selects bundled D:/E:/F: if installed. Otherwise repair the installed assets or configure existing 8 MiB raw inputs below. Empty-controller Start is not usable-disk proof."));
+            listed.Add(InlineMediaRow.Unavailable("hdd", "No HDD media selected. Enabling HDD may select bundled drives when available; otherwise choose existing images below."));
         if (library is null || library.Entries.Count == 0)
             listed.Add(InlineMediaRow.Unavailable("disk", library is null ? catalogDiagnostic : "Disk library is empty; use the bundled disk or load an existing catalog / configure a local path below."));
         if (listed.Count > InlineMediaListing.MaxRowsPerPage)
@@ -250,6 +404,19 @@ public sealed class StartupMediaPanel : UserControl
                     var button = new Button { Content = $"Use for {slot}:", IsEnabled = hddEnabled && !selecting };
                     button.Click += (_, _) => SelectHdd(row, slot);
                     actions.Children.Add(button);
+                    if (LibraryHddAction is not null && hddChoices.TryGetValue(row.Handle, out var candidate) && candidate.Volume is null)
+                    {
+                        var libraryButton = new Button { Content = $"Library flat512 as {slot}:", IsEnabled = hddEnabled && !librarySelecting && !selecting };
+                        libraryButton.Click += async (_, _) => await SelectLibraryHddAsync(row, slot);
+                        actions.Children.Add(libraryButton);
+                    }
+                }
+            if (row.Kind == "library-hdd" && row.Selectable && LibraryHddAction is not null)
+                foreach (var slot in new[] { "C", "D", "E", "F" })
+                {
+                    var button = new Button { Content = $"Library flat512 as {slot}:", IsEnabled = hddEnabled && !librarySelecting && !selecting };
+                    button.Click += async (_, _) => await SelectLibraryHddAsync(row, slot);
+                    actions.Children.Add(button);
                 }
             item.Children.Add(actions); rows.Children.Add(item);
         }
@@ -275,7 +442,7 @@ public sealed class StartupMediaPanel : UserControl
                 throw new ArgumentException("Draft changed during validation; the pending selection was cancelled.");
             if (slot == DiskSlot.A) { selectedA = candidate; selectedRowA = row; diskA.Text = candidate.Path; }
             else { selectedB = candidate; selectedRowB = row; diskB.Text = candidate.Path; }
-            status.Text = $"{slot}: {row.Name} selected read-only; draft only, validated again at Start.";
+            status.Text = $"{slot}: {row.Name} selected read-only; it is checked again when you start.";
             return true;
         }
         catch (Exception ex) when (Expected(ex)) { status.Text = "Not selected: " + ex.Message; return false; }
@@ -303,7 +470,7 @@ public sealed class StartupMediaPanel : UserControl
             hddFields[slot].Path.Text = candidate.Path;
             hddFields[slot].Volume.Text = candidate.Volume;
             hddFields[slot].Protection.IsChecked = candidate.WriteProtected;
-            status.Text = $"{slot}: {row.Name} selected ({(candidate.WriteProtected ? "read-only" : "guest writable, no host writeback")}); cold Start must admit the image."; return true;
+            status.Text = $"{slot}: {row.Name} selected ({(candidate.WriteProtected ? "read-only" : "changes stay in the machine until saved")}); checked when you start."; return true;
         }
         catch (Exception ex) when (Expected(ex)) { status.Text = "Not selected: " + ex.Message; return false; }
     }
@@ -311,7 +478,8 @@ public sealed class StartupMediaPanel : UserControl
     public void ClearHdd(string slot)
     {
         if (hddFields.TryGetValue(slot, out var field)) { field.Path.Text = ""; field.Volume.Text = ""; }
-        status.Text = $"{slot}: draft attachment removed; running machines unchanged.";
+        status.Text = $"{slot}: removed from this setup; running machines unchanged.";
+        UpdateHddBanner();
     }
 
     public void Clear(DiskSlot slot)

@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hc2000.Z80\Hc2000.Z80.csproj" />
+    <ProjectReference Include="../Hc2000.Configuration/Hc2000.Configuration.csproj" />
     <ProjectReference Include="..\Hc2000.Asm\Hc2000.Asm.csproj" />
     <ProjectReference Include="..\Hc2000.Disasm\Hc2000.Disasm.csproj" />
     <ProjectReference Include="..\Hc2000.Machine\Hc2000.Machine.csproj" />
@@ -13,12 +14,27 @@
     <InternalsVisibleTo Include="Hc2000.Tools.Tests" />
     <InternalsVisibleTo Include="Hc2000.ImageAdmissionProbe" />
   </ItemGroup>
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/../../src-library/shared')">
+    <!-- Private development builds expose shared includes beside hc; public publish excludes them. -->
+    <Content Include="../../src-library/shared/**/*.inc;../../src-library/shared/README.md" Link="src-library/shared/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+  </ItemGroup>
   <ItemGroup>
+    <Compile Include="../HostShared/PublicGuestPayload.cs" Link="HostShared/PublicGuestPayload.cs" />
     <Compile Include="../HostShared/HddFactoryImages.cs" Link="HostShared/HddFactoryImages.cs" />
+    <Compile Include="../HostShared/CBootImages.cs" Link="HostShared/CBootImages.cs" />
     <Compile Include="../HostShared/HddContainerPublication.cs" Link="HostShared/HddContainerPublication.cs" />
     <Compile Include="../HostShared/MediaHomeCreate.cs" Link="HostShared/MediaHomeCreate.cs" />
     <Compile Include="../HostShared/NativeImageAdmission.cs" Link="HostShared/NativeImageAdmission.cs" />
+    <Compile Include="../HostShared/WindowsImageAdmissionNative.cs" Link="HostShared/WindowsImageAdmissionNative.cs" />
+    <Compile Include="../HostShared/ImageAdmissionNative.cs" Link="HostShared/ImageAdmissionNative.cs" />
     <Compile Include="../HostShared/LinuxImageAdmissionNative.cs" Link="HostShared/LinuxImageAdmissionNative.cs" />
     <Compile Include="../HostShared/ImageAdmissionRecord.cs" Link="HostShared/ImageAdmissionRecord.cs" />
+    <Compile Include="../HostShared/CpmFileLocator.cs" Link="HostShared/CpmFileLocator.cs" />
+    <Compile Include="../HostShared/DiskInventory.cs" Link="HostShared/DiskInventory.cs" />
+    <Compile Include="../HostShared/WorkstationLayout.cs" Link="HostShared/WorkstationLayout.cs" />
   </ItemGroup>
+  <PropertyGroup>
+    <Hc2000FeaturePayload>true</Hc2000FeaturePayload>
+  </PropertyGroup>
+  <Import Project="../../build/FeatureFlags.targets" />
 </Project>

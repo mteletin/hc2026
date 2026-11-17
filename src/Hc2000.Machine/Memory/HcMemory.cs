@@ -1,13 +1,16 @@
 namespace Hc2000.Machine.Memory;
 
-/// <summary>Instance-owned physical stores and CPU/M1 views. Bus-cycle classification and port decode belong to the caller.</summary>
-public sealed partial class HcMemory
+/// <summary>Instance-owned physical stores and CPU/M1 views. Bus-cycle classification and port decode belong to the caller.
+/// A paged RAM comes from <see cref="PagedRamPool"/>; disposing hands it back for the next machine.</summary>
+public sealed partial class HcMemory : IDisposable
 {
-    private readonly byte[] ram;
+    private byte[] ram;
+    private bool disposed;
     private readonly byte[] rom;
     private readonly byte[] shadowRom;
     private readonly byte[] shadowRam;
     private PagedMemoryRange? sessionRange;
+    internal bool SessionWindowEngaged => sessionRange is not null;
 
     public MemoryProfile Profile { get; }
     /// <summary>Faithful latches plus bank selector; starts disabled (0xff), never bank 0 by accident.</summary>
@@ -74,7 +77,7 @@ public sealed partial class HcMemory
         if (if1.Length != 0x4000) throw new ArgumentException("IF1 must be exactly 16 KiB.", nameof(if1));
         Profile = profile;
         Latches = DisabledLatches with { PagedEnabled = profile.RamPaged is { BoundCpmWindow: false } };
-        ram = new byte[profile.RamBytes];
+        ram = PagedRamPool.Rent(profile.RamBytes, this);
         rom = new byte[profile.RomBytes];
         shadowRom = new byte[profile.ShadowRomBytes];
         shadowRam = new byte[profile.ShadowRamBytes];
@@ -82,6 +85,27 @@ public sealed partial class HcMemory
         cpm.CopyTo(rom.AsSpan(0x4000));
         if1.CopyTo(shadowRom);
         Pages = MemoryPaging.Build(Profile, Latches);
+    }
+
+    /// <summary>Hands a pooled RAM back once. The RAM then reads as empty, so anything still using this memory fails
+    /// at its next access instead of seeing the next machine's bytes.</summary>
+    public void Dispose()
+    {
+        if (disposed) return;
+        disposed = true;
+        var released = ram;
+        ram = [];
+        PagedRamPool.Return(released);
+    }
+
+    /// <summary>Retires this memory without handing its RAM to another machine: the pool stops counting it and the RAM stays
+    /// readable for whatever part of a retired machine still holds it, as before pooling; the GC frees it later. A second
+    /// call, or a call after <see cref="Dispose"/>, does nothing.</summary>
+    public void Retire()
+    {
+        if (disposed) return;
+        disposed = true;
+        PagedRamPool.Forget(ram);
     }
 
     /// <summary>Reset state: faithful latches, bank window disabled (hc2000-ram-banks-abi-v2).</summary>
@@ -163,6 +187,15 @@ public sealed partial class HcMemory
     // policy. Standalone ram.paged retains its power-on/reset behavior.
     internal void UseSessionPaging() => SetSessionPagingEngaged(false);
 
+    // The full workstation runs its drives from paged RAM: a tape session there marks its range engaged
+    // or not, but the paging ports and the gate stay on throughout.
+    private bool sessionPagingAlwaysOn;
+    internal void UseAlwaysOnSessionPaging()
+    {
+        sessionPagingAlwaysOn = true;
+        SetSessionPagingEngaged(false);
+    }
+
     private bool PagedPortsActive => Profile.RamPaged is { } device && Latches.PagedEnabled
         && (!device.BoundCpmWindow || Latches.Cpm);
 
@@ -171,7 +204,7 @@ public sealed partial class HcMemory
         if (engaged && (range is null || !pagedClaims.Any(c => c.Range == range)))
             throw new InvalidOperationException("Engagement requires the session's claimed range.");
         sessionRange = engaged ? range : null;
-        Latches = Latches with { PagedEnabled = engaged };
+        Latches = Latches with { PagedEnabled = engaged || sessionPagingAlwaysOn };
         Pages = MemoryPaging.Build(Profile, Latches, sessionRange);
     }
 

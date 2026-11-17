@@ -117,6 +117,10 @@ internal sealed class DiskWritebackHost
            && latest.RequestId == recorded.RequestId
            && latest.Generation == recorded.Generation;
 
+    /// <summary>The file a drive is bound to for writeback, or null (hc2000-remote-drive-mount: a shared drive bound to
+    /// its file leaves through <see cref="TryEjectAsync"/> and comes back through that file).</summary>
+    internal string? BoundPath(DiskSlot slot) => paths.TryGetValue(slot == DiskSlot.A ? "A" : "B", out var path) ? path : null;
+
     public async Task<bool> TryEjectAsync(DiskSlot slot)
     {
         var drive = slot == DiskSlot.A ? "A" : "B";

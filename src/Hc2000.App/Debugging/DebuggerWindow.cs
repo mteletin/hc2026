@@ -23,6 +23,10 @@ public sealed class DebuggerWindow : Window
     private readonly TextBox registers = Panel();
     private readonly TextBox fdc = Panel();
     private readonly TextBox breakpointList = Panel();
+    // The default docked view: what the PC is doing right now, monospace, updated on every publish.
+    private readonly TextBox pcRegisters = Panel();
+    private readonly TextBox pcInstruction = Panel();
+    private readonly TextBox pcMemoryConfiguration = Panel();
     private readonly TextBlock errors = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Action<DebuggerCommand>? enqueue;
     private readonly Button pause;
@@ -52,10 +56,28 @@ public sealed class DebuggerWindow : Window
         toolbar.Children.Add(address); toolbar.Children.Add(refresh);
         var codePanel = new Grid { RowDefinitions = new RowDefinitions("Auto,*") };
         codePanel.Children.Add(control); Grid.SetRow(code, 1); codePanel.Children.Add(code);
+        pcRegisters.Name = "DebuggerPcRegisters";
+        pcInstruction.Name = "DebuggerPcInstruction";
+        pcMemoryConfiguration.Name = "DebuggerPcMemoryConfig";
+        var pcPane = new Grid { Name = "DebuggerPcView", Margin = new Thickness(8),
+            RowDefinitions = new RowDefinitions("Auto,2*,Auto,*,Auto,*") };
+        Control[] pcRows =
+        [
+            new TextBlock { Text = "Z80 registers", Classes = { "caption" } }, pcRegisters,
+            new TextBlock { Text = "Program counter — current instruction", Classes = { "caption" } }, pcInstruction,
+            new TextBlock { Text = "Active memory configuration", Classes = { "caption" } }, pcMemoryConfiguration
+        ];
+        for (var row = 0; row < pcRows.Length; row++)
+        {
+            Grid.SetRow(pcRows[row], row);
+            pcPane.Children.Add(pcRows[row]);
+        }
         var tabs = new TabControl
         {
+            SelectedIndex = 0,
             ItemsSource = new[]
             {
+                new TabItem { Header = "PC", Content = pcPane },
                 new TabItem { Header = "Code / labels", Content = codePanel }, new TabItem { Header = "Memory / page map", Content = memory },
                 new TabItem { Header = "Registers", Content = registers }, new TabItem { Header = "FDC", Content = fdc },
                 new TabItem { Header = "Breakpoints", Content = BreakpointPanel() }
@@ -145,9 +167,14 @@ public sealed class DebuggerWindow : Window
                 $"gen={generation} seq={sequence} paused={(paused ? "yes" : "no")}. Display is a copied snapshot, not live state.";
         if (snapshot is null)
         {
-            code.Text = memory.Text = registers.Text = fdc.Text = breakpointList.Text = "Unavailable: no boundary snapshot."; return;
+            code.Text = memory.Text = registers.Text = fdc.Text = breakpointList.Text =
+                pcRegisters.Text = pcInstruction.Text = pcMemoryConfiguration.Text = "Unavailable: no boundary snapshot.";
+            return;
         }
         registers.Text = DebuggerDisplay.Registers(snapshot); fdc.Text = DebuggerDisplay.Fdc(snapshot);
+        pcRegisters.Text = DebuggerDisplay.Registers(snapshot);
+        pcInstruction.Text = $"PC={snapshot.Registers.Pc:X4}  {DebuggerDisplay.Instruction(snapshot)}";
+        pcMemoryConfiguration.Text = DebuggerDisplay.MemoryConfiguration(snapshot);
         breakpointList.Text = snapshot.Breakpoints.Count == 0 ? "None" :
             string.Join("\n", snapshot.Breakpoints.Select(b => $"{b.Kind} {b.Start:X4}-{b.End:X4}"));
         if (!ushort.TryParse(address.Text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var a))

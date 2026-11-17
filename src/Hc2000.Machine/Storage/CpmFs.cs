@@ -18,20 +18,22 @@ public sealed record Dpb(string Name, DiskGeometry Geometry, int Spt, int Bsh, i
         new("hcfs80", new(80,2,16,256),32,4,15,0,320,127,0xc0,0,32,0,true,true),
         new("hcfs40", new(40,2,16,256),32,4,15,0,160,127,0xc0,0,32,0,true,true)
     };
-    /// <summary>Accepted logical DPB v1 for the cold C:-F: HDD volumes the HDD epic delivers
-    /// (KB hc2000-cpm22-large-drive-dpb-v1 / hc2000-hdd-transport-v1): 4 KiB blocks, DSM 2047,
+    /// <summary>Accepted logical DPB v1 for the cold C:-F: HDD volumes: 4 KiB blocks, DSM 2047,
     /// DRM 1023, EXM 1, CKS 256, OFF 0 over a flat 16384x512 raw image. Geometry describes
     /// 1024 logical tracks of 16 physical sectors (SPT 64 in 128-byte records), not DSK CHS;
     /// Skew is not applied to a cold volume.</summary>
     public static Dpb HddVolume() => new("hdd-volume-8m", new(1024,1,16,512), 64, 5, 31, 1, 2047, 1023, 0xff, 0, 256, 0, true, false);
-    /// <summary>Accepted logical DPB for the resident M: v2 8 KiB drive (KB hc2000-m-base-view-v1,
-    /// doc amendment-m-v2-geometry-8kib): 8 KiB blocks (Bsh 6), EXM 1 with 16-bit allocation, DSM 1023,
+    /// <summary>Accepted logical DPB for the resident M: v2 8 KiB drive: 8 KiB blocks (Bsh 6),
+    /// EXM 1 with 16-bit allocation, DSM 1023,
     /// DRM 255, ALV 128 (AL0 0x80), CKS/OFF 0. SPT 128 records is logical, not DSK CHS; Geometry is a
     /// flat 512x16x1024 = 8 MiB raw store (1024 blocks, DSM 1023); Skew is not applied to a cold drive.</summary>
     public static Dpb MVolumeV2() => new("m-volume-8m-v2", new(512, 1, 16, 1024), 128, 6, 63, 1, 1023, 255, 0x80, 0x00, 0, 0, true, false);
 }
 public sealed record CpmFile(int User, string Name, string CatalogName, bool ReadOnly, bool System,
     int Records, int AllocatedBytes, int DirectoryIndex);
+public enum CpmRecordReadResult { Success, Unwritten, MissingExtent }
+public sealed record CpmStructuralIssue(string Code, int Entry, int User, string File, int Extent, int? Block, string Detail);
+public sealed record CpmStructuralReport(Dpb Parameters, IReadOnlyList<string> Warnings, IReadOnlyList<CpmStructuralIssue> Issues);
 
 /// <summary>CP/M 2.2 extents. Get returns record-rounded data, never guessed trimming.</summary>
 public sealed class CpmFs
@@ -47,13 +49,21 @@ public sealed class CpmFs
     private StringComparer NameComparer => Parameters.HcHeader ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
     public int MaximumBlock => maxBlock;
     public IReadOnlyList<string> Warnings { get; }
-    public CpmFs(Dsk disk, Dpb parameters)
+    public CpmFs(Dsk disk, Dpb parameters) : this(disk, parameters, true) { }
+    private CpmFs(Dsk disk, Dpb parameters, bool validate)
     {
         this.disk = disk; Parameters = parameters;
         if (disk.UniformGeometry() != parameters.Geometry) throw new InvalidDataException("Geometry does not match DPB.");
         (logical, dataStart, maxBlock, Warnings) = Initialize(parameters, disk.LogicalBytes(parameters.Skew), checked(parameters.Off * parameters.Spt * 128));
-        ValidateDirectory();
+        if (validate) ValidateDirectory();
     }
+    public static CpmStructuralReport InspectStructure(Dsk disk, Dpb parameters)
+    {
+        var fs = new CpmFs(disk, parameters, false);
+        return new(parameters, fs.Warnings, fs.StructuralIssues(true));
+    }
+    /// <summary>The same report for this open filesystem, a floppy or a cold volume alike.</summary>
+    public CpmStructuralReport InspectStructure() => new(Parameters, Warnings, StructuralIssues(true));
     private CpmFs(byte[] volume, Dpb parameters, bool readOnly = false)
     {
         Parameters = parameters; this.volume = true; this.readOnly = readOnly;
@@ -114,7 +124,7 @@ public sealed class CpmFs
     }
     public static CpmFs Format(Dpb parameters, DiskFormat format = DiskFormat.Extended)
         => new(Dsk.Create(parameters.Geometry, format), parameters);
-    /// <summary>Shared blank cold-volume writer (KB hc2000-media-home-scan-admission-v1 sec 4): fills exactly
+    /// <summary>Shared blank cold-volume writer: fills exactly
     /// 8,388,608 bytes with 0xe5 and returns the flat raw image CpmFs.OpenHddVolume accepts through the
     /// volume constructor (data start 0, no skew). Not the zero fill of hc hdd create; the Dpb.HddVolume()
     /// geometry is not a Dsk geometry, so Format(Dpb.HddVolume()) is structurally never on this path.</summary>
@@ -164,20 +174,47 @@ public sealed class CpmFs
     private bool Reserved(int block) => block < 16 && (((Parameters.Al0 << 8) | Parameters.Al1) & (0x8000 >> block)) != 0;
     private void ValidateDirectory()
     {
-        var allocated = new HashSet<int>(); var extents = new HashSet<string>(NameComparer);
+        var issue = StructuralIssues(false).FirstOrDefault();
+        if (issue is not null) throw new InvalidDataException(issue.Detail);
+    }
+    private IReadOnlyList<CpmStructuralIssue> StructuralIssues(bool continuity)
+    {
+        var issues = new List<CpmStructuralIssue>();
+        var allocated = new Dictionary<int, int>(); var extents = new HashSet<string>(NameComparer);
         foreach (var offset in DirectoryOffsets().Where(Live))
         {
+            var entry = (offset - dataStart) / 32; var user = (int)logical[offset];
+            var name = Name(offset); var extent = Extent(offset) & ~Parameters.Exm;
+            void Add(string code, string detail, int? block = null) => issues.Add(new(code, entry, user, name, extent, block, detail));
             if (logical[offset] > 31 || logical[offset + 15] > 128 || (!Parameters.HcHeader && logical.AsSpan(offset + 1, 11).ToArray().Any(b => (b & 0x7f) is < 32 or > 126)) || (!Parameters.HcHeader && Name(offset).Length == 0))
-                throw new InvalidDataException($"Invalid directory entry {(offset - dataStart) / 32}.");
+                Add("invalid-entry", $"Invalid directory entry {entry}.");
             var key = $"{logical[offset]}:{Name(offset)}:{Extent(offset) & ~Parameters.Exm}";
-            if (!extents.Add(key)) throw new InvalidDataException("Duplicate extent.");
+            if (!extents.Add(key)) Add("duplicate-extent", "Duplicate extent.");
             var blocks = Blocks(offset).ToArray();
             if (blocks.Length < (Records(offset) * 128 + Parameters.BlockSize - 1) / Parameters.BlockSize)
-                throw new InvalidDataException("Extent has insufficient allocated blocks.");
+                Add("insufficient-allocation", "Extent has insufficient allocated blocks.");
             foreach (var block in blocks)
-                if (block > maxBlock || Reserved(block) || !allocated.Add(block))
-                    throw new InvalidDataException($"Corrupt allocation block {block}, physical maximum {maxBlock}.");
+            {
+                if (block > maxBlock) Add("out-of-range-block", $"Block exceeds physical maximum {maxBlock}.", block);
+                else if (Reserved(block)) Add("reserved-block", "Block is reserved for the directory.", block);
+                else if (allocated.TryGetValue(block, out var previous)) Add("shared-block", $"Block also allocated by entry {previous}.", block);
+                else allocated.Add(block, entry);
+            }
         }
+        if (continuity)
+            foreach (var group in DirectoryOffsets().Where(Live).GroupBy(o => (User: (int)logical[o], Name: Name(o)), new UserNameComparer(NameComparer)))
+            {
+                var ordered = group.OrderBy(o => Extent(o) & ~Parameters.Exm).ToArray(); var expected = 0;
+                for (var index = 0; index < ordered.Length; index++)
+                {
+                    var offset = ordered[index]; var extent = Extent(offset) & ~Parameters.Exm; var entry = (offset - dataStart) / 32;
+                    if (extent != expected) issues.Add(new("missing-extent", entry, group.Key.User, group.Key.Name, extent, null, $"Expected extent {expected}."));
+                    if (index < ordered.Length - 1 && Records(offset) != 128 * (Parameters.Exm + 1))
+                        issues.Add(new("short-extent", entry, group.Key.User, group.Key.Name, extent, null, "Short intermediate file extent."));
+                    expected = extent + Parameters.Exm + 1;
+                }
+            }
+        return issues;
     }
     private int[] Offsets(string name, int user)
     {
@@ -193,6 +230,72 @@ public sealed class CpmFs
             .Select(g => new CpmFile(g.Key.User, g.Key.Name, CatalogName(g.First()), (logical[g.First() + 9] & 128) != 0,
                 (logical[g.First() + 10] & 128) != 0, g.Sum(Records), g.Sum(o => Blocks(o).Count() * Parameters.BlockSize), (g.OrderBy(Extent).First() - dataStart) / 32))
             .OrderBy(f => f.DirectoryIndex).ToArray();
+    }
+    /// <summary>Directory entry count (Drm + 1); a read-only view for CP/NET SEARCH.</summary>
+    public int DirectoryEntryCount => Parameters.Drm + 1;
+    /// <summary>The raw 32-byte directory entry at <paramref name="index"/>; a 0xE5 user byte
+    /// marks a free entry. Read-only; the CP/NET logical server returns these verbatim.</summary>
+    public byte[] GetDirectoryEntry(int index)
+    {
+        if (index < 0 || index >= DirectoryEntryCount) throw new ArgumentOutOfRangeException(nameof(index));
+        var offset = dataStart + index * 32;
+        return logical.AsSpan(offset, 32).ToArray();
+    }
+    /// <summary>Aggregate one live file (name in STEM.EXT or STEM form, CP/M case rules) into a
+    /// <see cref="CpmFile"/>, or null when absent. Read-only lookup for the CP/NET logical server.</summary>
+    public CpmFile? Find(string name, int user = 0)
+    {
+        var matches = DirectoryOffsets()
+            .Where(o => Live(o) && logical[o] == user && string.Equals(Name(o), name, NameComparison))
+            .OrderBy(o => Extent(o)).ToArray();
+        if (matches.Length == 0) return null;
+        var first = matches[0];
+        return new CpmFile(user, name, CatalogName(first),
+            (logical[first + 9] & 128) != 0, (logical[first + 10] & 128) != 0,
+            matches.Sum(Records), matches.Sum(o => Blocks(o).Count() * Parameters.BlockSize),
+            (first - dataStart) / 32);
+    }
+    /// <summary>The highest addressable record plus one, including gaps between extents.</summary>
+    public int? GetVirtualRecordCount(string name, int user = 0)
+    {
+        var offsets = DirectoryOffsets()
+            .Where(o => Live(o) && logical[o] == user && string.Equals(Name(o), name, NameComparison))
+            .ToArray();
+        if (offsets.Length == 0) return null;
+        return offsets.Max(offset => (Extent(offset) & ~Parameters.Exm) * 128 + Records(offset));
+    }
+    /// <summary>Finds the physical entry and logical record count for an FCB extent.</summary>
+    public bool TryGetFileExtent(string name, int user, int extent, out byte[] entry, out int records)
+    {
+        var physical = extent & ~Parameters.Exm;
+        var offset = DirectoryOffsets().Where(o => Live(o) && logical[o] == user &&
+            string.Equals(Name(o), name, NameComparison) && (Extent(o) & ~Parameters.Exm) == physical &&
+            Extent(o) >= extent).Select(o => (int?)o).FirstOrDefault();
+        if (offset is null) { entry = []; records = 0; return false; }
+        entry = logical.AsSpan(offset.Value, 32).ToArray();
+        records = Math.Clamp(Records(offset.Value) - (extent - physical) * 128, 0, 128);
+        return true;
+    }
+    /// <summary>Reads one record without compacting gaps in a file's extent or allocation map.</summary>
+    public CpmRecordReadResult ReadRecord(string name, int user, int record, Span<byte> destination)
+    {
+        if (record < 0 || record > 65535) throw new ArgumentOutOfRangeException(nameof(record));
+        if (destination.Length < 128) throw new ArgumentException("A record needs 128 bytes.", nameof(destination));
+        var extent = (record / 128) & ~Parameters.Exm;
+        var offset = DirectoryOffsets().Where(o => Live(o) && logical[o] == user &&
+            string.Equals(Name(o), name, NameComparison) && (Extent(o) & ~Parameters.Exm) == extent)
+            .Select(o => (int?)o).FirstOrDefault();
+        if (offset is null) return CpmRecordReadResult.MissingExtent;
+        var withinExtent = record - extent * 128;
+        if (withinExtent >= Records(offset.Value)) return CpmRecordReadResult.Unwritten;
+        var blockIndex = withinExtent * 128 / Parameters.BlockSize;
+        var blockField = offset.Value + 16 + blockIndex * (Parameters.WordAllocations ? 2 : 1);
+        var block = Parameters.WordAllocations
+            ? BinaryPrimitives.ReadUInt16LittleEndian(logical.AsSpan(blockField, 2)) : logical[blockField];
+        if (block == 0) return CpmRecordReadResult.Unwritten;
+        var recordOffset = dataStart + block * Parameters.BlockSize + withinExtent * 128 % Parameters.BlockSize;
+        logical.AsSpan(recordOffset, 128).CopyTo(destination);
+        return CpmRecordReadResult.Success;
     }
     private sealed class UserNameComparer(StringComparer comparer) : IEqualityComparer<(int User, string Name)>
     {
@@ -232,9 +335,9 @@ public sealed class CpmFs
             throw new InvalidDataException("Name must be an 8.3 disk filename.");
         return Encoding.ASCII.GetBytes(stem.PadRight(8) + ext.PadRight(3));
     }
-    public void Put(string name, ReadOnlySpan<byte> data, int user = 0)
+    public void Put(string name, ReadOnlySpan<byte> data, int user = 0, bool readOnly = false, bool system = false)
     {
-        if (readOnly) throw new InvalidDataException("M: v2 host view is read-only.");
+        if (this.readOnly) throw new InvalidDataException("M: v2 host view is read-only.");
         if (user is < 0 or > 31) throw new InvalidDataException("User must be 0..31.");
         var encodedName = EncodeName(name);
         var field = Encoding.ASCII.GetString(encodedName);
@@ -262,6 +365,8 @@ public sealed class CpmFs
         for (var e = 0; e < entriesNeeded; e++)
         {
             var offset = freeEntries[e]; Array.Clear(next, offset, 32); next[offset] = (byte)user; encodedName.CopyTo(next, offset + 1);
+            if (readOnly) next[offset + 9] |= 0x80;
+            if (system) next[offset + 10] |= 0x80;
             var recordCount = Math.Min(records, extentBytes / 128);
             var extent = e * (Parameters.Exm + 1) + (recordCount == 0 ? 0 : (recordCount - 1) / 128);
             next[offset + 12] = (byte)(extent & 31); next[offset + 14] = (byte)(extent >> 5);
@@ -277,6 +382,53 @@ public sealed class CpmFs
             records -= recordCount;
         }
         next.CopyTo(logical, 0); if (volume) return; disk!.WriteLogicalBytes(logical, Parameters.Skew);
+    }
+    public void SetAttributes(string name, int user, bool readOnly, bool system)
+    {
+        if (this.readOnly) throw new InvalidDataException("M: v2 host view is read-only.");
+        var offsets = Offsets(name, user);
+        var next = logical.ToArray();
+        foreach (var offset in offsets)
+        {
+            if (readOnly) next[offset + 9] |= 0x80;
+            else next[offset + 9] &= 0x7f;
+
+            if (system) next[offset + 10] |= 0x80;
+            else next[offset + 10] &= 0x7f;
+        }
+        next.CopyTo(logical, 0); if (volume) return; disk!.WriteLogicalBytes(logical, Parameters.Skew);
+    }
+    /// <summary>Moves a file to another user area by rewriting the user byte of its directory entries; its data
+    /// blocks and every other byte stay as they are.</summary>
+    public void MoveToUser(string name, int user, int toUser)
+    {
+        if (readOnly) throw new InvalidDataException("M: v2 host view is read-only.");
+        if (toUser is < 0 or > 15) throw new ArgumentOutOfRangeException(nameof(toUser));
+        var offsets = Offsets(name, user);
+        if (toUser != user && Find(name, toUser) is not null)
+            throw new InvalidDataException("User area " + toUser + " already holds " + name + ".");
+        foreach (var offset in offsets) logical[offset] = (byte)toUser;
+        if (volume) return; disk!.WriteLogicalBytes(logical, Parameters.Skew);
+    }
+    public IReadOnlyList<string> UnrecognizedAttributeFiles()
+    {
+        var list = new List<string>();
+        foreach (var offset in DirectoryOffsets().Where(Live))
+        {
+            bool hasUnrecognized = false;
+            for (var i = 1; i <= 8; i++)
+            {
+                if ((logical[offset + i] & 0x80) != 0) { hasUnrecognized = true; break; }
+            }
+            if ((logical[offset + 11] & 0x80) != 0) hasUnrecognized = true;
+            if (hasUnrecognized)
+            {
+                var user = (int)logical[offset];
+                var name = Name(offset);
+                list.Add($"user={user} file={name}");
+            }
+        }
+        return list.Distinct().ToArray();
     }
     public void Delete(string name, int user = 0)
     {

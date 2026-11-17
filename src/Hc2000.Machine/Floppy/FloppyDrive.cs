@@ -152,15 +152,21 @@ public sealed class FloppyDrive
 
     /// <summary>Export logical sectors, formatted overlays and status marks as EDSK bytes; caller owns host persistence.</summary>
     /// <remarks>Not a byte-identical archive save or .hcs snapshot. Dsk.Save preserves the original container.</remarks>
-    public byte[] ExportMedia()
+    public byte[] ExportMedia() => ExportMedia(int.MaxValue);
+
+    /// <summary>Export only if the complete padded EDSK representation fits the caller's bound.</summary>
+    public byte[] ExportMedia(int maximumBytes)
     {
+        if (maximumBytes < 0) throw new ArgumentOutOfRangeException(nameof(maximumBytes));
         if (Image is null) throw new InvalidOperationException("No medium.");
         var tracks = Image.Tracks.Select((t, i) => formatted.GetValueOrDefault((i / Image.Sides, i % Image.Sides), t)).ToArray();
         var lengths = tracks.Select(t => t.Sectors.Count == 0 ? 0 :
             checked((256 + t.Sectors.Sum(s => s.Data.Length) + 255) & ~255)).ToArray();
         if (lengths.Any(l => l / 256 > 255) || tracks.Any(t => t.Sectors.Count > 29 || t.Sectors.Any(s => s.Data.Length > ushort.MaxValue || s.N > 6)))
             throw new InvalidDataException("Track cannot be represented as EDSK.");
-        var bytes = new byte[checked(256 + lengths.Sum())];
+        var total = checked(256 + lengths.Sum());
+        if (total > maximumBytes) throw new InvalidDataException("Media export exceeds the requested size limit.");
+        var bytes = new byte[total];
         Encoding.ASCII.GetBytes("EXTENDED CPC DSK File\r\nDisk-Info\r\n").CopyTo(bytes, 0);
         Encoding.ASCII.GetBytes("HC2000 FDC").CopyTo(bytes, 34);
         bytes[48] = (byte)Image.Cylinders; bytes[49] = (byte)Image.Sides;

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Avalonia.Threading;
+using Hc2000.App.Explorer;
 using Hc2000.App.Media;
 using Hc2000.HostFiles;
 
@@ -11,6 +12,7 @@ internal sealed record ExplorerWriteResult(bool Published, ExplorerWriteRefusal?
 public partial class MainWindow
 {
     internal const string ExplorerWriteScope = "Protection covers this App host only. External processes may still write mounted images; close them before editing.";
+    internal Func<IReadOnlyList<string>> InstalledMediaRoots { get; set; } = () => InstalledMediaDirectory.Roots();
 
     /// <summary>One synchronous host-only transaction, with no UI reentrancy, owner dispatch or awaits.
     /// The callback must be a pure bounded image edit (e.g. CP/M copy-in), not UI or guest work.
@@ -34,6 +36,8 @@ public partial class MainWindow
                 {
                     var facts = admission.ValidateOpenedSource(input, path);
                     if (CheckExplorerOwnership(facts.FileId) is { } refusal) return refusal;
+                    if (InstalledMediaRoots().Any(root => InstalledMediaDirectory.Contains(root, facts.CanonicalPath)))
+                        return Refused(ExplorerWriteRefusal.ProtectedOriginal, "Installed media original is protected: use an unmounted private copy.");
                     if (AllSessions().Any(session => session.PathIsProtectedOriginal(path)))
                         return Refused(ExplorerWriteRefusal.ProtectedOriginal, "Protected original: use an unmounted private copy.");
                     if (facts.Length <= 0 || facts.Length > HddMediaAdapter.ImageLength)

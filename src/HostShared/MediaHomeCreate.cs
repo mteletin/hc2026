@@ -1,6 +1,6 @@
 namespace Hc2000.HostFiles;
 
-/// <summary>New-image create in a media home (KB hc2000-media-home-scan-admission-v1 sec 4): the one
+/// <summary>New-image create in a media home: the one
 /// writer to a media home. Writes the target's bytes as a new file inside the home and refuses a home
 /// that is unset, missing or not a directory and a name that already exists; never overwrites, never
 /// registers the new file. Shared by the hc CLI and the App; the bytes come from the shared writers
@@ -27,6 +27,8 @@ internal static class MediaHomeCreate
         try
         {
             File.WriteAllBytes(temporary, write());
+            // UMask=0002 guard (builder units): the writer's own output must not land group-writable.
+            if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(temporary, UnixFileMode.UserRead | UnixFileMode.UserWrite);
             admission?.ValidatePublicationTargetStillCurrent();
             moveStarted = true;
             File.Move(temporary, full, false);

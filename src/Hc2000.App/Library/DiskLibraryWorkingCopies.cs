@@ -17,6 +17,7 @@ public sealed class DiskLibraryWorkingCopyPublication
 {
     public Func<FileStream, ImmutableArray<byte>, CancellationToken, Task> WriteStage { get; set; } = WriteAsync;
     public Func<string, CancellationToken, Task<ImmutableArray<byte>>> ReadBack { get; set; } = ReadAsync;
+    public Func<string, CancellationToken, Task<ImmutableArray<byte>>> ReadBackHdd { get; set; } = ReadHddAsync;
     public Action<string, string> Publish { get; set; } = (stage, final) => File.Move(stage, final, overwrite: false);
     public Action<string> Delete { get; set; } = File.Delete;
 
@@ -36,9 +37,18 @@ public sealed class DiskLibraryWorkingCopyPublication
         return await ReadStreamAsync(input, cancellation);
     }
 
-    internal static async Task<ImmutableArray<byte>> ReadStreamAsync(FileStream input, CancellationToken cancellation)
+    private static async Task<ImmutableArray<byte>> ReadHddAsync(string path, CancellationToken cancellation)
     {
-        if (input.Length is < 1 or > DiskLibrarySchema.MaxContainerBytes) throw new InvalidDataException("image size is outside the copy budget");
+        await using var input = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, FileOptions.Asynchronous);
+        return await ReadStreamAsync(input, cancellation, DiskLibrarySchema.HddBytes);
+    }
+
+    internal static async Task<ImmutableArray<byte>> ReadStreamAsync(FileStream input, CancellationToken cancellation,
+        int maxBytes = DiskLibrarySchema.MaxContainerBytes)
+    {
+        if (maxBytes is not (DiskLibrarySchema.MaxContainerBytes or DiskLibrarySchema.HddBytes))
+            throw new ArgumentOutOfRangeException(nameof(maxBytes));
+        if (input.Length < 1 || input.Length > maxBytes) throw new InvalidDataException("image size is outside the copy budget");
         using var output = new MemoryStream();
         var buffer = new byte[65536];
         while (true)
@@ -46,7 +56,7 @@ public sealed class DiskLibraryWorkingCopyPublication
             cancellation.ThrowIfCancellationRequested();
             var count = await input.ReadAsync(buffer, cancellation);
             if (count == 0) break;
-            if (output.Length + count > DiskLibrarySchema.MaxContainerBytes) throw new InvalidDataException("image grew beyond the copy budget");
+            if (output.Length + count > maxBytes) throw new InvalidDataException("image grew beyond the copy budget");
             output.Write(buffer, 0, count);
         }
         return ImmutableArray.CreateRange(output.ToArray());
@@ -70,6 +80,18 @@ public sealed partial class DiskLibraryCatalog
     public async Task<DiskLibraryCopyResult> CreateWorkingCopyAsync(string entryId, string libraryRoot,
         DiskLibraryWorkingCopyPublication? publication = null, DiskLibraryPublication? catalogPublication = null,
         CancellationToken cancellation = default)
+        => await CreateWorkingCopyCoreAsync(entryId, libraryRoot, publication, catalogPublication, cancellation, hdd: false);
+
+    /// <summary>Explicit bounded raw HDD seed creation; catalog metadata alone remains no mount authority.
+    /// Current mutable HDD state will live in a separately admitted private named-volume container.</summary>
+    public Task<DiskLibraryCopyResult> CreateHddWorkingCopyAsync(string entryId, string libraryRoot,
+        DiskLibraryWorkingCopyPublication? publication = null, DiskLibraryPublication? catalogPublication = null,
+        CancellationToken cancellation = default)
+        => CreateWorkingCopyCoreAsync(entryId, libraryRoot, publication, catalogPublication, cancellation, hdd: true);
+
+    private async Task<DiskLibraryCopyResult> CreateWorkingCopyCoreAsync(string entryId, string libraryRoot,
+        DiskLibraryWorkingCopyPublication? publication, DiskLibraryPublication? catalogPublication,
+        CancellationToken cancellation, bool hdd)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
@@ -89,20 +111,24 @@ public sealed partial class DiskLibraryCatalog
                 return CopyResult(DiskLibraryCopyStatus.Unknown, "reconciliation is required before another mutation");
             var entry = prior.Entries.FirstOrDefault(e => e.Id == entryId);
             if (entry is null) return CopyResult(DiskLibraryCopyStatus.Refused, "unknown entry id");
+            if (entry.Kind != (hdd ? DiskLibraryKind.Hdd : DiskLibraryKind.Floppy))
+                return CopyResult(DiskLibraryCopyStatus.Refused, "copy kind requires its explicit copy lane; catalog metadata does not authorize mount");
+            if (hdd && (entry.Format != DiskLibraryFormat.Flat512 || entry.Length != DiskLibrarySchema.HddBytes))
+                return CopyResult(DiskLibraryCopyStatus.Refused, "HDD seeds require exact flat512 length");
             if (prior.Copies.Length >= DiskLibrarySchema.MaxCopies || prior.Copies.Count(c => c.EntryId == entryId) >= DiskLibrarySchema.MaxCopiesPerEntry)
                 return CopyResult(DiskLibraryCopyStatus.Refused, "copy count budget exceeded");
             RequireCopyAdmission();
-            if (!OperatingSystem.IsLinux()) return CopyResult(DiskLibraryCopyStatus.Refused, "trustworthy Linux identity is unavailable");
+            if (!NativeImageAdmission.IsGuarded) return CopyResult(DiskLibraryCopyStatus.Refused, "native file identity is unavailable");
             var acquired = NativeImageAdmission.TryAcquireColdRead(token);
             native = acquired.Admission;
             if (native is null) return CopyResult(DiskLibraryCopyStatus.Refused, "native admission refused: " + acquired.Refusal);
             var root = Path.GetFullPath(libraryRoot);
             if (Path.GetDirectoryName(CatalogPath) != root)
                 return CopyResult(DiskLibraryCopyStatus.Refused, "library root must be the catalog parent directory");
-            using var rootHandle = LinuxImageAdmissionNative.Directory(root, create: true);
+            using var rootHandle = ImageAdmissionNative.Directory(root, create: true);
             RequirePrivateDirectory(rootHandle);
             var copies = Path.Combine(root, "copies");
-            using var copiesHandle = LinuxImageAdmissionNative.Directory(copies, create: true);
+            using var copiesHandle = ImageAdmissionNative.Directory(copies, create: true);
             RequirePrivateDirectory(copiesHandle);
             RequireSafeCatalogPath();
 
@@ -113,34 +139,39 @@ public sealed partial class DiskLibraryCatalog
             if (prior.Entries.Any(e => e.Id != entryId && (e.SourcePath == entry.SourcePath || FileId(e.SourcePath) == sourceId)) ||
                 prior.Copies.Any(c => FileId(Path.Combine(root, c.RelativePath)) == sourceId))
                 throw new IOException("source aliases another original or managed copy");
-            var bytes = await DiskLibraryWorkingCopyPublication.ReadStreamAsync(source, token);
+            var bytes = await DiskLibraryWorkingCopyPublication.ReadStreamAsync(source, token,
+                hdd ? DiskLibrarySchema.HddBytes : DiskLibrarySchema.MaxContainerBytes);
             native.ValidateSourceStillCurrent(source, before);
             if (bytes.Length != entry.Length || Sha256Hex(bytes) != entry.Sha256)
                 throw new IOException("original changed since registration");
-            var disk = Dsk.Load(bytes.AsSpan());
-            if (disk.Format == DiskFormat.Raw || (disk.Format == DiskFormat.Extended ? DiskLibraryFormat.ExtendedDsk : DiskLibraryFormat.StandardDsk) != entry.Format)
-                throw new InvalidDataException("source container no longer matches the registered DSK format");
+            if (!hdd)
+            {
+                var disk = Dsk.Load(bytes.AsSpan());
+                if (disk.Format == DiskFormat.Raw || (disk.Format == DiskFormat.Extended ? DiskLibraryFormat.ExtendedDsk : DiskLibraryFormat.StandardDsk) != entry.Format)
+                    throw new InvalidDataException("source container no longer matches the registered DSK format");
+            }
             var id = Guid.NewGuid().ToString("d");
-            copy = new(id, entryId, "copies/" + id + ".dsk", entry.Sha256, entry.Sha256, entry.Length);
+            copy = new(id, entryId, "copies/" + id + (hdd ? ".img" : ".dsk"), entry.Sha256, entry.Sha256, entry.Length);
             candidate = prior with { Copies = prior.Copies.Add(copy) };
             _ = DiskLibrarySchema.Encode(candidate); // Validate all byte/count/schema bounds before creating a file.
             final = Path.Combine(root, copy.RelativePath);
             var stageCandidate = final + ".part";
             RequireVacant(final);
             token.ThrowIfCancellationRequested();
-            await using (var writer = new FileStream(stageCandidate, new FileStreamOptions
+            var stageOptions = new FileStreamOptions
             {
                 Mode = FileMode.CreateNew, Access = FileAccess.Write, Share = FileShare.None,
-                Options = FileOptions.Asynchronous, BufferSize = 65536,
-                UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite
-            }))
+                Options = FileOptions.Asynchronous, BufferSize = 65536
+            };
+            if (!OperatingSystem.IsWindows()) stageOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            await using (var writer = new FileStream(stageCandidate, stageOptions))
             {
                 stage = stageCandidate;
                 ownedId = FileId(stage) ?? throw new IOException("stage identity unavailable");
                 if (ownedId == sourceId) throw new IOException("stage is not independent storage");
                 await pub.WriteStage(writer, bytes, token);
             }
-            var verified = await pub.ReadBack(stage, token);
+            var verified = await (hdd ? pub.ReadBackHdd(stage, token) : pub.ReadBack(stage, token));
             if (verified.Length != bytes.Length || Sha256Hex(verified) != entry.Sha256 || FileId(stage) != ownedId)
                 throw new IOException("copy verification failed");
             native.ValidateSourceStillCurrent(source, before);
@@ -284,9 +315,7 @@ public sealed partial class DiskLibraryCatalog
 
     private static void RequirePrivateDirectory(Microsoft.Win32.SafeHandles.SafeFileHandle handle)
     {
-        var facts = LinuxImageAdmissionNative.Probe(handle);
-        if (facts.Uid != LinuxImageAdmissionNative.Uid || (facts.Mode & 0x1ff) != 0x1c0)
-            throw new IOException("managed directory must be user-owned and mode 0700");
+        ImageAdmissionNative.RequirePrivateDirectory(handle);
     }
 
     private static string? FileId(string path)

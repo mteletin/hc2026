@@ -26,8 +26,23 @@ public readonly record struct TapeTime : IComparable<TapeTime>
         var gcd = BigInteger.GreatestCommonDivisor(num, den);
         return new(checked((Int128)(num / gcd)), checked((Int128)(den / gcd)));
     }
-    public int CompareTo(TapeTime other) => ((BigInteger)Numerator * (BigInteger)other.Denominator)
-        .CompareTo((BigInteger)other.Numerator * (BigInteger)Denominator);
+    public int CompareTo(TapeTime other)
+    {
+        // Pulse searches compare millions of ordinary tape positions. Keep their
+        // exact cross-products on the stack; arbitrary-width values still use
+        // the original comparison when either product exceeds Int128.
+        if (Denominator == other.Denominator) return Numerator.CompareTo(other.Numerator);
+        try
+        {
+            return checked(Numerator * other.Denominator)
+                .CompareTo(checked(other.Numerator * Denominator));
+        }
+        catch (OverflowException)
+        {
+            return ((BigInteger)Numerator * (BigInteger)other.Denominator)
+                .CompareTo((BigInteger)other.Numerator * (BigInteger)Denominator);
+        }
+    }
     public static bool operator <(TapeTime a, TapeTime b) => a.CompareTo(b) < 0;
     public static bool operator >(TapeTime a, TapeTime b) => a.CompareTo(b) > 0;
     public static bool operator <=(TapeTime a, TapeTime b) => a.CompareTo(b) <= 0;

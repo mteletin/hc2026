@@ -1,0 +1,142 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Machine picker and honest Start (hc2000-0186-windows-start-no-machine). Kept apart from AppStyles.axaml, which
+       frame A owns, and included from it by one line (architect-1, hc2000 638357). Its colour tokens are AppStyles'
+       theme dictionaries (hc2000 638379, palette-light-values-20261023); none is defined here. -->
+
+  <!-- Primary action geometry and accent come from AppStyles, shared with every panel. -->
+  <Style Selector="Button.primaryAction">
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+  <Style Selector="Button.primaryAction:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AppAccentHoverBrush}"/>
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+  <Style Selector="Button.primaryAction:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="0.45"/>
+  </Style>
+  <Style Selector="TabControl.configurationTabs /template/ ItemsPresenter#PART_ItemsPresenter">
+    <Setter Property="Margin" Value="0,0,0,-1"/>
+    <Setter Property="ZIndex" Value="1"/>
+  </Style>
+  <Style Selector="TabControl.configurationTabs TabItem">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="MinHeight" Value="34"/>
+    <Setter Property="Padding" Value="4,8"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="sectionTab" Background="{DynamicResource AppCardBackgroundBrush}"
+                BorderBrush="{DynamicResource AppCardBorderBrush}" BorderThickness="1,1,1,1"
+                CornerRadius="6,6,0,0" Padding="{TemplateBinding Padding}">
+          <ContentPresenter Content="{TemplateBinding Header}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="TabControl.configurationTabs TabItem:selected /template/ Border#sectionTab">
+    <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}"/>
+    <Setter Property="BorderThickness" Value="1,1,1,0"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
+  </Style>
+  <Style Selector="Border.configurationContent">
+    <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+  <!-- Machine picker: one tile per machine that exists; the checked tile is the machine. -->
+  <Style Selector="RadioButton.machineTile">
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Width" Value="196"/>
+    <Setter Property="Height" Value="96"/>
+    <Setter Property="Margin" Value="0,0,12,12"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="tile" Background="{DynamicResource AppCardBackgroundBrush}" BorderBrush="{DynamicResource AppCardBorderBrush}"
+                BorderThickness="1" CornerRadius="8" Padding="14,12">
+          <ContentPresenter Content="{TemplateBinding Content}"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="RadioButton.machineTile:pointerover /template/ Border#tile">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentHoverBrush}"/>
+  </Style>
+  <Style Selector="RadioButton.machineTile:checked /template/ Border#tile">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
+    <Setter Property="BorderThickness" Value="2"/>
+    <Setter Property="Padding" Value="13,11"/>
+    <Setter Property="Background" Value="{DynamicResource AppTileSelectedBackgroundBrush}"/>
+  </Style>
+  <Style Selector="RadioButton.machineTile:focus-visible /template/ Border#tile">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
+  </Style>
+  <Style Selector="Border.tileBadge">
+    <Setter Property="Background" Value="{DynamicResource AppBadgeBackgroundBrush}"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="Padding" Value="6,1"/>
+    <Setter Property="HorizontalAlignment" Value="Left"/>
+  </Style>
+  <Style Selector="Border.tileBadge > TextBlock">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppBadgeTextBrush}"/>
+  </Style>
+  <Style Selector="TextBlock.tileTitle">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}"/>
+  </Style>
+  <Style Selector="TextBlock.groupHeader">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+    <Setter Property="LetterSpacing" Value="1"/>
+    <Setter Property="Foreground" Value="{DynamicResource AppMutedTextBrush}"/>
+    <Setter Property="Margin" Value="0,4,0,8"/>
+  </Style>
+  <Style Selector="Border.panelCard">
+    <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppCardBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="16,12"/>
+  </Style>
+  <!-- Segmented choice (CPU speed): the checked segment carries the accent. -->
+  <Style Selector="RadioButton.segment">
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="seg" Background="{DynamicResource AppCardBackgroundBrush}" BorderBrush="{DynamicResource AppCardBorderBrush}"
+                BorderThickness="1" CornerRadius="6" Padding="14,4" MinWidth="48">
+          <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="RadioButton.segment:checked /template/ Border#seg">
+    <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
+  </Style>
+  <Style Selector="RadioButton.segment:checked /template/ ContentPresenter">
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+  <Style Selector="RadioButton.segment:pointerover /template/ Border#seg">
+    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentHoverBrush}"/>
+  </Style>
+  <!-- A refusal or a failed Start, shown where the user is looking until dismissed. -->
+  <Style Selector="Border.blockingBanner">
+    <Setter Property="Background" Value="{DynamicResource AppBannerBackgroundBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppStatusStoppedBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="6"/>
+  </Style>
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="Consolas,Menlo,DejaVu Sans Mono,monospace"/>
+    <Setter Property="FontSize" Value="12"/>
+  </Style>
+</Styles>

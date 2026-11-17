@@ -20,7 +20,7 @@ public sealed record KeyChord
 
 public static class KeyMap
 {
-    // Symbol-shift conversion follows KB hc2000 doc source-cpm-rom §4.
+    // Symbol-shift conversion mirrors the shift layout of the original CP/M ROM.
     // The BASIC ROM may interpret these closures as tokens, not ASCII characters.
     private const string Symbols = "~*?\\\u001c{}^\u001d-+=.,;\"\u001e<|>]/\u001f`[:";
     private const string SymbolLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";

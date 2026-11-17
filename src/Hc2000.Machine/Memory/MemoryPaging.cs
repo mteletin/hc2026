@@ -54,8 +54,17 @@ public static class MemoryPaging
         profile.Validate();
         var mTransfer = PagedRamPolicy.IsMTransfer(profile.RamPaged?.PolicyId);
         var boundOnly = profile.RamPaged?.BoundCpmWindow == true;
+        // Window contract (RC19 ruling v2, doc architecture-rc19-tpa-window-644592): the CP/M window
+        // is transaction-scoped. It maps while the per-transaction M-transfer latch is held, or while
+        // the selected bank lies inside the engaged tape session's claimed range - the tape resident
+        // maps by bank and restores it on every exit path (TapeSavedBank/TapeRestoreBank), so the
+        // installed tape artifact stays byte-identical. Outside that, the window is main RAM and the
+        // supplied CP/M runs unmodified. The standalone tape identity is unchanged (it is not an
+        // M-transfer policy and keeps the BoundCpmWindow clause only).
+        var sessionBank = boundRange is { } session
+            && latches.PagedBank >= session.FirstPage && latches.PagedBank < session.FirstPage + session.PageCount;
         var window = profile.RamPaged is not null && latches.PagedEnabled
-            && (!mTransfer || (latches.Cpm && latches.PagedTransfer))
+            && (!mTransfer || (latches.Cpm && (latches.PagedTransfer || sessionBank)))
             && (!boundOnly || (latches.Cpm && boundRange is { } range
                 && latches.PagedBank >= range.FirstPage && latches.PagedBank < range.FirstPage + range.PageCount));
         var pages = new MemoryPage[8];

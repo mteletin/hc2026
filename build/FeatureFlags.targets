@@ -1,0 +1,36 @@
+<Project>
+  <!-- Release feature flags: one flag per epic slug, declared in feature-flags.json.
+       Hc2000CompiledFeatures: the slugs whose implementation is compiled in (build symbol HC2000_FEATURE_<SLUG>).
+       Hc2000EnabledFeatures: the slugs shipped on (hc2000-features.json beside each executable).
+       Both are ';'-separated and empty by default; enabled must be within compiled, compiled within declared.
+       A project sets Hc2000FeatureIds (the typed IDs) or Hc2000FeaturePayload (the shipped manifest) before importing. -->
+  <PropertyGroup>
+    <Hc2000FeatureCatalog>$(MSBuildThisFileDirectory)feature-flags.json</Hc2000FeatureCatalog>
+    <Hc2000FeatureBuilder>$(MSBuildThisFileDirectory)../tools/FeatureFlagBuilder/bin/$(Configuration)/$(TargetFramework)/FeatureFlagBuilder.dll</Hc2000FeatureBuilder>
+    <Hc2000FeatureOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/feature-flags/</Hc2000FeatureOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Hc2000CompiledFeatures)' != ''">
+    <DefineConstants>$(DefineConstants);HC2000_FEATURE_$(Hc2000CompiledFeatures.ToUpperInvariant().Replace('-', '_').Replace(';', ';HC2000_FEATURE_'))</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- A build-host tool: it keeps its own output place whatever this build's runtime or output overrides are. -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../tools/FeatureFlagBuilder/FeatureFlagBuilder.csproj" ReferenceOutputAssembly="false" Private="false"
+                      GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;OutputPath;BaseIntermediateOutputPath;Hc2000CompiledFeatures;Hc2000EnabledFeatures" />
+    <UpToDateCheckInput Include="$(Hc2000FeatureCatalog)" />
+  </ItemGroup>
+  <Target Name="GenerateFeatureIds" BeforeTargets="CoreCompile" DependsOnTargets="ResolveProjectReferences" Condition="'$(Hc2000FeatureIds)' == 'true' And '$(DesignTimeBuild)' != 'true'">
+    <Exec Command="dotnet &quot;$(Hc2000FeatureBuilder)&quot; ids &quot;$(Hc2000FeatureCatalog)&quot; &quot;$(Hc2000CompiledFeatures)&quot; &quot;$(Hc2000FeatureOutput)FeatureIds.g.cs&quot;" />
+    <ItemGroup>
+      <Compile Include="$(Hc2000FeatureOutput)FeatureIds.g.cs" />
+    </ItemGroup>
+  </Target>
+  <ItemGroup Condition="'$(Hc2000FeaturePayload)' == 'true'">
+    <Content Include="$(Hc2000FeatureOutput)hc2000-features.json" Link="hc2000-features.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Compile Include="$(MSBuildThisFileDirectory)../src/HostShared/FeatureSample/FeatureSampleGate.cs" Link="HostShared/FeatureSample/FeatureSampleGate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)../src/HostShared/FeatureSample/FeatureSampleCommand.cs" Link="HostShared/FeatureSample/FeatureSampleCommand.cs"
+             Condition="$(DefineConstants.Contains('HC2000_FEATURE_HC2000_FEATURE_FLAGS'))" />
+  </ItemGroup>
+  <Target Name="GenerateFeaturePayload" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences" Condition="'$(Hc2000FeaturePayload)' == 'true' And '$(DesignTimeBuild)' != 'true'">
+    <Exec Command="dotnet &quot;$(Hc2000FeatureBuilder)&quot; payload &quot;$(Hc2000FeatureCatalog)&quot; &quot;$(Hc2000CompiledFeatures)&quot; &quot;$(Hc2000EnabledFeatures)&quot; &quot;$(Hc2000FeatureOutput)hc2000-features.json&quot;" />
+  </Target>
+</Project>

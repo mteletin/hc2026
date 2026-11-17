@@ -16,7 +16,7 @@ using Hc2000.Machine.Video;
 
 namespace Hc2000.Machine.Snapshots;
 
-/// <summary>Logical .hcs machine snapshot (KB hc2000 doc spec-04-machine). <see cref="Save"/> captures
+/// <summary>Logical .hcs machine snapshot. <see cref="Save"/> captures
 /// the live machine at a drained instruction boundary into a versioned .hcs document;
 /// <see cref="Load"/> validates the document against this machine's profile and composition and
 /// restores every component onto a fresh machine. All cross-state consistency (device rosters,
@@ -35,50 +35,208 @@ public sealed class MachineSnapshot(
     TapeTransport? tape,
     FloppyController? floppy,
     TapeVolumeSession? tapeVolume = null,
-    ExpansionFrontierDriver? expansion = null)
+    ExpansionFrontierDriver? expansion = null, BlockDiskPort? hdd = null)
 {
     private const string DevicePrefix = "device-";
+
+    /// <summary>A runtime speed switch replaces the shared mapper; the snapshot must persist the one in force.</summary>
+    internal void InstallMapper(CpuTimeMapper next)
+    {
+        ArgumentNullException.ThrowIfNull(next);
+        mapper = next;
+    }
     private const string KindPrefix = "kind-";
     private const int FdcDriveUnitOffset = 2; // fdc base id + 1 motor, + 2..+5 drive units
+    private readonly int owner = Environment.CurrentManagedThreadId;
+    private int externalResources;
+
+    /// <summary>Host composition holds a lease for each live, non-rewindable resource.
+    /// Leases and their release belong to the machine owner and never enter the snapshot.</summary>
+    public IDisposable AcquireExternalState()
+    {
+        VerifyOwner();
+        externalResources = checked(externalResources + 1);
+        return new ExternalStateLease(this);
+    }
+
+    /// <summary>Admission before replacing this machine with a detached snapshot candidate.</summary>
+    public void ValidateSessionSnapshotLoad() => CheckExternalState();
+
+    private void VerifyOwner()
+    {
+        if (owner != Environment.CurrentManagedThreadId)
+            throw new InvalidOperationException("Snapshot external state belongs to the machine owner.");
+    }
+
+    private void CheckExternalState()
+    {
+        VerifyOwner();
+        if (externalResources != 0) Fail(HcsError.ExternalStateUnsupported, "live host resource");
+    }
+
+    private sealed class ExternalStateLease(MachineSnapshot snapshot) : IDisposable
+    {
+        private bool released;
+        public void Dispose()
+        {
+            snapshot.VerifyOwner();
+            if (released) return;
+            released = true;
+            snapshot.externalResources--;
+        }
+    }
 
     /// <summary>Captures the logical machine state as a .hcs document. The machine must be at a
     /// drained instruction boundary and the FDC must be idle; anything else fails with
     /// <see cref="HcsError.StateUnsupported"/>.</summary>
-    public byte[] Save(HcsWavPolicy? wavPolicy = null, HcsLimits? limits = null) =>
-        SaveCore(wavPolicy, limits ?? DefaultLimits(), null, false);
+    public byte[] Save(HcsWavPolicy? wavPolicy = null, HcsLimits? limits = null)
+    {
+        CheckExternalState();
+        return SaveCore(wavPolicy, limits ?? DefaultLimits(), null, false);
+    }
 
     /// <summary>Streaming HCS1 output avoids a second GiB-sized container allocation.</summary>
     public void Save(Stream destination, HcsWavPolicy? wavPolicy = null, HcsLimits? limits = null)
     {
         ArgumentNullException.ThrowIfNull(destination);
+        CheckExternalState();
         _ = SaveCore(wavPolicy, limits ?? DefaultLimits(), null, false, destination);
     }
 
     private HcsLimits DefaultLimits() => HcsLimits.ForProfile(profile);
 
     /// <summary>Read-only session-save admission, before any RAM or container copy.</summary>
-    public void ValidateSessionSnapshotSave(HcsWavPolicy? wavPolicy = null) =>
-        _ = CaptureAdmission(wavPolicy, DefaultLimits());
-
-    private (CpuLogicalState Cpu, JsonElement? Expansion) CaptureAdmission(HcsWavPolicy? wavPolicy, HcsLimits limits)
+    public void ValidateSessionSnapshotSave(HcsWavPolicy? wavPolicy = null)
     {
+        CheckExternalState();
+        _ = CaptureAdmission(wavPolicy, DefaultLimits());
+    }
+
+    private (CpuLogicalState Cpu, JsonElement? Expansion, JsonElement? X5, JsonElement? X2, JsonElement? X3, JsonElement? X4) CaptureAdmission(HcsWavPolicy? wavPolicy, HcsLimits limits)
+    {
+        if (MachineSchema.HasHdd(profile) != (hdd is not null)) Fail(HcsError.StateUnsupported, "HDD composition");
+        hdd?.ValidateLogicalSnapshot();
         wavPolicy?.Reserve(limits.TotalBytes);
         var stores = (long)memory.Ram.Length + memory.Rom.Length + memory.ShadowRam.Length + memory.ShadowRom.Length;
         if (stores > limits.TotalBytes) Fail(HcsError.LimitExceeded, "minimum machine stores");
-        if (ExpansionSchema.Enabled(profile) != (expansion is not null)) Fail(HcsError.StateUnsupported, "expansion composition");
-        var state = expansion?.CaptureState();
+        var frontier = ExpansionSchema.Enabled(profile) || ExpansionSchema.X5(profile);
+        if (frontier != (expansion is not null)) Fail(HcsError.StateUnsupported, "expansion composition");
+        if (expansion is not null && expansion.UnitCount != ExpansionArena.ComputeCount + profile.ExpansionDriverCount)
+            Fail(HcsError.StateUnsupported, "expansion-x5 composition");
+        if (ExpansionSchema.X5(profile) && !expansion!.ManagedMapComposed)
+            Fail(HcsError.StateUnsupported, "managed map composition");
+        if (profile.CpNet && (!memory.HasCpNetStagingClaim() || expansion?.X0?.CpNet is null))
+            Fail(HcsError.StateUnsupported, "cpnet staging composition");
         var logical = cpu.Capture();
-        var boundary = mapper.WholeTicks + (mapper.Remainder == 0 ? 0 : 1);
-        if (expansion is null ? scheduler.Now != boundary : scheduler.Now < boundary) Fail(HcsError.StateUnsupported, "boundary");
+        // The save boundary is the committed CPU's exact time, not its ceiling: a fractional rate
+        // lands mid-tick, and the ceiling would refuse a drained boundary. The non-expansion machine
+        // drains exactly to it; the expansion machine may have advanced devices past it.
+        if (expansion is null ? scheduler.LogicalNow != mapper.ExactTime() : scheduler.LogicalNow < mapper.ExactTime())
+            Fail(HcsError.StateUnsupported, "boundary");
         if (mapper.CpuTStates != logical.TStates) Fail(HcsError.StateUnsupported, "cpu");
-        var encoded = state is null ? (JsonElement?)null : ExpansionSchema.ValidateCaptured(state, logical, scheduler, mapper, memory.Latches.PagedBank);
-        return (logical, encoded);
+        if (expansion is null) return (logical, null, null, null, null, null);
+        var x2 = CaptureX2();
+        var x3 = CaptureX3();
+        var x4 = CaptureX4();
+        if (ExpansionSchema.X5(profile))
+        {
+            // The full-X5 file is admitted atomically before Save writes anything: the step-1
+            // component with the X5 context plus the cross-component ownership and driver timing.
+            var (compute, x5) = expansion.CaptureX5FullState();
+            var encoded = ExpansionSchema.ValidateCaptured(compute, logical, scheduler, mapper, memory.Latches.PagedBank, x5);
+            return (logical, encoded, ExpansionX5Schema.Encode(x5), x2, x3, x4);
+        }
+        var state = expansion.CaptureState();
+        var encodedState = ExpansionSchema.ValidateCaptured(state, logical, scheduler, mapper, memory.Latches.PagedBank);
+        return (logical, encodedState, null, x2, x3, x4);
+    }
+
+    private JsonElement? CaptureX2()
+    {
+        if (expansion?.X2 is not { } card) return null;
+        if (!ExpansionSchema.X5(profile) || expansion.X0 is null)
+            throw new HcsException(HcsError.StateUnsupported, "expansion-x2 composition");
+        try
+        {
+            var state = card.CaptureMetadata();
+            card.ValidateMetadata(state, CapturePlatform(expansion.X0), scheduler.Now, scheduler.PendingEvents);
+            return ExpansionX2Schema.ValidateCaptured(state);
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
+        {
+            throw new HcsException(HcsError.StateUnsupported, "expansion-x2: " + error.Message);
+        }
+    }
+
+    private ExpansionX0.ExpansionX0State CapturePlatform(ExpansionX0 platform)
+    {
+        var card = expansion?.X3;
+        var state = platform.CaptureState(id => card is not null && id == card.CardId);
+        if (card is not null)
+        {
+            if (!ExpansionSchema.X5(profile)) throw new ArgumentException("X3 requires full X5.");
+            var (_, x5) = expansion!.CaptureX5FullState();
+            card.ValidateMetadata(card.CaptureMetadata(), state, scheduler.Now, scheduler.PendingEvents,
+                page => memory.TryDmaPageEpoch(page, out _), owner => card.SavedOwnerAllowed(owner, x5));
+        }
+        return state;
+    }
+
+    private JsonElement? CaptureX3()
+    {
+        if (expansion?.X3 is not { } card) return null;
+        if (!ExpansionSchema.X5(profile) || expansion.X0 is null)
+            throw new HcsException(HcsError.StateUnsupported, "expansion-x3 composition");
+        try
+        {
+            _ = CapturePlatform(expansion.X0);
+            return ExpansionX3Schema.ValidateCaptured(card.CaptureMetadata());
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
+        {
+            throw new HcsException(HcsError.StateUnsupported, "expansion-x3: " + error.Message);
+        }
+    }
+
+    private JsonElement? CaptureX4()
+    {
+        if (expansion?.X4 is not { } card) return null;
+        if (!ExpansionSchema.X5(profile) || expansion.X0 is null)
+            throw new HcsException(HcsError.StateUnsupported, "expansion-x4 composition");
+        try
+        {
+            var state = card.CaptureMetadata();
+            var (_, x5) = expansion.CaptureX5FullState();
+            card.ValidateMetadata(state, CapturePlatform(expansion.X0), scheduler.Now, scheduler.PendingEvents,
+                owner => card.SavedOwnerAllowed(owner, x5));
+            return ExpansionX4Schema.ValidateCaptured(state);
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
+        {
+            throw new HcsException(HcsError.StateUnsupported, "expansion-x4: " + error.Message);
+        }
+    }
+
+    private JsonElement? CaptureX0(ExpansionX0 x0)
+    {
+        try
+        {
+            return ExpansionX0Schema.ValidateCaptured(CapturePlatform(x0), scheduler.Now);
+        }
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException)
+        { Fail(HcsError.StateUnsupported, "expansion-x0: " + e.Message); }
+        return null;
     }
 
     private byte[] SaveCore(HcsWavPolicy? wavPolicy, HcsLimits limits, TapeCassetteImage? replacement, bool validateOnly, Stream? destination = null)
     {
         // Reserve the complete bounded copy plan BEFORE Capture/asset ToArray/MemoryStream allocation.
-        var (cpuState, expansionState) = CaptureAdmission(wavPolicy, limits);
+        var (cpuState, expansionState, x5State, x2State, x3State, x4State) = CaptureAdmission(wavPolicy, limits);
+        // A machine composed without the X0 services saves the v1 form (absent component);
+        // a façade on a non-expansion profile is a composition error.
+        if (expansion?.X0 is not null && !ExpansionX0Schema.Enabled(profile))
+            Fail(HcsError.StateUnsupported, "expansion-x0 composition");
+        var x0Element = expansion?.X0 is { } x0Platform ? CaptureX0(x0Platform) : null;
         var fdcSnap = default(FdcDiagnosticSnapshot);
         byte sp1 = 0, sp2 = 0;
         int[] units = [];
@@ -139,7 +297,19 @@ public sealed class MachineSnapshot(
             Asset("disk-b-base", "disk-base", "raw1", "unmodified drive-b media at the last mount", bBase);
         Asset("disk-b-current", "disk-current", "raw1", "drive-b current media export",
             driveB?.Image is null ? [] : driveB.ExportMedia());
-        var capturedRam = memory.Ram.Span.ToArray();
+        var hddState = hdd?.Capture();
+        if (hddState is not null)
+            for (var i = 0; i < 4; i++)
+                Asset("hdd-" + (char)('c' + i), "buffer", "raw1", "logical HDD slot; no host binding", hddState.Slots[i].Bytes);
+        // The byte[] route writes synchronously into a private exact-sized output
+        // buffer, with no caller-controlled stream callbacks. Borrow paged RAM only
+        // for that non-reentrant operation instead of retaining another GiB copy.
+        // External streams still receive detached capture data before any Write.
+        ArraySegment<byte> ramSegment = default;
+        var borrowRam = destination is null && profile.Memory.RamPaged is not null
+            && System.Runtime.InteropServices.MemoryMarshal.TryGetArray((ReadOnlyMemory<byte>)memory.Ram, out ramSegment)
+            && ramSegment.Offset == 0 && ramSegment.Count == ramSegment.Array!.Length;
+        var capturedRam = borrowRam ? ramSegment.Array! : memory.Ram.Span.ToArray();
         Asset("ram", "ram", "raw1", "main ram", capturedRam);
         Asset("rom", "rom", "raw1", "main rom", memory.Rom.ToArray());
         Asset("shadow-ram", "ram", "raw1", "shadow ram", memory.ShadowRam.Span.ToArray());
@@ -165,10 +335,24 @@ public sealed class MachineSnapshot(
         {
             ["id"] = id, ["modelId"] = id, ["modelVersion"] = 1, ["state"] = state
         });
+        // Component ids must stay in ordinal order (HcsSchema.Sorted). cpnet-staging sorts before drive-a.
+        if (profile.CpNet) Component(CpNetStagingSchema.ComponentId, CpNetStagingSchema.Encode());
         if (driveA is not null) Component("drive-a", DriveState(driveA));
         if (driveB is not null) Component("drive-b", DriveState(driveB));
         if (expansionState is { } expansionElement)
             Component(ExpansionSchema.ComponentId, JsonNode.Parse(expansionElement.GetRawText())!.AsObject());
+        if (x0Element is { } x0e)
+            Component(ExpansionX0Schema.ComponentId, JsonNode.Parse(x0e.GetRawText())!.AsObject());
+        if (x2State is { } x2Element)
+            Component(ExpansionX2Schema.ComponentId, JsonNode.Parse(x2Element.GetRawText())!.AsObject());
+        if (x3State is { } x3Element)
+            Component(ExpansionX3Schema.ComponentId, JsonNode.Parse(x3Element.GetRawText())!.AsObject());
+        if (x4State is { } x4Element)
+            Component(ExpansionX4Schema.ComponentId, JsonNode.Parse(x4Element.GetRawText())!.AsObject());
+        // The full-X5 file carries the driver roster and managed maps as a second, separately
+        // validated component; the compatibility profile saves the v1 form (step-1 alone).
+        if (x5State is { } x5Element)
+            Component(ExpansionX5Schema.ComponentId, JsonNode.Parse(x5Element.GetRawText())!.AsObject());
         if (floppy is not null) components.Add(new JsonObject
         {
             ["id"] = "fdc", ["modelId"] = "fdc", ["modelVersion"] = 2, ["state"] = FdcState(fdcSnap!, sp1, sp2, units)
@@ -178,6 +362,16 @@ public sealed class MachineSnapshot(
             ["completedFrames"] = clock.CompletedFrames.ToString(CultureInfo.InvariantCulture),
             ["intAsserted"] = clock.IntAsserted
         });
+        if (hddState is not null)
+        {
+            var slots = new JsonArray();
+            for (var i = 0; i < 4; i++)
+                slots.Add(new JsonObject { ["assetId"] = "hdd-" + (char)('c' + i),
+                    ["generation"] = hddState.Slots[i].Generation, ["writeProtected"] = hddState.Slots[i].WriteProtected,
+                    ["dirty"] = hddState.Slots[i].Dirty });
+            Component(MachineSchema.HddComponentId, new JsonObject { ["pointer"] = hddState.Pointer,
+                ["status"] = hddState.Status, ["slots"] = slots });
+        }
         var (pressed, joysticks) = keyboard.Snapshot();
         Component("keyboard", new JsonObject
         {
@@ -236,6 +430,9 @@ public sealed class MachineSnapshot(
             ["dividerDenominator"] = mapper.Denominator.ToString(CultureInfo.InvariantCulture),
             ["mapperWhole"] = mapper.WholeTicks.ToString(CultureInfo.InvariantCulture),
             ["mapperRemainder"] = mapper.Remainder.ToString(CultureInfo.InvariantCulture),
+            // The remainder's own denominator: a fresh epoch writes the ratio denominator, a runtime
+            // speed switch writes the lcm of the anchor's denominator and the ratio's.
+            ["mapperRemainderDenominator"] = mapper.RemainderDenominator.ToString(CultureInfo.InvariantCulture),
             ["lastCpuTStates"] = mapper.CpuTStates.ToString(CultureInfo.InvariantCulture),
             ["nextSequence"] = scheduler.NextSequence.ToString(CultureInfo.InvariantCulture),
             ["deviceGenerations"] = Generations()
@@ -251,7 +448,15 @@ public sealed class MachineSnapshot(
                 ["kind"] = Kind(e.Kind),
                 ["generation"] = e.Generation.ToString(CultureInfo.InvariantCulture),
                 ["sequence"] = e.InsertionSequence.ToString(CultureInfo.InvariantCulture),
-                ["payload"] = new JsonObject { ["value"] = e.Payload.ToString(CultureInfo.InvariantCulture) }
+                ["payload"] = new JsonObject { ["value"] = e.Payload.ToString(CultureInfo.InvariantCulture) },
+                // The exact due (floor + fraction) of a CPU frontier event; device events have none
+                // and stay at their integer tick. Legacy documents omit it.
+                ["dueLogical"] = e.DueTime is { } due ? new JsonObject
+                {
+                    ["whole"] = due.WholeTicks.ToString(CultureInfo.InvariantCulture),
+                    ["numerator"] = due.FractionNumerator.ToString(CultureInfo.InvariantCulture),
+                    ["denominator"] = due.FractionDenominator.ToString(CultureInfo.InvariantCulture)
+                } : null
             });
         }
 
@@ -275,30 +480,46 @@ public sealed class MachineSnapshot(
         };
         var logicalManifest = JsonDocument.Parse(manifest.ToJsonString()).RootElement.Clone();
         var schema = new MachineSchema(profile, wavPolicy);
-        var capacity = 0;
-        if (expansion is not null && destination is null && !validateOnly)
+        if (validateOnly)
         {
-            // Keep the byte[] save route, without doubling a GiB buffer when later blobs/trailer arrive.
+            // Use the codec's exact framing arithmetic; retain its existing admission bound.
+            var manifestBytes = HcsCodec.CanonicalJson(logicalManifest, limits).Length;
+            long wireBytes = 64L + manifestBytes;
+            foreach (var blob in blobs) wireBytes = checked(wireBytes + 12L + blob.Length);
+            if (wireBytes > limits.TotalBytes)
+            {
+                var lengths = string.Join(", ", assets.Select(a => $"{a!["id"]}={a["byteLength"]}"));
+                Fail(HcsError.LimitExceeded,
+                    $"file (total={wireBytes}; preview={limits.TotalBytes}; accepted={HcsLimits.ForProfile(profile).TotalBytes}; manifest={manifestBytes}; assets: {lengths})");
+            }
+        }
+        byte[]? exactBuffer = null;
+        if (destination is null && !validateOnly)
+        {
+            // One exact-sized buffer holds the whole container: the codec writes into it directly,
+            // so no second GiB-sized array is ever allocated (the old MemoryStream + ToArray doubled it).
             long wireBytes = 64L + HcsCodec.CanonicalJson(logicalManifest, limits).Length;
             foreach (var blob in blobs) wireBytes = checked(wireBytes + 12L + blob.Length);
             if (wireBytes > limits.TotalBytes || wireBytes > Array.MaxLength) Fail(HcsError.LimitExceeded, "file");
-            capacity = (int)wireBytes;
+            exactBuffer = new byte[(int)wireBytes];
         }
-        using Stream ownedStream = destination is not null || validateOnly ? Stream.Null : new MemoryStream(capacity);
+        using Stream ownedStream = destination is not null || validateOnly ? Stream.Null : new MemoryStream(exactBuffer!, writable: true);
         var stream = destination ?? ownedStream;
         if (profile.Memory.RamPaged is not null) HcsCodec.WriteOwned(stream, logicalManifest, blobs, schema, limits);
         else HcsCodec.Write(stream, logicalManifest, blobs, schema, limits);
-        return validateOnly || destination is not null ? [] : ((MemoryStream)stream).ToArray();
+        return validateOnly || destination is not null ? [] : exactBuffer!;
     }
     /// <summary>Adopts a .hcs document onto this fresh machine: container and profile validation
     /// first, then cross-state consistency against the live composition, then the component
     /// restore. Any mismatch fails with <see cref="HcsError"/>.</summary>
-    internal TapeFailure? CheckCassette(TapeCassetteImage candidate)
+    internal TapeFailure? CheckCassette(TapeCassetteImage candidate, HcsWavPolicy? wavPolicy)
     {
         try
         {
-            // Reserve bounded headroom for generation/manifest digits changed by the subsequent Insert.
-            _ = SaveCore(HcsWavPolicy.Default, new HcsLimits(TotalBytes: 256 * 1024 * 1024 - 4096), candidate, true);
+            // Use the composition's exact Save/Load policy, including an explicit paged opt-out.
+            // The 4096 headroom covers generation/manifest digits changed by the subsequent Insert.
+            var limits = HcsLimits.ForProfile(profile);
+            _ = SaveCore(wavPolicy, limits with { TotalBytes = limits.TotalBytes - 4096 }, candidate, true);
             return null;
         }
         catch (Exception e) when (e is HcsException or ArgumentException or OverflowException or InvalidOperationException)
@@ -315,22 +536,43 @@ public sealed class MachineSnapshot(
     public void Load(Stream stream, HcsWavPolicy? wavPolicy = null, HcsLimits? limits = null)
     {
         ArgumentNullException.ThrowIfNull(stream);
+        CheckExternalState();
         limits ??= DefaultLimits();
         wavPolicy?.Reserve(limits.TotalBytes);
-        if (ExpansionSchema.Enabled(profile) != (expansion is not null)) Fail(HcsError.StateUnsupported, "expansion composition");
+        var frontier = ExpansionSchema.Enabled(profile) || ExpansionSchema.X5(profile);
+        if (frontier != (expansion is not null)) Fail(HcsError.StateUnsupported, "expansion composition");
+        if (expansion is not null && expansion.UnitCount != ExpansionArena.ComputeCount + profile.ExpansionDriverCount)
+            Fail(HcsError.StateUnsupported, "expansion-x5 composition");
+        if (ExpansionSchema.X5(profile) && !expansion!.ManagedMapComposed)
+            Fail(HcsError.StateUnsupported, "managed map composition");
         if (scheduler.Now != 0 || mapper.CpuTStates != 0)
             Fail(HcsError.StateInconsistent, "fresh");
-        var doc = HcsCodec.Read(stream, new MachineSchema(profile, wavPolicy), limits);
+        var doc = HcsCodec.ReadForLoad(stream, new MachineSchema(profile, wavPolicy), limits);
         var m = doc.Manifest;
 
+        // The schema admitted the document before any blob or store was read. The full-X5 restore
+        // decodes the separately validated expansion-x5 component here, before the step-1 component
+        // is read with the X5 context, so a malformed or mismatched roster or ownership is refused
+        // before any scheduler, RAM, CPU or grant mutation below.
+        ExpansionX5State? x5State = null;
+        if (ExpansionSchema.X5(profile))
+        {
+            var x5Component = m.GetProperty("components").EnumerateArray()
+                .Single(c => c.GetProperty("id").GetString() == ExpansionX5Schema.ComponentId);
+            x5State = ExpansionX5Schema.Read(x5Component.GetProperty("state"));
+        }
         var cpuState = CpuLogicalState.FromJson(m.GetProperty("cpu"), expansion is not null);
-        var expansionState = expansion is null ? null : ExpansionSchema.Read(m);
+        var expansionState = expansion is null ? null : ExpansionSchema.Read(m, x5State is not null, x5State);
         var c = m.GetProperty("clock");
         var now = Counter(c, "now");
         var lastCpuT = Counter(c, "lastCpuTStates");
         var nextSequence = Counter(c, "nextSequence");
         var mapperWhole = Counter(c, "mapperWhole");
         var mapperRemainder = Counter(c, "mapperRemainder");
+        // Absent in a legacy document: the remainder then shares the ratio denominator (fresh epoch).
+        var mapperRemainderDenominator = c.TryGetProperty("mapperRemainderDenominator", out var drElement) && drElement.ValueKind != JsonValueKind.Null
+            ? Counter(c, "mapperRemainderDenominator") : Counter(c, "dividerDenominator");
+        var versionedClock = c.TryGetProperty("mapperRemainderDenominator", out _);
         if (Counter(c, "dividerNumerator") != mapper.Numerator || Counter(c, "dividerDenominator") != mapper.Denominator)
             Fail(HcsError.StateInconsistent, "clock");
 
@@ -346,9 +588,12 @@ public sealed class MachineSnapshot(
         {
             var device = ParseDeviceId(e.GetProperty("deviceId").GetString()!);
             var kind = ParseKind(e.GetProperty("kind").GetString()!);
+            LogicalTime? dueLogical = null;
+            if (e.TryGetProperty("dueLogical", out var dueElement) && dueElement.ValueKind == JsonValueKind.Object)
+                dueLogical = new LogicalTime(Counter(dueElement, "whole"), Counter(dueElement, "numerator"), Counter(dueElement, "denominator"));
             events.Add(new DeviceEvent(
                 Counter(e, "dueTick"), (EventPhase)Num(e, "phase"), device, kind,
-                Counter(e, "generation"), Counter(e, "payload", "value"), Counter(e, "sequence")));
+                Counter(e, "generation"), Counter(e, "payload", "value"), Counter(e, "sequence"), dueLogical));
             if (device == flashDeviceId) { flashDue = Counter(e, "dueTick"); flashCount++; }
         }
         // The Ula flash is a free-running toggle: exactly one pending deadline at any drained boundary.
@@ -362,9 +607,34 @@ public sealed class MachineSnapshot(
             versions[Text(comp, "id")] = Num(comp, "modelVersion");
         }
 
+        if (components.ContainsKey(MachineSchema.HddComponentId) != (hdd is not null))
+            Fail(HcsError.StateInconsistent, "HDD composition");
+        var restoredHdd = hdd is null ? null : MachineSchema.ReadHddState(components[MachineSchema.HddComponentId],
+            id => doc.CopyBlob(AssetBlobId(m, id)));
+
         if (components.ContainsKey("tape") != (tape is not null) || components.ContainsKey("fdc") != (floppy is not null)
             || components.ContainsKey("drive-a") != (floppy is not null) || components.ContainsKey("drive-b") != (floppy is not null))
             Fail(HcsError.StateInconsistent, "composition");
+        // The v1-save rule: a save without the expansion-x0 component restores the explicit empty
+        // engine; a component without the expansion composition is inconsistent.
+        if (components.ContainsKey(ExpansionX0Schema.ComponentId) && expansion?.X0 is null)
+            Fail(HcsError.StateInconsistent, "expansion-x0 composition");
+        JsonElement? x0Element = components.TryGetValue(ExpansionX0Schema.ComponentId, out var x0ComponentState) ? x0ComponentState : null;
+        if (profile.CpNet && (x0Element is null || expansion?.X0?.CpNet is null || !memory.HasCpNetStagingClaim()
+            || !components.ContainsKey(CpNetStagingSchema.ComponentId)))
+            Fail(HcsError.StateInconsistent, "cpnet staging composition");
+        var hasX2 = components.TryGetValue(ExpansionX2Schema.ComponentId, out var x2ComponentState);
+        if (hasX2 != (expansion?.X2 is not null) || hasX2 && (x0Element is null || expansion?.X0 is null))
+            Fail(HcsError.StateInconsistent, "expansion-x2 composition");
+        var x2State = hasX2 ? ExpansionX2Schema.Read(x2ComponentState) : null;
+        var hasX3 = components.TryGetValue(ExpansionX3Schema.ComponentId, out var x3ComponentState);
+        if (hasX3 != (expansion?.X3 is not null) || hasX3 && (x0Element is null || expansion?.X0 is null || x5State is null))
+            Fail(HcsError.StateInconsistent, "expansion-x3 composition");
+        var x3State = hasX3 ? ExpansionX3Schema.Read(x3ComponentState) : null;
+        var hasX4 = components.TryGetValue(ExpansionX4Schema.ComponentId, out var x4ComponentState);
+        if (hasX4 != (expansion?.X4 is not null) || hasX4 && (x0Element is null || expansion?.X0 is null || x5State is null))
+            Fail(HcsError.StateInconsistent, "expansion-x4 composition");
+        var x4State = hasX4 ? ExpansionX4Schema.Read(x4ComponentState) : null;
         var assetIds = new HashSet<string>();
         foreach (var a in m.GetProperty("assets").EnumerateArray()) assetIds.Add(Text(a, "id"));
         if (assetIds.Contains("tape") != (tape is not null && versions["tape"] == 1) || !assetIds.Contains("ram")
@@ -443,7 +713,8 @@ public sealed class MachineSnapshot(
             {
                 volumeState = volumeJson.Deserialize<TapeVolumeState>() ?? throw new ArgumentException("volume state");
                 tapeVolume!.ValidateState(volumeState);
-                if (volumeState.WindowEngaged != components["memory"].TryGetProperty("paged", out _))
+                var pagingEngaged = profile.Name == MachineProfile.Hc2000V2FullWorkstationV1.Name || volumeState.WindowEngaged;
+                if (pagingEngaged != components["memory"].TryGetProperty("paged", out _))
                     throw new ArgumentException("Tape window engagement disagrees with paging state.");
             }
             catch (Exception e) when (e is JsonException or ArgumentException or InvalidOperationException or OverflowException)
@@ -525,9 +796,17 @@ public sealed class MachineSnapshot(
         }
         else if (assetIds.Contains(TapeSnapshotContract.CassetteAssetId) || assetIds.Any(id => id.StartsWith("tape-source-", StringComparison.Ordinal)))
             Fail(HcsError.AssetMismatch, "uncomposed tape assets");
-        // Prove the mapper equation before changing any live scheduler/store/device.
-        var mapped = (System.Numerics.BigInteger)lastCpuT * mapper.Numerator;
-        if (mapped / mapper.Denominator != mapperWhole || mapped % mapper.Denominator != mapperRemainder) Fail(HcsError.StateInconsistent, "clock");
+        // Prove the clock identity before changing any live scheduler/store/device. A legacy document
+        // (no remainder denominator) is the zero epoch: lastCpuT * ratio. A versioned one carries the
+        // exact anchor, which a runtime speed switch re-bases, so it is never re-derived from the counter.
+        if (!versionedClock)
+        {
+            var mapped = (System.Numerics.BigInteger)lastCpuT * mapper.Numerator;
+            if (mapped / mapper.Denominator != mapperWhole || mapped % mapper.Denominator != mapperRemainder) Fail(HcsError.StateInconsistent, "clock");
+        }
+        else if (mapperRemainderDenominator % mapper.Denominator != 0 || mapperRemainder >= mapperRemainderDenominator
+            || mapperWhole > now)
+            Fail(HcsError.StateInconsistent, "clock");
 
         void CheckTapeAsset(string id, string kind, string format)
         {
@@ -535,20 +814,105 @@ public sealed class MachineSnapshot(
             if (rows.Length != 1 || Text(rows[0], "kind") != kind || Text(rows[0], "format") != format) Fail(HcsError.AssetMismatch, "tape asset");
         }
 
-        try { scheduler.ValidateRestore(now, events, nextSequence, generations); }
+        byte[]? restoredPageOwners = null;
+        if (expansionState is not null)
+        {
+            try { restoredPageOwners = expansion!.PrepareGrantAdoption(expansionState, x5State); }
+            catch (ArgumentException) { Fail(HcsError.StateInconsistent, "expansion arena ownership"); }
+            var savedBank = components["memory"].GetProperty("paged").GetProperty("bank").GetUInt16();
+            if (!memory.ExpansionArena!.IsDevicePageMainMappable(savedBank))
+                Fail(HcsError.StateInconsistent, "expansion arena main bank");
+        }
+        bool SavedDmaPageAllowed(ushort page)
+        {
+            if (restoredPageOwners is null || restoredPageOwners[page] != 0 || memory.IsCardReservedPage(page) ||
+                memory.ClaimedPagedRanges.Any(range => page >= range.FirstPage && page < range.FirstPage + range.PageCount))
+                return false;
+            return true;
+        }
+        bool SavedDmaTransferAllowed(ExpansionX0.X0DmaChannelState transfer) =>
+            restoredPageOwners is not null && restoredPageOwners[transfer.Page] == 0 &&
+            !memory.ClaimedPagedRanges.Any(range => transfer.Page >= range.FirstPage && transfer.Page < range.FirstPage + range.PageCount) &&
+            memory.ExpansionArena!.AllowsDma(transfer.CardId, transfer.Direction, transfer.Page, transfer.Offset, transfer.Count);
+        if (expansion?.X0 is { } liveX0)
+        {
+            try
+            {
+                if (x0Element is { } x0Json)
+                    liveX0.ValidateState(ExpansionX0Schema.Read(x0Json), now, events, SavedDmaTransferAllowed);
+                else liveX0.ValidateEmpty(now, events);
+            }
+            catch (ArgumentException) { Fail(HcsError.StateInconsistent, "expansion-x0"); }
+        }
+        if (x2State is not null)
+        {
+            try { expansion!.X2!.ValidateMetadata(x2State, ExpansionX0Schema.Read(x0Element!.Value), now, events); }
+            catch (ArgumentException) { Fail(HcsError.StateInconsistent, "expansion-x2"); }
+        }
+        if (x3State is not null)
+        {
+            var card = expansion!.X3!;
+            try { card.ValidateMetadata(x3State, ExpansionX0Schema.Read(x0Element!.Value), now, events,
+                SavedDmaPageAllowed, owner => card.SavedOwnerAllowed(owner, x5State!)); }
+            catch (ArgumentException) { Fail(HcsError.StateInconsistent, "expansion-x3"); }
+        }
+        if (x4State is not null)
+        {
+            var card = expansion!.X4!;
+            try { card.ValidateMetadata(x4State, ExpansionX0Schema.Read(x0Element!.Value), now, events,
+                owner => card.SavedOwnerAllowed(owner, x5State!)); }
+            catch (ArgumentException) { Fail(HcsError.StateInconsistent, "expansion-x4"); }
+        }
+        // The mapper takes the document's clock identity before anything reads it: the machine
+        // resumes at the saved boundary and the expansion frontier is re-derived at that rate.
+        try { mapper.Restore(lastCpuT, mapperWhole, mapperRemainder, mapperRemainderDenominator); }
+        catch (ArgumentOutOfRangeException) { Fail(HcsError.StateInconsistent, "clock"); }
+        if (mapper.WholeTicks != mapperWhole || mapper.Remainder != mapperRemainder || mapper.RemainderDenominator != mapperRemainderDenominator)
+            Fail(HcsError.StateInconsistent, "clock");
+        // The machine resumes at the saved boundary, not at the committed CPU's time: a drained
+        // save rests exactly on the committed CPU's exact time (whole == now, the fraction in the
+        // remainder); a partial save admitted devices ahead of the committed CPU (whole < now) and
+        // the machine resumes at the document's now tick, as the legacy path did.
+        var boundary = mapperWhole == now ? mapper.ExactTime() : LogicalTime.Tick(now);
+        try { scheduler.ValidateRestore(boundary, events, nextSequence, generations); }
         catch (Exception e) when (e is ArgumentException or InvalidOperationException)
         { Fail(HcsError.StateInconsistent, "scheduler"); }
         // ---- restore (one validated event set; no counter-by-counter generation replay) ----
-        scheduler.RestoreEvents(now, events, nextSequence, generations);
-        mapper.Map(lastCpuT);
-        if (mapper.WholeTicks != mapperWhole || mapper.Remainder != mapperRemainder)
-            Fail(HcsError.StateInconsistent, "clock");
+        scheduler.RestoreEvents(boundary, events, nextSequence, generations);
         if (expansionState is not null)
         {
             cpu.Restore(cpuState);
-            expansion!.AdoptState(expansionState, components["memory"].GetProperty("paged").GetProperty("bank").GetUInt16(), events);
+            var mainBank = components["memory"].GetProperty("paged").GetProperty("bank").GetUInt16();
+            if (x5State is null) expansion!.AdoptState(expansionState, mainBank, events);
+            else expansion!.AdoptX5FullState(expansionState, x5State, mainBank, events);
+            if (expansion.X0 is { } x0Platform)
+            {
+                try
+                {
+                    if (x0Element is { } x0Json) x0Platform.AdoptState(ExpansionX0Schema.Read(x0Json), now, events);
+                    else x0Platform.AdoptEmpty(now, events);
+                }
+                catch (ArgumentException) { Fail(HcsError.StateInconsistent, "expansion-x0"); }
+            }
+            else if (x0Element is not null)
+                Fail(HcsError.StateInconsistent, "expansion-x0 composition");
         }
-        doc.BlobView(AssetBlobId(m, "ram")).Span.CopyTo(memory.Ram.Span);
+        if (restoredHdd is not null) hdd!.Restore(restoredHdd);
+        doc.CopyBlobTo(AssetBlobId(m, "ram"), memory.Ram.Span);
+        if (x2State is not null)
+            expansion!.X2!.AdoptMetadata(x2State, ExpansionX0Schema.Read(x0Element!.Value), now, events);
+        if (x3State is not null)
+        {
+            var card = expansion!.X3!;
+            card.AdoptMetadata(x3State, ExpansionX0Schema.Read(x0Element!.Value), now, events,
+                SavedDmaPageAllowed, owner => card.SavedOwnerAllowed(owner, x5State!));
+        }
+        if (x4State is not null)
+        {
+            var card = expansion!.X4!;
+            card.AdoptMetadata(x4State, ExpansionX0Schema.Read(x0Element!.Value), now, events,
+                owner => card.SavedOwnerAllowed(owner, x5State!));
+        }
         doc.CopyBlob(AssetBlobId(m, "shadow-ram")).CopyTo(memory.ShadowRam.Span);
         var mem = components["memory"];
         memory.RestoreLatches(new PagingLatches((byte)Num(mem, "port7e"),
@@ -659,7 +1023,11 @@ public sealed class MachineSnapshot(
     {
         var ids = new List<int> { clock.DeviceId, flashDeviceId };
         if (expansion is not null)
-            for (var id = 0; id <= ExpansionArena.ComputeCount; id++) ids.Add(ExpansionFrontierDriver.FirstCpuDeviceId + id);
+            for (var id = 0; id <= expansion.UnitCount; id++) ids.Add(ExpansionFrontierDriver.FirstCpuDeviceId + id);
+        if (expansion?.X0 is { } x0) ids.AddRange(x0.Dma.DeviceIds);
+        if (expansion?.X2 is { } x2) ids.Add(x2.DeviceId);
+        if (expansion?.X3 is { } x3) { ids.Add(x3.ClockDevice); ids.Add(x3.PumpDevice); }
+        if (expansion?.X4 is { } x4) ids.Add(x4.EngineDevice);
         if (tape is not null) ids.Add(tape.DeviceId);
         if (floppy is not null)
             for (var d = floppy.FdcDeviceId; d <= floppy.FdcDeviceId + 5; d++) ids.Add(d);
@@ -727,7 +1095,11 @@ public sealed class MachineSnapshot(
     {
         var live = new HashSet<int> { clock.DeviceId, flashDeviceId };
         if (expansion is not null)
-            for (var id = 0; id <= ExpansionArena.ComputeCount; id++) live.Add(ExpansionFrontierDriver.FirstCpuDeviceId + id);
+            for (var id = 0; id <= expansion.UnitCount; id++) live.Add(ExpansionFrontierDriver.FirstCpuDeviceId + id);
+        if (expansion?.X0 is { } x0) foreach (var id in x0.Dma.DeviceIds) live.Add(id);
+        if (expansion?.X2 is { } x2) live.Add(x2.DeviceId);
+        if (expansion?.X3 is { } x3) { live.Add(x3.ClockDevice); live.Add(x3.PumpDevice); }
+        if (expansion?.X4 is { } x4) live.Add(x4.EngineDevice);
         if (tape is not null) live.Add(tape.DeviceId);
         if (floppy is not null)
             for (var d = floppy.FdcDeviceId; d <= floppy.FdcDeviceId + 5; d++) live.Add(d);

@@ -12,7 +12,7 @@ public sealed partial class MachineSchema
     protected internal override void ReserveCopies(long wireBytes) => wavPolicy?.Reserve(wireBytes);
 
     protected internal override bool AdmitLargeBlob(JsonElement manifest, uint blobId, int length,
-        HcsReadWindow read, IReadOnlyList<byte[]> blobs, HcsLimits limits)
+        HcsReadWindow read, IReadOnlyList<HcsBlob> blobs, HcsLimits limits)
     {
         if (AdmitPagedRamBlob(manifest, blobId, length)) return true;
         if (wavPolicy is null || length > wavPolicy.MaxInputBytes || length > TapeInputPolicy.WavInputBytes) return false;
@@ -31,8 +31,10 @@ public sealed partial class MachineSchema
             if (native.ValueKind != JsonValueKind.Object || Text(native.GetProperty("kind")) != TapeSnapshotContract.CassetteAssetKind
                 || Text(native.GetProperty("format")) != TapeSnapshotContract.CassetteAssetFormat) return false;
             var nativeId = UInt(native.GetProperty("blobId"));
-            if (nativeId == blobId || nativeId == 0 || nativeId > blobs.Count || blobs[(int)nativeId - 1] is not { } nativeBytes
-                || nativeBytes.Length > limits.BlobBytes || Counter(native.GetProperty("byteLength")) != nativeBytes.Length
+            if (nativeId == blobId || nativeId == 0 || nativeId > blobs.Count
+                || blobs[(int)nativeId - 1] is not { } nativeBlob || nativeBlob.Length > limits.BlobBytes) return false;
+            var nativeBytes = nativeBlob.Materialize();
+            if (nativeBytes.Length > limits.BlobBytes || Counter(native.GetProperty("byteLength")) != nativeBytes.Length
                 || Text(native.GetProperty("sha256")) != Convert.ToHexStringLower(SHA256.HashData(nativeBytes))) return false;
             // Canonical asset order places this bounded, hash-checked native cassette before its sources.
             var cassette = TapeNativeCodec.Parse<TapeCassetteDto>(nativeBytes);
@@ -68,6 +70,8 @@ public sealed partial class MachineSchema
             ["shadow-ram"] = ("ram", "raw1"), ["shadow-rom"] = ("rom", "raw1"),
             [TapeSnapshotContract.CassetteAssetId] = (TapeSnapshotContract.CassetteAssetKind, TapeSnapshotContract.CassetteAssetFormat)
         };
+        if (HasHdd(profile))
+            foreach (var slot in new[] { "hdd-c", "hdd-d", "hdd-e", "hdd-f" }) required[slot] = ("buffer", "raw1");
         foreach (var asset in assets)
         {
             var id = Text(asset.GetProperty("id"));
@@ -85,6 +89,7 @@ public sealed partial class MachineSchema
         }
         if (required.Count != 0) return false;
         var components = manifest.GetProperty("components").EnumerateArray().Select(c => Text(c.GetProperty("id"))).ToHashSet(StringComparer.Ordinal);
+        if (HasHdd(profile) && !components.Remove(HddComponentId)) return false;
         if (UsesCpuFrontiers && !components.Remove(ExpansionSchema.ComponentId)) return false;
         if (!new[] { "frame-clock", "keyboard", "memory", "tape", "ula" }.All(components.Remove)) return false;
         if (components.Count != 0 && !components.SetEquals(new[] { "fdc", "drive-a", "drive-b" })) return false;
@@ -102,16 +107,18 @@ public sealed partial class MachineSchema
         return true;
     }
 
-    protected override void ValidateBlobModels(JsonElement manifest, byte[][] blobs, HcsLimits limits)
+    protected override void ValidateBlobModels(JsonElement manifest, HcsBlob[] blobs, HcsLimits limits)
     {
         try { ValidatePagedBlobModel(manifest, blobs); ValidateWavBlobModels(manifest, blobs); }
         catch (Exception e) when (e is JsonException or ArgumentException or NullReferenceException)
         { Error(HcsError.InvalidFormat, "native WAV source model"); }
     }
 
-    private void ValidateWavBlobModels(JsonElement manifest, byte[][] blobs)
+    private void ValidateWavBlobModels(JsonElement manifest, HcsBlob[] blobs)
     {
-        if (wavPolicy is null) return;
+        // Gate on the data, not on the policy object: a wav1 original must be revalidated on
+        // every load (paged profiles carry none), using the default tape limits when the caller
+        // supplied no policy. The large-blob refusal above stays policy-gated.
         var assets = manifest.GetProperty("assets").EnumerateArray().ToArray();
         var sources = assets.Where(a => Text(a.GetProperty("id")).StartsWith("tape-source-", StringComparison.Ordinal)).ToArray();
         if (!sources.Any(a => Text(a.GetProperty("format")) == "wav1")) return;
@@ -125,7 +132,7 @@ public sealed partial class MachineSchema
             || Text(native.GetProperty("format")) != TapeSnapshotContract.CassetteAssetFormat)
             Error(HcsError.AssetMismatch, "original WAV native cassette");
         // Charge declared originals plus the existing native DTO's actual storage before immutable copies.
-        var nativeBytes = blobs[UInt(native.GetProperty("blobId")) - 1];
+        var nativeBytes = blobs[UInt(native.GetProperty("blobId")) - 1].Materialize();
         var dto = TapeNativeCodec.Parse<TapeCassetteDto>(nativeBytes);
         long retained = sources.Sum(a => Counter(a.GetProperty("byteLength")));
         foreach (var side in dto.Sides)
@@ -136,8 +143,8 @@ public sealed partial class MachineSchema
         }
         if (retained > new TapeLimits().DecodedBytes) Error(HcsError.LimitExceeded, "joint native/original storage");
         var originals = sources.Select(a => new TapeSourceAsset(Text(a.GetProperty("id")),
-            TapeNativeCodec.FormatValue(Text(a.GetProperty("format"))[..^1]), blobs[UInt(a.GetProperty("blobId")) - 1])).ToArray();
-        var result = TapeNativeCodec.Read(blobs[UInt(native.GetProperty("blobId")) - 1], originals, new(), wavPolicy.TapeLimits);
+            TapeNativeCodec.FormatValue(Text(a.GetProperty("format"))[..^1]), blobs[UInt(a.GetProperty("blobId")) - 1].Materialize())).ToArray();
+        var result = TapeNativeCodec.Read(nativeBytes, originals, new(), wavPolicy?.TapeLimits);
         if (!result.Success) Error(HcsError.AssetMismatch, "native WAV source validation: " + result.Failure!.Detail);
     }
 }

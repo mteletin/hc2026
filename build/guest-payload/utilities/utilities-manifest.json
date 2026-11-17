@@ -1,0 +1,606 @@
+{
+  "provenance": "hc2000-cpm-utilities-provenance-v1",
+  "sourceCommit": "1c739b98a3d883a37acf14dd4da0b172d622d546",
+  "bootProfile": "hc2000-v2-paged-m-v1",
+  "floppyDpb": {
+    "Name": "cpm-hc80",
+    "Geometry": {
+      "Cylinders": 80,
+      "Sides": 2,
+      "Sectors": 9,
+      "SectorSize": 512,
+      "Length": 737280
+    },
+    "Spt": 36,
+    "Bsh": 4,
+    "Blm": 15,
+    "Exm": 0,
+    "Dsm": 351,
+    "Drm": 127,
+    "Al0": 192,
+    "Al1": 0,
+    "Cks": 32,
+    "Off": 4,
+    "WordAllocations": true,
+    "HcHeader": false,
+    "BlockSize": 2048,
+    "DirectoryBlocks": 2,
+    "Skew": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      2,
+      4,
+      6,
+      8
+    ]
+  },
+  "volumeDpb": {
+    "Name": "m-volume-8m-v2",
+    "Geometry": {
+      "Cylinders": 512,
+      "Sides": 1,
+      "Sectors": 16,
+      "SectorSize": 1024,
+      "Length": 8388608
+    },
+    "Spt": 128,
+    "Bsh": 6,
+    "Blm": 63,
+    "Exm": 1,
+    "Dsm": 1023,
+    "Drm": 255,
+    "Al0": 128,
+    "Al1": 0,
+    "Cks": 0,
+    "Off": 0,
+    "WordAllocations": true,
+    "HcHeader": false,
+    "BlockSize": 8192,
+    "DirectoryBlocks": 1,
+    "Skew": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      11,
+      13,
+      15,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16
+    ]
+  },
+  "inputs": [
+    {
+      "path": "bios/src/hc2000/upgrade/arch.asm",
+      "size": 24227,
+      "sha256": "00c8a60696c700f8efc2b5e4358ad0981d9724d17eb3d919e11741ba8fd1929a"
+    },
+    {
+      "path": "bios/src/hc2000/upgrade/hdd.init.asm",
+      "size": 3170,
+      "sha256": "e825cf922991080e672b29d17ce29ead1ed2ad71c38083dcd7b5f79b32162a6e"
+    },
+    {
+      "path": "bios/src/hc2000/upgrade/hdd.layout.inc",
+      "size": 1359,
+      "sha256": "f7b1f41011b0a91ca9b468ab871b9be5a895945fdfbaa51084e58b344b98557c"
+    },
+    {
+      "path": "bios/src/hc2000/upgrade/hdd.resident.asm",
+      "size": 20366,
+      "sha256": "d47a45d563ae3062e507663dadf5102998483031e9d86db4b7eb552aeed6fda0"
+    },
+    {
+      "path": "bios/src/hc2000/upgrade/hdd.swap.asm",
+      "size": 257,
+      "sha256": "9f0fc87c6dff3ee6e8376990735e84c8a6f8d362e3b3b1af3ed9809833bb9681"
+    },
+    {
+      "path": "disks/cpm/CPM22-HC-HDD.DSK",
+      "size": 778496,
+      "sha256": "decf650c04b03e45fb04dbcdca4033883355e5aee5a1bd8a77b2b2eb958b2427"
+    },
+    {
+      "path": "disks/cpm/CPM22-HC.DSK",
+      "size": 778496,
+      "sha256": "ff5a1c541c8aa80778a0f44d3ece398013084aafd9be1d3f32d2f68b774bb008"
+    },
+    {
+      "path": "disks/cpm/CPMZ80.DSK",
+      "size": 778496,
+      "sha256": "66b8e4dedc08ddd872607efaecd2c2a4bf4ec8cb3869e7f3e468f966ccf12b87"
+    },
+    {
+      "path": "examples/expansion-mailbox/side.asm",
+      "size": 5147,
+      "sha256": "5d30a9881580b993951fb3528f3cca4cb1a7a65ab3e8869f925da34b107baa59"
+    },
+    {
+      "path": "roms/hc2000/eprom-dump-hc2k-2/M27C512.bin",
+      "size": 65536,
+      "sha256": "83e3213b049c5b849ee32e04da901eba06992d5aa1f44f76564f312c79748d2b"
+    },
+    {
+      "path": "software/tools/cpm-stress/bigfile.asm",
+      "size": 2910,
+      "sha256": "771870793afebfaf9fe48f6b3d6aa5b8258df6477f21b0a9aa74c94052597f3e"
+    },
+    {
+      "path": "software/tools/cpm-stress/copychk.asm",
+      "size": 3860,
+      "sha256": "743e7311022ea684da733ee0dc70c9db9c68a0633e9c3fe7410e0566b8ac9a4b"
+    },
+    {
+      "path": "software/tools/cpm-stress/dirload.asm",
+      "size": 2709,
+      "sha256": "b540f6cc9338362e04ece279b9d9cf59eb90df19ae4d6d7436ca7965081264ad"
+    },
+    {
+      "path": "software/tools/cpm-stress/randomio.asm",
+      "size": 3673,
+      "sha256": "5c3bc760e0ef582b150314d2b3c764318274a6c421f39922a2ff8740329714ad"
+    },
+    {
+      "path": "software/tools/cpm-stress/users.asm",
+      "size": 3181,
+      "sha256": "e33e55ac0d208c571bec21eab6eb57ef72227ffa07c388c4d4e3940907ed6952"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/dispatch.sites.inc",
+      "size": 1106,
+      "sha256": "d9186efcb7e5a66c11cfac5291351bb3a88e70056401e15367bff829ec587d5a"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/folders/folders.layout.inc",
+      "size": 3329,
+      "sha256": "e247f3434e5e56d8abdfa66b6da9163dd99c1b91ec01bd3e8daf23d2ef6452b3"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/paging/ram.paged.asm",
+      "size": 11747,
+      "sha256": "4e087f5474273dc76d770b0dc4e16ee72362f16a45f73fab9a4d7bcfafc8b381"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/tape/tape.init.asm",
+      "size": 10460,
+      "sha256": "98bca3517fdc35d22245622d309a3c1b0da655116d5953d57dec398b5d76fc38"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/tape/tape.layout.inc",
+      "size": 2696,
+      "sha256": "0113ec86ad1d3d6462bf291ba5aa82d3f85f2b144fc278d54fdc6c41ca475c19"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/tape/tape.resident.asm",
+      "size": 10708,
+      "sha256": "c35bfc4e68f678f5333d03f9f1c5d4dbe401f9ce2fdb66097ced050aafea63a2"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x2/x2.init.asm",
+      "size": 6576,
+      "sha256": "70b87aa4730e71a404576f5eab8bd8ee72b3257e5516d25d70ea4835d236b96b"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x2/x2.layout.inc",
+      "size": 2692,
+      "sha256": "b1bb361a1945ef332bd846c28a5411afe61fc66957ec0edc924533ec0ddcc8ce"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x2/x2.resident.asm",
+      "size": 7188,
+      "sha256": "3f9ce0678ef3a776dc8625a5e2d21bf801c6ab1b6c6ccac61ab03bf45348a6f0"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/curl.args.inc",
+      "size": 5835,
+      "sha256": "f85b43ad4b7d70d3d010f9587fa767facc372e2900062ad1be00f8779451c465"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/curl.asm",
+      "size": 8900,
+      "sha256": "7495060c3737b8ad89dfbbe33e024ff61cb19a75614085158dd2db2228f84614"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/curl.disk.inc",
+      "size": 11567,
+      "sha256": "d99190517dee8aaf47f70737449f45a60d56f7cae3ab86d5d469f144ef125f56"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/curl.http.inc",
+      "size": 9188,
+      "sha256": "5b42fdac1021726d3f298f4a1915ced97dadba4705172cb821f28b27d705d95e"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/curl.net.inc",
+      "size": 7032,
+      "sha256": "dac4e37bf6760a44ae0f30c0ad1428a80c76cc5f55044bf9b1ff021a58d98b1d"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/curl.redirect.inc",
+      "size": 8051,
+      "sha256": "68de65951bbe40ed157f2ef08b796f790b129a1a87350138e0801b6ef59db23d"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/curl.url.inc",
+      "size": 3083,
+      "sha256": "367d7bd0e4326ec15eb1f4cfcfed6b886e883f4e922724bd4383bcb3b2bac838"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/netecho.asm",
+      "size": 13961,
+      "sha256": "c1e4389fb418363f059458b27c0c374d57e6ec0e16c91ad6751b71fef858198f"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/ssh.asm",
+      "size": 124004,
+      "sha256": "a6a5b2fc2811ec6fa24d46e1a15e390c1bc4578d23da81fc72d604040a155b4e"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/x6.client.inc",
+      "size": 15751,
+      "sha256": "12413aa5da5bbb81b091ced2c195d4366a4049c0b9c48a40b9b7243496446eca"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/x6.driver.asm",
+      "size": 6499,
+      "sha256": "7b64d31d69937ae4316bd5f5254d91de52e891f9874e7297b4c2630ffabb6e2e"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/x6.init.asm",
+      "size": 9417,
+      "sha256": "9ff8aa944da917790be1a8e34d7f11b73404b6cf0b483153fd8b06acf11996a9"
+    },
+    {
+      "path": "src-library/extended/bios-upgrade/x6/x6.start.inc",
+      "size": 4561,
+      "sha256": "5883ac3f8155f9fb674b4bb030d50466696188f2234e6148765ff4bc290ab50c"
+    },
+    {
+      "path": "src-library/extended/tools/ccp/ccp.asm",
+      "size": 961,
+      "sha256": "2e11108e9efe1bd4093b79e225a3968b27da1d4a09b09d093e30a21f5f4b5295"
+    },
+    {
+      "path": "src-library/extended/tools/drvsel/drvsel.asm",
+      "size": 7857,
+      "sha256": "c6893392dff9e662a55cbf3b61ab1f3da81e50ff14b5bcf8f69a4c3adb717078"
+    },
+    {
+      "path": "src-library/extended/tools/folders/folders.asm",
+      "size": 1375,
+      "sha256": "fa67256b0add15660596e57f6fae14a0e97d801ee549018ef9773751c052b42e"
+    },
+    {
+      "path": "src-library/extended/tools/folders/folders.tool.inc",
+      "size": 14284,
+      "sha256": "d7bd223a487ffb4d2a362927aa34e1c1190773871af1e6c5663d9d848ae38bac"
+    },
+    {
+      "path": "src-library/extended/tools/hdfmt/hdfmt.asm",
+      "size": 9004,
+      "sha256": "75446b04881313134c6d604c7cb3cbf3a84064141344a7219d7d234f12594715"
+    },
+    {
+      "path": "src-library/extended/tools/mfmt/mfmt.asm",
+      "size": 8316,
+      "sha256": "4739df6bc71065279a789a5967b5c92121ef30aee5295f19f620dc34b14ef884"
+    },
+    {
+      "path": "src-library/extended/tools/mkdir/mkdir.asm",
+      "size": 1131,
+      "sha256": "9c40bc1e179382a4a1092458cc6b528349222205dcf16226fd8565cc5991b3d0"
+    },
+    {
+      "path": "src-library/extended/tools/ramstat/ramstat.asm",
+      "size": 6013,
+      "sha256": "e747435b6316edd79de5a8639ee9a67f45977bade9fa7c90d89e9482d9134c82"
+    },
+    {
+      "path": "src-library/extended/tools/rmdir/rmdir.asm",
+      "size": 1029,
+      "sha256": "30943eb477048b5286030f937fe116f780f1a889318e9a25ed7f95d653fcdd6d"
+    },
+    {
+      "path": "src-library/extended/tools/shell/shell.asm",
+      "size": 792,
+      "sha256": "ec7f3530b50cc19b63fe303ca47609d11f5b0f06819641799ab19a7da3e7f76d"
+    },
+    {
+      "path": "src-library/extended/tools/shell/shell.tool.inc",
+      "size": 2308,
+      "sha256": "797d25a8250038ae9f13f365bfa9acf6107d2602d9966c9b00d576e0d711ce23"
+    },
+    {
+      "path": "src-library/extended/tools/sum/sum.asm",
+      "size": 7545,
+      "sha256": "df995b8a61abb2f4b85b9691f7b969c37d64de561fd5420c0e0d316b43f9eb42"
+    },
+    {
+      "path": "src-library/extended/tools/sysinfo/sysinfo.asm",
+      "size": 20910,
+      "sha256": "9ffd673f9ce7d04613cafcff32314c4b20c5ac30192e7b3b7d853656904f75ac"
+    },
+    {
+      "path": "src-library/extended/tools/time/time.asm",
+      "size": 1918,
+      "sha256": "20a1084827aa8aebcd781645081097d7b61ffdcfdab5eec6c14ae04f3f4e9cac"
+    },
+    {
+      "path": "src-library/extended/tools/xjob/xjob.asm",
+      "size": 11873,
+      "sha256": "197cd9ab01fe6971db709f0b663204972a63e3aa920ca1bce3e3a166b112df3b"
+    },
+    {
+      "path": "src-library/shared/bdos/1/bdos.inc",
+      "size": 4873,
+      "sha256": "94a4277ca4fbcdbf14b3a6ccd598170854cb6d8dd79410a9463fd3bbe47c15ec"
+    },
+    {
+      "path": "src-library/shared/console/1/console.inc",
+      "size": 1652,
+      "sha256": "9bdc30a186e96a71e08edcc16600dcd9ec462a0f7b06fe7b1429595afed37327"
+    },
+    {
+      "path": "src-library/shared/disk/1/disk.inc",
+      "size": 2867,
+      "sha256": "e90b7444b519e5935e6e20d20ec1bc23fc16336443186494e85d1b211cd41a22"
+    },
+    {
+      "path": "src-library/shared/machineid/1/machineid.inc",
+      "size": 3593,
+      "sha256": "3d479d975b02acacbeb3d9a4643e92c4dae5cc852b3fe88e06d815f4b7e6899a"
+    },
+    {
+      "path": "src-library/shared/targets/hc2000-v2/targets.inc",
+      "size": 2728,
+      "sha256": "207253f800ef227a737312df99318e2e7a066a3145fd84a65fc352051dadec1d"
+    },
+    {
+      "path": "src-library/shared/time/1/time.inc",
+      "size": 11265,
+      "sha256": "0407eb5c5ee4c7de41492d9ae7e643e709c8c66752dd0f84c98375c1438d0390"
+    },
+    {
+      "path": "tools/UpgradeBiosBuilder/Program.cs",
+      "size": 24532,
+      "sha256": "3714a75809a0bc7b6d8e8422cbcccad11b2752c0cc75f699a9229f534e1930cb"
+    }
+  ],
+  "files": [
+    {
+      "name": "CCP.COM",
+      "source": "src-library/extended/tools/ccp/ccp.asm",
+      "size": 260,
+      "sha256": "6ab3a39b6c5e8cbbf378730aaa6fd65ea343aa654db7d6e1da15b32ea0316989",
+      "recordSize": 384,
+      "recordSha256": "5d04b776204f82815e7a66a0662df4ac025afd08e86e2e02a4ba393aaa4bd210"
+    },
+    {
+      "name": "CURL.COM",
+      "source": "src-library/extended/bios-upgrade/x6/curl.asm",
+      "size": 9550,
+      "sha256": "4a4c330ee0f3320ecacc84f85492d76b88fb84f0191430f0716a74bd28d74531",
+      "recordSize": 9600,
+      "recordSha256": "0052e2492e380fa9fd1dd6ee84a2a8fe00f2a628648a29ec33359bd883ca0fe9"
+    },
+    {
+      "name": "D.COM",
+      "source": "disks/cpm/CPM22-HC.DSK",
+      "size": 4608,
+      "sha256": "fb8e4d11948e9b8c068f72a6527e9fb0b5264597fc94873fe85408a999d2767a",
+      "recordSize": 4608,
+      "recordSha256": "fb8e4d11948e9b8c068f72a6527e9fb0b5264597fc94873fe85408a999d2767a"
+    },
+    {
+      "name": "DDT.COM",
+      "source": "disks/cpm/CPMZ80.DSK",
+      "size": 4864,
+      "sha256": "bc4b0f085f8d1e37caf2a13850c70afa07acb626b22b1a7cb63368b3334dd448",
+      "recordSize": 4864,
+      "recordSha256": "bc4b0f085f8d1e37caf2a13850c70afa07acb626b22b1a7cb63368b3334dd448"
+    },
+    {
+      "name": "DRVSEL.COM",
+      "source": "src-library/extended/tools/drvsel/drvsel.asm",
+      "size": 353,
+      "sha256": "82fa6adecf4f6ec6ecbd4e133755f4266fe72d47beaaa76498b5447f1ca2a6c9",
+      "recordSize": 384,
+      "recordSha256": "8b3be8756083188f984ded9eeb3f7c5ba82c63648f39f98183e0bcec28293b71"
+    },
+    {
+      "name": "FOLDERS.COM",
+      "source": "src-library/extended/tools/folders/folders.asm",
+      "size": 2008,
+      "sha256": "b2e8c0f6d3fbfec2805d0e5216caccca35345b4f64c921b7f232dd0d4c729fd1",
+      "recordSize": 2048,
+      "recordSha256": "72a808bc379d1168dfddab20d60e248639851b84cdfb5c788cda8800e4cd9c58"
+    },
+    {
+      "name": "HDFMT.COM",
+      "source": "src-library/extended/tools/hdfmt/hdfmt.asm",
+      "size": 475,
+      "sha256": "e3ab7daeedf01823499b6bdea78c2ff8c862b1e4114283d14005a49961f29622",
+      "recordSize": 512,
+      "recordSha256": "89f757b61e6c12572ba128b8fd02f39320aa9a18859e591d3dd1e93a3af2e61a"
+    },
+    {
+      "name": "LOAD.COM",
+      "source": "disks/cpm/CPM22-HC.DSK",
+      "size": 1792,
+      "sha256": "c885d061a5dcb3830ab1c29a13e34d3c0560cc3faf569bc55b195c0330a9cbd6",
+      "recordSize": 1792,
+      "recordSha256": "c885d061a5dcb3830ab1c29a13e34d3c0560cc3faf569bc55b195c0330a9cbd6"
+    },
+    {
+      "name": "MBASIC.COM",
+      "source": "disks/cpm/CPM22-HC.DSK",
+      "size": 24320,
+      "sha256": "e6412bb1d8fcb2638b169dcde79741a4346975dae2de46272ce394d233ee2ada",
+      "recordSize": 24320,
+      "recordSha256": "e6412bb1d8fcb2638b169dcde79741a4346975dae2de46272ce394d233ee2ada"
+    },
+    {
+      "name": "MFMT.COM",
+      "source": "src-library/extended/tools/mfmt/mfmt.asm",
+      "size": 420,
+      "sha256": "d1328c89cc93d73e386343fe90024ed9c237cb4403fe88bdb51c1e08b4984bef",
+      "recordSize": 512,
+      "recordSha256": "c82d53a4713f1a1b697b0e37a94ebe17e49a7cb11868a9092186335f86051395"
+    },
+    {
+      "name": "MKDIR.COM",
+      "source": "src-library/extended/tools/mkdir/mkdir.asm",
+      "size": 1981,
+      "sha256": "34ac61a232dc290b54a10e4534cc6f6e19ea62eb851c6a692a1fc5b04f79d5d1",
+      "recordSize": 2048,
+      "recordSha256": "f73fa24cf60f4a6a9def8016776a9847a4730effa9e37bd470b6e8c2b3011e68"
+    },
+    {
+      "name": "NETECHO.COM",
+      "source": "src-library/extended/bios-upgrade/x6/netecho.asm",
+      "size": 3073,
+      "sha256": "5b034648db919a110ba2df49bb0f758b8becd3de93844700fd95141736863a95",
+      "recordSize": 3200,
+      "recordSha256": "37915095a95247844045395dd2f26a4c204e030dbe60ee4d8ff24520b0fd0cdf"
+    },
+    {
+      "name": "NETX6.COM",
+      "source": "src-library/extended/bios-upgrade/x6/x6.init.asm",
+      "size": 2618,
+      "sha256": "39d20331f33ab2d93cdafe3048692bf8ecc742c223769ce35cf9c5a766c7462d",
+      "recordSize": 2688,
+      "recordSha256": "5c596ebc4c0e5ae8055fa3c290fcbfc22bc766624e8b0c562a1656a156aa8cff"
+    },
+    {
+      "name": "PIP.COM",
+      "source": "disks/cpm/CPM22-HC.DSK",
+      "size": 7424,
+      "sha256": "7f9e12a92e2bcfd814b5b680a2f7d5c2a2c50c9a5ef94a6891dcaa3527f08ec2",
+      "recordSize": 7424,
+      "recordSha256": "7f9e12a92e2bcfd814b5b680a2f7d5c2a2c50c9a5ef94a6891dcaa3527f08ec2"
+    },
+    {
+      "name": "RAMSTAT.COM",
+      "source": "src-library/extended/tools/ramstat/ramstat.asm",
+      "size": 221,
+      "sha256": "88e46063c080f4a40ca11a2722249c93e81bdd2412fdcbdaeebe0a26a27ab353",
+      "recordSize": 256,
+      "recordSha256": "ae11b3bd7bc548ea2598ac3f5275f7fb4628f49ada4c352688201c10792847a8"
+    },
+    {
+      "name": "RMDIR.COM",
+      "source": "src-library/extended/tools/rmdir/rmdir.asm",
+      "size": 1981,
+      "sha256": "eb0c525ae6cfe81c7e556c44333e81df795c7763a37b10025637ff52cf67a79a",
+      "recordSize": 2048,
+      "recordSha256": "63b058eca0b809363c674ae7b36f34bf87a69030854f7dd39256ed2deb34c620"
+    },
+    {
+      "name": "SHELL.COM",
+      "source": "src-library/extended/tools/shell/shell.asm",
+      "size": 248,
+      "sha256": "a53adf1b2cd04278c989fb687bbe32a891f584a33b02a4d450cc56cc5a149092",
+      "recordSize": 256,
+      "recordSha256": "2db1f003e0a67c858004a1ca8ef5fca225c99a53d5469cbdfbc4426001490399"
+    },
+    {
+      "name": "SSH.COM",
+      "source": "src-library/extended/bios-upgrade/x6/ssh.asm",
+      "size": 17024,
+      "sha256": "70aa5d04dc0beb8d6bb4d3b6c0fcd01f5ac68c93a9edca32a029ea57e731e135",
+      "recordSize": 17024,
+      "recordSha256": "70aa5d04dc0beb8d6bb4d3b6c0fcd01f5ac68c93a9edca32a029ea57e731e135"
+    },
+    {
+      "name": "STAT.COM",
+      "source": "disks/cpm/CPM22-HC.DSK",
+      "size": 5248,
+      "sha256": "614d0b1d66466177e5b2bf585251d53d1e24eda34ada136b4ae178ab5944dc73",
+      "recordSize": 5248,
+      "recordSha256": "614d0b1d66466177e5b2bf585251d53d1e24eda34ada136b4ae178ab5944dc73"
+    },
+    {
+      "name": "SUBMIT.COM",
+      "source": "disks/cpm/CPM22-HC.DSK",
+      "size": 1280,
+      "sha256": "4c3fec22ebca595b03c279eb21b19aa4b2dab139741ed29172ca6fa4c43e7066",
+      "recordSize": 1280,
+      "recordSha256": "4c3fec22ebca595b03c279eb21b19aa4b2dab139741ed29172ca6fa4c43e7066"
+    },
+    {
+      "name": "SUM.COM",
+      "source": "src-library/extended/tools/sum/sum.asm",
+      "size": 394,
+      "sha256": "01aadcc541c989f29560f320f9a86cadceef86c35318695c93861b9315d563a7",
+      "recordSize": 512,
+      "recordSha256": "5d9e8f92d6d9884140203d02c2deae0c08fb0a34677c9c4229e996b62ff44fd0"
+    },
+    {
+      "name": "SYSINFO.COM",
+      "source": "src-library/extended/tools/sysinfo/sysinfo.asm",
+      "size": 2215,
+      "sha256": "6fab752cc2930ff73c15f4f4880018683659696b8e7473f97b4d0efe0f366965",
+      "recordSize": 2304,
+      "recordSha256": "68edd8f7104400ddbce242f4f144f89e1613ca3989cb875778e08c17ee3e2770"
+    },
+    {
+      "name": "TAPEINIT.COM",
+      "source": "src-library/extended/bios-upgrade/tape/tape.init.asm",
+      "size": 5604,
+      "sha256": "003d59478a380515f1d0d641867922c76a0f34954673f04ba2387d2b4bb8e876",
+      "recordSize": 5632,
+      "recordSha256": "2839a9c6fdcd0b3513967185f7a87831a403d0b8341bbc1900ed99b5fe48cf93"
+    },
+    {
+      "name": "TIME.COM",
+      "source": "src-library/extended/tools/time/time.asm",
+      "size": 726,
+      "sha256": "c8f9301d20425a4ebd102e793ec744acd96b9ddf4b3fab8d1e76172f83fde894",
+      "recordSize": 768,
+      "recordSha256": "537cfb7a85cafed63b2fc8a0eb3ba5918f1c65967001aeac7b0aba73a613081a"
+    },
+    {
+      "name": "X2INST.COM",
+      "source": "src-library/extended/bios-upgrade/x2/x2.init.asm",
+      "size": 1132,
+      "sha256": "12e4d3482948c341730d4c7a98c9d24fd8500f423d26384236e1bb0cbe10bb86",
+      "recordSize": 1152,
+      "recordSha256": "1b2e0f9c90eebd55eaba9cdfb557a8550c74ae2b5b568e48ba848fb603bedce1"
+    },
+    {
+      "name": "XSUB.COM",
+      "source": "disks/cpm/CPM22-HC.DSK",
+      "size": 768,
+      "sha256": "817a16b595ea6de8df0dd5e808f89a49e85dea546673283d759d01e960598bed",
+      "recordSize": 768,
+      "recordSha256": "817a16b595ea6de8df0dd5e808f89a49e85dea546673283d759d01e960598bed"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "CPM22-HC-ram-paged-upgrade.DSK",
+      "size": 778496,
+      "sha256": "fc36f11ab405d41f3d700ca7e269cd2057fc16c2306e4b7438396743d714e085"
+    },
+    {
+      "name": "HC2000-UTIL-8M.DSK",
+      "size": 8388608,
+      "sha256": "116173c69dcbd11236cffb9edfe158d110f8bd56984830711cd7f2b2a69e31ce"
+    },
+    {
+      "name": "HC2000-UTIL.DSK",
+      "size": 778496,
+      "sha256": "e04e57ebc8ba52819dcf6d1d5d02cae58496d91631a800dff79029a2778a7eca"
+    }
+  ]
+}

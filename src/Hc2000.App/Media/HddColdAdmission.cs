@@ -24,7 +24,7 @@ internal sealed class HddColdAdmission : IDisposable
     internal static HddColdAdmission Open(string path, CancellationToken cancellation = default)
     {
         var result = NativeImageAdmission.TryAcquireColdRead(cancellation);
-        var native = result.Admission ?? throw new AdmissionException(result.Refusal!.Value);
+        var native = result.RequireAdmission();
         FileStream? source = null;
         try
         {

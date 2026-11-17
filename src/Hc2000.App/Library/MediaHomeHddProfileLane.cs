@@ -25,7 +25,8 @@ public static class MediaHomeHddProfileLane
     /// volume must be published in the container. <paramref name="draft"/> is the machine draft; a
     /// refusal returns it unchanged with the stated reason, a selection returns the recorded draft
     /// plus the admitted volume identity.</summary>
-    public static MediaHomeHddProfileResult Select(string kind, string path, string? volumeName, string slot, MachineConfiguration draft)
+    public static MediaHomeHddProfileResult Select(string kind, string path, string? volumeName, string slot, MachineConfiguration draft,
+        bool writable = false)
     {
         if (slot is not ("C" or "D" or "E" or "F"))
             return Refused(draft, $"Select-as targets are the HDD slots C:–F:, not '{slot}:'");
@@ -38,11 +39,11 @@ public static class MediaHomeHddProfileLane
         try
         {
             var name = volumeName ?? SingleVolume(path);
-            using var volume = HddColdVolume.OpenMapped(path, [new HddColdVolumeRequest((byte)(slot[0] - 'A'), name)]);
+            using var volume = HddColdVolume.OpenMapped(path, [new HddColdVolumeRequest((byte)(slot[0] - 'A'), name, Writable: writable)]);
             var identity = volume.Identities[0];
             // Profile change, effective cold: the slot is replaced (not duplicated) in the machine
             // draft; the existing cold start path admits it at the next cold start.
-            var recorded = draft with { Hdd = [.. draft.Hdd.Where(h => h.Slot != slot), new HddConfiguration(slot, path, true, identity.Name)] };
+            var recorded = draft with { Hdd = [.. draft.Hdd.Where(h => h.Slot != slot), new HddConfiguration(slot, path, !writable, identity.Name)] };
             recorded.Validate();
             return new(MediaHomeHddProfileOutcome.Selected, null, recorded, identity);
         }
@@ -50,6 +51,24 @@ public static class MediaHomeHddProfileLane
         {
             return Refused(draft, ex.GetBaseException().Message);
         }
+    }
+
+    /// <summary>Explicit library-copy cold action: publication prepares a private medium, then the
+    /// ordinary named-volume lane freshly admits it. It records a draft only; no reset or live switch.</summary>
+    public static async Task<MediaHomeHddProfileResult> SelectLibraryCopyAsync(DiskLibraryCatalog catalog,
+        string copyId, string libraryRoot, string slot, MachineConfiguration draft, CancellationToken cancellation = default)
+    {
+        if (slot is not ("C" or "D" or "E" or "F"))
+            return Refused(draft, "library HDD targets are C:–F:");
+        var prepared = await catalog.PrepareHddContainerAsync(copyId, libraryRoot, cancellation);
+        if (prepared.Status is not (DiskLibraryHddContainerStatus.Created or DiskLibraryHddContainerStatus.Reused))
+            return Refused(draft, prepared.Message);
+        if (cancellation.IsCancellationRequested)
+            return Refused(draft, "cancelled before cold selection; private container retained, nothing selected");
+        var selected = Select("hdd-container", prepared.Path!, "LIBRARY.DSK", slot, draft, writable: true);
+        return selected.Outcome == MediaHomeHddProfileOutcome.Selected
+            ? selected with { Message = "selected for cold start; private container is the working medium, .img is seed/provenance only; running machine unchanged" }
+            : selected;
     }
 
     /// <summary>Clears the recorded slot from the machine draft; a slot that is not recorded

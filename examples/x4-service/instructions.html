@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>X4 math guest service</title></head>
+<body><h1>X4 math guest service</h1>
+<p>Enable X5 and the X4 math accelerator on a new machine. X4 is off by default.
+Load <code>X4MATH.tap</code> as a CODE tape at 32768, then call the entry at 32768 from your own program.
+The resident code, stack, request and 64-byte reply buffer must remain in caller-owned accessible memory.
+This explicit service does not patch BASIC or CP/M and does not intercept language operations.</p>
+<p>Call with HL pointing at an 8–32-byte request, A holding its length, and DE pointing at the reply buffer.
+On return A is the admission code, FE for invalid length or incomplete reply, or FF when the card is unavailable.
+AF, BC, DE and HL are clobbered; IX and IY are preserved. An eight-byte refusal is followed by FF bytes in the buffer.</p>
+<p>Frames begin with version 1, opcode, payload length, reserved zero, and a little-endian 32-bit tag.
+INFO (0) has no payload; START (1) has a 24-byte operation/format/options/operand payload;
+QUERY (2), CANCEL (3), ACK (4) have no payload. Non-INFO commands require a nonzero tag.
+START acknowledges admission, not completion: poll QUERY with the same tag until the state is terminal,
+read the numeric status and result, and ACK that tag before starting another operation.
+An ABORT of the transport does not cancel the engine; use CANCEL explicitly.</p>
+<p>ABI 1 offers I32/I64 checked add, subtract, multiply and quotient/remainder;
+finite F32/F64 add, subtract, multiply, divide and square root; and explicit F32/F64,
+MBASIC single/double and Turbo Pascal real conversions. It does not advertise transcendental functions.
+Frames and results use little endian. START payload offsets 0–3 are arithmetic operation, source format,
+destination format and options; offsets 4–11 and 12–19 are operands A and B; offsets 20–23 are zero.
+Unused bytes and the second operand of SQRT or CONVERT must be zero. Arithmetic operations are
+1 add, 2 subtract, 3 multiply, 4 divide, 5 quotient/remainder, 6 square root and 7 convert.
+Formats are 1 I32, 2 I64, 3 F32, 4 F64, 5 MBASIC single, 6 MBASIC double and 7 Turbo real.
+For conversion, option bit 0 enables rounding; otherwise options must be zero. Native formats are
+conversion-only. Arithmetic formats must match. DIV and SQRT are floating-point only; DIVREM is integer only.</p>
+<p>A successful non-INFO reply has 56 payload bytes after its 8-byte header. Payload offsets 0–3 are state,
+operation, source and destination formats; offset 4 numeric status, 5 result length, 6–7 flags,
+8–11 active tag, 12–15 latency/backend versions, 16–23 generation, 24–31 accepted tick,
+32–39 due tick and 40–55 result. States are 0 idle, 1 busy, 2 done, 3 numerical error and 4 cancelled.
+The admission response byte is 0 OK, 1 busy, 2 invalid, 3 unsupported, 4 no target, 5 too late,
+6 time limit or 7 resource limit. Numeric status values 1–8 mean divide-by-zero, domain, overflow,
+unsupported nonfinite, precision loss, native range, internal failure and invalid numeric encoding.
+Flags 1, 2 and 4 mean inexact, underflow and negative-zero loss. See the X4 ABI specification for exact
+validation, native encodings, rounding and modeled timing.</p>
+</body></html>

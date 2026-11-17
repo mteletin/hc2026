@@ -1,14 +1,30 @@
 using System.Runtime.InteropServices;
+using Hc2000.HostFiles;
 
 namespace Hc2000.App.Media;
 
-/// <summary>Real Linux statx/access facts. A failed or non-Linux probe is unknown, never a modeled regular file or invented inode.</summary>
+/// <summary>Real Linux statx/access or Windows handle metadata. Failed probes report unknown; identity never comes from a path hash.</summary>
 internal static class LinuxFileFacts
 {
     internal readonly record struct Fact(bool Known, bool Regular, bool Link, bool Writable, string? FileId);
 
     internal static Fact Inspect(string path)
     {
+        if (OperatingSystem.IsWindows())
+        {
+            try
+            {
+                var attributes = File.GetAttributes(path);
+                var windowsLink = (attributes & FileAttributes.ReparsePoint) != 0;
+                var directory = (attributes & FileAttributes.Directory) != 0;
+                if (windowsLink || directory) return new(true, false, windowsLink, false, null);
+                var native = WindowsImageAdmissionNative.InspectFile(path);
+                var id = native.Id;
+                return new(true, true, false, (attributes & FileAttributes.ReadOnly) == 0,
+                    $"{id.DeviceMajor:x}:{id.DeviceMinor:x}:{id.Inode:x}");
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { return Unknown; }
+        }
         if (!OperatingSystem.IsLinux() || Statx(-100, path, 0x100, 0x7ffu, out var stat) != 0) return Unknown;
         if ((stat.Mask & 0x101u) != 0x101u) return Unknown;
         var type = stat.Mode & 0xF000u;

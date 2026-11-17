@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Platform.Storage;
@@ -31,6 +32,7 @@ public sealed partial class HddPanel : StackPanel
     private bool coldConfigurationConsumed;
     private readonly HddInitialMedia?[] selected = new HddInitialMedia?[4];
     private readonly TextBlock[] labels = new TextBlock[4];
+    private readonly TextBlock[] markers = new TextBlock[4], statuses = new TextBlock[4];
     private readonly Button[] choose = new Button[4], save = new Button[4];
     private readonly CheckBox[] protection = new CheckBox[4];
     private readonly Button start = new() { Content = "Start NEW HDD machine (original BIOS)" };
@@ -38,11 +40,23 @@ public sealed partial class HddPanel : StackPanel
     private readonly CheckBox discardClose = new() { Content = "Explicitly discard unsaved HDD edits when closing" };
     private readonly TextBlock notice = new() { Text = "HDD is off for this machine. Choose New machine, then enable HDD in Hardware before Start.", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
     private readonly StackPanel hddRows = new() { Spacing = 3 };
+    private readonly StackPanel libraryRows = new() { Name = "HddLibraryRemaps", Spacing = 3 };
+    private ImmutableArray<(string Id, string Name)> libraryEntries = [];
+    private Func<string, Task<Hc2000.App.Library.DiskLibraryHddContainerResult>>? inspectLibraryTarget;
+    internal void ConfigureLibraryRemaps(ImmutableArray<(string Id, string Name)> entries,
+        Func<string, Task<Hc2000.App.Library.DiskLibraryHddContainerResult>>? inspect)
+    {
+        libraryEntries = entries; inspectLibraryTarget = inspect; RefreshHddList();
+    }
     private ImmutableArray<InlineMediaRow> hddListed = [];
     private ImmutableArray<HddDriveView> views = [];
+    internal event Action<HddReply>? Observed;
     public bool IsBusy { get; private set; }
     public bool ColdConfigurationAvailable => startCold is not null;
     internal bool RequiresRuntimeInspection => request is not null && (!runtimeInspected || hddEnabled);
+    // Attached, but the drives were never read: the media poll reads them once (MediaPanel.PollAsync).
+    internal bool AwaitsFirstInspection => request is not null && !runtimeInspected;
+    internal Task InspectFirstAsync() => RunAsync(InspectAsync);
     public bool CanCloseSafely => !boundSavePending && (views.All(view => !view.Dirty) || discardClose.IsChecked == true);
     public string? Notice => notice.Text;
     internal Func<byte, Task>? BrowseFiles { get; set; }
@@ -56,7 +70,10 @@ public sealed partial class HddPanel : StackPanel
         for (int index = 0; index < 4; index++)
         {
             byte drive = (byte)(index + 2);
-            labels[index] = new() { Text = $"{(char)('C' + index)}: profile off" };
+            var letter = (char)('A' + drive);
+            labels[index] = new() { Name = $"Drive{letter}Name", Text = $"{letter}: profile off", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+            markers[index] = new() { Name = $"Drive{letter}Marker", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
+            statuses[index] = new() { Name = $"Drive{letter}Status", TextWrapping = Avalonia.Media.TextWrapping.Wrap };
             choose[index] = new() { Content = "Prepare raw image…" };
             save[index] = new() { Content = "Save copy…" };
             protection[index] = new() { Content = "Write-protected at cold attach" };
@@ -78,20 +95,29 @@ public sealed partial class HddPanel : StackPanel
                 VerifyBinding(binding);
                 if (file is not null) await SaveCopyAsync(file.TryGetLocalPath() ?? throw new InvalidOperationException("Local output only."), drive);
             });
-            Children.Add(labels[index]);
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             var browse = new Button { Content = $"Browse {(char)('A' + drive)} files" };
             browse.Click += async (_, _) => { if (BrowseFiles is { } action) await action(drive); };
             boundSaveButtons[index] = new() { Content = $"Save {(char)('A' + drive)} to bound container" };
             boundSaveButtons[index].Click += async (_, _) => await RunAsync(() => SaveBoundAsync(drive));
-            row.Children.Add(choose[index]); row.Children.Add(protection[index]); row.Children.Add(save[index]); row.Children.Add(browse);
-            row.Children.Add(boundSaveButtons[index]);
+            var textColumn = new StackPanel();
+            textColumn.Children.Add(labels[index]); textColumn.Children.Add(markers[index]); textColumn.Children.Add(statuses[index]);
+            textColumn.Children.Add(protection[index]);
+            var menu = new ContextMenu();
+            menu.Items.Add(choose[index]); menu.Items.Add(save[index]); menu.Items.Add(browse); menu.Items.Add(boundSaveButtons[index]);
+            var more = new Button { Name = $"Drive{letter}More", Width = 26, Height = 26, Padding = new Thickness(5), Content = new PathIcon { Width = 16, Height = 16, Data = Avalonia.Media.Geometry.Parse("M3,7 A1,1 0 1 0 3,9 A1,1 0 1 0 3,7 M8,7 A1,1 0 1 0 8,9 A1,1 0 1 0 8,7 M13,7 A1,1 0 1 0 13,9 A1,1 0 1 0 13,7") } };
+            Avalonia.Automation.AutomationProperties.SetName(more, $"More actions for drive {letter}");
+            ToolTip.SetTip(more, $"More actions for drive {letter}");
+            var row = new Grid { Name = $"Drive{letter}Row", ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 6, ContextMenu = menu };
+            Grid.SetColumn(more, 1);
+            row.Children.Add(textColumn); row.Children.Add(more);
+            more.Click += (_, _) => menu.Open(row);
             Children.Add(row);
         }
         var hddListSection = new StackPanel { Orientation = Orientation.Vertical, Spacing = 3 };
         hddListSection.Children.Add(new TextBlock { Text = "HDD entries (inline listing of prepared images and inspection results)", FontSize = 14 });
         hddListSection.Children.Add(hddRows);
         Children.Add(hddListSection);
+        Children.Add(libraryRows);
         Children.Add(new TextBlock { Text = "Named maps default to read-only; writable selections require explicit opt-in. Preparation cannot mix with raw slots. Saving a capture does not prove a guest deblock flush.", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
         Children.Add(volumePath); Children.Add(volumeName); Children.Add(volumeDrive); Children.Add(writableVolume); Children.Add(prepareVolume); Children.Add(clearVolumes);
         prepareVolume.Click += async (_, _) => await RunAsync(() => PrepareVolumeAsync(volumePath.Text ?? "", volumeName.Text ?? "", (byte)(volumeDrive.SelectedIndex + 2), writableVolume.IsChecked == true));
@@ -147,7 +173,7 @@ public sealed partial class HddPanel : StackPanel
         views = []; hddEnabled = false; runtimeInspected = false; discardClose.IsChecked = false; IsBusy = false;
         Array.Clear(selected);
         for (var index = 0; index < labels.Length; index++)
-            labels[index].Text = $"{(char)('C' + index)}: no current observation";
+            SetDriveText(index, $"{(char)('C' + index)}: no current observation", "", "");
     }
     internal void Observe(HddReply? reply)
     {
@@ -157,22 +183,40 @@ public sealed partial class HddPanel : StackPanel
         hddEnabled = !views.IsEmpty;
         lastSwitch = reply.Switch;
         foreach (var view in views)
-            labels[view.Drive - 2].Text = $"{(char)('A' + view.Drive)}: last observation · {(view.Present ? view.Name ?? "raw image" : "empty")} · generation {view.Generation} · {(view.WriteProtected ? "protected" : "writable")} · {(view.Dirty ? "dirty" : "clean")}";
+            SetDriveText(view.Drive - 2, $"{(char)('A' + view.Drive)}: {(view.Present ? Path.GetFileName(view.Name ?? "disk image") : "empty")}", "last observation", $"generation {view.Generation} · {(view.WriteProtected ? "protected" : "writable")} · {(view.Dirty ? "unsaved changes" : "no changes")}");
         notice.Text = reply.Error ?? (lastSwitch?.State switch
         {
-            HddSwitchState.AwaitingGuest => "Remap pending: close files and run HDSWAP from A:; no media changes before the guest ACK. Refresh to observe completion, or cancel.",
-            HddSwitchState.Committed => "Remap committed under the guest ACK hold. Inspect the replacement protection before another operation.",
-            HddSwitchState.Cancelled => "Remap cancelled; the original binding remains installed.",
-            HddSwitchState.Unknown => "Unknown remap outcome; CPU hold and source authority remain retained. " + lastSwitch.Error,
-            _ => "HDD state observed. Guest writes after this observation may require another save."
+            HddSwitchState.AwaitingGuest => "Drive change pending: close files and run HDSWAP from A:. Refresh to check completion, or cancel.",
+            HddSwitchState.Committed => "Drive changed. Check its write protection before continuing.",
+            HddSwitchState.Cancelled => "Drive change cancelled; the original disk is still in use.",
+            HddSwitchState.Unknown => "Could not confirm the drive change. The machine remains paused; disks are kept safe. " + lastSwitch.Error,
+            _ => "Hard-disk status updated. Later changes may need another save."
         });
         UpdateControls();
         RefreshHddList();
+        Observed?.Invoke(reply);
     }
 
     /// <summary>Rebuild the inline HDD entry listing from existing cold preparation and inspection data.</summary>
     public void RefreshHddList()
     {
+        libraryRows.Children.Clear();
+        if (inspectLibraryTarget is { } inspect && request is not null && hddEnabled)
+        {
+            libraryRows.Children.Add(new TextBlock { Text = "Saved writable library working media · guest ACK required; catalogue protection still wins (no live creation or rebuilding)", TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+            foreach (var entry in libraryEntries.Take(InlineMediaListing.MaxRowsPerPage))
+            {
+                var row = new StackPanel { Spacing = 3 };
+                row.Children.Add(new TextBlock { Text = entry.Name, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+                foreach (byte drive in new byte[] { 2, 3, 4, 5 })
+                {
+                    var button = new Button { Content = $"Remap library as {(char)('A' + drive)}:", IsEnabled = lastSwitch?.State is not (HddSwitchState.AwaitingGuest or HddSwitchState.Unknown) };
+                    button.Click += async (_, _) => await RunAsync(() => BeginLibrarySwitchAsync(() => inspect(entry.Id), drive, discardSwitch.IsChecked == true));
+                    row.Children.Add(button);
+                }
+                libraryRows.Children.Add(row);
+            }
+        }
         bool cold = startCold is not null;
         var prepared = cold ? selected.Where(image => image is not null).Select(image => image!).ToImmutableArray()
             : ImmutableArray<HddInitialMedia>.Empty;
@@ -207,7 +251,7 @@ public sealed partial class HddPanel : StackPanel
             throw new InvalidOperationException("Cold configuration changed while reading.");
         selected[index] = new(drive, bytes, Path.GetFileName(path));
         preparationVersion++;
-        labels[index].Text = $"{(char)('A' + drive)}: prepared {Path.GetFileName(path)}, exact {bytes.Length} bytes; not attached";
+        SetDriveText(index, $"{(char)('A' + drive)}: {Path.GetFileName(path)}", "prepared; not attached", $"exact {bytes.Length} bytes");
         RefreshHddList();
     }
     internal async Task PrepareVolumeAsync(string path, string name, byte drive, bool writable = false)
@@ -234,7 +278,7 @@ public sealed partial class HddPanel : StackPanel
         namedSelections = requests.Select((selection, index) => new NamedSelection(full, identities[index].Name, selection.Drive, identities[index], !media[index].WriteProtected)).ToImmutableArray();
         preparationVersion++;
         RefreshPreparedLabels();
-        notice.Text = "Named map prepared, not mounted. Start revalidates every selection under one native admission; catalogue read-only protection cannot be disabled.";
+        notice.Text = "The selected drives are ready, not yet mounted. Start checks them again. Read-only disks remain protected.";
         UpdateControls();
         RefreshHddList();
     }
@@ -250,10 +294,16 @@ public sealed partial class HddPanel : StackPanel
         {
             var named = namedSelections.SingleOrDefault(selection => selection.Drive == index + 2);
             if (named is not null)
-                labels[index].Text = $"{(char)('C' + index)}: prepared {named.Name}, exact 8388608 bytes, {(named.Writable ? "WRITABLE (opt-in)" : "READ-ONLY")}; not attached";
+                SetDriveText(index, $"{(char)('C' + index)}: {named.Name}", "prepared; not attached", $"exact 8388608 bytes, {(named.Writable ? "WRITABLE (opt-in)" : "READ-ONLY")}");
             else if (selected[index] is null)
-                labels[index].Text = $"{(char)('C' + index)}: empty cold slot";
+                SetDriveText(index, $"{(char)('C' + index)}: empty cold slot", "", "");
         }
+    }
+    private void SetDriveText(int index, string name, string marker, string status)
+    {
+        labels[index].Text = name;
+        markers[index].Text = marker;
+        statuses[index].Text = status;
     }
     internal async Task StartColdAsync()
     {
@@ -282,6 +332,25 @@ public sealed partial class HddPanel : StackPanel
         RefreshHddList();
     }
     public async Task InspectAsync() => await SendAsync(new(HddAction.Inspect));
+    /// <summary>Library preparation yields only an intended existing target. Capture the runtime
+    /// and old generation before any async inspection; only the existing BeginSwitch/guest ACK
+    /// owner path may replace media, with the usual dirty/discard and protection checks.</summary>
+    internal async Task BeginLibrarySwitchAsync(Func<Task<Hc2000.App.Library.DiskLibraryHddContainerResult>> inspectTarget,
+        byte drive, bool discardChanges = false)
+    {
+        _ = Index(drive);
+        var binding = runtimeBinding;
+        if (request is null || !hddEnabled || !runtimeInspected || lastSwitch?.State is HddSwitchState.AwaitingGuest or HddSwitchState.Unknown)
+            throw new InvalidOperationException("Inspect a connected HDD machine with no unresolved remap first.");
+        var generation = views.Single(view => view.Drive == drive).Generation;
+        var target = await inspectTarget();
+        if (target.Status != Hc2000.App.Library.DiskLibraryHddContainerStatus.Reused || target.Path is null || target.Identity is null)
+            throw new IOException("Library target refused: " + target.Message);
+        await SendAsync(new(HddAction.BeginSwitch, drive, Target: new(target.Path, target.Identity, Writable: true),
+            ExpectedGeneration: generation, DiscardChanges: discardChanges), binding);
+        discardSwitch.IsChecked = false;
+    }
+
     internal async Task BeginVolumeSwitchAsync(string path, string name, byte drive, bool discardChanges = false, bool writable = false)
     {
         _ = Index(drive);
@@ -367,6 +436,7 @@ public sealed partial class HddPanel : StackPanel
         prepareVolume.IsEnabled = coldNamed && !IsBusy;
         volumePath.IsEnabled = volumeName.IsEnabled = volumeDrive.IsEnabled = writableVolume.IsEnabled = (coldNamed || runtimeNamed) && !IsBusy;
         switchVolume.IsEnabled = discardSwitch.IsEnabled = runtimeNamed && !IsBusy;
+        libraryRows.IsEnabled = runtimeNamed && runtimeInspected && !IsBusy;
         cancelSwitch.IsEnabled = request is not null && lastSwitch?.State == HddSwitchState.AwaitingGuest && !IsBusy;
         clearVolumes.IsEnabled = startCold is not null && !namedSelections.IsEmpty && !IsBusy;
         start.IsEnabled = startCold is not null && !IsBusy;

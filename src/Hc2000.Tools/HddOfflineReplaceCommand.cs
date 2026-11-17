@@ -62,7 +62,7 @@ internal static class HddOfflineReplaceCommand
         NativeImageAdmission? admission = null;
         try
         {
-            if (NativeImageAdmission.PlatformMode == ImageAdmissionPlatformMode.GuardedLinux)
+            if (NativeImageAdmission.IsGuarded)
             {
                 var result = NativeImageAdmission.TryAcquireColdRead(default);
                 admission = result.Admission ?? throw new AdmissionException(result.Refusal!.Value);

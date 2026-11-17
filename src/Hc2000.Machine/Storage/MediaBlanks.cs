@@ -1,6 +1,6 @@
 namespace Hc2000.Machine.Storage;
 
-/// <summary>Shared blank-media table (KB hc2000-media-home-scan-admission-v1 sec 4): one table, three named
+/// <summary>Shared blank-media table: one table, three named
 /// targets, one writer per family. The hc CLI and the App call these same methods; the writers return
 /// bytes only, so "byte-identical" means one writer, not a second implementation. Home placement and
 /// refusal are host-side (Hc2000.HostFiles.MediaHomeCreate).</summary>

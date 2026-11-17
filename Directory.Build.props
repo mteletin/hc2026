@@ -7,4 +7,24 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
+  <!-- Avalonia's portable output carries native binaries (and Windows native PDBs)
+       for every platform. Development executables need only the SDK host's RID.
+       Keep existing non-RID paths for tests/probes and build-host tools; explicit
+       cross-build/publish RIDs retain their normal paths and payload selection. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == '' And ('$(MSBuildProjectName)' == 'Hc2000.App' Or '$(MSBuildProjectName)' == 'Hc2000.App.Tests' Or '$(MSBuildProjectName)' == 'Hc2000.Machine.Tests' Or '$(MSBuildProjectName)' == 'Hc2000.Tools.Tests' Or '$(MSBuildProjectName)' == 'Hc2000.ImageAdmissionProbe' Or '$(MSBuildProjectName)' == 'InstallerVerify')">
+    <UseCurrentRuntimeIdentifier>true</UseCurrentRuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+  <!-- hc2000-ram-one-buffer: every emulated frame is a fresh pixel array (416 KB for the ULA, 1.67 MB with the text
+       overlay, up to 1.2 MB on the X2), 50 a second. Above .NET's default 85 KB large-object threshold each one goes
+       to the large object heap, which only a full collection frees, so frames piled up by the gigabyte. At 2 MiB
+       they die young in the ordinary heap; the paged machine's 1 GiB RAM stays a large object. Measured on
+       CpmUtilitiesGuestTests (15 tests, one test host): 3,225 MB peak on main, 1,613 MB with this alone, 912 MB with the
+       RAM pool too, at the same run time. -->
+  <!-- CP/NET releases its snapshot lease only after both transport quiescence and host-gate retirement.
+       The App now uses the same threshold; the restored-guest stress gate covers this timing. -->
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.LOHThreshold" Value="2097152" />
+  </ItemGroup>
 </Project>

@@ -58,7 +58,13 @@ public static class Assembler
     private sealed record Macro(string[] Parameters, SourceLine[] Body);
     private sealed record Temporary(string Name, int Order, int Address);
     private static SourceLine[] ReadLines(string path) => ToLines(File.ReadAllText(path), path);
-    private static SourceLine[] ToLines(string source, string file) => source.Replace("\r", "").Split('\n')
+    /// <summary>
+    /// A CP/M text file ends at its first ^Z (1AH): CP/M keeps whole 128-byte records, and the rest of the last one is ^Z
+    /// padding. A source read back from an HC2000 drive carries it (the remote drive share, demo #192, 2026-11-06: line 7 of
+    /// a 6-line HELLO.ASM was "Unknown instruction"), so the assembler stops there, as CP/M's own assemblers do.
+    /// </summary>
+    private static SourceLine[] ToLines(string source, string file) =>
+        (source.IndexOf('\u001A') is var end and >= 0 ? source[..end] : source).Replace("\r", "").Split('\n')
         .Select((text, i) => new SourceLine(file, i + 1, text)).ToArray();
     private static bool IsSourceException(Exception ex) => ex is IOException or UnauthorizedAccessException or FormatException or OverflowException or ArgumentException;
 

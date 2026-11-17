@@ -21,6 +21,7 @@ public sealed class SdlQueuedAudioSink : IQueuedAudioSink
     public string BinarySha256 { get; }
     public ushort Format { get; private set; }
     public byte Channels { get; private set; }
+    int IQueuedAudioSink.Channels => Channels;
 
     private SdlQueuedAudioSink(string path)
     {
@@ -31,10 +32,11 @@ public sealed class SdlQueuedAudioSink : IQueuedAudioSink
         catch { NativeLibrary.Free(module); module = IntPtr.Zero; throw; }
     }
 
-    public static SdlQueuedAudioSink Open(int desiredFrequency = 48000)
+    public static SdlQueuedAudioSink Open(int desiredFrequency = 48000, byte channels = 1)
     {
         if (desiredFrequency is not (44100 or 48000))
             throw new ArgumentOutOfRangeException(nameof(desiredFrequency));
+        if (channels is not (1 or 2)) throw new ArgumentOutOfRangeException(nameof(channels));
         var (rid, file) = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ("win-x64", "SDL2.dll")
             : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? ("linux-x64", "libSDL2-2.0.so.0")
             : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ?
@@ -52,10 +54,10 @@ public sealed class SdlQueuedAudioSink : IQueuedAudioSink
                 throw new IOException($"Expected SDL2 {BackendVersion}, obtained {version.Major}.{version.Minor}.{version.Patch}.");
             if (sink.api.Init(0x10) != 0) throw sink.Error("SDL_InitSubSystem(AUDIO)");
             sink.initialized = true;
-            var desired = new AudioSpec { Frequency = desiredFrequency, Format = FloatFormat, Channels = 1, Samples = 512 };
+            var desired = new AudioSpec { Frequency = desiredFrequency, Format = FloatFormat, Channels = channels, Samples = 512 };
             sink.device = sink.api.OpenDevice(IntPtr.Zero, 0, ref desired, out var obtained, 1); // frequency change only
             if (sink.device == 0) throw sink.Error("SDL_OpenAudioDevice");
-            ValidateObtained(obtained.Frequency, obtained.Format, obtained.Channels, obtained.Samples);
+            ValidateObtained(obtained.Frequency, obtained.Format, obtained.Channels, obtained.Samples, channels);
             sink.SampleRate = obtained.Frequency;
             sink.Format = obtained.Format;
             sink.Channels = obtained.Channels;
@@ -68,9 +70,10 @@ public sealed class SdlQueuedAudioSink : IQueuedAudioSink
     }
 
     public static ushort FloatFormat => BitConverter.IsLittleEndian ? (ushort)0x8120 : (ushort)0x9120;
-    public static void ValidateObtained(int frequency, ushort format, byte channels, ushort samples)
+    public static void ValidateObtained(int frequency, ushort format, byte channels, ushort samples, byte expectedChannels = 1)
     {
-        if (frequency is not (44100 or 48000) || format != FloatFormat || channels != 1 || samples == 0)
+        if (frequency is not (44100 or 48000) || format != FloatFormat || expectedChannels is not (1 or 2) ||
+            channels != expectedChannels || samples == 0)
             throw new IOException($"Unsupported obtained PCM: {frequency}Hz, 0x{format:x4}, {channels} channels, block {samples}.");
     }
     public static int AudioSpecSize => Marshal.SizeOf<AudioSpec>();
@@ -82,7 +85,7 @@ public sealed class SdlQueuedAudioSink : IQueuedAudioSink
         {
             RequireOpen();
             var bytes = api.GetQueued(device);
-            if (bytes % sizeof(float) != 0 || bytes / sizeof(float) > int.MaxValue) throw new IOException("Invalid SDL queue byte count.");
+            if (bytes % (sizeof(float) * Channels) != 0 || bytes / sizeof(float) > int.MaxValue) throw new IOException("Invalid SDL queue byte count.");
             return (int)(bytes / sizeof(float));
         }
     }
@@ -90,6 +93,7 @@ public sealed class SdlQueuedAudioSink : IQueuedAudioSink
     {
         RequireOpen();
         if (samples.Length == 0) return;
+        if (samples.Length % Channels != 0) throw new ArgumentException("PCM block must contain complete frames.", nameof(samples));
         var copy = samples.ToArray();
         var pinned = GCHandle.Alloc(copy, GCHandleType.Pinned);
         try

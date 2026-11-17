@@ -51,7 +51,7 @@ public sealed class SoundSpeedNotice : UserControl
     public void Refresh()
     {
         var silent = int.TryParse(speedField.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var speed) && speed != 100;
-        notice.Text = silent ? $"Sound is silent at {speed}% speed: sound is rendered only at 100%." : "";
+        notice.Text = silent ? $"Sound is silent at {speed}% speed: sound plays only at 100%." : "";
         notice.IsVisible = silent;
         restore.IsVisible = silent;
     }

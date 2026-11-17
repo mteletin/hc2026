@@ -1,18 +1,20 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Hc2000.App/Hc2000.App.csproj" />
+    <Project Path="src/Hc2000.Configuration/Hc2000.Configuration.csproj" />
     <Project Path="src/Hc2000.Asm/Hc2000.Asm.csproj" />
     <Project Path="src/Hc2000.Disasm/Hc2000.Disasm.csproj" />
     <Project Path="src/Hc2000.Machine/Hc2000.Machine.csproj" />
     <Project Path="src/Hc2000.Tools/Hc2000.Tools.csproj" />
     <Project Path="src/Hc2000.Z80/Hc2000.Z80.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Hc2000.App.Tests/Hc2000.App.Tests.csproj" />
-    <Project Path="tests/Hc2000.Asm.Tests/Hc2000.Asm.Tests.csproj" />
-    <Project Path="tests/Hc2000.Disasm.Tests/Hc2000.Disasm.Tests.csproj" />
-    <Project Path="tests/Hc2000.Machine.Tests/Hc2000.Machine.Tests.csproj" />
-    <Project Path="tests/Hc2000.Tools.Tests/Hc2000.Tools.Tests.csproj" />
-    <Project Path="tests/Hc2000.Z80.Tests/Hc2000.Z80.Tests.csproj" />
+  <Folder Name="/tools/">
+    <Project Path="tools/FeatureFlagBuilder/FeatureFlagBuilder.csproj" />
+    <Project Path="tools/FactoryHddBuilder/FactoryHddBuilder.csproj" />
+    <Project Path="tools/UtilitiesDiskBuilder/UtilitiesDiskBuilder.csproj" />
+    <Project Path="tools/UpgradeBiosBuilder/UpgradeBiosBuilder.csproj" />
+    <Project Path="tools/ExpansionMailboxBuilder/ExpansionMailboxBuilder.csproj" />
+    <Project Path="tools/CpNetSprBuilder/CpNetSprBuilder.csproj" />
+    <Project Path="tools/WorkstationSystemDiskBuilder/WorkstationSystemDiskBuilder.csproj" />
   </Folder>
 </Solution>

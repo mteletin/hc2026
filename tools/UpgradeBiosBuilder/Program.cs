@@ -6,9 +6,9 @@ using Hc2000.Machine;
 using Hc2000.Machine.Storage;
 using Hc2000.Machine.Memory;
 
-if (args.Length != 2 || args[0] is not ("blockport" or "m" or "m-paged" or "m-paged-v2" or "hdd-guest" or "tape-guest"))
+if (args.Length != 2 || args[0] is not ("blockport" or "m" or "m-paged" or "m-paged-v2" or "hdd-guest" or "hdd-guest-standalone" or "tape-guest" or "cboot"))
 {
-    Console.Error.WriteLine("Usage: dotnet run --project tools/UpgradeBiosBuilder -- <blockport|m|m-paged|m-paged-v2|hdd-guest|tape-guest> <output-directory>");
+    Console.Error.WriteLine("Usage: dotnet run --project tools/UpgradeBiosBuilder -- <blockport|m|m-paged|m-paged-v2|hdd-guest|hdd-guest-standalone|tape-guest|cboot> <output-directory>");
     return 2;
 }
 
@@ -18,11 +18,13 @@ if (args[0] == "m-paged")
     return BuildMPaged(root, output);
 if (args[0] == "m-paged-v2")
     return BuildMPagedVariant(root, output, v2: true);
+if (args[0] == "cboot")
+    return BuildCboot(root, output);
 Directory.CreateDirectory(output);
 
 if (args[0] == "tape-guest")
 {
-    var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade/tape.init.asm");
+    var sourcePath = Path.Combine(root, "src-library/extended/bios-upgrade/tape/tape.init.asm");
     var sourceBytes = File.ReadAllBytes(sourcePath);
     var assembled = Assembler.AssembleText(Encoding.UTF8.GetString(sourceBytes), file: sourcePath);
     File.WriteAllText(Path.Combine(output, "tape.init.lst"), assembled.ToListing());
@@ -39,20 +41,23 @@ if (args[0] == "tape-guest")
     File.WriteAllBytes(Path.Combine(output, "TAPEINIT.COM"), image);
     Console.WriteLine($"SOURCE {Hash(sourceBytes)} {sourcePath}");
     Console.WriteLine($"COM tape.init {image.Length} {Hash(image)} STATIC_ONLY DB=none runtime=not-run");
-    foreach (var include in new[] { "tape.layout.inc", "tape.resident.asm" })
+    foreach (var include in new[] { "tape.layout.inc", "tape.resident.asm", "../dispatch.sites.inc" })
     {
-        var path = Path.Combine(root, "bios/src/hc2000/upgrade", include);
+        var path = Path.Combine(root, "src-library/extended/bios-upgrade/tape", include);
         Console.WriteLine($"INCLUDE {Hash(File.ReadAllBytes(path))} {path}");
     }
     return 0;
 }
-else if (args[0] == "hdd-guest")
+else if (args[0] is "hdd-guest" or "hdd-guest-standalone")
 {
     // Source-fit artifacts only, not installation or positive guest ACK proof.
     // Preserve old modes, input media and profile defaults verbatim.
+    var hddSourceDir = args[0] == "hdd-guest-standalone"
+        ? Path.Combine(root, "bios/src/hc2000/upgrade")
+        : Path.Combine(root, "src-library/extended/bios-upgrade/hdd");
     foreach (var name in new[] { "hdd.init", "hdd.swap" })
     {
-        var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade", name + ".asm");
+        var sourcePath = Path.Combine(hddSourceDir, name + ".asm");
         var sourceBytes = File.ReadAllBytes(sourcePath);
         var assembled = Assembler.AssembleText(Encoding.UTF8.GetString(sourceBytes), file: sourcePath);
         File.WriteAllText(Path.Combine(output, name + ".lst"), assembled.ToListing());
@@ -63,14 +68,17 @@ else if (args[0] == "hdd-guest")
             return 3;
         }
         var image = assembled.ToBinary();
-        if (assembled.Segments.Min(s => s.Address) != 0x100 || image.Length > 0x8F00)
+        if (assembled.Segments.Min(s => s.Address) != 0x100 || image.Length > (args[0] == "hdd-guest-standalone" ? 0x9700 : 0x8F00))
             throw new InvalidOperationException("HDD guest COM exceeds the reserved TPA ceiling.");
-        File.WriteAllBytes(Path.Combine(output, name == "hdd.init" ? "HDDINIT.COM" : "HDSWAP.COM"), image);
+        File.WriteAllBytes(Path.Combine(output, name == "hdd.init" ? (args[0] == "hdd-guest-standalone" ? "HDINST.COM" : "HDDINIT.COM") : "HDSWAP.COM"), image);
         Console.WriteLine($"SOURCE {Hash(sourceBytes)} {sourcePath}");
         Console.WriteLine($"COM {name} {image.Length} {Hash(image)} STATIC_ONLY DB=none runtime=not-run");
-        foreach (var include in new[] { "hdd.layout.inc", "hdd.resident.asm" })
+        // The standalone pair (hc2000-cpm22-proving) includes only its own layout and resident.
+        foreach (var include in args[0] == "hdd-guest-standalone"
+            ? new[] { "hdd.layout.inc", "hdd.resident.asm" }
+            : new[] { "hdd.layout.inc", "hdd.resident.asm", "../dispatch.sites.inc", "../tape/tape.layout.inc" })
         {
-            var path = Path.Combine(root, "bios/src/hc2000/upgrade", include);
+            var path = Path.Combine(hddSourceDir, include);
             Console.WriteLine($"INCLUDE {Hash(File.ReadAllBytes(path))} {path}");
         }
     }
@@ -78,7 +86,7 @@ else if (args[0] == "hdd-guest")
 }
 else if (args[0] == "blockport")
 {
-    var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade/disk.blockport.asm");
+    var sourcePath = Path.Combine(root, "src-library/extended/bios-upgrade/blockport/disk.blockport.asm");
     var sourceBytes = File.ReadAllBytes(sourcePath);
     var source = Encoding.UTF8.GetString(sourceBytes);
     var assembly = Assembler.AssembleText(source, file: sourcePath);
@@ -121,7 +129,7 @@ else if (args[0] == "blockport")
 }
 else
 {
-    var sourcePath = Path.Combine(root, "bios/src/hc2000/upgrade/ram.banks.asm");
+    var sourcePath = Path.Combine(root, "src-library/extended/bios-upgrade/paging/ram.banks.asm");
     var sourceBytes = File.ReadAllBytes(sourcePath);
     var source = Encoding.UTF8.GetString(sourceBytes);
     var assembled = Assembler.AssembleText(source, file: sourcePath);
@@ -176,7 +184,7 @@ static int BuildMPagedVariant(string root, string output, bool v2)
     if (Directory.Exists(output) || File.Exists(output))
         throw new IOException("m-paged requires a NEW private output directory.");
     var mode = v2 ? "m-paged-v2" : "m-paged";
-    var sourcePath = Path.Combine(root, $"bios/src/hc2000/upgrade/ram.paged{(v2 ? ".v2" : "")}.asm");
+    var sourcePath = Path.Combine(root, $"src-library/extended/bios-upgrade/paging/ram.paged{(v2 ? ".v2" : "")}.asm");
     var sourceBytes = File.ReadAllBytes(sourcePath);
     var diskPath = Path.Combine(root, "disks/cpm/CPM22-HC.DSK");
     var input = File.ReadAllBytes(diskPath);
@@ -301,6 +309,83 @@ static int BuildMPagedVariant(string root, string output, bool v2)
     Record($"IMAGE {bios.Length} {Hash(bios)} {prefix}.bin");
     Record($"MEDIA {media.Length} {Hash(media)} {mediaName}");
     return Finish(0);
+}
+
+static int BuildCboot(string root, string output)
+{
+    // hc2000-direct-c-boot extended upper ROM: the faithful cpm-hc2kzip keeps
+    // E000-F7FF and the faithful A: boot body at F80E verbatim; F800 becomes
+    // the C: loader stub and F870 the loader body. The warm trampoline is a
+    // payload patch (restored at 3080 inside the bootstrap region), emitted
+    // separately for the payload capture step.
+    var sourcePath = Path.Combine(root, "src-library/extended/bios-upgrade/hdd/cboot.boot.asm");
+    var sourceBytes = File.ReadAllBytes(sourcePath);
+    Directory.CreateDirectory(output);
+    var assembly = Assembler.AssembleText(Encoding.UTF8.GetString(sourceBytes), file: sourcePath);
+    File.WriteAllText(Path.Combine(output, "cboot.boot.lst"), assembly.ToListing());
+    File.WriteAllText(Path.Combine(output, "cboot.boot.sym"), assembly.ToSymbolFile());
+    if (!assembly.Success)
+    {
+        foreach (var diagnostic in assembly.Diagnostics) Console.Error.WriteLine(diagnostic.Message);
+        return 3;
+    }
+    if (assembly.Segments.Any(s => s.Address is not (0x8100 or 0x3080 or 0xF800)))
+        throw new InvalidOperationException("Unexpected cboot segment.");
+    var body = assembly.Segments.Single(s => s.Address == 0x8100).Bytes;
+    var warm = assembly.Segments.Single(s => s.Address == 0x3080).Bytes;
+    var stub = assembly.Segments.Single(s => s.Address == 0xF800).Bytes;
+    if (stub.Length != 14) throw new InvalidOperationException($"C-boot stub must be 14 bytes, got {stub.Length}.");
+    if (body.Length > 0x790) throw new InvalidOperationException($"C-boot body exceeds the F870..FFFF window ({body.Length:X}).");
+    if (warm.Length > 0x80) throw new InvalidOperationException("Warm trampoline exceeds the 3080-30FF window.");
+    // The trampoline's CALL target: the resident HddFlush (PHASE 0x9000) from
+    // the same hdd.init.asm the guest installer uses.
+    var initPath = Path.Combine(root, "src-library/extended/bios-upgrade/hdd/hdd.init.asm");
+    var init = Assembler.AssembleText(Encoding.UTF8.GetString(File.ReadAllBytes(initPath)), file: initPath);
+    if (!init.Success)
+    {
+        foreach (var diagnostic in init.Diagnostics) Console.Error.WriteLine(diagnostic.Message);
+        return 3;
+    }
+    if (!init.Symbols.TryGetValue("HddFlush", out var flush) || flush is < 0x9000 or >= 0xB800)
+        throw new InvalidOperationException("Resident HddFlush symbol missing or outside the resident region.");
+    if (warm[0] != 0xCD || (warm[1] | warm[2] << 8) != 0)
+        throw new InvalidOperationException("Warm trampoline CALL placeholder changed.");
+    warm[1] = unchecked((byte)flush);
+    warm[2] = unchecked((byte)(flush >> 8));
+    var romPath = Path.Combine(root, "roms/hc2000/v2/cpm-hc2kzip.bin");
+    var baseline = File.ReadAllBytes(romPath);
+    if (baseline.Length != 0x2000) throw new InvalidOperationException("cpm-hc2kzip.bin must be 8 KiB.");
+    // Faithful cold entry: LD HL,F80E; LD DE,8000; LD BC,005F; LDIR; JP 8000.
+    ReadOnlySpan<byte> faithfulStub = [0x21, 0x0E, 0xF8, 0x11, 0x00, 0x80, 0x01, 0x5F, 0x00, 0xED, 0xB0, 0xC3, 0x00, 0x80];
+    if (!baseline.AsSpan(0x1800, faithfulStub.Length).SequenceEqual(faithfulStub))
+        throw new InvalidOperationException("cpm-hc2kzip faithful stub at F800 changed; review required.");
+    // Faithful body starts with LD SP,8000.
+    if (baseline[0x180E] != 0x31 || baseline[0x180F] != 0x00 || baseline[0x1810] != 0x80)
+        throw new InvalidOperationException("Faithful A: boot body at F80E changed; review required.");
+    var rom = (byte[])baseline.Clone();
+    stub.CopyTo(rom.AsSpan(0x1800));
+    body.CopyTo(rom.AsSpan(0x1870));
+    // Everything after the loader body is the faithful ROM tail: the burned-in
+    // IM2 vector (0x58 0xEE at 1EFF/1F00 -> PC 0xEE58, the console/INT handler
+    // the CP/M ROM relies on once its cold entry does EI) and the chip trailer.
+    // Never overwrite it: with I=FE an INT vectoring through 0xFF bytes lands
+    // at 0xFFFF and kills the loader mid-boot (hc2000-direct-c-boot).
+    if (rom[0x1EFF] != 0x58 || rom[0x1F00] != 0xEE)
+        throw new InvalidOperationException("Burned-in IM2 vector (58 EE) at 1EFF/1F00 missing from the cboot tail.");
+    File.WriteAllBytes(Path.Combine(output, "cpm-hc2kzip-cboot-v1.bin"), rom);
+    File.WriteAllBytes(Path.Combine(output, "cboot-warm-3080.bin"), warm);
+    Console.WriteLine($"SOURCE {Hash(sourceBytes)} {sourcePath}");
+    foreach (var include in new[] { "cboot.layout.inc", "cboot.boot.asm" })
+    {
+        var path = Path.Combine(root, "src-library/extended/bios-upgrade/hdd", include);
+        Console.WriteLine($"INCLUDE {Hash(File.ReadAllBytes(path))} {path}");
+    }
+    Console.WriteLine($"BOOTSTUB {stub.Length} {Hash(stub)} rom@F800");
+    Console.WriteLine($"BOOTBODY {body.Length} {Hash(body)} rom@F870");
+    Console.WriteLine($"WARMTRAMPOLINE {warm.Length} {Hash(warm)} payload@3080 flush={flush:X4}");
+    Console.WriteLine($"ROM_INPUT {baseline.Length} {Hash(baseline)} {romPath}");
+    Console.WriteLine($"ROM {rom.Length} {Hash(rom)} cpm-hc2kzip-cboot-v1.bin");
+    return 0;
 }
 
 static byte[] ExtractSuppliedBios(string root)

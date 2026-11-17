@@ -19,10 +19,18 @@ public static class StartupHardwarePreparation
         configuration.ValidateEffective();
         verifiedRoms.Profile.Validate();
         if (verifiedRoms.Profile.Name != MachineProfile.Hc2000V2.Name
+            && verifiedRoms.Profile.Name != MachineProfile.Hc2000V2HddCbootV1.Name
             || verifiedRoms.Basic.Length != 0x4000 || verifiedRoms.Cpm.Length != 0x4000 || verifiedRoms.If1.Length != 0x4000)
             throw new ArgumentException("Cold Start requires the verified whole-chip v2 ROM map.", nameof(verifiedRoms));
-        if (configuration.Profile != "hc2000-v2-hdd-v1")
-            return BasicMachineComposition.PrepareRamWholeChipV2(verifiedRoms, configuration.Profile, configuration.TextOverlay);
+        var x5Hdd = configuration.Profile == "hc2000-v2-paged-expansion-x5-hdd-guest-v1";
+        var fullWorkstation = configuration.Profile == "hc2000-v2-full-workstation-v1";
+        if (configuration.Profile is not ("hc2000-v2-hdd-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-combined-workstation-v1"
+                or "hc2000-v2-combined-workstation-v2") && !x5Hdd && !fullWorkstation)
+            return BasicMachineComposition.PrepareRamWholeChipV2(verifiedRoms, configuration.Profile, configuration.TextOverlay,
+                configuration.CpuTurboMultiplier, configuration.ExpansionDriverCount, configuration.X2Vga, configuration.X3Sound, configuration.X4Math,
+                configuration.X6Net, configuration.MainCpuTarget);
+        // Each stored name keeps its own identity; a v1 draft never composes v2 and vice versa.
+        var combined = configuration.Profile is "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2";
 
         // Cold profile lane (hc2000-hdd-context-mount-profile-lane): a named selection records a
         // container volume per slot and is admitted cold through the existing HddColdVolume path --
@@ -30,6 +38,10 @@ public static class StartupHardwarePreparation
         var named = configuration.Hdd.Where(h => h.Volume is not null).ToList();
         if (named.Count > 0)
         {
+            // The v2 workstation admits the installed named C:-F: set through the same cold admission as the raw HDD
+            // machine (its guest-ACK driver is the one HDINST speaks); v1 keeps its raw-only HddV1 identity.
+            if (configuration.Profile == "hc2000-v2-combined-workstation-v1")
+                throw new IOException("The combined CP/M workstation v1 cold-starts from raw 8 MiB volumes; named container volumes need the v2 workstation.");
             if (configuration.Hdd.Any(h => h.Volume is null))
                 throw new IOException("Named HDD volumes and raw 8 MiB slots cannot share one cold start.");
             if (configuration.DiskA is not null || configuration.DiskB is not null)
@@ -49,7 +61,15 @@ public static class StartupHardwarePreparation
             }
             var requests = named.Select(h => new HddColdVolumeRequest((byte)(h.Slot[0] - 'A'), h.Volume!, null, !h.WriteProtected)).ToImmutableArray();
             using var volume = HddColdVolume.OpenMapped(container, requests);
-            return BasicMachineComposition.PrepareAdmittedHddMapWholeChipV2(verifiedRoms, volume);
+            if (fullWorkstation)
+                return BasicMachineComposition.PrepareAdmittedFullWorkstationMapWholeChipV2(verifiedRoms, volume,
+                    configuration.ExpansionDriverCount, configuration.X2Vga, configuration.X3Sound, configuration.X6Net,
+                    configuration.TextOverlay, configuration.MainCpuTarget);
+            if (x5Hdd)
+                return BasicMachineComposition.PrepareAdmittedX5HddMapWholeChipV2(verifiedRoms, volume,
+                    configuration.TextOverlay, configuration.ExpansionDriverCount, configuration.X6Net, configuration.MainCpuTarget);
+            return BasicMachineComposition.PrepareAdmittedHddMapWholeChipV2(verifiedRoms, volume, configuration.MainCpuTarget,
+                combined ? MachineProfile.Hc2000V2CombinedWorkstationV2 : null);
         }
 
         var images = new List<HddInitialMedia>();
@@ -71,6 +91,19 @@ public static class StartupHardwarePreparation
             images.Add(new((byte)(hdd.Slot[0] - 'A'), bytes, Path.GetFileName(hdd.Path), hdd.WriteProtected));
         }
         cancellation.ThrowIfCancellationRequested();
-        return BasicMachineComposition.PrepareHddWholeChipV2(verifiedRoms, images, configuration.TextOverlay);
+        if (fullWorkstation)
+            return BasicMachineComposition.PrepareFullWorkstationWholeChipV2(verifiedRoms, images, configuration.ExpansionDriverCount,
+                configuration.X2Vga, configuration.X3Sound, configuration.X6Net, configuration.TextOverlay, configuration.MainCpuTarget);
+        if (x5Hdd)
+            return BasicMachineComposition.PrepareX5HddWholeChipV2(verifiedRoms, images, configuration.TextOverlay,
+                configuration.ExpansionDriverCount, configuration.X6Net, configuration.MainCpuTarget);
+        // The raw HDD and C:-boot identities follow the ROM map (adopt: null); the combined names keep their own.
+        return BasicMachineComposition.PrepareHddWholeChipV2(verifiedRoms, images, configuration.TextOverlay, configuration.CpuTurboMultiplier,
+            configuration.Profile switch
+            {
+                "hc2000-v2-combined-workstation-v1" => MachineProfile.Hc2000V2CombinedWorkstationV1,
+                "hc2000-v2-combined-workstation-v2" => MachineProfile.Hc2000V2CombinedWorkstationV2,
+                _ => null
+            }, configuration.MainCpuTarget);
     }
 }

@@ -7,6 +7,25 @@ public readonly record struct TapeBlockSpan(TapeTime Start, TapeTime End, byte F
 
 public sealed partial class TapCodec
 {
+    internal static TapeResult<List<byte[]>> RecoverFrames(ITapeSignalIndex signal, TapeLimits limits)
+    {
+        var cursor = new PulseCursor(signal);
+        var frames = new List<byte[]>();
+        long bytes = 0;
+        while (!cursor.End)
+        {
+            if (!Within(cursor.Width, 2168, 10)) { cursor.Move(); continue; }
+            var decoded = DecodeBlock(cursor);
+            if (!decoded.Success) continue;
+            var frame = decoded.Value.Frame;
+            bytes += frame.Count;
+            if (frames.Count >= limits.SourceBlocks || bytes > limits.DecodedBytes)
+                return TapeResult<List<byte[]>>.Fail(TapeError.BoundsExceeded, "Recovered TAP block/byte limit.");
+            frames.Add(frame.ToArray());
+        }
+        return TapeResult<List<byte[]>>.Ok(frames);
+    }
+
     /// <summary>The blocks the TAP export recognizer would decode, found tolerantly: anything else is skipped, never
     /// refused. Spec 14 skip stops at a block's End (where its gap begins); its data-block index counts flag FF blocks.</summary>
     public static ImmutableArray<TapeBlockSpan> Blocks(ITapeSignalIndex signal)

@@ -33,7 +33,7 @@ public sealed partial class HddPanel
         {
             boundSavePending = false;
             await InspectAsync();
-            notice.Text = "No retained HDD save. Inspect current dirty state before starting another save.";
+            notice.Text = "No hard-disk save is waiting. Check for unsaved changes before saving again.";
             return;
         }
         await FinishBoundSaveAsync(capture.Id, reconcile: true, binding);

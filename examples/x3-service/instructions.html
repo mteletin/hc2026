@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>X3 command service</title></head><body>
+<h1>X3 command service</h1>
+<p>This bundle contains an explicit Z80 command service and a separate bounded MOD example for the optional X3 card. Neither is an automatic BIOS hook.</p>
+<ol>
+<li>Start a new full-X5 machine with X3 enabled. Equivalent flags: <code>--memory paged --m-view --side-z80 16 --driver-z80 0 --x3-sound</code>. The caller must be the current owner of X3.</li>
+<li>Load <code>X3SOUND.tap</code> as CODE at 32768, or assemble the included source at a caller-chosen address. Reserve that code, the caller's stack, request, 48-byte reply and sample pages from other software for as long as they are needed. This example does not claim space in the BIOS or common RAM.</li>
+<li>Call the entry at 32768 with HL pointing to a complete 12–32 byte X3 request, A holding its length and DE pointing to a writable 48-byte reply buffer. The call returns A=0 for admission, 1–7 for a card refusal, FE for invalid length or incomplete response, and FF when no accessible X3 card is present. It preserves IX and IY and clobbers AF, BC, DE and HL.</li>
+</ol>
+<h2>Version 1 frames</h2>
+<p>All multibyte fields are little-endian. The 8-byte request header is <code>01, opcode, payload length, 00, tag:u32</code>. The tag is a caller correlation value, not an ownership capability. Payloads have the following byte offsets:</p>
+<ul>
+<li>START (01, 24 bytes): 0 channel (0–3), 1 zero, 2 page:u16, 4 offset:u16, 6 length:u32, 10 loop start:u32, 14 loop length:u32, 18 period:u16, 20 volume:u8, 21–23 zero.</li>
+<li>STOP (02) and QUERY (04), 4 bytes: 0 channel, 1–3 zero.</li>
+<li>SET (03, 8 bytes): 0 channel, 1 zero, 2 period:u16, 4 volume:u8, 5–7 zero.</li>
+</ul>
+<p>START offset is below 16384, length is 1–131070 bytes, period is 124–65535 and volume is 0–64. One-shot samples use zero loop start and length; otherwise the loop must fit the sample. Every source page must be currently allowed to the shared DMA service: device-reserved and privately owned pages are not valid sample sources.</p>
+<p>The reply begins <code>01, echoed opcode, result, payload length, echoed tag:u32</code>. Results are 00 accepted, 01 busy, 02 invalid, 03 unsupported, 04 source denied, 05 resource limit, 06 invalid state and 07 time limit. Refusals have no payload. An accepted reply has a 40-byte coherent channel snapshot: offset 0 channel, 1 state (0 stopped, 1 priming, 2 playing, 3 ended, 4 underrun, 5 fault), 2 flags (loop, pending parameters, refill), 3 current volume, 4 period:u16, 6 FIFO bytes:u16, 8 next consumed position:u32, 12–15 zero, 16 generation:u64, 24 observed master tick:u64 and 32 next sample tick:u64 (zero if none).</p>
+<p>A successful reply acknowledges admission only. Audio continues after the call; QUERY reads its coherent channel state. STOP each active channel before releasing its pages or handing the card to another driver. X3 playback uses caller-owned arena data, not host files; the command service itself does not load MOD files.</p>
+<h2>Bounded MOD example</h2>
+<ol>
+<li>Use a freshly started full-X5 machine with X3 enabled and an idle expansion controller. Reserve arena page 10 exclusively for this example: it overwrites its first 256 bytes. Reserve addresses 8000–BFFF for the CODE, working data and private stack, and do not run another X3 client simultaneously.</li>
+<li>In BASIC, execute <code>CLEAR 32767</code>, mount <code>X3MOD.tap</code> and load it with <code>LOAD "" CODE</code>. Execute <code>PRINT USR 32768</code>. The embedded original sentinel runs its one 64-row order at speed 6 and 125 BPM, stops all four channels and returns 0 on success; 1 means unsupported module, 2 map refusal and 3 X3 refusal. Playback needs a working host audio sink to be audible.</li>
+</ol>
+<p>This is a deliberately narrow example, not a general MOD player. It accepts only an embedded single-order, single-pattern four-channel <code>M.K.</code> module with four 64-byte zero-finetune samples, zero-start full loops or one-shot samples, explicit instrument numbers on notes and no effects. Other sample geometry, multiple patterns, tempo/effect commands and external file loading are rejected or unsupported. It temporarily maps page 10 into C000 and restores the fresh main map before playing; it cannot safely run if another program owns that memory or a nonfresh map.</p>
+<p><code>X3-sentinel.mod</code> is original synthetic data authored for this example, also embedded in the tape. Its SHA-256 is <code>667d0e387c80c036ca37ae54a7a18321be677f923297545feb81b2a515be2f31</code>; no third-party song or sample is included.</p>
+</body></html>

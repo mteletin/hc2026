@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>X2 VGA bulk graphics upload</title>
+<style>body{max-width:54em;margin:3em auto;padding:0 1em;font:18px/1.5 system-ui;color:#18232d;background:#fafafa}code,pre{background:#e8edf1;padding:.2em}</style>
+<h1>X2 VGA: bulk graphics upload service</h1>
+<p>This in-house tape loads a BASIC-callable example and a bounded, main-owned X2 bulk graphics upload service using the shared Expansion DMA controller. It uploads bounded indexed images (>16 KiB, up to a full 320&times;240 plane of 76,800 bytes) without per-byte main-Z80 port transfers, preserving legacy console and drawing commands.</p>
+<h2>Start and load</h2>
+<ol>
+<li>Start a new full-X5 machine with the X2 command VGA accelerator enabled. The equivalent flags are <code>--memory paged --m-view --side-z80 16 --driver-z80 0 --x2-vga</code>. The fresh card must be main-owned, with no other program using its ports.</li>
+<li>In BASIC enter <code>CLEAR 32767</code>, insert the supplied <code>X2BULK.tap</code>, enter <code>LOAD "" CODE</code> and press PLAY. Wait for the BASIC editor to return; eject the clean tape.</li>
+<li>Enter <code>PRINT USR 32768</code>. BASIC returns <code>0</code> on the ULA when all segments, completion verification, and presentation have completed. Then choose <strong>X2 VGA</strong> in the machine's display selector to see the completed 320&times;240 indexed image: one-pixel-wide vertical lines across the whole screen in the repeating colour sequence blue, red, magenta, green, cyan, yellow, white, blue (40 repeats of the 8-pixel sequence per row). Any nonzero result (1&ndash;5, 254, 255) is a refusal, timeout, or unsupported hardware, not success.</li>
+</ol>
+<p>These are Spectrum BASIC tokens, not pasted keyword letters. CLEAR is X at the K cursor; LOAD is J; quotes are SYMBOL SHIFT+P; CODE is extended mode then I; PRINT is P; USR is extended mode then L. This uses ordinary tape loading, not a host memory edit.</p>
+<h2>Calling from guest code</h2>
+<p>After loading, the fixed entry points at 0x8000 allow custom guest software to control bulk uploads:</p>
+<ul>
+<li><code>0x8000</code>: <code>JP x2_bulk_demo</code> &mdash; USR entry point. Runs full discovery, palette setup, 5-segment upload across arena pages 10&ndash;14, and presentation. Returns BC = 0 on success.</li>
+<li><code>0x8003</code>: <code>JP x2_bulk_discover</code> &mdash; Queries port 0x779D. Returns A = 0 (Z set) if bulk graphics is supported, A = 4 (NZ) if unsupported.</li>
+<li><code>0x8006</code>: <code>JP x2_bulk_begin</code> &mdash; Initiates an upload extent (DE = destination offset, HL = total bytes low word, BC = total bytes high word). Returns A = admission result (0 Accepted).</li>
+<li><code>0x8009</code>: <code>JP x2_bulk_segment</code> &mdash; Submits one DMA segment (BC = arena physical page, DE = page offset, HL = byte count). Returns A = admission result (0 Accepted).</li>
+<li><code>0x800C</code>: <code>JP x2_bulk_wait_done</code> &mdash; Polls port 0x779D until the segment DMA transfer finishes and acknowledges the segment. Returns A = 0 on completion.</li>
+<li><code>0x800F</code>: <code>JP x2_bulk_cancel</code> &mdash; Cancels an active upload chain. Returns A = admission result (0 Accepted, 5 TooLate).</li>
+<li><code>0x8012</code>: <code>JP x2_bulk_ack</code> &mdash; Explicitly acknowledges DMA terminal state (opcode 11).</li>
+<li><code>0x8015</code>: <code>JP x2_bulk_present</code> &mdash; Presents the completed back plane at the next video boundary (opcode 5). Waits until presentation commits. Returns A = 0 on success.</li>
+<li><code>0x8018</code>: <code>JP x2_bulk_query</code> &mdash; Latches and reads the 20-byte query receipt into <code>x2_query_receipt</code>. Returns A = 0 on valid receipt.</li>
+</ul>
+<h2>Framed Service 1 Additive Opcodes</h2>
+<p>The service extends framed service 1 on ports 0x759D and 0x769D with opcodes 8&ndash;11:</p>
+<ul>
+<li><code>8 BeginUpload</code>: payload is 8 bytes: <code>[destOffset:u32le, totalBytes:u32le]</code>. Validates positive length and bounds within the 76,800-byte plane. Quiescent engine and idle DMA channel required. Fences drawing and presentation while the chain is Open.</li>
+<li><code>9 UploadSegment</code>: payload is a 16-byte X0 descriptor: <code>[ver=1, dir=1, flags=0, res=0, page:u16le, offset:u16le, count:u32le, tag:u32le]</code>. Transfers up to 16,384 bytes from one arena page via DMA.</li>
+<li><code>10 CancelUpload</code>: empty payload, matching chain tag. Aborts an Open chain and cancels queued DMA reservations. Cancelling a completed chain returns 5 (TooLate).</li>
+<li><code>11 AcknowledgeSegment</code>: empty payload, matching chain tag. Acknowledges terminal DMA state (Done, Error, Cancelled, TooLate) to return the channel to Idle.</li>
+</ul>
+<h2>Latched Status Query (Port 0x779D)</h2>
+<p>Writing <code>1</code> to port <code>0x779D</code> latches an immutable 20-byte query receipt. Subsequent reads return receipt bytes in order, then 0xFF:</p>
+<ul>
+<li><code>[0]</code> Signature: <code>0xB1</code></li>
+<li><code>[1]</code> ABI Version: <code>1</code></li>
+<li><code>[2]</code> Phase: 0 = Idle, 1 = Open, 2 = Complete, 3 = Cancelled</li>
+<li><code>[3]</code> Bulk Admission Result: 0 = Accepted, 1 = Busy, 2 = Invalid, 3 = TimeLimit, 4 = Unsupported, 5 = TooLate</li>
+<li><code>[4..7]</code> Committed Progress (32-bit little-endian)</li>
+<li><code>[8..11]</code> Total Requested Bytes (32-bit little-endian)</li>
+<li><code>[12..15]</code> Chain Tag (32-bit little-endian)</li>
+<li><code>[16]</code> DMA State: 0 = Idle, 1 = Programming, 2 = Queued, 3 = Done, 4 = Error, 5 = Cancelled, 6 = TooLate</li>
+<li><code>[17]</code> DMA Refusal: 0 = None, 1 = Busy, 2 = InvalidDescriptor, 3 = PermissionDenied, etc.</li>
+<li><code>[18..19]</code> Reserved (0)</li>
+</ul>
+<h2>Presentation Fence and Cancellation Recovery</h2>
+<p>The <code>Present</code> command is refused whenever the upload chain is <code>Open</code> or <code>Cancelled</code>. Once a chain is cancelled, already committed back-plane bytes remain hidden. Recovery from cancellation requires either a full-plane upload (offset 0, total 76,800), or a completed full-plane legacy <code>Clear</code> command which resets the upload fence to <code>Idle</code>.</p>
+</html>

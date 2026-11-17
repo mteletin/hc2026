@@ -10,7 +10,7 @@ public sealed class ProfileRomPanel : StackPanel
 {
     private readonly ComboBox profiles = new() { Name = "RomProfileChoice", ItemsSource = ProfileRomSelection.ProfileIds, SelectedIndex = 0 };
     private readonly TextBox root = new() { Name = "RomAssetRoot", PlaceholderText = "Asset root containing roms/hc2000/" };
-    private readonly Button browse = new() { Content = "Choose ROM asset root…" };
+    private readonly Button browse = new() { Content = "Choose ROM asset root" };
     private readonly Button select = new() { Content = "Validate and select ROM set" };
     private readonly Button startBasic = new() { Content = "Start BASIC", IsEnabled = false };
     private readonly Button resetBasic = new() { Content = "Reset BASIC", IsEnabled = false };
@@ -32,6 +32,9 @@ public sealed class ProfileRomPanel : StackPanel
         AutomationProperties.SetName(root, "ROM asset root");
         AutomationProperties.SetName(startBasic, "Start BASIC");
         AutomationProperties.SetName(resetBasic, "Reset BASIC");
+        ToolTip.SetTip(profiles, "Choose the machine profile whose ROM files will be checked. This does not change a running machine.");
+        ToolTip.SetTip(select, "Check the selected profile's ROM files and keep them ready for Start BASIC. A running machine is unchanged.");
+        ToolTip.SetTip(browse, "Choose the folder containing roms/hc2000. Selecting a folder does not load or start a machine.");
         Children.Add(new TextBlock { Text = "Faithful profile ROM set", FontSize = 18 });
         Children.Add(profiles); Children.Add(description); Children.Add(root);
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };

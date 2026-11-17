@@ -15,6 +15,7 @@ namespace Hc2000.App;
 public partial class MainWindow
 {
     private bool twoPaneWired;
+    internal Func<string> ExplorerInitialHostDirectory { get; set; } = () => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
     private void BindExplorer(MachineSession session, MachineConfiguration? configuration)
     {
@@ -31,13 +32,15 @@ public partial class MainWindow
         }
         state.MachineName = configuration?.Name ?? "HC2000";
         var media = this.FindControl<MediaPanel>("MediaControls")!;
-        media.BrowseFiles = slot => BrowseExplorerDriveAsync(session, slot, configuration);
-        media.Hdd.BrowseFiles = drive => BrowseExplorerHddAsync(session, drive, configuration);
-        media.BrowseLibraryFiles = row => BrowseExplorerLibraryAsync(session, media, row);
+        media.BrowseFiles = slot => { ShowMediaFullView(); return BrowseExplorerDriveAsync(session, slot, configuration); };
+        media.Hdd.BrowseFiles = drive => { ShowMediaFullView(); return BrowseExplorerHddAsync(session, drive, configuration); };
+        media.BrowseLibraryFiles = row => { ShowMediaFullView(); return BrowseExplorerLibraryAsync(session, media, row); };
         if (!twoPaneWired)
         {
             twoPaneWired = true;
+            media.OpenExplorerWorkspace.Click += (_, _) => OpenExplorerWorkspace();
             media.TwoPane.Scan.Click += async (_, _) => await ScanTwoPaneHomeAsync();
+            media.TwoPane.ScanTapeHome.Click += async (_, _) => await ScanTwoPaneTapeHomeAsync();
             media.TwoPane.Choose.Click += async (_, _) => await ChooseTwoPaneHomeAsync();
             media.TwoPane.NewFloppy.Click += (_, _) => media.TwoPane.BeginNewImage("floppy-720", "NEW720.DSK");
             media.TwoPane.NewHardDrive.Click += (_, _) => media.TwoPane.BeginNewImage("hdd-volume-8m", "NEW8M.HDD");
@@ -54,6 +57,74 @@ public partial class MainWindow
             };
         }
         RenderExplorer(session);
+    }
+
+    private void OpenExplorerWorkspace()
+    {
+        var session = CurrentSession;
+        if (session is null || !ExplorerCurrent(session)) return;
+        var home = ExplorerInitialHostDirectory();
+        var window = new MediaExplorerWindow(home, InstalledMediaRoots(), async row =>
+        {
+            await BrowseMediaHomeRowAsync(session, row);
+            return ExplorerCurrent(session)
+                ? (session.Explorer.Image, session.Explorer.Notice)
+                : (null, "Machine selection changed; reopen Explorer for the current machine.");
+        }, (image, entry, destination) =>
+        {
+            var result = CopyExplorerOut(session, image, entry, destination);
+            return result is null ? session.Explorer.Notice : $"Copied to {result.HostPath}.";
+        }, async image =>
+        {
+            if (!ExplorerCurrent(session, image) || image.Path is null || image.Descriptor.Kind != MediaImageKind.DskContainer)
+                return (image, "Only an opened floppy image can create a managed copy.");
+            var row = new ExplorerCopyRow(Path.GetFileName(image.Path), image.Path, "floppy-dsk", image.Bytes.Length, "selected image");
+            await OpenTwoPaneCopyAsync(row);
+            return ExplorerCurrent(session) ? (session.Explorer.Image, session.Explorer.Notice)
+                : (null, "Machine selection changed; reopen Explorer.");
+        }, async (image, selected, user) =>
+        {
+            if (!ExplorerCurrent(session, image)) return (null, "Image or machine selection changed.");
+            if (image.ReadOnlyReason is not null) return (image, image.ReadOnlyReason);
+            if (image.Path is null) return (image, "This image is read-only.");
+            var catalog = this.FindControl<MediaPanel>("MediaControls")!.DiskLibrary;
+            var catalogRoot = catalog is null ? null : Path.GetDirectoryName(catalog.CatalogPath);
+            var managed = catalogRoot is not null && catalog!.Copies.Any(copy =>
+                string.Equals(Path.GetFullPath(Path.Combine(catalogRoot, copy.RelativePath)), Path.GetFullPath(image.Path), StringComparison.Ordinal));
+            if (image.Descriptor.Kind != MediaImageKind.HddRaw8MiB && !managed)
+                return (image, "Create/open a floppy working copy before copying into it.");
+            try
+            {
+                var bytes = await MediaFiles.ReadAsync(selected.Path, MediaFiles.MaxDiskBytes);
+                if (!ExplorerCurrent(session, image)) return (null, "Image or machine selection changed.");
+                if (image.Descriptor.Kind == MediaImageKind.HddRaw8MiB)
+                    CopyExplorerVolumeIn(session, image, selected.Name, user, false, bytes);
+                else CopyExplorerIn(session, image, selected.Name, user, false, bytes);
+                return (session.Explorer.Image, session.Explorer.Notice);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
+            {
+                return (image, "Copy-in refused: " + exception.Message);
+            }
+        }, async (row, volume) =>
+        {
+            if (!ExplorerCurrent(session)) return (null, "Machine selection changed; reopen Explorer.");
+            var isInstalled = row.Home == "installed"
+                || InstalledMediaRoots().Any(root => InstalledMediaDirectory.Contains(root, row.Path));
+            var isProtected = session.PathIsProtectedOriginal(row.Path)
+                || AllSessions().Any(s => s.PathIsProtectedOriginal(row.Path));
+            var readOnlyReason = isInstalled
+                ? "Installed media original is protected: use an unmounted private copy."
+                : isProtected
+                    ? "Protected original: use an unmounted private copy."
+                    : $"{row.Name} volumes are read-only: extract or use a standalone volume.";
+            await BrowseExplorerImageAsync(session, $"{row.Name} / {volume.Name} (read-only)", null,
+                MediaImageDescriptor.HddRaw8MiB, () => NestedMediaExplorer.ReadVolumeAsync(row, volume),
+                readOnlyReason: readOnlyReason);
+            return ExplorerCurrent(session) ? (session.Explorer.Image, session.Explorer.Notice)
+                : (null, "Machine selection changed; reopen Explorer.");
+        });
+        window.Show(this);
     }
 
     /// <summary>Creates a new image in the matching media home through the shared writer
@@ -73,6 +144,9 @@ public partial class MainWindow
         {
             media.TwoPane.CancelNewImage();
             media.TwoPane.Notice.Text = "Created " + result.Path + " (not registered; the next scan lists it).";
+            // The created tape's own list is the tape-home list: refresh it now, so the creating
+            // workflow's refreshed list owns the new tape without a restart.
+            if (kind == "tape-blank") _ = ScanTwoPaneTapeHomeAsync();
         }
         else media.TwoPane.Notice.Text = "New image refused: " + result.Refusal;
     }
@@ -90,6 +164,36 @@ public partial class MainWindow
         if (!ExplorerCurrent(session)) return;
         media.TwoPane.Bind(result.Rows, session.Explorer.Image?.Path, result.Notice);
         session.Explorer.Notice = "Disk home: " + result.Notice;
+        RenderExplorer(session);
+    }
+
+    /// <summary>Scans the configured tape home into the two-pane list with the shipped scanner
+    /// (Hc2000.App.Media.MediaHomeScan, contract hc2000-media-home-scan-admission-v1) - no second
+    /// parser or list: a created tape, even a zero-byte one, is listed as kind "tape" without a
+    /// restart. Reads only; the scanned path is never a write target, and a tape row never opens
+    /// the floppy-only copy lane.</summary>
+    internal async Task ScanTwoPaneTapeHomeAsync()
+    {
+        var session = CurrentSession;
+        if (session is null || !ExplorerCurrent(session)) return;
+        var media = this.FindControl<MediaPanel>("MediaControls")!;
+        var home = configurationStore.Load().Settings.TapeHome;
+        if (string.IsNullOrWhiteSpace(home))
+        {
+            media.TwoPane.Bind(Array.Empty<ExplorerCopyRow>(), session.Explorer.Image?.Path, "not configured; set the tape home in settings first.");
+            session.Explorer.Notice = "Tape home: not configured; set the tape home in settings first.";
+            RenderExplorer(session);
+            return;
+        }
+        var listing = await Task.Run(() => MediaHomeScan.ScanAsync(null, home, null));
+        if (!ExplorerCurrent(session)) return;
+        var state = listing.Homes.Single(state => state.Home == "tape");
+        var notice = home + ": " + (state.Available
+            ? $"{listing.Rows.Length} file(s) listed."
+            : state.Reason);
+        media.TwoPane.Bind(listing.Rows.Select(row => new ExplorerCopyRow(row.Name, row.Path, row.Kind, row.Size, row.Detail)).ToList(),
+            session.Explorer.Image?.Path, notice);
+        session.Explorer.Notice = "Tape home: " + notice;
         RenderExplorer(session);
     }
 
@@ -203,7 +307,8 @@ public partial class MainWindow
 
     // Production browse composition seam: a frozen reader belongs to one session, not the shared view.
     internal async Task BrowseExplorerImageAsync(MachineSession session, string label, string? path,
-        MediaImageDescriptor descriptor, Func<Task<ImmutableArray<byte>>> read)
+        MediaImageDescriptor descriptor, Func<Task<ImmutableArray<byte>>> read,
+        string? readOnlyReason = null)
     {
         if (!ExplorerCurrent(session)) return;
         var state = session.Explorer;
@@ -213,13 +318,13 @@ public partial class MainWindow
         state.Listing = null;
         state.ListingTitle = null;
         state.Notice = "Reading " + label;
-        state.Refresh = () => BrowseExplorerImageAsync(session, label, path, descriptor, read);
+        state.Refresh = () => BrowseExplorerImageAsync(session, label, path, descriptor, read, readOnlyReason);
         RenderExplorer(session);
         try
         {
             var bytes = await read();
             if (session.Closed || session.RuntimeGeneration != generation || state.Request != request) return;
-            state.Image = ExplorerImage.Parse(label, path, descriptor, bytes);
+            state.Image = ExplorerImage.Parse(label, path, descriptor, bytes, readOnlyReason);
             state.Notice = $"{state.Image.Entries.Count} files / refused entries. Copy-out never overwrites an existing host path.";
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException)
@@ -240,7 +345,8 @@ public partial class MainWindow
                     var reply = await bridge.RequestAsync(new(MediaAction.ExportDisk, slot));
                     if (reply.Error is not null) throw new InvalidOperationException(reply.Error);
                     return reply.Export;
-                });
+                },
+                readOnlyReason: "Live boundary snapshot is read-only.");
         var configured = slot == DiskSlot.A ? configuration?.DiskA : configuration?.DiskB;
         if (session.HasRuntime || session.ReplacingRuntime || session.StartingConfiguration is not null)
             return ExplorerRefusalAsync(session, "Runtime media is unavailable; refusing to substitute the host image for live bytes.");
@@ -276,7 +382,8 @@ public partial class MainWindow
                     if (cancelled.Error is not null || cancelled.Hdd?.Error is not null)
                         throw new InvalidOperationException(cancelled.Error ?? cancelled.Hdd!.Error);
                     return capture.Bytes;
-                });
+                },
+                readOnlyReason: "Live boundary snapshot is read-only.");
         if (session.HasRuntime || session.ReplacingRuntime || session.StartingConfiguration is not null)
             return ExplorerRefusalAsync(session, "Runtime HDD media is unavailable; refusing to substitute a host file.");
         var configured = configuration?.Hdd.FirstOrDefault(h => h.Slot == ((char)('A' + drive)).ToString());
@@ -291,8 +398,9 @@ public partial class MainWindow
     // drive and library rows use. A tape and an hdd-container row browse through the existing
     // readers (Tap.List, the footer/index container read) and the pane shows that listing
     // read-only - the disk file-view composition with copy in/out is for disks and volumes.
-    // A snapshot row is not a CP/M browse; an unknown row has no browse action. Browsing
-    // writes nothing.
+    // A snapshot row is not a CP/M browse; an unknown row has no browse action on the file. Both
+    // refuse in the pane, and the refusal replaces the pane's previous content instead of leaving
+    // a stale listing behind. Browsing writes nothing.
     internal Task BrowseMediaHomeRowAsync(MachineSession session, MediaHomeRow row)
     {
         if (!ExplorerCurrent(session)) return Task.CompletedTask;
@@ -370,6 +478,7 @@ public partial class MainWindow
         if (!ExplorerCurrent(session, image)) return false;
         try
         {
+            if (image.ReadOnlyReason is not null) throw new InvalidOperationException(image.ReadOnlyReason);
             if (!image.CanImport) throw new InvalidOperationException("Live snapshots and flat HDD volumes are read-only in the copy-in lane.");
             ExplorerImage? updated = null;
             var result = WriteExplorerImage(image.Path!, bytes =>
@@ -401,6 +510,7 @@ public partial class MainWindow
         if (!ExplorerCurrent(session, image)) return false;
         try
         {
+            if (image.ReadOnlyReason is not null) throw new InvalidOperationException(image.ReadOnlyReason);
             if (!image.CanImportVolume) throw new InvalidOperationException("Only an opened flat 8 MiB volume can take a volume copy-in.");
             ExplorerImage? updated = null;
             var result = WriteExplorerImage(image.Path!, bytes =>

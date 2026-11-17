@@ -170,7 +170,7 @@ public static class MediaHomeScan
     /// followed). Zero-byte files are a blank tape under the tape home and unknown everywhere else;
     /// a file accepted by two inspectors, or by none, is unknown. Unreadable files are unknown rows.
     /// </summary>
-    private static async Task<MediaHomeRow?> ClassifyAsync(string home, string path, CancellationToken ct)
+    internal static async Task<MediaHomeRow?> ClassifyAsync(string home, string path, CancellationToken ct)
     {
         FileInfo info;
         long length;

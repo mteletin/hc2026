@@ -16,6 +16,8 @@ public sealed partial class ExpansionComputeUnit
     private ExpansionLifecycle savedLifecycle;
     private long cpuAnchor, masterAnchor;
     public ushort Id { get; }
+    /// <summary>"compute" (fixed 64-KiB units 1-16) or "driver" (map-backed units 17-24).</summary>
+    public string Kind { get; }
     public ExpansionLifecycle Lifecycle { get; private set; }
     public ulong ExecutionEpoch { get; private set; } = 1;
     public bool Runnable => Lifecycle is ExpansionLifecycle.Running or ExpansionLifecycle.Halted;
@@ -30,7 +32,8 @@ public sealed partial class ExpansionComputeUnit
         ExpansionLifecycle.ServiceIdle or ExpansionLifecycle.WaitingMailbox;
     internal bool MutableImage => Retired && Lifecycle is ExpansionLifecycle.ResetStopped or ExpansionLifecycle.ServiceIdle;
 
-    internal ExpansionComputeUnit(ushort id, ExpansionMemoryLease memory) { Id = id; this.memory = memory; }
+    internal ExpansionComputeUnit(ushort id, ExpansionMemoryLease memory, string kind = "compute")
+    { Id = id; this.memory = memory; Kind = kind; }
     public FrontierState CaptureFrontier() => core.CaptureFrontier();
     public FrontierEffect PeekNextFrontier()
     {
@@ -94,6 +97,10 @@ public sealed partial class ExpansionComputeUnit
         Lifecycle = savedLifecycle = ExpansionLifecycle.ResetStopped;
         cpuAnchor = 0; masterAnchor = LastMasterTick = tick;
     }
+
+    /// <summary>Managed-map denial (full-X5): the holder's access was refused; it stops at the
+    /// uncommitted effect until a root reset clears the fault and restarts it.</summary>
+    internal void Fault() => Lifecycle = ExpansionLifecycle.Faulted;
     internal void ReplaceImage(ushort offset, ReadOnlySpan<byte> data)
     {
         for (var i = 0; i < data.Length; i++) memory.Write(checked((ushort)(offset + i)), data[i]);

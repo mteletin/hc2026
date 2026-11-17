@@ -58,14 +58,27 @@ public sealed partial class TapeVolumeSession : ITapeVolumeGuestWindow
             return view.Present && view.ActiveSide == side && RefreshCatalog().Success && cachedCatalog?.Identity == catalogIdentity;
         }
     }
+    private readonly bool pinnedTapeReservation;
+    private readonly bool fullWorkstation;
+
     public TapeVolumeSession(MachineProfile profile, TapeTransport tape, HcMemory memory, Func<char, bool>? slotPresent = null)
     {
         profile.Validate();
-        if (profile.Name != MachineProfile.Hc2000V2PagedTapeV2.Name
+        if (profile.Name != MachineProfile.Hc2000V2PagedTapeV2.Name && profile.Name != MachineProfile.Hc2000V2CombinedWorkstationV1.Name && profile.Name != MachineProfile.Hc2000V2CombinedWorkstationV2.Name
+            && profile.Name != MachineProfile.Hc2000V2FullWorkstationV1.Name
             || profile.Memory != memory.Profile with { RomProvenance = profile.Memory.RomProvenance })
             throw new ArgumentException("The exact paged tape profile and its memory are required.", nameof(profile));
+        // The composite pins the accepted map-v2 tape reservation (pages 576-831, 4 MiB); the standalone
+        // tape profile keeps its existing dynamic claim and 8 MiB ceiling unchanged. The HddGuest
+        // successor (v2) keeps the same pin (decision hc2000-combined-workstation-hdd-guest-v2).
+        pinnedTapeReservation = profile.Name == MachineProfile.Hc2000V2CombinedWorkstationV1.Name || profile.Name == MachineProfile.Hc2000V2CombinedWorkstationV2.Name
+            || profile.Name == MachineProfile.Hc2000V2FullWorkstationV1.Name;
+        // The full workstation's drives live in paged RAM (its switch, ws.switch.asm), so paging stays on with
+        // or without a tape, and the descriptor goes to the switch's state page, where programs cannot reach it.
+        fullWorkstation = profile.Name == MachineProfile.Hc2000V2FullWorkstationV1.Name;
         this.tape = tape; this.memory = memory; this.slotPresent = slotPresent ?? (_ => false);
-        memory.UseSessionPaging();
+        if (fullWorkstation) memory.UseAlwaysOnSessionPaging();
+        else memory.UseSessionPaging();
         tape.DeckStateChanged += OnDeckStateChanged;
     }
     private void OnDeckStateChanged(TapeDeckView view)
@@ -124,9 +137,10 @@ public sealed partial class TapeVolumeSession : ITapeVolumeGuestWindow
     }
     public void Bind(HcMemory target)
     {
-        if (!ReferenceEquals(target, memory) || entry is null || range is not null || ImageBytes is < 16384 or > 8388608 || ImageBytes % 4096 != 0)
-            throw new InvalidOperationException("No legal unbound image for this memory.");
-        range = memory.ClaimPagedPages(this, (ImageBytes + 0x3fff) / 0x4000, Write);
+        int maxBytes = pinnedTapeReservation ? 4194304 : 8388608;
+        if (!ReferenceEquals(target, memory) || entry is null || range is not null || ImageBytes < 16384 || ImageBytes > maxBytes || ImageBytes % 4096 != 0)
+            throw new InvalidOperationException(pinnedTapeReservation ? "No legal unbound image for the 4 MiB tape reservation." : "No legal unbound image for this memory.");
+        range = memory.ClaimPagedPages(this, (ImageBytes + 0x3fff) / 0x4000, Write, firstPage: pinnedTapeReservation ? 576 : null);
         boundWriteProtected = WriteProtected;
         memory.SetSessionPagingEngaged(true, range);
         PublishDescriptor();

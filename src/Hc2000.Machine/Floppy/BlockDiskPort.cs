@@ -33,12 +33,24 @@ public sealed partial class BlockDiskPort : IPortDevice
     private ushort pointer;
     private byte status;
 
-    public BlockDiskPort(HcMemory memory, FloppyController controller, bool hddEnabled = false, bool guestAckEnabled = false)
+    private readonly Func<bool>? descriptorMemoryAdmitted;
+    internal bool HasDescriptorMemoryGuard => descriptorMemoryAdmitted is not null;
+    internal bool UsesMemory(HcMemory candidate) => ReferenceEquals(memory, candidate);
+
+    public BlockDiskPort(HcMemory memory, FloppyController controller, bool hddEnabled = false, bool guestAckEnabled = false,
+        bool compositeSwitchRefused = false)
+        : this(memory, controller, hddEnabled, guestAckEnabled, compositeSwitchRefused, null) { }
+
+    internal BlockDiskPort(HcMemory memory, FloppyController controller, bool hddEnabled, bool guestAckEnabled,
+        bool compositeSwitchRefused, Func<bool>? descriptorMemoryAdmitted)
     {
         this.memory = memory ?? throw new ArgumentNullException(nameof(memory));
         this.controller = controller ?? throw new ArgumentNullException(nameof(controller));
         if (guestAckEnabled && !hddEnabled) throw new ArgumentException("Guest ACK requires HDD slots.", nameof(guestAckEnabled));
+        if (compositeSwitchRefused && !guestAckEnabled) throw new ArgumentException("Composite switch refusal applies to guest-ACK ports only.", nameof(compositeSwitchRefused));
         GuestAckEnabled = guestAckEnabled;
+        CompositeSwitchRefused = compositeSwitchRefused;
+        this.descriptorMemoryAdmitted = descriptorMemoryAdmitted;
         transfer = new(memory, controller.DriveA, controller.DriveB);
         if (hddEnabled) slots = Enumerable.Range(0, 4).Select(_ => new HddSlot()).ToArray();
     }
@@ -157,6 +169,9 @@ public sealed partial class BlockDiskPort : IPortDevice
         return slots[drive - 2];
     }
 
+    // Logical snapshots copy all bytes and dirty marks and restore without host bindings or guest authority.
+    public void ValidateLogicalSnapshot() { VerifyOwner(); RequireNoGuestSwitch(); }
+
     /// <summary>Owned logical state for snapshot composition. No host path or handle.</summary>
     public BlockDiskPortState Capture()
     {
@@ -231,6 +246,7 @@ public sealed partial class BlockDiskPort : IPortDevice
         // Every error is checked before a transfer mutates RAM/media. The descriptor is
         // captured in full first, including when READ overwrites it as an ordinary DMA effect.
         if (operation is not (1 or 2)) return 0x01;
+        if (descriptorMemoryAdmitted is not null && !descriptorMemoryAdmitted()) return 0x03;
         if (HddEnabled && memory.Read(pointer) == 2) return ExecuteHdd(operation);
         if (pointer > 0xfff8) return 0x03;
         for (var i = 0; i < 8; i++)

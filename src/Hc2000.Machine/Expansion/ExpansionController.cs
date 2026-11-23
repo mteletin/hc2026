@@ -16,6 +16,11 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
     // Full-X5 root state (host-composed only): the managed map and the static v1 device owner table.
     public ExpansionMmu? Mmu { get; set; }
     internal ExpansionServiceDispatcher? Services { get; set; }
+    // The row's single interrupt source (design contract 2): the composition sets it unconditionally;
+    // verbs 6/7 on 0x79fd enable/disable its line and the 7F9D read drains its status/ack queue.
+    public ExpansionRowInterrupt? RowInterrupt { get; set; }
+    // The X0 DMA engine, for the loan operations' card and channel checks (design contract 1).
+    internal ExpansionDma? Dma { get; set; }
     private readonly byte[] deviceOwners = new byte[256];
     private ulong ownerEpoch;
     private ulong portIncarnation;
@@ -46,7 +51,8 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
             new(0x7bfd, 0xffff, this, PortAccess.ReadWrite), new(0x7afd, 0xffff, this, PortAccess.ReadWrite),
             new(0x79fd, 0xffff, this, PortAccess.Write), new(0x78fd, 0xffff, this, PortAccess.ReadWrite),
             new(0x77fd, 0xffff, this, PortAccess.Read), new(0x76fd, 0xffff, this, PortAccess.Read),
-            new(0x75fd, 0xffff, this, PortAccess.ReadWrite), new(0x74fd, 0xffff, this, PortAccess.ReadWrite)
+            new(0x75fd, 0xffff, this, PortAccess.ReadWrite), new(0x74fd, 0xffff, this, PortAccess.ReadWrite),
+            new(0x7f9d, 0xffff, this, PortAccess.Read)
         });
     }
     public CpuPortOrigin MainOrigin => new(0, 1, CpuPortRole.Main);
@@ -95,6 +101,10 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
             0x77fd => (byte)((collecting ? 1 : 0) | (response is null ? 0 : 2) | (pendingId == 0 ? 0 : 4) |
                 ((selected > 0 && selected <= units.Length && units[selected - 1].Lifecycle == ExpansionLifecycle.Faulted ? 8 : 0)) |
                 ((byte)lastResult << 4)),
+            // The row's status/ack register (7F9D, main-only, design contract 2/3): one byte per read -
+            // bits 0-4 the source id, 5-7 the class; zero when the queue is drained. The read acks the
+            // source, so the main learns each finish once and only by asking.
+            0x7f9d => RowInterrupt is { } row ? (byte)row.Next() : (byte)0,
             _ => 0xff
         };
     }
@@ -133,6 +143,16 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
                 break;
             case 4: responseCursor = 0; break;
             case 5: response = null; responseCursor = 0; break;
+            // The row's enable bit (design contract 2): it gates the row's contribution to the machine
+            // INT line only; a queue that fills while disabled asserts the line when enabled.
+            case 6:
+                if (RowInterrupt is null) { lastResult = ExpansionResult.Unsupported; break; }
+                RowInterrupt.Enabled = true;
+                break;
+            case 7:
+                if (RowInterrupt is null) { lastResult = ExpansionResult.Unsupported; break; }
+                RowInterrupt.Enabled = false;
+                break;
             default: lastResult = ExpansionResult.InvalidFrame; break;
         }
     }
@@ -240,6 +260,39 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
                 Emit(read, frame); return;
             case 13:
                 Emit(unit.Mailbox.AcknowledgeOutbox(BinaryPrimitives.ReadUInt64LittleEndian(data))); return;
+            case 17:
+            {
+                // LEND: the selected unit lends one of its pages to a registered card (design contract 1).
+                // Payload: u16 cardId + u16 page. The card must be registered, no channel may hold a
+                // transfer on the page, and the page must not be lent; the arena re-checks ownership.
+                var cardId = BinaryPrimitives.ReadUInt16LittleEndian(data);
+                var page = BinaryPrimitives.ReadUInt16LittleEndian(data[2..]);
+                if (Dma is null || !Dma.HasCard(cardId) || Dma.HasChannelOnPage(page) || arena.PageIsLent(page))
+                { Emit(ExpansionResult.InvalidState); return; }
+                Emit(arena.TryLendPage(latched, cardId, page) ? ExpansionResult.Accepted : ExpansionResult.InvalidState);
+                return;
+            }
+            case 18:
+            {
+                // UNLEND: the owner ends the loan explicitly (the DMA settling it is the other end).
+                // Payload: u16 cardId + u16 page; the loan must name both and no channel may be on it.
+                var cardId = BinaryPrimitives.ReadUInt16LittleEndian(data);
+                var page = BinaryPrimitives.ReadUInt16LittleEndian(data[2..]);
+                if (Dma is null || Dma.HasChannelOnPage(page) || !arena.PageLentTo(page, cardId))
+                { Emit(ExpansionResult.InvalidState); return; }
+                arena.EndLentPage(cardId, page);
+                Emit(ExpansionResult.Accepted);
+                return;
+            }
+            case 19:
+            {
+                // SET UNIT CLOCK (design contract 4): payload byte 0-4 = the MainCpuSpeed target.
+                // Stable units only: a running unit keeps its epoch's ratio until its next rebase.
+                if (!unit.Stable) { Emit(ExpansionResult.InvalidState); return; }
+                unit.SetClockTarget(data[0]);
+                Emit(ExpansionResult.Accepted);
+                return;
+            }
             default: Emit(ExpansionResult.Unsupported); return;
         }
         Emit(ExpansionResult.Accepted);
@@ -364,6 +417,8 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
                     if (data.Slice(22 + i * 16, 10).ContainsAnyExcept((byte)0)) return false;
                 return true;
             case 15: return data.Length == 6;
+            case 17: case 18: return data.Length == 4; // LEND/UNLEND: u16 cardId + u16 page.
+            case 19: return data.Length == 1 && data[0] <= 4; // SET UNIT CLOCK: MainCpuSpeed 0-4.
             default: return true; // Unknown operation gets Unsupported, not a guessed payload interpretation.
         }
     }

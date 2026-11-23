@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Hc2000.Machine.Timing;
 using Hc2000.Machine.Snapshots;
 using Hc2000.Z80.Frontier;
@@ -12,15 +13,25 @@ internal sealed record ExpansionX5State(int Version, ExpansionMmuState[] Maps,
     ExpansionUnitState[] Drivers, byte[] DeviceOwners, ulong OwnerEpoch, ExpansionOwnedCard[] Cards);
 // HandoverHalt remains reserved zero: small units hand over through Idle alone.
 // ExchangeOwner identifies the one live latch flip; bank zero is a legal previous bank.
+// ClockTarget is additive (Version 1): absent in legacy documents, which read as the faithful
+// default; omitting it on write keeps legacy documents byte-identical through the round-trip.
 internal sealed record ExpansionUnitState(string Kind, ExpansionPageGrant Grant, ulong ExecutionEpoch,
     ExpansionLifecycle Lifecycle, ExpansionLifecycle SavedLifecycle, long CpuAnchor, long MasterAnchor,
     long LastMasterTick, long Remainder, ExpansionMailboxEffect RequestedMailboxEffect,
-    FrontierState Cpu, ExpansionMailboxState Mailbox, byte ExchangeOwner, bool HandoverHalt, ushort ExchangePreviousBank);
+    FrontierState Cpu, ExpansionMailboxState Mailbox, byte ExchangeOwner, bool HandoverHalt,
+    ushort ExchangePreviousBank,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] MainCpuSpeed? ClockTarget = null);
 internal sealed record ExpansionMailboxState(byte[] Inbox, byte[] Outbox, byte[] Staging,
     int InboxCursor, int StagingCount, bool HasInbox, bool HasOutbox, bool Collecting, bool Overflow, byte LastError);
 internal sealed record ExpansionRootState(ushort Selected, ushort Latched, byte[] Staging,
     bool Collecting, bool Overflow, byte[]? Response, int ResponseCursor, ushort PendingId,
-    byte PendingOperation, ExpansionResult LastResult);
+    byte PendingOperation, ExpansionResult LastResult,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ExpansionRowInterruptState? RowInterrupt = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ExpansionPageLoan[]? Loans = null);
+// Additive (Version 1): the row's status/ack register (enable bit + bounded pending queue) and the
+// arena's live page loans. Legacy documents carry neither; both default to null and read as
+// "no row interrupt / no loans".
+internal sealed record ExpansionRowInterruptState(bool Enabled, ushort[] Queue);
 
 public sealed partial class ExpansionMailbox
 {
@@ -53,7 +64,7 @@ public sealed partial class ExpansionComputeUnit
 {
     internal ExpansionUnitState CaptureState(ExpansionPageGrant grant, byte exchangeOwner, ushort previousBank) => new(Kind, grant, ExecutionEpoch,
         Lifecycle, savedLifecycle, cpuAnchor, masterAnchor, LastMasterTick, ClockRemainder,
-        requestedMailboxEffect, core.CaptureFrontier(), Mailbox.CaptureState(), exchangeOwner, false, previousBank);
+        requestedMailboxEffect, core.CaptureFrontier(), Mailbox.CaptureState(), exchangeOwner, false, previousBank, ClockTarget);
 
     internal void AdoptState(ExpansionUnitState s, ExpansionMemoryLease lease)
     {
@@ -61,6 +72,7 @@ public sealed partial class ExpansionComputeUnit
         Lifecycle = s.Lifecycle; savedLifecycle = s.SavedLifecycle; cpuAnchor = s.CpuAnchor;
         masterAnchor = s.MasterAnchor; LastMasterTick = s.LastMasterTick;
         requestedMailboxEffect = s.RequestedMailboxEffect; Mailbox.AdoptState(s.Mailbox);
+        SetClockTarget((byte)(s.ClockTarget ?? MainCpuSpeed.Faithful)); clockRemainder = s.Remainder;
     }
 }
 
@@ -118,7 +130,9 @@ public sealed partial class ExpansionController
     }
 
     internal ExpansionRootState CaptureState() => new(selected, latched, staging.AsSpan(0, stagingCount).ToArray(),
-        collecting, overflow, response?.ToArray(), responseCursor, pendingId, pendingOperation, lastResult);
+        collecting, overflow, response?.ToArray(), responseCursor, pendingId, pendingOperation, lastResult,
+        RowInterrupt is { } row ? row.CaptureState() : null,
+        arena.CaptureLoans() is { Length: > 0 } loans ? loans : null);
 
     internal ExpansionUnitState[] CaptureUnits() => units.Select(u => u.CaptureState(arena.GetGrant(u.Id),
         arena.OwnsExchange(u.Id) ? (byte)u.Id : (byte)0, arena.PreviousExchangeBank(u.Id))).ToArray();
@@ -175,7 +189,45 @@ public sealed partial class ExpansionController
         Array.Clear(staging); r.Staging.CopyTo(staging, 0); stagingCount = r.Staging.Length;
         collecting = r.Collecting; overflow = r.Overflow; response = r.Response; responseCursor = r.ResponseCursor;
         pendingId = r.PendingId; pendingOperation = r.PendingOperation; lastResult = r.LastResult;
+        if (r.RowInterrupt is { } rowState) RowInterrupt?.AdoptState(rowState);
+        if (r.Loans is { } loans) arena.AdoptLoans(loans);
     }
+}
+
+public sealed partial class ExpansionRowInterrupt
+{
+    internal ExpansionRowInterruptState CaptureState() => new(Enabled, queue.ToArray());
+
+    internal void AdoptState(ExpansionRowInterruptState s)
+    {
+        queue.Clear();
+        foreach (var source in s.Queue) queue.Enqueue(source);
+        Enabled = s.Enabled;
+    }
+}
+
+public sealed partial class ExpansionArena
+{
+    internal ExpansionPageLoan[] CaptureLoans() => pageLoans.Values.ToArray();
+
+    /// <summary>Restore the live loans after the grants they rest on are adopted: every loan must
+    /// still name a page the unit owns at the captured epochs, with no page or card lent twice.</summary>
+    internal void AdoptLoans(ExpansionPageLoan[] loans)
+    {
+        VerifyOwner();
+        pageLoans.Clear();
+        foreach (var loan in loans)
+        {
+            if (loan.UnitId is < 1 or > ComputeCount + DriverCount || !grantFor(loan.UnitId).Owns(loan.Page) ||
+                loan.CardId == 0 || pageLoans.ContainsKey(loan.Page) ||
+                pageOwners[loan.Page] != loan.UnitId ||
+                loan.MapEpoch != grants[loan.UnitId - 1].MapEpoch || loan.PageEpoch != pageEpochs[loan.Page])
+                throw new ArgumentException("Invalid arena page loan.");
+            pageLoans[loan.Page] = loan;
+        }
+    }
+
+    private ExpansionPageGrant grantFor(ushort unitId) => grants[unitId - 1];
 }
 
 public sealed partial class ExpansionFrontierDriver

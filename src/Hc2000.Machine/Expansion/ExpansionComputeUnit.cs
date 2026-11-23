@@ -24,9 +24,28 @@ public sealed partial class ExpansionComputeUnit
     public long LastMasterTick { get; private set; }
     public long CpuAnchor => cpuAnchor;
     public long MasterAnchor => masterAnchor;
-    // The only admitted rational clock is 5/1; the denominator-one remainder is always zero.
-    public long ClockRemainder => 0;
-    public long NextMasterTick => checked(masterAnchor + checked((PeekNextFrontier().AtCpuTState - cpuAnchor) * 5));
+    // Per-unit clock target (design contract 4): the faithful 3.5 MHz class by default, exactly 5/1
+    // master ticks per T-state, so faithful units stay byte-identical to today's mapping. An explicit
+    // target is the exact reduced rational rate with a persisted remainder - never a per-T-state
+    // rounding; achieved throughput is metered in CommittedTStates and reported, not promised.
+    private MainCpuSpeed clockTarget = MainCpuSpeed.Faithful;
+    private long clockNumerator = 5, clockDenominator = 1, clockRemainder;
+    public MainCpuSpeed ClockTarget => clockTarget;
+    public long ClockNumerator => clockNumerator;
+    public long ClockDenominator => clockDenominator;
+    public long ClockRemainder => clockRemainder;
+    public long CommittedTStates { get; private set; }
+    public long NextMasterTick
+    {
+        get
+        {
+            // The committed T-states' exact time from the epoch anchor, the same ceil-boundary the
+            // main CPU's mapper uses: two effects inside one master tick share the tick, and the
+            // anchor (not a running sum) keeps the rate exact - no per-commit drift.
+            var delta = checked(PeekNextFrontier().AtCpuTState - cpuAnchor);
+            return checked(masterAnchor + (checked(delta * clockNumerator) + clockDenominator - 1) / clockDenominator);
+        }
+    }
     internal bool Retired => core.AtInstructionBoundary;
     internal bool Stable => Lifecycle is ExpansionLifecycle.ResetStopped or ExpansionLifecycle.Paused or
         ExpansionLifecycle.ServiceIdle or ExpansionLifecycle.WaitingMailbox;
@@ -45,7 +64,10 @@ public sealed partial class ExpansionComputeUnit
     public FrontierCommit CommitFrontier(byte value, long masterTick)
     {
         if (masterTick != NextMasterTick) throw new InvalidOperationException("Compute clock/frontier mismatch.");
+        var delta = checked(PeekNextFrontier().AtCpuTState - cpuAnchor);
         var result = core.CommitFrontier(value);
+        clockRemainder = checked((checked(core.TStates - cpuAnchor) * clockNumerator)) % clockDenominator;
+        CommittedTStates = checked(CommittedTStates + delta);
         LastMasterTick = masterTick;
         Lifecycle = core.Halted ? ExpansionLifecycle.Halted : ExpansionLifecycle.Running;
         if (result.Retired)
@@ -71,7 +93,8 @@ public sealed partial class ExpansionComputeUnit
     internal void Rebase(long tick)
     {
         if (tick < LastMasterTick) throw new ArgumentOutOfRangeException(nameof(tick));
-        cpuAnchor = core.TStates; masterAnchor = tick; LastMasterTick = tick;
+        // The remainder belongs to the previous anchors; each rebase starts a fresh clock epoch.
+        cpuAnchor = core.TStates; masterAnchor = tick; LastMasterTick = tick; clockRemainder = 0;
     }
     internal void Start(long tick) { Rebase(tick); Lifecycle = ExpansionLifecycle.Running; }
     internal void Pause(long tick)
@@ -96,6 +119,16 @@ public sealed partial class ExpansionComputeUnit
         ExecutionEpoch = checked(ExecutionEpoch + 1);
         Lifecycle = savedLifecycle = ExpansionLifecycle.ResetStopped;
         cpuAnchor = 0; masterAnchor = LastMasterTick = tick;
+        clockRemainder = 0; CommittedTStates = 0;
+    }
+
+    /// <summary>Set the unit's clock target (op 19): stable units only - a running unit keeps its
+    /// epoch's ratio until its next rebase. The remainder starts fresh for the new denominator.</summary>
+    internal void SetClockTarget(byte value)
+    {
+        var (numerator, denominator) = ((MainCpuSpeed)value).MasterTicksPerTState();
+        clockTarget = (MainCpuSpeed)value; clockNumerator = numerator; clockDenominator = denominator;
+        clockRemainder = 0;
     }
 
     /// <summary>Managed-map denial (full-X5): the holder's access was refused; it stops at the

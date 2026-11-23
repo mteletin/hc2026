@@ -8,6 +8,7 @@
     <X2ServiceOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x2-service/</X2ServiceOutput>
     <X2BulkOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x2-bulk/</X2BulkOutput>
     <X2BenchmarkOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x2-benchmark/</X2BenchmarkOutput>
+    <LendingFrameOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/lending-frame/</LendingFrameOutput>
     <X3ServiceOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x3-service/</X3ServiceOutput>
     <X4ServiceOutput>$(MSBuildProjectDirectory)/$(BaseIntermediateOutputPath)$(Configuration)/$(TargetFramework)/$(RuntimeIdentifier)/x4-service/</X4ServiceOutput>
   </PropertyGroup>
@@ -21,6 +22,9 @@
     <Content Include="$(X2BenchmarkOutput)benchmark.bin;$(X2BenchmarkOutput)manifest.json"
              Link="examples/x2-benchmark/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Include="$(X2BenchmarkOutput)benchmark.bin" LogicalName="Hc2000.App.Examples.X2Benchmark.benchmark.bin" />
+    <Content Include="$(LendingFrameOutput)oneframe.bin;$(LendingFrameOutput)manifest.json"
+             Link="examples/lending-frame/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Include="$(LendingFrameOutput)oneframe.bin" LogicalName="Hc2000.App.Examples.LendingFrame.oneframe.bin" />
     <Content Include="$(X3ServiceOutput)X3SOUND.tap;$(X3ServiceOutput)X3MOD.tap;$(X3ServiceOutput)X3-sentinel.mod;$(X3ServiceOutput)instructions.html;$(X3ServiceOutput)main.asm;$(X3ServiceOutput)x3.service.asm;$(X3ServiceOutput)player.asm;$(X3ServiceOutput)sentinel.asm;$(X3ServiceOutput)sentinel.data.asm;$(X3ServiceOutput)provenance.txt"
              Link="examples/x3-service/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="$(X4ServiceOutput)X4MATH.tap;$(X4ServiceOutput)instructions.html;$(X4ServiceOutput)main.asm;$(X4ServiceOutput)x4.service.asm;$(X4ServiceOutput)provenance.txt"

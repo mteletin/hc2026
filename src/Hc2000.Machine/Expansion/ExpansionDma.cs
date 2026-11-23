@@ -116,6 +116,8 @@ public sealed partial class ExpansionDma
         public long Token, DueTick, LastTick;
         public X0DmaRefusal Refusal = X0DmaRefusal.None;
         public byte[] EndpointState = [];
+        public bool Settled;
+        public int Sequence;
     }
 
     private readonly HcMemory memory;
@@ -138,6 +140,17 @@ public sealed partial class ExpansionDma
 
     public X0DmaTimingPolicy Policy => policy;
 
+    /// <summary>Lent-page settlement (design contract 1): the arena's loan ends with the transfer -
+    /// done, failed, cancelled, reset - so the lending unit can write the page again. The composition
+    /// wires the arena's EndLentPage here; the engine only reports (cardId, page) and never decides.
+    /// The arena callback ends the loan only if it matches, so reporting a page nobody lent is a no-op.</summary>
+    public Action<ushort, ushort>? OnLentPageSettled { get; set; }
+
+    /// <summary>Row interrupt (design contract 2): a finished transfer raises the dma-complete source
+    /// with the channel's registration sequence (1-16); a failed or cancelled transfer is visible by
+    /// the card's status, as today.</summary>
+    public Action<int>? OnTransferDone { get; set; }
+
     internal bool CanRegisterCard(ushort cardId, int otherDeviceId, Hc2000.Machine.Memory.HcMemory expectedMemory,
         DeviceScheduler expectedScheduler)
     {
@@ -158,7 +171,7 @@ public sealed partial class ExpansionDma
         var channel = new Channel
         {
             Endpoint = endpoint, CardId = endpoint.Identity.CardId, EndpointEpoch = endpoint.Identity.Epoch,
-            DeviceId = FirstDeviceId + channels.Count,
+            DeviceId = FirstDeviceId + channels.Count, Sequence = channels.Count + 1,
         };
         scheduler.RegisterDevice(channel.DeviceId, e => Completion(channel, e));
         channels.Add(channel);
@@ -166,6 +179,11 @@ public sealed partial class ExpansionDma
     }
 
     public bool HasCard(ushort cardId) => channels.Any(c => c.CardId == cardId);
+
+    /// <summary>Whether any channel holds an admitted (queued) transfer from the page: the row
+    /// controller refuses to lend or un-lend a page while a transfer on it is outstanding.</summary>
+    public bool HasChannelOnPage(ushort page) =>
+        channels.Any(c => c.State == X0DmaState.Queued && c.Page == page);
 
     public IReadOnlyList<int> DeviceIds => channels.Select(c => c.DeviceId).ToArray();
 
@@ -327,7 +345,7 @@ public sealed partial class ExpansionDma
             return;
         }
         c.HasRecord = true; c.Page = page; c.PageEpoch = pageEpoch; c.Offset = offset; c.Count = count; c.Tag = tag;
-        c.Direction = s[1]; c.Data = data; c.DueTick = due; c.LastTick = masterTick;
+        c.Direction = s[1]; c.Data = data; c.DueTick = due; c.LastTick = masterTick; c.Settled = false;
         c.EndpointState = c.Endpoint.CaptureSnapshotState();
         c.Token = 0;
         c.State = X0DmaState.Queued;
@@ -366,6 +384,7 @@ public sealed partial class ExpansionDma
                 {
                     c.State = X0DmaState.TooLate;
                     c.Refusal = X0DmaRefusal.None;
+                    SettleLentPage(c);
                     return;
                 }
                 if (MatchesIdentity(c))
@@ -376,6 +395,7 @@ public sealed partial class ExpansionDma
                 }
                 else Fail(c, X0DmaRefusal.StaleEndpoint, c.Tag);
                 c.Data = null; c.HasRecord = false; c.Token = 0;
+                SettleLentPage(c);
                 if (wasActive) PromoteNext(Math.Max(masterTick, scheduler.Now));
                 break;
             case X0DmaState.Done or X0DmaState.TooLate:
@@ -395,6 +415,7 @@ public sealed partial class ExpansionDma
         {
             c.Data = null; c.Token = 0;
             Fail(c, X0DmaRefusal.StaleEndpoint, c.Tag);
+            SettleLentPage(c);
             PromoteNext(scheduler.Now);
             return;
         }
@@ -403,6 +424,7 @@ public sealed partial class ExpansionDma
             c.Endpoint.CancelReservation();
             c.Data = null; c.Token = 0;
             Fail(c, X0DmaRefusal.PageNotOwned, c.Tag);
+            SettleLentPage(c);
             PromoteNext(scheduler.Now);
             return;
         }
@@ -415,7 +437,19 @@ public sealed partial class ExpansionDma
         }
         c.Data = null; c.Token = 0; c.State = X0DmaState.Done;
         c.Refusal = X0DmaRefusal.None;
+        SettleLentPage(c);
+        OnTransferDone?.Invoke(c.Sequence);
         PromoteNext(scheduler.Now);
+    }
+
+    /// <summary>Report this channel's admitted page as settled if the transfer has not reported it
+    /// already: the loan (if any) ends with the transfer, and the match-based arena callback makes
+    /// every non-lent page a no-op.</summary>
+    private void SettleLentPage(Channel c)
+    {
+        if (c.Settled || OnLentPageSettled is null) return;
+        c.Settled = true;
+        OnLentPageSettled(c.CardId, c.Page);
     }
 
     private static bool MatchesIdentity(Channel c) =>
@@ -551,6 +585,7 @@ public sealed partial class ExpansionDma
             {
                 scheduler.Cancel(c.Token);
                 if (MatchesIdentity(c)) c.Endpoint.CancelReservation();
+                SettleLentPage(c);
             }
             scheduler.InvalidateDevice(c.DeviceId);
             c.State = X0DmaState.Idle; c.StagingCount = 0; c.Data = null; c.HasRecord = false;

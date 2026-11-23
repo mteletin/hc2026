@@ -34,7 +34,7 @@ public sealed partial class MachineSchema
             if (Text(asset.GetProperty("kind")) != "buffer" || Text(asset.GetProperty("format")) != "raw1")
                 Error(HcsError.AssetMismatch, "HDD asset format");
             var length = Counter(asset.GetProperty("byteLength"));
-            if (length is not (0 or HddSlot.ImageBytes) || length != 0 && generation == 0 ||
+            if (length != 0 && !HddSlot.IsAcceptedImageLength(length) || length != 0 && generation == 0 ||
                 length == 0 && (slot.GetProperty("dirty").GetBoolean() || slot.GetProperty("writeProtected").GetBoolean()))
                 Error(HcsError.StateInconsistent, "HDD logical media");
         }

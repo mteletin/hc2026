@@ -845,6 +845,7 @@ public static class BasicMachineComposition
                 : HcIoProfile.WithTapeControl(profile, memory, ula, driveLatch, fdcStatus, fdcData, idle, idle, tapeControl);
         ExpansionArena? expansionArena = null;
         ExpansionX0? x0 = null;
+        ExpansionRowInterrupt? rowInterrupt = null;
         ExpansionX2Card? x2 = null;
         ExpansionX3Card? x3 = null;
         ExpansionX4Card? x4 = null;
@@ -863,11 +864,24 @@ public static class BasicMachineComposition
             expansionRoot = new(expansionArena, x5 ? profile.ExpansionDriverCount : 0);
             if (fullWorkstation && !memory.TryReserveWorkstationPages())
                 throw new ArgumentException("The full workstation's switch pages cannot be reserved.");
+            // The row's single interrupt source (design contract 2): always composed on an expansion
+            // machine. The DMA engine settles the arena's page loans with the transfer, and the X2
+            // card raises the frame-presented source when a Present command completes.
+            rowInterrupt = new ExpansionRowInterrupt();
+            expansionRoot.RowInterrupt = rowInterrupt;
             x0 = new ExpansionX0(memory, scheduler);
-            if (experimentalX2 && !ExpansionX2Card.TryCompose(memory, scheduler, expansionRoot, x0,
-                    mappings, 3000, 3, ExpansionArena.FirstUnreservedDevicePage,
-                    ExpansionArena.FirstUnreservedDevicePage + 5, out x2))
-                throw new ArgumentException("X2 resources cannot be composed.");
+            expansionRoot.Dma = x0.Dma;
+            x0.Dma.OnLentPageSettled = (cardId, page) => expansionArena.EndLentPage(cardId, page);
+            // A finished transfer raises the dma-complete source with its channel's sequence number.
+            x0.Dma.OnTransferDone = sequence => rowInterrupt.Raise(ExpansionRowInterruptSource.DmaComplete, (ushort)sequence);
+            if (experimentalX2)
+            {
+                if (!ExpansionX2Card.TryCompose(memory, scheduler, expansionRoot, x0,
+                        mappings, 3000, 3, ExpansionArena.FirstUnreservedDevicePage,
+                        ExpansionArena.FirstUnreservedDevicePage + 5, out x2))
+                    throw new ArgumentException("X2 resources cannot be composed.");
+                x2!.OnPresentCompleted = () => rowInterrupt!.Raise(ExpansionRowInterruptSource.FramePresented, 0);
+            }
             if (experimentalX3 && !ExpansionX3Card.TryCompose(memory, scheduler, expansionRoot, x0,
                     mappings, 4, 3001, 3002, edge =>
                     {
@@ -918,7 +932,16 @@ public static class BasicMachineComposition
         if (profile.Name == MachineProfile.Hc2000V2HddCbootV1.Name || profile.Name == MachineProfile.Hc2000V2FullWorkstationV1.Name)
             ApplyCpmColdEntry(cpu, memory);
         var frontier = expansionRoot is null ? null : new ExpansionFrontierDriver(scheduler, clock, mapper, expansionRoot, memory, ports, cpu);
-        if (frontier is not null) { frontier.X0 = x0; frontier.X2 = x2; frontier.X3 = x3; frontier.X4 = x4; }
+        if (frontier is not null) { frontier.X0 = x0; frontier.X2 = x2; frontier.X3 = x3; frontier.X4 = x4; frontier.Arena = expansionArena; }
+        // The machine INT line is the OR of the frame clock's interrupt line and the row's interrupt
+        // source (design contract 2): both contributors update the same line; the row's enable bit
+        // gates only its own contribution, so with it disabled everything works by asking, as today.
+        if (rowInterrupt is { } row) {
+            var updateIntLine = () => { newCpu.IntLine = clock.IntAsserted || row.LineAsserted; };
+            clock.InterruptChanged += (_, _) => updateIntLine();
+            row.LineChanged += updateIntLine;
+            updateIntLine();
+        }
         if (x5)
         {
             var mmu = new ExpansionMmu(expansionArena!);

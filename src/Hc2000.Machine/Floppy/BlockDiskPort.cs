@@ -142,7 +142,7 @@ public sealed partial class BlockDiskPort : IPortDevice
             return new(HddSelectedCaptureError.StaleState, "Expected protection or dirty flag differs from the slot.");
         if (current.Present)
         {
-            if (expectedCurrent.Bytes.Length != HddSlot.ImageBytes ||
+            if (expectedCurrent.Bytes.Length != current.Bytes.Length ||
                 !current.Bytes.AsSpan().SequenceEqual(expectedCurrent.Bytes))
                 return new(HddSelectedCaptureError.StaleState, "Expected image bytes differ from the current slot image.");
         }
@@ -304,7 +304,7 @@ public sealed partial class BlockDiskPort : IPortDevice
         {
             if (!slot.Present) return 0x05;
             if (generation != slot.Generation) return 0x0d;
-            if (lba >= HddSlot.SectorCount) return 0x0c;
+            if (lba >= slot.SectorCount) return 0x0c;
             if (operation == 2 && slot.WriteProtected) return 0x08;
         }
         if (!transfer.ValidDma(dma)) return 0x09;
@@ -312,7 +312,7 @@ public sealed partial class BlockDiskPort : IPortDevice
         {
             Span<byte> reply = stackalloc byte[16];
             reply.Clear();
-            BinaryPrimitives.WriteUInt32LittleEndian(reply, slot.Present ? (uint)HddSlot.SectorCount : 0u);
+            BinaryPrimitives.WriteUInt32LittleEndian(reply, slot.SectorCount);
             BinaryPrimitives.WriteUInt32LittleEndian(reply[4..], slot.Generation);
             reply[8] = slot.Present ? (byte)(slot.WriteProtected ? 1 : 3) : (byte)0;
             transfer.WriteDma(dma, reply);

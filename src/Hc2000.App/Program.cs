@@ -1108,6 +1108,7 @@ public partial class MainWindow : Window
         WireX2Screen();
         WireX6Gateway();
         WireX2Benchmark();
+        WireLendingFrame();
         var presentationModeBox = this.FindControl<ComboBox>("PresentationModeSelector");
         if (presentationModeBox is not null)
         {

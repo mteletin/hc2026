@@ -26,7 +26,9 @@
 {"from": "software/fm/FM2A.PAS", "name": "FM2A.PAS", "at": "C:/prog/fm"},
 {"from": "software/fm/FM2B.PAS", "name": "FM2B.PAS", "at": "C:/prog/fm"},
 {"from": "software/fm/FMMAIN.PAS", "name": "FMMAIN.PAS", "at": "C:/prog/fm"},
-{"from": "software/hcasm/HCASM.COM", "name": "HCASM.COM", "at": "C:/bin"}
+{"from": "software/hcasm/HCASM.COM", "name": "HCASM.COM", "at": "C:/bin"},
+{"from": "software/tpc/TPC.COM", "name": "TPC.COM", "at": "C:/bin"},
+{"from": "software/tpe/TPE.COM", "name": "TPE.COM", "at": "C:/bin"}
 ],
 "placements":[
 {"sha256": "fb8e4d11948e9b8c068f72a6527e9fb0b5264597fc94873fe85408a999d2767a", "name": "D.COM", "at": ["C:/bin"]},

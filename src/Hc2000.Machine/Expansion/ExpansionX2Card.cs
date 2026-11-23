@@ -14,6 +14,9 @@ internal sealed class ExpansionX2Card
     internal ExpansionX2Engine Engine { get; }
     internal ExpansionX2Upload Upload { get; }
     internal ExpansionX2Port Port { get; }
+    // Row interrupt (design contract 2): the composition raises the frame-presented source when the
+    // Present command completes; the machine drains it at 7F9D.
+    internal Action? OnPresentCompleted { get; set; }
     internal bool IsQuiescent => Port.IsQuiescent && Upload.IsQuiescent;
     private readonly int deviceId;
     private readonly ushort cardId;
@@ -30,7 +33,8 @@ internal sealed class ExpansionX2Card
         Upload = new(cardId, back, () => engine is not null && engine.IsQuiescent, data => engine?.Console.Write(data));
         Engine = engine = new(scheduler, deviceId, back, front,
             kind => kind == X2CommandKind.Present ? Upload.CanPresent : Upload.IsQuiescent,
-            kind => { if (kind == X2CommandKind.Clear) Upload.ResetFenceAfterClear(); });
+            kind => { if (kind == X2CommandKind.Clear) Upload.ResetFenceAfterClear();
+                if (kind == X2CommandKind.Present) OnPresentCompleted?.Invoke(); });
         Port = new(Engine, services, cardId, Upload, dma);
     }
 

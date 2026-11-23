@@ -73,6 +73,7 @@
             <Button.ContextMenu>
               <ContextMenu Name="BenchmarksMenu">
                 <MenuItem Name="RunX2BenchmarkMenuItem" Header="Run X2 VGA benchmark"/>
+                <MenuItem Name="RunLendingFrameDemoMenuItem" Header="Run lending one-frame demo"/>
                 <MenuItem Name="ShowX2BenchmarkResultsMenuItem" Header="Show X2 benchmark results" IsEnabled="False"/>
               </ContextMenu>
             </Button.ContextMenu>

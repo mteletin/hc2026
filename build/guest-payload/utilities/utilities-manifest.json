@@ -1,6 +1,6 @@
 {
   "provenance": "hc2000-cpm-utilities-provenance-v1",
-  "sourceCommit": "1c739b98a3d883a37acf14dd4da0b172d622d546",
+  "sourceCommit": "226a53166b4f15751780182c898a0f57239c5560",
   "bootProfile": "hc2000-v2-paged-m-v1",
   "floppyDpb": {
     "Name": "cpm-hc80",
@@ -242,8 +242,8 @@
     },
     {
       "path": "src-library/extended/bios-upgrade/x6/ssh.asm",
-      "size": 124004,
-      "sha256": "a6a5b2fc2811ec6fa24d46e1a15e390c1bc4578d23da81fc72d604040a155b4e"
+      "size": 128615,
+      "sha256": "3594278dfe48008d00b02cf913360f7d76bf6214f700b5f64cdc31d475ca71b5"
     },
     {
       "path": "src-library/extended/bios-upgrade/x6/x6.client.inc",
@@ -516,10 +516,10 @@
     {
       "name": "SSH.COM",
       "source": "src-library/extended/bios-upgrade/x6/ssh.asm",
-      "size": 17024,
-      "sha256": "70aa5d04dc0beb8d6bb4d3b6c0fcd01f5ac68c93a9edca32a029ea57e731e135",
-      "recordSize": 17024,
-      "recordSha256": "70aa5d04dc0beb8d6bb4d3b6c0fcd01f5ac68c93a9edca32a029ea57e731e135"
+      "size": 17335,
+      "sha256": "cdca52fae3ba633e019d332dae58b52f4e7252b59ce7381850a06a376db57943",
+      "recordSize": 17408,
+      "recordSha256": "20dfe00ef234e1132a1ca7933dc50ada5e1eaa3fdce47bd0fa0e8d8f55e4d2ac"
     },
     {
       "name": "STAT.COM",
@@ -595,12 +595,12 @@
     {
       "name": "HC2000-UTIL-8M.DSK",
       "size": 8388608,
-      "sha256": "116173c69dcbd11236cffb9edfe158d110f8bd56984830711cd7f2b2a69e31ce"
+      "sha256": "a6e9cb1edf3c9e1c79dd5aadba9c9cd10beaa90e885eb24a71673586f6345851"
     },
     {
       "name": "HC2000-UTIL.DSK",
       "size": 778496,
-      "sha256": "e04e57ebc8ba52819dcf6d1d5d02cae58496d91631a800dff79029a2778a7eca"
+      "sha256": "672d41490765f620e8ae835ae852556486c4ff40a7084ea9eb825a43b2966f10"
     }
   ]
 }

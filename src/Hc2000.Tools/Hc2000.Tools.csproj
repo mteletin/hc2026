@@ -32,6 +32,7 @@
     <Compile Include="../HostShared/CpmFileLocator.cs" Link="HostShared/CpmFileLocator.cs" />
     <Compile Include="../HostShared/DiskInventory.cs" Link="HostShared/DiskInventory.cs" />
     <Compile Include="../HostShared/WorkstationLayout.cs" Link="HostShared/WorkstationLayout.cs" />
+    <Compile Include="../HostShared/GuestDriveImages.cs" Link="HostShared/GuestDriveImages.cs" />
   </ItemGroup>
   <PropertyGroup>
     <Hc2000FeaturePayload>true</Hc2000FeaturePayload>

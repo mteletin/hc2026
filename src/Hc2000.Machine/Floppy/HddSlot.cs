@@ -10,9 +10,13 @@ public sealed record HddSlotState(byte[] Bytes, uint Generation, bool WriteProte
 internal sealed class HddSlot
 {
     public const int ImageBytes = 8_388_608;
-    public const int SectorCount = ImageBytes / 512;
+
+    /// <summary>Extended media cap (hc2000-hdd-media-512mb): the contract accepts exactly 8 MiB or exactly 512 MiB.</summary>
+    public const int ExtendedImageBytes = 536_870_912;
+    public static bool IsAcceptedImageLength(long length) => length is ImageBytes or ExtendedImageBytes;
     private byte[] bytes = [];
     public bool Present => bytes.Length != 0;
+    public uint SectorCount => Present ? (uint)(bytes.Length / 512) : 0u;
     public uint Generation { get; private set; }
     public bool WriteProtected { get; private set; }
     public bool Dirty { get; private set; }
@@ -28,7 +32,8 @@ internal sealed class HddSlot
 
     private void AttachCore(ReadOnlySpan<byte> image, bool writeProtected, bool discardDirty, bool pending)
     {
-        if (image.Length != ImageBytes) throw new ArgumentException("HDD images must be exactly 8,388,608 bytes.", nameof(image));
+        if (!IsAcceptedImageLength(image.Length))
+            throw new ArgumentException($"HDD images must be exactly {ImageBytes:N0} or {ExtendedImageBytes:N0} bytes.", nameof(image));
         RequireClean(discardDirty);
         var generation = checked(Generation + 1); // Never wrap into an old media identity.
         var owned = image.ToArray();
@@ -65,7 +70,7 @@ internal sealed class HddSlot
     internal bool MatchesSaved(HddSlotState? expected) =>
         expected is not null && expected.Bytes is not null && Present && !WriteProtected &&
         expected.Generation == Generation && expected.WriteProtected == WriteProtected &&
-        expected.Dirty == Dirty && expected.Bytes.Length == ImageBytes &&
+        expected.Dirty == Dirty && IsAcceptedImageLength(expected.Bytes.Length) &&
         bytes.AsSpan().SequenceEqual(expected.Bytes);
 
     internal void AcknowledgeSaved() => Dirty = false;
@@ -74,7 +79,7 @@ internal sealed class HddSlot
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(state.Bytes);
-        if (state.Bytes.Length != 0 && state.Bytes.Length != ImageBytes ||
+        if (state.Bytes.Length != 0 && !IsAcceptedImageLength(state.Bytes.Length) ||
             state.Bytes.Length == 0 && (state.Dirty || state.WriteProtected) ||
             state.Bytes.Length != 0 && state.Generation == 0)
             throw new ArgumentException("Invalid HDD logical media state.", nameof(state));

@@ -23,6 +23,14 @@ public readonly record struct ExpansionPageGrant(ushort UnitId, ulong ResourceEp
 internal sealed record ExpansionDevicePageClaim(ushort Page, ushort CardId, bool MainMappable,
     ushort SourceOffset, ushort SourceCapacity, bool ExclusiveSource = true);
 
+/// <summary>A bounded page loan (design contract 1): a compute or driver page the unit's owner lends
+/// to a registered card. The card may then DMA the page RamToCard (the X0 channel and the X2 upload
+/// reach it unchanged); the lending unit's own writes to the page are denied until the loan ends, and
+/// the loan ends on the card's DMA completing, failing or being cancelled or reset, or on an explicit
+/// un-lend. The map and page epochs are captured so the snapshot can verify the loan still names the
+/// page the unit owns. One loan per page: a page already lent cannot be re-lent to another card.</summary>
+internal sealed record ExpansionPageLoan(ushort UnitId, ushort Page, ushort CardId, ulong MapEpoch, ulong PageEpoch);
+
 /// <summary>Owner-side arena admission; does not contain CPU, controller or scheduler references.</summary>
 public sealed partial class ExpansionArena
 {
@@ -44,6 +52,7 @@ public sealed partial class ExpansionArena
     // Zero denotes the main pool. Roster pages are private; a conflicting main latch is refused in the constructor.
     private readonly byte[] pageOwners = new byte[65536];
     private readonly Dictionary<ushort, ExpansionDevicePageClaim> deviceClaims = new();
+    private readonly Dictionary<ushort, ExpansionPageLoan> pageLoans = new();
     private readonly ulong[] pageEpochs = new ulong[65536];
     private readonly ExpansionPageGrant[] grants = new ExpansionPageGrant[ComputeCount + DriverCount];
     private ushort mainBank;
@@ -169,12 +178,65 @@ public sealed partial class ExpansionArena
             (long)offset + count <= (long)claim.SourceOffset + claim.SourceCapacity;
     }
 
+    /// <summary>Lend a page the unit still owns to a registered card. The card is validated by the
+    /// controller (it must be registered and have no other channel on the page); the arena validates
+    /// ownership: the unit must hold the page through its current grant, the page must not be lent,
+    /// device-claimed or revoked, and the epochs must be live. The loan captures the map and page
+    /// epochs; a page whose owner changes (a refused, un-lent repurpose apart) can never change while
+    /// lent, because every owner change is refused on a lent page.</summary>
+    internal bool TryLendPage(ushort unitId, ushort cardId, ushort page)
+    {
+        VerifyOwner();
+        if (pageLoans.ContainsKey(page)) return false;
+        if (unitId is 0 or > ComputeCount + DriverCount ||
+            unitId > ComputeCount && unitId < DriverFirst) return false;
+        var grant = grants[unitId - 1];
+        if (grant.UnitId == 0 || !grant.Owns(page) || pageOwners[page] != (byte)unitId) return false;
+        var mapEpoch = grant.MapEpoch;
+        var pageEpoch = pageEpochs[page];
+        if (mapEpoch == ulong.MaxValue || pageEpoch == ulong.MaxValue || deviceClaims.ContainsKey(page))
+            return false;
+        pageLoans[page] = new ExpansionPageLoan(unitId, page, cardId, mapEpoch, pageEpoch);
+        return true;
+    }
+
+    /// <summary>End the loan on a page if it exists and names the settling card: the card's DMA
+    /// completing, failing, being cancelled or reset, or the owner's explicit un-lend, all settle
+    /// through here. A settling card that does not match leaves the loan untouched.</summary>
+    internal void EndLentPage(ushort cardId, ushort page)
+    {
+        VerifyOwner();
+        if (pageLoans.TryGetValue(page, out var loan) && loan.CardId == cardId)
+            pageLoans.Remove(page);
+    }
+
+    internal bool PageLentTo(ushort page, ushort cardId)
+    {
+        VerifyOwner();
+        return pageLoans.TryGetValue(page, out var loan) && loan.CardId == cardId;
+    }
+
+    internal bool PageIsLent(ushort page)
+    {
+        VerifyOwner();
+        return pageLoans.ContainsKey(page);
+    }
+
+    internal bool UnitHasLentPage(ushort unitId)
+    {
+        VerifyOwner();
+        return pageLoans.Values.Any(loan => loan.UnitId == unitId);
+    }
+
     internal bool AllowsDma(ushort cardId, byte direction, ushort page, ushort offset, uint count)
     {
         VerifyOwner();
         if (deviceClaims.TryGetValue(page, out var claim))
             return claim.CardId == cardId && direction == X0DmaDirection.RamToCard &&
                 offset == claim.SourceOffset && AllowsDeviceSource(page, cardId, offset, count);
+        // A page the unit lent to this card is readable by it: the loan is the bounded, explicit
+        // exception to isolation, and it is RamToCard only - the card never writes a lent page.
+        if (direction == X0DmaDirection.RamToCard && PageLentTo(page, cardId)) return true;
         return !deviceClaims.Values.Any(claim => claim.CardId == cardId && claim.ExclusiveSource);
     }
 
@@ -202,7 +264,8 @@ public sealed partial class ExpansionArena
             var reservedBank = exchangeOwner == expected.UnitId ? exchangePreviousBank : mainBank;
             if (page < first || page == reservedBank ||
                 exchangeOwner != 0 && exchangeOwner != expected.UnitId && page == exchangePreviousBank ||
-                deviceClaims.ContainsKey(page) || pageOwners[page] != 0 && pageOwners[page] != expected.UnitId) return false;
+                deviceClaims.ContainsKey(page) || pageLoans.ContainsKey(page) ||
+                pageOwners[page] != 0 && pageOwners[page] != expected.UnitId) return false;
             for (var previous = 0; previous < i; previous++)
                 if (pages[previous] == page) return false;
         }
@@ -267,7 +330,15 @@ public sealed partial class ExpansionArena
     /// instead of reaching another unit's bytes. The map preflighted the grant at map time; a root
     /// repurpose since then frees the page and the stale slot is a denial, not a crash.</summary>
     internal byte RouteRead(ushort unitId, uint page, ushort intra) => ram[Route(unitId, page) + intra];
-    internal void RouteWrite(ushort unitId, uint page, ushort intra, byte value) => ram[Route(unitId, page) + intra] = value;
+    internal void RouteWrite(ushort unitId, uint page, ushort intra, byte value)
+    {
+        // Lent-page denial (design contract 1): a unit cannot change a page while it is lent to a
+        // card. The driver faults the unit before it reaches this re-check, which protects every
+        // other owner-thread caller.
+        if (PageIsLent((ushort)page))
+            throw new InvalidOperationException("The page is lent to a card and cannot change while it is lent.");
+        ram[Route(unitId, page) + intra] = value;
+    }
     private int Route(ushort unitId, uint page)
     {
         VerifyOwner();
@@ -285,6 +356,10 @@ public sealed partial class ExpansionArena
     {
         var physical = Resolve(grant, address);
         if (exchangeOwner == grant.UnitId && address >= 0xc000) return;
+        // Lent-page denial (design contract 1): the scratch area discards anyway, but everything the
+        // unit stores on a lent page is refused; the driver faults it before it reaches this re-check.
+        if (PageIsLent((ushort)grant.Pages[address >> 14]))
+            throw new InvalidOperationException("The compute page is lent to a card and cannot change while it is lent.");
         ram[physical] = value;
     }
 

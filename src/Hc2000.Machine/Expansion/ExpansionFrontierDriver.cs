@@ -155,7 +155,10 @@ public sealed partial class ExpansionFrontierDriver
             {
                 if (effect.Kind == FrontierEffectKind.M1Read) OnM1Fetch?.Invoke(effect.Address, main);
                 mapper.Map(effect.AtCpuTState);
-                main.CommitFrontier(value, clock.IntAsserted);
+                // The machine INT line is the frame clock OR the expansion row (contract 2),
+                // read at this effect's tick; the frontier model gets the line here, not from
+                // the edge events that update the non-frontier Z80 field.
+                main.CommitFrontier(value, clock.IntAsserted || controller.RowInterrupt?.LineAsserted == true);
             }
         }
         else
@@ -173,7 +176,23 @@ public sealed partial class ExpansionFrontierDriver
             if (effect.Kind == FrontierEffectKind.PortWrite) view.Write(effect.Address, effect.WriteValue, item.DueTick);
             // A map denial faults the driver at its uncommitted effect (no bus effect, no value).
             if (!commit) return;
+            var before = unit.Lifecycle;
             unit.CommitFrontier(value, item.DueTick);
+            // 7F9D reports compute unit lifecycle transitions only; driver IDs 17-24 are not
+            // representable in the row interrupt contract and their lifecycle remains internal.
+            if (id <= ExpansionArena.ComputeCount && unit.Lifecycle != before)
+            {
+                switch (unit.Lifecycle)
+                {
+                    case ExpansionLifecycle.Halted:
+                    case ExpansionLifecycle.ServiceIdle:
+                        controller.RowInterrupt?.Raise(ExpansionRowInterruptSource.UnitDone, unit.Id);
+                        break;
+                    case ExpansionLifecycle.WaitingMailbox:
+                        controller.RowInterrupt?.Raise(ExpansionRowInterruptSource.UnitMailboxWait, unit.Id);
+                        break;
+                }
+            }
             controller.AcknowledgeFrontier(id, item.DueTick);
         }
         Synchronize();
@@ -256,17 +275,40 @@ public sealed partial class ExpansionFrontierDriver
     }
     private bool UnitWrite(ExpansionComputeUnit unit, ushort address, byte value)
     {
-        if (Mmu is null || !Mmu.IsMapHolder(unit.Id)) { unit.WriteMemory(address, value); return true; }
+        // Lent-page denial (design contract 1): the unit cannot change a page while it is lent to a
+        // card. The fault leaves the unit at its uncommitted store; the arena re-checks on both paths.
+        if (Mmu is null || !Mmu.IsMapHolder(unit.Id))
+        {
+            if (LentUnitPage(unit.Id, address)) { unit.Fault(); return false; }
+            unit.WriteMemory(address, value); return true; // compute units keep their lease
+        }
         if (!Mmu.TryResolve(unit.Id, address, ExpansionSlotCaps.Write, out var r)) { unit.Fault(); return false; }
         switch (r.Kind)
         {
             case ExpansionSlotKind.Arena:
-                try { Arena!.RouteWrite(unit.Id, r.Target, r.Intra, value); }
+                if (Arena!.PageIsLent((ushort)r.Target))
+                { Mmu.RecordFault(unit.Id, address, ExpansionSlotCaps.Write); unit.Fault(); return false; }
+                try { Arena.RouteWrite(unit.Id, r.Target, r.Intra, value); }
                 catch (InvalidOperationException) { Mmu!.RecordFault(unit.Id, address, ExpansionSlotCaps.Write); unit.Fault(); return false; } // never write a page the lease lost
                 return true;
             default:
                 throw new InvalidOperationException("A driver managed write resolved to a store that cannot take it.");
         }
+    }
+    /// <summary>Whether the unit's lease maps this logical address to a page currently lent to a card.</summary>
+    private bool LentUnitPage(ushort unitId, ushort address)
+    {
+        if (Arena is null) return false;
+        var grant = Arena.GetGrant(unitId);
+        return Arena.PageIsLent(grant.Pages[address >> 14]);
+    }
+    /// <summary>Per-unit clock report (design contract 4): the target and the committed T-state meter;
+    /// the achieved throughput is CommittedTStates over the elapsed master ticks - measured, not
+    /// promised. 280 MHz is a target: a unit that cannot keep it reports what it achieved.</summary>
+    public (MainCpuSpeed Target, long CommittedTStates) UnitClock(ushort id)
+    {
+        var unit = controller.GetUnit(id);
+        return (unit.ClockTarget, unit.CommittedTStates);
     }
     private static ushort ManagedOffset(in ExpansionMmuResolution r) =>
         checked((ushort)(checked((int)r.Target * ExpansionMmu.SlotBytes) + r.Intra));

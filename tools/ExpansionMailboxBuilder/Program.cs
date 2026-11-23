@@ -11,6 +11,7 @@ try
     X2ServiceAssets.Generate(args[0], Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(args[1]))!, "x2-service"), args[2]);
     X2BulkAssets.Generate(args[0], Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(args[1]))!, "x2-bulk"), args[2]);
     X2BenchmarkAssets.Generate(args[0], Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(args[1]))!, "x2-benchmark"), args[2]);
+    LendingFrameAssets.Generate(args[0], Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(args[1]))!, "lending-frame"), args[2]);
     X3ServiceAssets.Generate(args[0], Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(args[1]))!, "x3-service"), args[2]);
     X4ServiceAssets.Generate(args[0], Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(args[1]))!, "x4-service"), args[2]);
     return 0;

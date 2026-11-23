@@ -114,6 +114,20 @@ internal static class ExpansionSchema
     {
         if (Encoding.UTF8.GetByteCount(cpu.GetRawText()) > CpuBytes) throw Invalid();
     }
+
+    /// <summary>Per-unit clock identity (design contract 4): the committed tick is the exact
+    /// ceil-boundary from the epoch anchor at the unit's own ratio, and the persisted remainder is
+    /// the committed phase. For the faithful unit this is the original 5/1 integer identity, so
+    /// legacy documents validate unchanged.</summary>
+    private static bool ValidateUnitClock(ExpansionUnitState u)
+    {
+        // A legacy document carries no target: it is the faithful 5/1 unit, and the identity below
+        // reduces to the original integer check for it.
+        var (numerator, denominator) = (u.ClockTarget ?? MainCpuSpeed.Faithful).MasterTicksPerTState();
+        var delta = checked(u.Cpu.TStates - u.CpuAnchor);
+        return checked(u.MasterAnchor + (checked(delta * numerator) + denominator - 1) / denominator) == u.LastMasterTick
+            && checked(delta * numerator) % denominator == u.Remainder;
+    }
     private static void CheckEncodedSize(JsonElement value, int bytes)
     {
         if (value.ValueKind != JsonValueKind.String || value.GetString()!.Length > 4 * ((bytes + 2) / 3)) throw Invalid();
@@ -172,9 +186,10 @@ internal static class ExpansionSchema
                 u.ExchangeOwner != 0 && (u.ExchangeOwner != grant.UnitId ||
                     u.Lifecycle != ExpansionLifecycle.ServiceIdle || u.Cpu.Halted ||
                     u.Cpu.Registers.PC >= 0xc000 || u.Cpu.Registers.SP > 0xbfff || grant.Pages.Page3 != mainBank) ||
-                u.CpuAnchor < 0 || u.MasterAnchor < 0 || u.Remainder != 0 ||
+                u.CpuAnchor < 0 || u.MasterAnchor < 0 || u.ClockTarget is { } target && !Enum.IsDefined(target) ||
+                u.Remainder < 0 ||
                 u.CpuAnchor > u.Cpu.TStates || u.LastMasterTick > now ||
-                checked(u.MasterAnchor + checked((u.Cpu.TStates - u.CpuAnchor) * 5)) != u.LastMasterTick) throw Invalid();
+                !ValidateUnitClock(u)) throw Invalid();
             for (var page = 0; page < 4; page++)
                 if (grant.Pages[page] < ExpansionArena.FirstComputePage ||
                     grant.Pages[page] == mainBank && !(page == 3 && u.ExchangeOwner == grant.UnitId) ||
@@ -238,6 +253,20 @@ internal static class ExpansionSchema
             if (r.PendingId != 0 || response.Length is < 40 or > 69676 || r.ResponseCursor > response.Length ||
                 response[0] != 1 || response[1] > 8 || response[2] > 6 || response[3] != 0 ||
                 BinaryPrimitives.ReadUInt32LittleEndian(response.AsSpan(4)) != response.Length - 40) throw Invalid();
+        }
+        // Row interrupt + loans (additive, Version 1): the register is bounded and drainable; each
+        // loan names a card and a page the lending unit's grant owns, and a page is lent at most once.
+        if (r.RowInterrupt is { } row && (row.Queue is null || row.Queue.Length > 256)) throw Invalid();
+        if (r.Loans is { } loans)
+        {
+            var loanPages = new HashSet<ushort>();
+            foreach (var loan in loans)
+            {
+                var owner = loan.UnitId <= units.Length ? units[loan.UnitId - 1] :
+                    (x5?.Drivers is { Length: > 0 } && loan.UnitId <= units.Length + x5.Drivers.Length
+                        ? x5.Drivers[loan.UnitId - 1 - units.Length] : null);
+                if (loan.CardId == 0 || owner is null || !owner.Grant.Owns(loan.Page) || !loanPages.Add(loan.Page)) throw Invalid();
+            }
         }
         if (r.PendingId == 0) { if (r.PendingOperation != 0) throw Invalid(); return; }
         var u = r.PendingId <= units.Length ? units[r.PendingId - 1] : x5!.Drivers[r.PendingId - 1 - units.Length];

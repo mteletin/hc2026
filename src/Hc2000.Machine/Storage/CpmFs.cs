@@ -430,11 +430,11 @@ public sealed class CpmFs
         }
         return list.Distinct().ToArray();
     }
-    public void Delete(string name, int user = 0)
+    public void Delete(string name, int user = 0, bool force = false)
     {
         if (readOnly) throw new InvalidDataException("M: v2 host view is read-only.");
         var offsets = Offsets(name, user);
-        if (offsets.Any(o => (logical[o + 9] & 128) != 0)) throw new InvalidDataException("File is read-only.");
+        if (!force && offsets.Any(o => (logical[o + 9] & 128) != 0)) throw new InvalidDataException("File is read-only.");
         foreach (var offset in offsets) logical[offset] = 0xe5;
         if (volume) return; disk!.WriteLogicalBytes(logical, Parameters.Skew);
     }

@@ -55,7 +55,7 @@ public sealed partial class HcMemory
     internal bool TryDmaPageEpoch(ushort cardId, byte direction, ushort page, ushort offset, uint count, out ulong epoch)
     {
         epoch = 0;
-        if (expansionArena is null || !expansionArena.MainOwns(page) ||
+        if (expansionArena is null || !expansionArena.MainOwns(page) && !expansionArena.PageLentTo(page, cardId) ||
             !expansionArena.AllowsDma(cardId, direction, page, offset, count) ||
             pagedClaims.Any(c => page >= c.Range.FirstPage && page < c.Range.FirstPage + c.Range.PageCount))
             return false;

@@ -172,10 +172,11 @@ public static class Assembler
         {
             if (strict) Errors.Add(new(line.File, line.Number, Math.Max(1, line.Text.Length - line.Text.TrimStart().Length + 1), DiagnosticSeverity.Error, message));
         }
+        private bool patching;
         private readonly HashSet<string> Directives = new(StringComparer.OrdinalIgnoreCase)
         {
             "ORG", "EQU", "=", "DB", "DEFB", "BYTE", "DW", "DEFW", "WORD", "DS", "DEFS", "BLOCK", "DM", "DEFM",
-            "INCLUDE", "INCBIN", "IF", "ELSE", "ENDIF", "MACRO", "ENDM", "REPT", "ENDR", "ASSERT", "PHASE", "DEPHASE", "OUTPUT", "SAVEBIN"
+            "INCLUDE", "INCBIN", "IF", "ELSE", "ENDIF", "MACRO", "ENDM", "REPT", "ENDR", "ASSERT", "PHASE", "DEPHASE", "OUTPUT", "SAVEBIN", "PATCH", "ENDPATCH"
         };
         // Reserved Zilog mnemonics disambiguate column-one instructions from colonless labels.
         private readonly HashSet<string> Mnemonics = new("ADC ADD AND BIT CALL CCF CP CPD CPDR CPI CPIR CPL DAA DEC DI DJNZ EI EX EXX HALT IM IN INC IND INDR INI INIR JP JR LD LDD LDDR LDI LDIR NEG NOP OR OTDR OTIR OUT OUTD OUTI POP PUSH RES RET RETI RETN RL RLA RLC RLCA RLD RR RRA RRC RRCA RRD RST SBC SCF SET SLA SLL SRA SRL SUB XOR".Split(' '), StringComparer.OrdinalIgnoreCase);
@@ -300,7 +301,10 @@ public static class Assembler
                         if (physical < 0 || (long)physical + bytes.Length > 65536 || logical < 0 || (long)logical + bytes.Length > 65536) throw new FormatException("Emission exceeds the 16-bit address space.");
                         for (var n = 0; n < bytes.Length; n++)
                         {
-                            if (memory.ContainsKey(physical + n)) throw new FormatException($"Overlapping output at 0x{physical + n:X4}.");
+                            // Output never lands twice on an address, except between PATCH and ENDPATCH, where it replaces
+                            // bytes already placed and nothing else: a program built on another's source patches it there.
+                            if (patching != memory.ContainsKey(physical + n))
+                                throw new FormatException(patching ? $"PATCH outside existing output at 0x{physical + n:X4}." : $"Overlapping output at 0x{physical + n:X4}.");
                         }
                         for (var n = 0; n < bytes.Length; n++) memory[physical + n] = bytes[n];
                         if (outputPath != null)
@@ -357,6 +361,14 @@ public static class Assembler
                     RequireCount(operands, 1);
                     if (strict && Eval(args) == 0) throw new FormatException($"Assertion failed: {args}");
                     return [];
+                case "PATCH":
+                    RequireCount(operands, 0);
+                    if (patching) throw new FormatException("PATCH inside PATCH.");
+                    patching = true; return [];
+                case "ENDPATCH":
+                    RequireCount(operands, 0);
+                    if (!patching) throw new FormatException("ENDPATCH without PATCH.");
+                    patching = false; return [];
                 case "PHASE":
                     RequireCount(operands, 1);
                     logical = Address(Eval(args)); phaseOffsets.Push(logical - physical); return [];

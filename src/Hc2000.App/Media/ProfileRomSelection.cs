@@ -90,6 +90,19 @@ public static class ProfileRomSelection
             => SliceChip(LoadChip(assetRoot, WholeChipCbootSourcePath, WholeChipCbootSha256,
                 "Use the canonical C:-boot whole-chip EPROM dump; same size is not enough."), MachineProfile.Hc2000V2HddCbootV1);
 
+        public static (MachineProfile Profile, byte[] Basic, byte[] Cpm, byte[] If1) LoadCpm3V1(string assetRoot)
+        {
+            var (profile, basic, cpm, if1) = LoadWholeChipV2(assetRoot);
+            profile = MachineProfile.Hc2000V2HddCpm3V1;
+            var source = profile.RomRegions.Single(r => r.Role == ProfileRomRole.CpmUpper).SourcePath!;
+            var upper = MediaFiles.ReadAsync(Path.Combine(assetRoot, source), 0x2000).GetAwaiter().GetResult();
+            const string hash = "50d4365c48c37dc191f8bdec68e292d6825b807b712a340f9b231df000f31a0b";
+            if (upper.Length != 0x2000 || !Convert.ToHexString(SHA256.HashData(upper.AsSpan())).Equals(hash, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException($"ROM identity mismatch: {source}.");
+            upper.AsSpan().CopyTo(cpm.AsSpan(0x2000));
+            return (profile, basic, cpm, if1);
+        }
+
         private static byte[] LoadChip(string assetRoot, string sourcePath, string expectedSha, string mismatchAdvice)
         {
             if (string.IsNullOrWhiteSpace(assetRoot)) throw new ArgumentException("Choose the asset root containing roms/hc2000/.", nameof(assetRoot));

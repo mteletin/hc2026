@@ -94,6 +94,7 @@ public static class Program
         Console.Error.WriteLine("  hc fs compare --help     Compare stored files between two CP/M disk images and exit statuses");
         Console.Error.WriteLine("  hc fs export --help      Export all CP/M files from a disk image to a safe host folder");
         Console.Error.WriteLine("  hc fs from-folder --help Create a CP/M data-disk image from a host folder and exit statuses");
+        Console.Error.WriteLine("  hc fs to-hdd --help      Preview and gather CP/M floppies onto a new data hard disk");
         Console.Error.WriteLine("  hc fs repack --help      Copy a CP/M data disk's files safely to a new 40- or 80-track disk");
         Console.Error.WriteLine("  hc fs restore --help     Restore a replayable CP/M file export to a new 40- or 80-track data disk");
     }

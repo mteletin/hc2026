@@ -28,6 +28,7 @@ public sealed partial class StartupHardwarePanel : UserControl
         new("hc2000-v2", "ORIGINAL", "64K", "Classic HC2000", "The machine as built: BASIC at power-on, 64 KiB RAM, floppy A: and B:, CP/M 2.2", false),
         new("hc2000-v2-ram-banks-v1", "ORIGINAL", "64K + 1M", "Banked RAM", "64 KiB + 1 MiB in banks the program selects", false),
         new("hc2000-v2-hdd-v1", "STORAGE", "HDD", "Hard disk", "64 KiB RAM with hard disks C: to F:", false),
+        new("hc2000-v2-hdd-cpm3-v1", "STORAGE", "HDD · CP/M 3", "Hard disk, CP/M 3 from C:", "Nonbanked CP/M 3; supply a prepared 8 MiB C: image", false),
         new("hc2000-v2-hdd-cboot-v1", "STORAGE", "HDD · CP/M", "Hard disk, CP/M from C:", "64 KiB RAM with hard disks C: to F:; boots CP/M from C: at every reset, no floppy needed", false),
         new("hc2000-v2-blockport-v1", "STORAGE", "BLOCK", "Block disk", "64 KiB RAM with the block disk controller", false),
         new("hc2000-v2-tape-control-v1", "STORAGE", "TAPE", "Tape control", "64 KiB RAM with the tape control port", false),
@@ -48,6 +49,7 @@ public sealed partial class StartupHardwarePanel : UserControl
     /// <summary>The turbo multipliers the catalog admits for <paramref name="profile"/>: "1" alone when it admits none.</summary>
     public static IReadOnlyList<string> TurboValues(string profile)
     {
+        if (profile == "hc2000-v2-hdd-cpm3-v1") return ["1"];
         var set = CapabilityCatalog.FromProfile(profile) ?? throw new ArgumentException("Unknown profile " + profile, nameof(profile));
         return CapabilityCatalog.Find("cpu-turbo")!.AdmittedValues
             .Where(value => CapabilityCatalog.Validate(set.With("cpu-turbo", value)) is null).ToArray();
@@ -56,6 +58,7 @@ public sealed partial class StartupHardwarePanel : UserControl
     /// <summary>The command-line flags that build the same machine (text overlay is a display choice, not hardware).</summary>
     public static string CommandLine(string profile, int turbo = 1, int driverCount = 0, bool x2Vga = false, bool x3Sound = false, bool x4Math = false, bool x6Net = false)
     {
+        if (profile == "hc2000-v2-hdd-cpm3-v1") return ""; // Startup profile only; --cpm-cold-boot selects CP/M 2.2.
         var set = CapabilityCatalog.FromProfile(profile, cpuTurbo: turbo, driverCount: driverCount, x2Vga: x2Vga, x3Sound: x3Sound, x4Math: x4Math, x6Net: x6Net) ?? throw new ArgumentException("Unknown profile " + profile, nameof(profile));
         var flags = new List<string>();
         foreach (var row in CapabilityCatalog.SurfaceRows)
@@ -73,6 +76,7 @@ public sealed partial class StartupHardwarePanel : UserControl
     private readonly ComboBox driverCount;
     private readonly CheckBox x2Vga, x3Sound, x4Math, x6Net, x6Gateway;
     private readonly TextBlock turboUnavailable, turboReset, title, description, commandLine;
+    private readonly Button copyCommandLine;
     private readonly string? unsupportedProfile;
     private Grid? hardwareLayout;
     private StackPanel? machineDetails;
@@ -108,7 +112,7 @@ public sealed partial class StartupHardwarePanel : UserControl
 
     /// <summary>True when the selected machine takes the raw HDD volumes (the raw HDD, X5 HDD and C:-boot profiles, the
     /// combined workstation or the full workstation).</summary>
-    public bool HddEnabled => selectedProfile is "hc2000-v2-hdd-v1" or "hc2000-v2-paged-expansion-x5-hdd-guest-v1" or "hc2000-v2-hdd-cboot-v1"
+    public bool HddEnabled => selectedProfile is "hc2000-v2-hdd-v1" or "hc2000-v2-paged-expansion-x5-hdd-guest-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-hdd-cpm3-v1"
         or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2" or "hc2000-v2-full-workstation-v1";
 
     /// <summary>The selected admitted profile; null while an unsupported stored profile awaits a choice.</summary>
@@ -186,7 +190,8 @@ public sealed partial class StartupHardwarePanel : UserControl
             turboPicks[value] = segment;
             turboSegments.Children.Add(segment);
         }
-        Part<Button>("CopyCommandLine").Click += async (_, _) =>
+        copyCommandLine = Part<Button>("CopyCommandLine");
+        copyCommandLine.Click += async (_, _) =>
         {
             if (TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard && commandLine.Text is { Length: > 0 } flags)
                 await clipboard.SetTextAsync(flags);
@@ -371,7 +376,10 @@ public sealed partial class StartupHardwarePanel : UserControl
             }
             title.Text = Cards.First(card => card.Profile == selectedProfile).Title;
             description.Text = Describe(selectedProfile, selectedTurbo);
-            commandLine.Text = CommandLine(selectedProfile, selectedTurbo, selectedDriverCount, selectedX2Vga, selectedX3Sound, selectedX4Math, selectedX6Net) is { Length: > 0 } flags ? flags : "(no flags: the default machine)";
+            var hasCommandLine = selectedProfile != "hc2000-v2-hdd-cpm3-v1";
+            copyCommandLine.IsEnabled = hasCommandLine;
+            commandLine.Text = !hasCommandLine ? "Select this profile here and supply a prepared raw C: image."
+                : CommandLine(selectedProfile, selectedTurbo, selectedDriverCount, selectedX2Vga, selectedX3Sound, selectedX4Math, selectedX6Net) is { Length: > 0 } flags ? flags : "(no flags: the default machine)";
         }
         finally { seeding = wasSeeding; }
     }
@@ -393,6 +401,7 @@ public sealed partial class StartupHardwarePanel : UserControl
         "hc2000-v2-hdd-v1" => "64 KiB RAM plus the raw HDD controller. An empty draft gets the bundled C: utilities and formatted empty D:/E:/F: volumes; change them in Media. The original BIOS does not read the hard disk, so guest software is needed. Guest writes go to private copies, never to installed images; live switching and HDD snapshots are not available.",
         "hc2000-v2-combined-workstation-v1" => "The qualified combined CP/M workstation: the 1 GiB paged store with the 8 MiB M: (pages 0-511), four raw 8 MiB hard-disk volumes C: to F:, the CP/M tape volume on its free letter and the sixteen side Z80 processors. CPU turbo is not composed; guest software installs the C-F, tape and compute doors. Each machine allocates a contiguous 1 GiB store at Start.",
         "hc2000-v2-combined-workstation-v2" => "The qualified combined CP/M workstation: the 1 GiB paged store with the 8 MiB M: (pages 0-511), four raw 8 MiB hard-disk volumes C: to F:, the CP/M tape volume on its free letter and the sixteen side Z80 processors. C-F uses the guest driver, so the HDINST resident installs the drives in a guest session; host-side live switching is refused for this machine. CPU turbo is not composed. Each machine allocates a contiguous 1 GiB store at Start.",
+        "hc2000-v2-hdd-cpm3-v1" => "Boots nonbanked CP/M 3 from a prepared raw 8 MiB C: image. No floppy is needed.",
         "hc2000-v2-hdd-cboot-v1" => "64 KiB RAM, the raw HDD controller and the direct-C:-boot CP/M ROM. At power-on and at every reset the machine enters the CP/M boot stub, which loads the boot image from C: and starts CP/M there - no floppy needed. C: must keep its boot image; guest writes go to private copies, never to installed images.",
         "hc2000-v2-full-workstation-v1" => "The full workstation: CP/M boots from C: at power-on and at every reset, into the folder shell, with 1 GiB of paged RAM, hard disks C: to F:, the 8 MiB M: drive, the CP/M tape volume, the VGA screen, sound, the network card with the gateway on and sixteen side Z80 processors. The drives run from paged RAM, so CP/M programs keep the stock TPA. Live HDD switching and snapshots are unavailable. Each machine allocates a contiguous 1 GiB store at Start.",
         _ => "This stored hardware is not supported by ordinary Start."

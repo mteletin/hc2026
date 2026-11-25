@@ -15,6 +15,12 @@ public static class StorageCommand
 {
     public static int Run(string command, string[] args, TextWriter output, TextWriter error)
     {
+        if (command.Equals("fs", StringComparison.OrdinalIgnoreCase) && args.FirstOrDefault() == "from-fat32")
+            return FromFat32Command.Run(args, output, error);
+
+        if (command.Equals("fs", StringComparison.OrdinalIgnoreCase) && args.FirstOrDefault() == "to-hdd")
+            return FloppyToHddCommand.Run(args, output, error);
+
         if (command.Equals("fs", StringComparison.OrdinalIgnoreCase) &&
             (args is ["--help"] or ["check", "--help"] or ["survey", "--help"] or ["locate", "--help"] or ["find", "--help"] or ["duplicates", "--help"] or ["dups", "--help"] or ["variants", "--help"] or ["vars", "--help"] or ["name-variants", "--help"] or ["compare", "--help"] or ["export", "--help"] or ["from-folder", "--help"] or ["repack", "--help"] or ["copy", "--help"] or ["restore", "--help"] or ["inventory", "--help"] || args.FirstOrDefault() is "check" or "survey" or "locate" or "find" or "duplicates" or "dups" or "variants" or "vars" or "name-variants" or "compare" or "export" or "from-folder" or "repack" or "copy" or "restore" or "inventory"))
         {
@@ -205,6 +211,8 @@ public static class StorageCommand
         {
             output.WriteLine("usage: hc fs check <image> [--format auto|cpm-hc|hcfs|cpm-hc40|cpm-hc80|hcfs40|hcfs80] [--geometry cylinders,sides,sectors,sector-size]");
             output.WriteLine("       hc fs from-folder <folder> <destination> [--preset cpm-hc80|cpm-hc40] [--user <0..15>]");
+            FromFat32Command.PrintUsage(output, "       ");
+            FloppyToHddCommand.PrintUsage(output, "       ");
             output.WriteLine("       hc fs repack <source> <destination> --target cpm-hc80|cpm-hc40 [--format auto|cpm-hc80|cpm-hc40] [--geometry <geometry>]");
             output.WriteLine("       hc fs restore <export-folder> <destination> [--preset cpm-hc80|cpm-hc40]");
             output.WriteLine("       hc fs locate <folder> <pattern> [--recursive] [--user <0..31>] [--format auto|cpm-hc|hcfs|cpm-hc40|cpm-hc80|hcfs40|hcfs80] [--geometry cylinders,sides,sectors,sector-size]");

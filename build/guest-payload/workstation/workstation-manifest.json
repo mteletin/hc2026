@@ -1,7 +1,7 @@
 {
   "artifact": "CPM22-HC-ram-paged-v2-workstation.DSK",
   "state": "unbound TAPEINIT template; session-bound at launch by --workstation",
-  "git": "226a53166b4f15751780182c898a0f57239c5560",
+  "git": "cdd7d753040c7ce443fc8b4c3be20ab4a2e73acd",
   "gitDirty": "false",
   "base": "CPM22-HC-ram-paged-v2-upgrade.DSK (UpgradeBiosBuilder m-paged-v2)",
   "baseSha256": "5523a58735474072609be6254f5e8024a1e25310b8643c3b5d372ffb74d4ffc2",

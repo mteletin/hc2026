@@ -57,8 +57,8 @@ public sealed class IdentityRecord : IPortDevice
     {
         ArgumentNullException.ThrowIfNull(profile);
         if (profile.Name is "hc2000-v1" or "hc2000-v2") return null;
-        // The guest-acknowledge HDD identity is the HDD card's hardware; the catalog lists only the selectable one.
-        var name = profile.Name == "hc2000-v2-hdd-guest-v1" ? "hc2000-v2-hdd-v1" : profile.Name;
+        // These profiles report the same HDD hardware; their ROM identities are not interchangeable at launch.
+        var name = profile.Name is "hc2000-v2-hdd-guest-v1" or "hc2000-v2-hdd-cpm3-v1" ? "hc2000-v2-hdd-v1" : profile.Name;
         var set = CapabilityCatalog.FromProfile(name, profile.Video.TextOverlay, profile.CpuTurboMultiplier,
             profile.ExpansionDriverCount, x2, x3, x4, x6)
             ?? throw new ArgumentException($"{profile.Name} has no capability catalog entry.", nameof(profile));

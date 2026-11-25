@@ -150,7 +150,7 @@ public sealed record MachineConfiguration
     {
         Validate();
         if (Profile is not ("hc2000-v2" or "hc2000-v2-ram-banks-v1" or "hc2000-v2-paged-v1"
-                or "hc2000-v2-paged-m-v1" or "hc2000-v2-hdd-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-blockport-v1"
+                or "hc2000-v2-paged-m-v1" or "hc2000-v2-hdd-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-hdd-cpm3-v1" or "hc2000-v2-blockport-v1"
                 or "hc2000-v2-tape-control-v1" or "hc2000-v2-paged-tape-v2"
                 or "hc2000-v2-paged-m-v2" or "hc2000-v2-paged-expansion-v1"
                 or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2"
@@ -163,7 +163,7 @@ public sealed record MachineConfiguration
         if (CpuTurboMultiplier != 1 && Profile is not ("hc2000-v2" or "hc2000-v2-ram-banks-v1"))
             throw new ArgumentException(CapabilityCatalog.TurboNotAdmitted);
         if (Scale > 8) throw new ArgumentException("Implemented scale is 0 (Fit) or 1–8.");
-        if (!Hdd.IsEmpty && Profile is not ("hc2000-v2-hdd-v1" or "hc2000-v2-paged-expansion-x5-hdd-guest-v1" or "hc2000-v2-hdd-cboot-v1"
+        if (!Hdd.IsEmpty && Profile is not ("hc2000-v2-hdd-v1" or "hc2000-v2-paged-expansion-x5-hdd-guest-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-hdd-cpm3-v1"
                 or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2" or "hc2000-v2-full-workstation-v1"))
             throw new ArgumentException("HDD slots require a hard-disk profile (raw HDD, X5 with hard disk, C: boot), the combined CP/M workstation or the full workstation. Remove the draft HDD slots explicitly or select one before a new cold Start.");
         if (Profile is "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2" && Hdd.Length != 4)

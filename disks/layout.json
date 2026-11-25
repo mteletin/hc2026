@@ -1,17 +1,22 @@
 {"schema":1,
 "drives":[
 {"drive": "C", "folders": ["/", "/bin", "/etc", "/src", "/prog", "/sbin", "/prog/c", "/prog/pas", "/prog/fm", "/prog/aud", "/prog/games", "/docs", "/prog/z80", "/prog/cpm1", "/prog/hc98", ""], "path": ["/bin", "/sbin", "/prog", "/"]},
-{"drive": "D", "folders": ["/", "/lib", "/lib/shared", "/lib/bios", "/lib/tools", "/hdd", "", "", "", "", "", "", "", "", "", ""], "path": ["/"]},
-{"drive": "E", "folders": ["/", "/dis", "/dis/apps", "/dis/arc", "/dis/comms", "/dis/dev", "/dis/disk", "/dis/file", "/dis/machine", "/dis/system", "/dis/text", "", "", "", "", ""], "path": ["/"]}
+{"drive": "D", "folders": ["/", "/lib", "/lib/shared", "/lib/bios", "/lib/tools", "/hdd", "/lib/turbo", "", "", "", "", "", "", "", "", ""], "path": ["/"]},
+{"drive": "E", "folders": ["/", "/dis", "/dis/apps", "/dis/arc", "/dis/comms", "/dis/cpm3", "/dis/dev", "/dis/disk", "/dis/file", "/dis/machine", "/dis/system", "/dis/text", "", "", "", ""], "path": ["/"]}
 ],
 "library":[
 {"from": "src-library/shared/", "at": "D:/lib/shared"},
 {"from": "src-library/extended/bios-upgrade/", "at": "D:/lib/bios"},
 {"from": "src-library/extended/tools/", "at": "D:/lib/tools"},
 {"from": "src-library/extended/", "at": "D:/lib"},
+{"from": "src-library/applications/turbo/", "at": "D:/lib/turbo"},
+{"from": "src-library/applications/turbox/", "at": "D:/lib/turbo"},
+{"from": "src-library/applications/tpc/", "at": "D:/lib/turbo"},
+{"from": "src-library/applications/tpe/", "at": "D:/lib/turbo"},
 {"from": "src-library/applications/", "at": "E:/dis/apps"},
 {"from": "src-library/archive/", "at": "E:/dis/arc"},
 {"from": "src-library/comms/", "at": "E:/dis/comms"},
+{"from": "src-library/cpm3/", "at": "E:/dis/cpm3"},
 {"from": "src-library/development/", "at": "E:/dis/dev"},
 {"from": "src-library/disk/", "at": "E:/dis/disk"},
 {"from": "src-library/file/", "at": "E:/dis/file"},

@@ -13,6 +13,10 @@ public static class TargetFacts
     /// src-library/machine); a boot test reads both from page zero at the A&gt; prompt.</summary>
     public const int BiosBase = 0xD300, BdosEntry = 0xC506;
 
+    /// <summary>CP/M 3's BDOS entry on the extended HC2000 (doc link-layout v4 on hc2000-cpm3-system: the BDOS3 image at
+    /// B200, its dispatcher entry at B206, which page zero 6 holds after boot).</summary>
+    public const int BdosEntryCpm3 = 0xB206;
+
     /// <summary>The machine facts for one target, as <c>shared/targets/&lt;name&gt;/targets.inc</c> holds them, written
     /// from the same records the running machine answers with: the identity bank's ports and capability bits come from
     /// <see cref="IdentityRecord"/>, so a program built for a target and one that probes the bank at run time read the
@@ -39,7 +43,19 @@ public static class TargetFacts
         foreach (var each in LibraryTargets.All) Equ("TARGET_ID_" + each.Name.ToUpperInvariant().Replace('-', '_'), each.Id, each.Meaning);
         Equ("TARGET_ID", target.Id, $"this file's target, {target.Name}");
         Line();
-        if (target.Built)
+        if (!target.Built)
+        {
+            Line("; This target's memory facts are not built yet.");
+        }
+        else if (target.Name == "cpm3")
+        {
+            Line("; CP/M 3.0 as the HC2000 loads it (doc link-layout v3 on hc2000-cpm3-system:");
+            Line("; the BDOS3 image at B200, the BIOS jump table at D300). A program that");
+            Line("; must follow a relocated system reads (0x0001) and (0x0006) at run time instead.");
+            Equ("BIOS_BASE", BiosBase, "the BIOS jump table: (0x0001) - 3 after boot");
+            Equ("BDOS_ENTRY", BdosEntryCpm3, "the BDOS entry: (0x0006) after boot");
+        }
+        else
         {
             Line("; CP/M 2.2 as the HC2000 loads it (the extended BIOS keeps the jump table");
             Line("; where the supplied one has it). A program that must follow a relocated");
@@ -47,7 +63,6 @@ public static class TargetFacts
             Equ("BIOS_BASE", BiosBase, "the BIOS jump table: (0x0001) - 3 after boot");
             Equ("BDOS_ENTRY", BdosEntry, "the BDOS entry: (0x0006) after boot");
         }
-        else Line("; CP/M 3.0's memory facts come with the CP/M 3 work; nothing is built here yet.");
         Line();
         var bank = target.Id != 1;
         Line("; The identity bank (decision hc2000-machine-identity-bank-v1)");

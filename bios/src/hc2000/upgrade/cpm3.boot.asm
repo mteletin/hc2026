@@ -1,6 +1,6 @@
 ; Independent nonbanked resident BOOT block. Load at 7800h separately from
-; the D300h BIOS; the CCP must not overwrite 7000h-7fffh. Production image
-; builder integration and relocation of FE62h SCB references are still TODO.
+; the D300h BIOS; the CCP must not overwrite 7000h-7fffh. The system
+; builder relocates the operand marked below and includes this block.
 ; Cold device and drive initialization is not implemented here: unlike DRI's
 ; BIOSKRNL, this standalone block has no linked ?cinit/?init or XDPH init hooks.
 ; The caller must initialize the platform (including the console ROM) first.
@@ -18,6 +18,7 @@ Boot:
     LD (5),A
     LD HL,0xD303
     LD (1),HL
+ScbWord_Mxtpa:
     LD HL,(MXTPA)
     LD (6),HL
     ; Reset the complete FCB on every boot, including BDOS-updated fields.

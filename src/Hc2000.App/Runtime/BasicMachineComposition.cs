@@ -123,7 +123,8 @@ public static class BasicMachineComposition
         MachineProfile? adopt = null, string mainCpuTarget = "faithful")
     {
         ArgumentNullException.ThrowIfNull(images);
-        if (roms.Profile.Name != MachineProfile.Hc2000V2.Name && roms.Profile.Name != MachineProfile.Hc2000V2HddCbootV1.Name)
+        if (roms.Profile.Name != MachineProfile.Hc2000V2.Name && roms.Profile.Name != MachineProfile.Hc2000V2HddCbootV1.Name
+            && roms.Profile.Name != MachineProfile.Hc2000V2HddCpm3V1.Name)
             throw new ArgumentException("HDD cold configuration requires the whole-chip faithful v2 or C:-boot ROM map.", nameof(roms));
         if (cpuTurbo != 1)
             throw new ArgumentException(CapabilityCatalog.TurboNotAdmitted, nameof(cpuTurbo));
@@ -131,9 +132,13 @@ public static class BasicMachineComposition
         // successor) are the only identities selectable here; each stored name keeps its own identity. The C:-boot
         // ROM map (hc2000-direct-c-boot) adopts the C:-boot identity, whose disk policy is the guest-ACK wire the
         // boot loader speaks; the faithful map defaults to the raw HDD identity.
-        adopt ??= roms.Profile.Name == MachineProfile.Hc2000V2HddCbootV1.Name
-            ? MachineProfile.Hc2000V2HddCbootV1 : MachineProfile.Hc2000V2HddV1;
-        if (adopt.Name is not ("hc2000-v2-hdd-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2"
+        var cpm3Name = MachineProfile.Hc2000V2HddCpm3V1.Name;
+        adopt ??= roms.Profile.Name == cpm3Name ? MachineProfile.Hc2000V2HddCpm3V1
+            : roms.Profile.Name == MachineProfile.Hc2000V2HddCbootV1.Name
+                ? MachineProfile.Hc2000V2HddCbootV1 : MachineProfile.Hc2000V2HddV1;
+        if ((adopt.Name == cpm3Name) != (roms.Profile.Name == cpm3Name))
+            throw new ArgumentException("CP/M 3 requires its own C:-boot ROM map and identity.", nameof(adopt));
+        if (adopt.Name is not ("hc2000-v2-hdd-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-hdd-cpm3-v1" or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2"
             or "hc2000-v2-full-workstation-v1"))
             throw new ArgumentException("HDD cold configuration adopts the raw HDD or the combined workstation identity.", nameof(adopt));
         var owned = images.Select(image =>
@@ -929,7 +934,7 @@ public static class BasicMachineComposition
         // Only the opt-in C:-boot profile and the full workstation, which boots the same way, start at the CP/M ROM cold
         // entry. It is applied before the expansion frontier exists: the frontier driver prepares the main CPU's first
         // bus effect when it is composed, so a later PC would run the effect prepared for 0000.
-        if (profile.Name == MachineProfile.Hc2000V2HddCbootV1.Name || profile.Name == MachineProfile.Hc2000V2FullWorkstationV1.Name)
+        if (profile.Name is "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-hdd-cpm3-v1" or "hc2000-v2-full-workstation-v1")
             ApplyCpmColdEntry(cpu, memory);
         var frontier = expansionRoot is null ? null : new ExpansionFrontierDriver(scheduler, clock, mapper, expansionRoot, memory, ports, cpu);
         if (frontier is not null) { frontier.X0 = x0; frontier.X2 = x2; frontier.X3 = x3; frontier.X4 = x4; frontier.Arena = expansionArena; }

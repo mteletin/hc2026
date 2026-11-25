@@ -1,6 +1,6 @@
 ; Experimental nonbanked CP/M 3 BIOS fragment; system integration still required.
 ; D300h is a provisional test origin; no loader or SPR is supplied.
-; TODO: production builder must also load cpm3.boot.asm at 7800h.
+; The system builder includes cpm3.boot.asm at 7800h.
 ; Console requires the HC2000 CP/M ROM mapped at E000h and initialized by
 ; its E000h entry. It uses RAM at DB00h/DF00h and changes interrupt state.
 INCLUDE "time/time.inc"

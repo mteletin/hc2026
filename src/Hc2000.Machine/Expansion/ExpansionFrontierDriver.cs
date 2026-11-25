@@ -116,6 +116,42 @@ public sealed partial class ExpansionFrontierDriver
                 scheduler.Generation(FirstCpuDeviceId + id), DueTime: exact));
         }
     }
+    /// <summary>One bus effect of side unit <paramref name="id"/> at <paramref name="dueTick"/>: performed, committed, its
+    /// lifecycle change raised on the row (compute units), acknowledged. False when a map denial left it uncommitted.</summary>
+    private bool DispatchUnitEffect(ushort id, ExpansionComputeUnit unit, long dueTick)
+    {
+        var effect = unit.PeekNextFrontier();
+        var view = unitPorts[id] ?? throw new InvalidOperationException("Missing current unit port binding.");
+        var value = (byte)0; var commit = true;
+        if (effect.Kind is FrontierEffectKind.M1Read or FrontierEffectKind.MemoryRead)
+            commit = UnitRead(unit, effect.Address, effect.Kind == FrontierEffectKind.M1Read, out value);
+        else if (effect.Kind == FrontierEffectKind.PortRead) value = view.Read(effect.Address, dueTick);
+        else if (effect.Kind == FrontierEffectKind.InterruptAck) value = PortDecoder.IntVector();
+        if (effect.Kind == FrontierEffectKind.MemoryWrite && !UnitWrite(unit, effect.Address, effect.WriteValue)) commit = false;
+        if (effect.Kind == FrontierEffectKind.PortWrite) view.Write(effect.Address, effect.WriteValue, dueTick);
+        // A map denial faults the driver at its uncommitted effect (no bus effect, no value).
+        if (!commit) return false;
+        var before = unit.Lifecycle;
+        unit.CommitFrontier(value, dueTick);
+        // 7F9D reports compute unit lifecycle transitions only; driver IDs 17-24 are not
+        // representable in the row interrupt contract and their lifecycle remains internal.
+        if (id <= ExpansionArena.ComputeCount && unit.Lifecycle != before)
+        {
+            switch (unit.Lifecycle)
+            {
+                case ExpansionLifecycle.Halted:
+                case ExpansionLifecycle.ServiceIdle:
+                    controller.RowInterrupt?.Raise(ExpansionRowInterruptSource.UnitDone, unit.Id);
+                    break;
+                case ExpansionLifecycle.WaitingMailbox:
+                    controller.RowInterrupt?.Raise(ExpansionRowInterruptSource.UnitMailboxWait, unit.Id);
+                    break;
+            }
+        }
+        controller.AcknowledgeFrontier(id, dueTick);
+        return true;
+    }
+
     private void Cancel(ushort id)
     {
         if (tokens[id] == 0) return;
@@ -165,35 +201,17 @@ public sealed partial class ExpansionFrontierDriver
         {
             var unit = controller.GetUnit(id);
             if (!unit.Runnable || epochs[id] != unit.ExecutionEpoch) throw new InvalidOperationException("A stale unit event reached dispatch.");
-            var effect = unit.PeekNextFrontier();
-            var view = unitPorts[id] ?? throw new InvalidOperationException("Missing current unit port binding.");
-            var value = (byte)0; var commit = true;
-            if (effect.Kind is FrontierEffectKind.M1Read or FrontierEffectKind.MemoryRead)
-                commit = UnitRead(unit, effect.Address, effect.Kind == FrontierEffectKind.M1Read, out value);
-            else if (effect.Kind == FrontierEffectKind.PortRead) value = view.Read(effect.Address, item.DueTick);
-            else if (effect.Kind == FrontierEffectKind.InterruptAck) value = PortDecoder.IntVector();
-            if (effect.Kind == FrontierEffectKind.MemoryWrite && !UnitWrite(unit, effect.Address, effect.WriteValue)) commit = false;
-            if (effect.Kind == FrontierEffectKind.PortWrite) view.Write(effect.Address, effect.WriteValue, item.DueTick);
-            // A map denial faults the driver at its uncommitted effect (no bus effect, no value).
-            if (!commit) return;
-            var before = unit.Lifecycle;
-            unit.CommitFrontier(value, item.DueTick);
-            // 7F9D reports compute unit lifecycle transitions only; driver IDs 17-24 are not
-            // representable in the row interrupt contract and their lifecycle remains internal.
-            if (id <= ExpansionArena.ComputeCount && unit.Lifecycle != before)
+            // A unit faster than the master tick (28 and 280 MHz: 0.625 and 0.0625 ticks a T-state) has several bus
+            // effects inside one tick. They share the tick (NextMasterTick's ceiling boundary), so they are committed here,
+            // in order, until the unit's next effect is strictly future or it stops; scheduling one of them at the current
+            // tick is refused (Synchronize), which crashed every frame of a 28 MHz unit. Slower units never take a second
+            // turn: at 14 MHz and below consecutive effects are more than one tick apart.
+            var epoch = unit.ExecutionEpoch;
+            do
             {
-                switch (unit.Lifecycle)
-                {
-                    case ExpansionLifecycle.Halted:
-                    case ExpansionLifecycle.ServiceIdle:
-                        controller.RowInterrupt?.Raise(ExpansionRowInterruptSource.UnitDone, unit.Id);
-                        break;
-                    case ExpansionLifecycle.WaitingMailbox:
-                        controller.RowInterrupt?.Raise(ExpansionRowInterruptSource.UnitMailboxWait, unit.Id);
-                        break;
-                }
+                if (!DispatchUnitEffect(id, unit, item.DueTick)) return;
             }
-            controller.AcknowledgeFrontier(id, item.DueTick);
+            while (unit.Runnable && unit.ExecutionEpoch == epoch && unit.NextMasterTick == item.DueTick);
         }
         Synchronize();
     }

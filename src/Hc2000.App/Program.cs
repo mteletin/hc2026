@@ -639,12 +639,13 @@ public partial class MainWindow : Window
         try
         {
             var assetRoot = assetRootOverride ?? ProfileRomSelection.DefaultAssetRoot();
-            // The C:-boot machine (hc2000-direct-c-boot) and the full workstation load the whole-chip dump carrying its
-            // direct-C:-boot CP/M upper ROM; every other machine loads the canonical chip.
             var startProfile = session.StartingConfiguration?.Profile;
-            var roms = await Task.Run(() => startProfile is "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-full-workstation-v1"
-                ? ProfileRomSelection.LoadWholeChipCbootV1(assetRoot)
-                : ProfileRomSelection.LoadWholeChipV2(assetRoot));
+            var roms = await Task.Run(() => startProfile switch
+            {
+                "hc2000-v2-hdd-cpm3-v1" => ProfileRomSelection.LoadCpm3V1(assetRoot),
+                "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-full-workstation-v1" => ProfileRomSelection.LoadWholeChipCbootV1(assetRoot),
+                _ => ProfileRomSelection.LoadWholeChipV2(assetRoot)
+            });
             if (closing || session.Closed || session.Worker is not null || session.ReplacingRuntime || generation != session.RuntimeGeneration) { NoteStartSkipped(session, "the session changed while the ROM map was loading"); return; }
             var disks = session.StartingConfiguration is { } configuration
                 ? await Configuration.PrestartMedia.ReadAsync(configuration, session.ClaimHeldConfiguredStart(configuration)) : [];

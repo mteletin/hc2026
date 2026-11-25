@@ -20,3 +20,6 @@ disks/host/** -text
 
 # Compiled guest assets are checksum-pinned, including their receipts.
 build/guest-payload/** -text
+
+# DRI CP/M 3 system originals: byte-exact, never normalized
+disks/cpm3/** -text

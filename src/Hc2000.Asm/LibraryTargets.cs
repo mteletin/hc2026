@@ -17,7 +17,7 @@ public static class LibraryTargets
     [
         new("hc2000-v1", 1, "original", "the original HC2000: the faithful ROM and CP/M 2.2 as it ships", Built: true),
         new("hc2000-v2", 2, "extended-cpm22", "the extended HC2000 under CP/M 2.2", Built: true),
-        new("cpm3", 3, "cpm3", "the extended HC2000 under CP/M 3.0, declared and built once CP/M 3 lands", Built: false),
+        new("cpm3", 3, "cpm3", "the extended HC2000 under CP/M 3.0", Built: true),
     ];
 
     /// <summary>The target by its command-line name or its manifest name, ignoring case; null for anything else.</summary>

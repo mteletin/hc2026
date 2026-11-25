@@ -322,6 +322,10 @@ public sealed class CpmFs
         }
         return output.ToArray();
     }
+    /// <summary>Checks a name against this profile's directory encoding without writing. A caller that
+    /// plans a transfer uses it so a preview refuses exactly the names its write step would refuse.</summary>
+    public void ValidateName(string name) => EncodeName(name);
+
     private byte[] EncodeName(string name)
     {
         if (Parameters.HcHeader)

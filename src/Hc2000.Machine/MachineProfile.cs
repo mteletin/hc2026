@@ -134,6 +134,13 @@ public sealed record MachineProfile
         BlockDisk = BlockDiskPolicy.HddGuestV1,
         RomRegions = V2CbootRegions
     };
+    public static MachineProfile Hc2000V2HddCpm3V1 => new()
+    {
+        Name = "hc2000-v2-hdd-cpm3-v1",
+        BlockDisk = BlockDiskPolicy.HddGuestV1,
+        RomRegions = [V2Regions[0], V2Regions[1] with { SourcePath = "roms/hc2000/v2/cpm-hc2kzip-cpm3cboot-v1.bin" },
+            V2Regions[2], V2Regions[3]]
+    };
     public static MachineProfile Hc2000V2TapeControlV1 => new()
     {
         Name = "hc2000-v2-tape-control-v1",
@@ -353,7 +360,7 @@ public sealed record MachineProfile
             ValidateBlockportUpgrade();
             return;
         }
-        if (Name == "hc2000-v2-hdd-cboot-v1")
+        if (Name is "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-hdd-cpm3-v1")
         {
             ValidateCbootUpgrade();
             return;
@@ -438,7 +445,7 @@ public sealed record MachineProfile
             Video.FlashPeriodDenominator != canonicalVideo.FlashPeriodDenominator ||
             !Video.Palette.SequenceEqual(canonicalVideo.Palette))
             throw new ArgumentException("C:-boot must preserve the canonical v2 video policy.", nameof(Video));
-        if (!RomRegions.SequenceEqual(V2CbootRegions))
+        if (!RomRegions.SequenceEqual(Name == "hc2000-v2-hdd-cpm3-v1" ? Hc2000V2HddCpm3V1.RomRegions : V2CbootRegions))
             throw new ArgumentException("C:-boot reuses the canonical v2 regions with only the CpmUpper substitution; no other change or padding.", nameof(RomRegions));
     }
 

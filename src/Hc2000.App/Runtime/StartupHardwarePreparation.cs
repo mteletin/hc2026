@@ -18,13 +18,20 @@ public static class StartupHardwarePreparation
         cancellation.ThrowIfCancellationRequested();
         configuration.ValidateEffective();
         verifiedRoms.Profile.Validate();
+        const string cpm3 = "hc2000-v2-hdd-cpm3-v1";
+        if ((configuration.Profile == cpm3) != (verifiedRoms.Profile.Name == cpm3))
+            throw new ArgumentException("The CP/M 3 profile requires its matching ROM map.", nameof(verifiedRoms));
         if (verifiedRoms.Profile.Name != MachineProfile.Hc2000V2.Name
             && verifiedRoms.Profile.Name != MachineProfile.Hc2000V2HddCbootV1.Name
+            && verifiedRoms.Profile.Name != cpm3
             || verifiedRoms.Basic.Length != 0x4000 || verifiedRoms.Cpm.Length != 0x4000 || verifiedRoms.If1.Length != 0x4000)
             throw new ArgumentException("Cold Start requires the verified whole-chip v2 ROM map.", nameof(verifiedRoms));
+        if (configuration.Profile == cpm3 && (!configuration.Hdd.Any(h => h.Slot == "C")
+            || configuration.Hdd.Any(h => h.Volume is not null)))
+            throw new IOException("CP/M 3 requires a prepared raw 8 MiB C: image and cannot use named volumes.");
         var x5Hdd = configuration.Profile == "hc2000-v2-paged-expansion-x5-hdd-guest-v1";
         var fullWorkstation = configuration.Profile == "hc2000-v2-full-workstation-v1";
-        if (configuration.Profile is not ("hc2000-v2-hdd-v1" or "hc2000-v2-hdd-cboot-v1" or "hc2000-v2-combined-workstation-v1"
+        if (configuration.Profile is not ("hc2000-v2-hdd-v1" or "hc2000-v2-hdd-cboot-v1" or cpm3 or "hc2000-v2-combined-workstation-v1"
                 or "hc2000-v2-combined-workstation-v2") && !x5Hdd && !fullWorkstation)
             return BasicMachineComposition.PrepareRamWholeChipV2(verifiedRoms, configuration.Profile, configuration.TextOverlay,
                 configuration.CpuTurboMultiplier, configuration.ExpansionDriverCount, configuration.X2Vga, configuration.X3Sound, configuration.X4Math,
@@ -87,6 +94,7 @@ public static class StartupHardwarePreparation
             }
             // Existing raw cold route: exact-size private bytes, never a named-container flattening,
             // writable host binding or live attach. Guest protection is retained independently.
+            // The CP/M 3 ROM checks the C: boot payload; the host filename does not identify its contents.
             var bytes = await HddFiles.ReadAsync(hdd.Path, cancellation);
             images.Add(new((byte)(hdd.Slot[0] - 'A'), bytes, Path.GetFileName(hdd.Path), hdd.WriteProtected));
         }

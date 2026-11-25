@@ -63,6 +63,7 @@ public static class BuildCommand
                 return 0;
             }
             int built = 0, skipped = 0;
+            byte[]? cpm3Bdos = null;
             foreach (var recipe in recipes)
             {
                 var result = Build(root, recipe, target);
@@ -70,11 +71,24 @@ public static class BuildCommand
                 if (result.Failed) return 1;
                 if (result.Bytes is null) { skipped++; continue; }
                 built++;
+                if (target.Name == "cpm3" && recipe is { Category: "cpm3", Name: "bdos3" })
+                    cpm3Bdos = result.Bytes;
                 if (outDirectory is not null)
                 {
                     var file = System.IO.Path.Combine(outDirectory, target.Name, recipe.Category, recipe.Name + ".bin");
                     Directory.CreateDirectory(System.IO.Path.GetDirectoryName(file)!);
                     File.WriteAllBytes(file, result.Bytes);
+                }
+            }
+            if (cpm3Bdos is not null)
+            {
+                var image = Cpm3SystemBuilder.Build(Path.GetFullPath(Path.Combine(root, "..")), cpm3Bdos);
+                output.WriteLine($"cpm3 system: {image.Length} bytes, sha256 {Convert.ToHexStringLower(SHA256.HashData(image))}");
+                if (outDirectory is not null)
+                {
+                    var directory = Path.Combine(outDirectory, target.Name, "cpm3");
+                    Directory.CreateDirectory(directory);
+                    File.WriteAllBytes(Path.Combine(directory, Cpm3SystemBuilder.ImageFileName), image);
                 }
             }
             output.WriteLine($"{target.Name}: {built} built, {skipped} skipped (not declared for this target).");

@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "guestSourceCommit": "226a53166b4f15751780182c898a0f57239c5560",
-  "privateSourceSha256": "99930dac79bc020e8028919c155bb891df105c362836a5cbcedc4eaee66bc764",
+  "guestSourceCommit": "cdd7d753040c7ce443fc8b4c3be20ab4a2e73acd",
+  "privateSourceSha256": "0c4a5f8371bb74c79c261f82a09353188157851718a301f7501bb5c4b7782acd",
   "groups": {
     "utilities": [
       {
@@ -157,7 +157,7 @@
       {
         "path": "utilities-manifest.json",
         "bytes": 20489,
-        "sha256": "923637af2262bc651090dcd26232054e5a7dd5e35c67a1253ff8622686e2fc0e"
+        "sha256": "03020af925de9fc1bce448cff8b77aeaa3516b97ae936b11308fd373671695a3"
       }
     ],
     "cpnet": [
@@ -176,7 +176,7 @@
       {
         "path": "workstation-manifest.json",
         "bytes": 927,
-        "sha256": "164e782225f4a3f3dbf2ca49f1989ab8fb3cac2043a63c1c90b3478825607184"
+        "sha256": "7b3699f9c343e43a32d2c9e06ed4bb7ef6567562a579edc428b129d46febb27b"
       }
     ]
   }

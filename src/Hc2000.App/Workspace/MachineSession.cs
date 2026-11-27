@@ -55,6 +55,9 @@ internal sealed class MachineSession
     public Hc2000.Machine.Video.PresentationMode PresentationMode { get; set; } = Hc2000.Machine.Video.PresentationMode.Faithful;
     public Task BasicReplacementCompletion { get; set; } = Task.CompletedTask;
     public bool BasicRuntimeActive { get; set; }
+    /// <summary>hc2000-speed-140-turbo-280: the Turbo state the user asked for and the machine has not taken yet (the
+    /// switch waits for a safe point); null once the machine's rate shows it. Never saved.</summary>
+    public bool? TurboRequested { get; set; }
     public bool ReplacingRuntime { get; set; }
     public int MediaPollTicks { get; set; }
     public MediaBridge? MediaBridge { get; set; }

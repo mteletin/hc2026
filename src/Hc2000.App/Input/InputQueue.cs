@@ -20,7 +20,7 @@ public sealed record KeyTransition : InputCommand
 public sealed record ReleaseAll : InputCommand;
 public enum InputControlKind { Pause, Resume, Step, Reset, Load, Shutdown, SetSpeed, SetMainCpuSpeed }
 public sealed record RuntimeControl(InputControlKind Kind, string? Path = null, int SpeedPercent = 100,
-    // hc2000-accelerated-clock-domains: the MainCpuSpeed ordinal (0 faithful .. 4 MHz280) for a live
+    // hc2000-accelerated-clock-domains: the MainCpuSpeed ordinal (0 faithful .. 4 MHz280, 5 MHz140) for a live
     // main-CPU clock switch at the next safe boundary; -1 unless the kind is SetMainCpuSpeed.
     int MainCpuSpeedIndex = -1) : InputCommand;
 
@@ -111,7 +111,7 @@ public sealed class InputQueue
             throw new ArgumentException("Unknown input command.", nameof(command));
         if (command is RuntimeControl control && (!Enum.IsDefined(control.Kind)
             || control.Kind == InputControlKind.SetSpeed && control.SpeedPercent is not (0 or 100 or 200 or 400)
-            || (control.Kind == InputControlKind.SetMainCpuSpeed) != (control.MainCpuSpeedIndex is >= 0 and <= 4)))
+            || (control.Kind == InputControlKind.SetMainCpuSpeed) != (control.MainCpuSpeedIndex is >= 0 and <= 5)))
             throw new ArgumentOutOfRangeException(nameof(command));
         if (command is Media.MediaCommand media && (!Enum.IsDefined(media.Action) || !Enum.IsDefined(media.Slot)
             || media.Action == Media.MediaAction.InsertDisk && (media.Bytes.IsDefaultOrEmpty || media.Bytes.Length > Media.MediaFiles.MaxDiskBytes)))

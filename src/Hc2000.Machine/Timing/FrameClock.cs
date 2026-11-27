@@ -41,8 +41,11 @@ public sealed class FrameClock
             Timing.FirstPixelTick % FrameTiming.LineTicks + 640 > FrameTiming.LineTicks)
             throw new ArgumentOutOfRangeException(nameof(timing));
         scheduler.RegisterDevice(deviceId, Dispatch);
-        // Epoch-zero outputs are synchronous (INT false, blanked first line); no zero-time enqueue.
-        Enqueue(FrameTiming.CharacterTicks, EventPhase.Video, Sample);
+        liveGeneration = scheduler.Generation(deviceId);
+        // Epoch-zero outputs are synchronous (INT false, blanked first line); no zero-time enqueue. The per-character video
+        // samples are not events any more: RenderTo takes each one, in its place in the machine's order, just before the
+        // first event that comes after it (hc2000-fast-emulation; 17,784 events a frame saved).
+        scheduler.CatchUp = RenderTo;
         Enqueue(Timing.IntStartTick, EventPhase.SignalEdge, IntOn);
         Enqueue(checked(Timing.IntStartTick + Timing.IntWidthTicks), EventPhase.SignalEdge, IntOff);
         Enqueue(FrameTiming.FrameTicks, EventPhase.Frame, Publish);
@@ -55,6 +58,30 @@ public sealed class FrameClock
         ArgumentOutOfRangeException.ThrowIfNegative(completedFrames);
         CompletedFrames = completedFrames;
         IntAsserted = intAsserted;
+        // Every sample at or before the restored time was taken when the snapshot was captured.
+        nextSample = checked((scheduler.Now / FrameTiming.CharacterTicks + 1) * FrameTiming.CharacterTicks);
+    }
+
+    // The tick of the next video sample not yet taken (samples fall every CharacterTicks from CharacterTicks on).
+    private long nextSample = FrameTiming.CharacterTicks;
+
+    // The device generation the clock's events carry. Invalidating the device silences the clock: its events lapse, and
+    // so do its samples, as they did when each sample was an event (a test that stops the video and then advances the
+    // scheduler to a far time would otherwise render every sample on the way).
+    private readonly long liveGeneration;
+
+    /// <summary>Takes every video sample that comes before an event at <paramref name="time"/> in phase
+    /// <paramref name="phase"/>: a sample shares its tick with events of later phases (Frame, Cpu), which it precedes, and
+    /// follows the earlier ones (input, signal edges, controller). So the raster sees each change exactly when the
+    /// per-character event did. Also called before a state change made outside an event (a ULA port write).</summary>
+    public void RenderTo(LogicalTime time, EventPhase phase)
+    {
+        var limit = time.WholeTicks;
+        if (time.IsInteger && phase <= EventPhase.Video) limit--;
+        if (limit < nextSample || scheduler.Generation(deviceId) != liveGeneration) return;
+        if (VideoSample is { } sample)
+            for (var tick = nextSample; tick <= limit; tick += FrameTiming.CharacterTicks) sample(tick, PositionAt(tick));
+        nextSample = checked(nextSample + ((limit - nextSample) / FrameTiming.CharacterTicks + 1) * FrameTiming.CharacterTicks);
     }
 
     public VideoPosition PositionAt(long tick)
@@ -76,8 +103,7 @@ public sealed class FrameClock
         switch (item.Kind)
         {
             case Sample:
-                Enqueue(checked(item.DueTick + FrameTiming.CharacterTicks), EventPhase.Video, Sample);
-                VideoSample?.Invoke(item.DueTick, PositionAt(item.DueTick));
+                // An older snapshot's queued sample: RenderTo takes the samples now, so the event only lapses.
                 break;
             case IntOn:
             case IntOff:

@@ -9,19 +9,22 @@ public sealed record AppSettings
     public string Theme { get; init; } = "Dark";
     public string Profile { get; init; } = "hc2000-v2";
     // hc2000-accelerated-clock-domains: the user's main-Z80 clock choice (owner decision #317).
-    // "faithful" (the default, keeping legacy behaviour) or a 7/14/28/280 MHz target, as
-    // MainCpuSpeedInfo.Setting strings; validated below. A distinct dimension from the legacy
-    // cpu.turbo multiplier: the two are never combined. Stored via the shadow JSON property,
-    // omitted while faithful, exactly like the machine drafts (old files keep their shape).
+    // "auto" (the default since hc2000-speed-140-turbo-280: 140 MHz on the machines that start CP/M, faithful on Classic
+    // and the BASIC expansion machines),
+    // "faithful", or a 7/14/28/140/280 MHz target, as MainCpuSpeedInfo.Setting strings; validated below. A distinct
+    // dimension from the legacy cpu.turbo multiplier: the two are never combined. Stored via the shadow JSON property,
+    // omitted while auto, exactly like the machine drafts.
     [JsonIgnore]
-    public string MainCpuTarget { get; init; } = "faithful";
+    public string MainCpuTarget { get; init; } = Hc2000.Machine.MainCpuSpeedInfo.Auto;
 
-    /// <summary>JSON shadow for <see cref="MainCpuTarget"/>: old files without the key default to faithful.</summary>
+    /// <summary>JSON shadow for <see cref="MainCpuTarget"/>: omitted while auto, so files without the key (old ones
+    /// included, which left faithful out) read as auto; an explicit faithful is written and kept
+    /// (hc2000-speed-140-turbo-280).</summary>
     [JsonPropertyName("mainCpuTarget")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? MainCpuTargetJson
     {
-        get => MainCpuTarget == "faithful" ? null : MainCpuTarget;
+        get => Hc2000.Machine.MainCpuSpeedInfo.IsAuto(MainCpuTarget) ? null : MainCpuTarget;
         init { if (value is { } target) MainCpuTarget = target; }
     }
     public string RomSet { get; init; } = "roms/hc2000/eprom-dump-hc2k-2";
@@ -63,7 +66,7 @@ public sealed record AppSettings
         if (string.IsNullOrWhiteSpace(Profile) || string.IsNullOrWhiteSpace(RomSet)
             || string.IsNullOrWhiteSpace(AudioPreference))
             throw new ArgumentException("Profile, ROM set and audio preference must not be empty.");
-        Hc2000.Machine.MainCpuSpeedInfo.ParseSetting(MainCpuTarget); // refuses an unadmitted main CPU clock choice.
+        Hc2000.Machine.MainCpuSpeedInfo.ValidateSetting(MainCpuTarget); // refuses an unadmitted main CPU clock choice.
         if (SpeedPercent is not (0 or 100 or 200 or 400))
             throw new ArgumentException("Speed must be 100, 200, 400 or 0 (unlimited).");
         if (Scale < 0)

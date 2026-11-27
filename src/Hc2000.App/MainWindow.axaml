@@ -251,7 +251,7 @@
     </Grid>
 
     <!-- F5: one-line status bar - the machine state left, the selected machine name right. -->
-    <Grid Name="StatusBar" Grid.Row="2" Classes="statusBar" ColumnDefinitions="*,2*,Auto,Auto">
+    <Grid Name="StatusBar" Grid.Row="2" Classes="statusBar" ColumnDefinitions="*,2*,Auto,Auto,Auto,Auto">
       <TextBlock Name="StatusLine" Grid.Column="0" Classes="caption" Text="Set up this machine, then start it." VerticalAlignment="Center" Margin="8,2"
                  TextWrapping="NoWrap" MaxLines="1" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
       <!-- hc2000-accelerated-clock-domains: the honest main-CPU rate line (requested choice, achieved T/s
@@ -261,9 +261,16 @@
                  TextWrapping="NoWrap" MaxLines="1" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
       <!-- hc2000-ssh-terminal: the selected machine's X6 network gateway, always in view while it runs with the card
            (the owner could not find the panel's switch, manual test #22). One click switches it. -->
-      <ToggleButton Name="X6GatewayStatus" Grid.Column="2" IsVisible="False" Margin="4,1" Padding="8,1"
+      <!-- hc2000-speed-140-turbo-280: Turbo takes the running extended machine to 280 MHz and back to its chosen speed. -->
+      <!-- hc2000-speed-140-turbo-280: the boot check's recommendation, when it differs from the machine's chosen speed. -->
+      <Button Name="SpeedAdvice" Grid.Column="2" IsVisible="False" Margin="4,1" Padding="8,1" MinHeight="0"
+              VerticalAlignment="Center" VerticalContentAlignment="Center" FontSize="{Binding FontSize, ElementName=TurboToggle}"
+              AutomationProperties.Name="Recommended speed for this host"/>
+      <ToggleButton Name="TurboToggle" Grid.Column="3" IsVisible="False" Margin="4,1" Padding="8,1" Content="Turbo 280"
+                    AutomationProperties.Name="Turbo 280 MHz" ToolTip.Tip="Run this machine at 280 MHz, side Z80s too; click again for its chosen speed (Ctrl+Shift+T)"/>
+      <ToggleButton Name="X6GatewayStatus" Grid.Column="4" IsVisible="False" Margin="4,1" Padding="8,1"
                     AutomationProperties.Name="X6 network gateway" ToolTip.Tip="Switch this machine's X6 network gateway on or off (Ctrl+Shift+O)"/>
-      <TextBlock Name="SelectedMachineName" Grid.Column="3" Classes="caption" Text="HC2000" VerticalAlignment="Center" Margin="8,2" MaxWidth="180"
+      <TextBlock Name="SelectedMachineName" Grid.Column="5" Classes="caption" Text="HC2000" VerticalAlignment="Center" Margin="8,2" MaxWidth="180"
                  TextWrapping="NoWrap" MaxLines="1" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
     </Grid>
   </Grid>

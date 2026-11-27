@@ -363,7 +363,9 @@ public sealed partial class ExpansionArena
         ram[physical] = value;
     }
 
-    private int Resolve(ExpansionPageGrant grant, ushort address)
+    internal byte[] Ram => ram;
+
+    internal int Resolve(ExpansionPageGrant grant, ushort address)
     {
         VerifyOwner();
         if (grant.UnitId is 0 or > ComputeCount + DriverCount || grants[grant.UnitId - 1] != grant)
@@ -394,6 +396,16 @@ public sealed class ExpansionMemoryLease
     }
     public byte Read(ushort address) => arena.Read(grant, address);
     public void Write(ushort address, byte value) => arena.Write(grant, address, value);
+
+    /// <summary>The arena array and the physical offset of each of the lease's four pages, checked once (owner thread,
+    /// current lease, pages still owned) for a compute-unit burst, which runs only while no page is lent and no exchange
+    /// is installed, so every per-access check would give the same answer (hc2000-fast-emulation).</summary>
+    internal (byte[] Ram, int[] Bases) Direct()
+    {
+        var bases = new int[4];
+        for (var slot = 0; slot < 4; slot++) bases[slot] = arena.Resolve(grant, (ushort)(slot << 14));
+        return (arena.Ram, bases);
+    }
     public byte[] Copy()
     {
         // Check before allocation as well as on every access; never lend the arena's array.

@@ -19,6 +19,23 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
     // The row's single interrupt source (design contract 2): the composition sets it unconditionally;
     // verbs 6/7 on 0x79fd enable/disable its line and the 7F9D read drains its status/ack queue.
     public ExpansionRowInterrupt? RowInterrupt { get; set; }
+
+    /// <summary>Called with the unit's id before an operation that reads or changes a unit's execution (the frontier
+    /// driver rolls back a burst that ran past the request's time).</summary>
+    internal Action<ushort>? BeforeUnitOperation { get; set; }
+
+    /// <summary>Called with the unit's id for every operation on a unit (the driver looks at that unit's bursts again).</summary>
+    internal Action<ushort>? UnitTouched { get; set; }
+
+    /// <summary>Whether nothing outside compute unit <paramref name="id"/> can see or change its memory or execution
+    /// now: no operation pending on it, no exchange installed, none of its pages lent to a card.</summary>
+    internal bool UnitIsolated(ushort id)
+    {
+        if (pendingId == id || arena.OwnsExchange(id)) return false;
+        var grant = arena.GetGrant(id);
+        for (var i = 0; i < 4; i++) if (arena.PageIsLent(grant.Pages[i])) return false;
+        return true;
+    }
     // The X0 DMA engine, for the loan operations' card and channel checks (design contract 1).
     internal ExpansionDma? Dma { get; set; }
     private readonly byte[] deviceOwners = new byte[256];
@@ -56,6 +73,22 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
         });
     }
     public CpuPortOrigin MainOrigin => new(0, 1, CpuPortRole.Main);
+    /// <summary>Sets every stable unit's clock to <paramref name="target"/>: the machine's own clock at composition
+    /// (hc2000-speed-140-turbo-280, the side Z80s follow the main by default). A running unit keeps its epoch's ratio,
+    /// as SET UNIT CLOCK does.</summary>
+    public void SetUnitClocks(MainCpuSpeed target)
+    {
+        if (!Enum.IsDefined(target)) throw new ArgumentOutOfRangeException(nameof(target));
+        foreach (var unit in units) if (unit.Stable) unit.SetClockTarget((byte)target);
+    }
+
+    /// <summary>The machine's clock moved (a live switch, Turbo): every unit still on <paramref name="from"/> follows to
+    /// <paramref name="to"/>, at once when stable, else at its next fresh epoch (see ExpansionComputeUnit.FollowClock).</summary>
+    public void FollowMachineClock(MainCpuSpeed from, MainCpuSpeed to)
+    {
+        foreach (var unit in units) unit.FollowClock(from, to);
+    }
+
     public ExpansionComputeUnit GetUnit(ushort id)
     {
         VerifyOwner();
@@ -174,11 +207,16 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
         if (latched == 0 && op is not (1 or 14 or 16)) { Emit(ExpansionResult.DeniedOrigin); return; }
         var data = staging.AsSpan(HeaderBytes, stagingCount - HeaderBytes);
         if (!ValidPayload(op, data)) { Emit(ExpansionResult.InvalidFrame); return; }
+        // A unit running a burst may be ahead of this request: every operation that reads or changes its execution
+        // first puts it back where the machine's order has it (hc2000-fast-emulation). QUERY reads nothing a burst
+        // changes; MAIL SEND and MAIL ACK touch only the mailbox, which a burst never reads.
+        if (unit is not null) UnitTouched?.Invoke(latched);
+        if (unit is not null && op is not (1 or 11 or 13)) BeforeUnitOperation?.Invoke(latched);
         if (op == 1) { Emit(ExpansionResult.Accepted, Query()); return; }
         if (op is 14 or 16) { MapOp(op, data); return; }
         if (op == 15) { Handoff(data); return; }
         if (unit is null) throw new InvalidOperationException("Missing admitted compute.");
-        if (tick < unit.LastMasterTick) { Emit(ExpansionResult.InvalidState); return; }
+        if (tick < (op is 11 or 13 ? unit.OrderedLastMasterTick : unit.LastMasterTick)) { Emit(ExpansionResult.InvalidState); return; }
         if (op is 2 or 3 or 4 or 10 && unit.ExecutionEpoch == ulong.MaxValue)
         { Emit(ExpansionResult.ResourceLimit); return; }
         if (op is 2 or 10 && !OwnedCardsQuiescent(latched))
@@ -286,7 +324,7 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
             }
             case 19:
             {
-                // SET UNIT CLOCK (design contract 4): payload byte 0-4 = the MainCpuSpeed target.
+                // SET UNIT CLOCK (design contract 4): payload byte = the MainCpuSpeed target (0-4, 5 = 140 MHz).
                 // Stable units only: a running unit keeps its epoch's ratio until its next rebase.
                 if (!unit.Stable) { Emit(ExpansionResult.InvalidState); return; }
                 unit.SetClockTarget(data[0]);
@@ -418,7 +456,7 @@ public sealed partial class ExpansionController : IOriginPortDevice, IPortOrigin
                 return true;
             case 15: return data.Length == 6;
             case 17: case 18: return data.Length == 4; // LEND/UNLEND: u16 cardId + u16 page.
-            case 19: return data.Length == 1 && data[0] <= 4; // SET UNIT CLOCK: MainCpuSpeed 0-4.
+            case 19: return data.Length == 1 && Enum.IsDefined((MainCpuSpeed)data[0]); // SET UNIT CLOCK: a MainCpuSpeed (0-5).
             default: return true; // Unknown operation gets Unsupported, not a guessed payload interpretation.
         }
     }

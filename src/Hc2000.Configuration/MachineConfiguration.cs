@@ -31,20 +31,23 @@ public sealed record MachineConfiguration
     }
 
     /// <summary>
-    /// The user's main-Z80 clock choice (hc2000-accelerated-clock-domains): <c>faithful</c> (default on
-    /// new installations) or <c>7MHz</c>/<c>14MHz</c>/<c>28MHz</c>/<c>280MHz</c> targets. A distinct dimension
+    /// The user's main-Z80 clock choice (hc2000-accelerated-clock-domains): <c>auto</c> (the default since
+    /// hc2000-speed-140-turbo-280: 140 MHz on the machines that start CP/M, faithful on Classic and the BASIC expansion machines), <c>faithful</c>, or
+    /// <c>7MHz</c>/<c>14MHz</c>/<c>28MHz</c>/<c>140MHz</c>/<c>280MHz</c> targets. A distinct dimension
     /// from <see cref="CpuTurboMultiplier"/>: the two are never combined. Stored via the shadow JSON property,
-    /// omitted when faithful, so old files keep their legacy behaviour exactly.
+    /// omitted while auto.
     /// </summary>
     [JsonIgnore]
-    public string MainCpuTarget { get; init; } = "faithful";
+    public string MainCpuTarget { get; init; } = Hc2000.Machine.MainCpuSpeedInfo.Auto;
 
-    /// <summary>JSON shadow for <see cref="MainCpuTarget"/>: old files without the key default to faithful.</summary>
+    /// <summary>JSON shadow for <see cref="MainCpuTarget"/>: omitted while auto, so files without the key (old ones
+    /// included, which left faithful out) read as auto; an explicit faithful is written and kept
+    /// (hc2000-speed-140-turbo-280).</summary>
     [JsonPropertyName("mainCpuTarget")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? MainCpuTargetJson
     {
-        get => MainCpuTarget == "faithful" ? null : MainCpuTarget;
+        get => Hc2000.Machine.MainCpuSpeedInfo.IsAuto(MainCpuTarget) ? null : MainCpuTarget;
         init { if (value is { } target) MainCpuTarget = target; }
     }
 

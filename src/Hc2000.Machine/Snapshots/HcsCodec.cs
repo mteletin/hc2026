@@ -152,6 +152,31 @@ public static class HcsCodec
     public static HcsDocument Read(Stream source, HcsSchema schema, HcsLimits? limits = null) =>
         ReadCore(source, schema, limits, false);
 
+    /// <summary>The main CPU clock a machine document was saved at - its clock divider, master ticks per T-state - read
+    /// from the manifest alone, so a host can compose the machine that loads it at that speed (hc2000-speed-140-turbo-280:
+    /// a snapshot saved with Turbo on, or at an older default, keeps its speed). Null when the bytes are not such a
+    /// document; the load itself still validates everything.</summary>
+    public static (long Numerator, long Denominator)? PeekClockDivider(ReadOnlySpan<byte> file)
+    {
+        if (file.Length < 32 || !file[..8].SequenceEqual(Magic)) return null;
+        var manifestLength = BinaryPrimitives.ReadUInt32LittleEndian(file[24..]);
+        if (manifestLength == 0 || manifestLength > 64L * 1024 * 1024 || 32L + manifestLength > file.Length) return null;
+        try
+        {
+            using var manifest = JsonDocument.Parse(file.Slice(32, (int)manifestLength).ToArray());
+            if (!manifest.RootElement.TryGetProperty("clock", out var clock)) return null;
+            static long Read(JsonElement c, string key) => c.GetProperty(key) is var v && v.ValueKind == JsonValueKind.String
+                ? long.Parse(v.GetString()!, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture)
+                : v.GetInt64();
+            var numerator = Read(clock, "dividerNumerator"); var denominator = Read(clock, "dividerDenominator");
+            return numerator > 0 && denominator > 0 ? (numerator, denominator) : null;
+        }
+        catch (Exception e) when (e is JsonException or KeyNotFoundException or FormatException or OverflowException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
     // The machine consumes this document before returning; no deferred source escapes the load.
     internal static HcsDocument ReadForLoad(Stream source, HcsSchema schema, HcsLimits limits) =>
         ReadCore(source, schema, limits, true);

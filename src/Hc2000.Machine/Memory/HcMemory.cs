@@ -224,6 +224,26 @@ public sealed partial class HcMemory : IDisposable
         Update(value);
     }
 
+    /// <summary>The array behind 8 KB page <paramref name="page"/> of the CPU's view as the latches stand, when the whole
+    /// page maps linearly onto one store (no IF1 chip-select window) and a write there is a plain store (no claimed paged
+    /// byte): address a reads array[offset + (a &amp; mask)]. The relaxed main quantum reads and writes through it; it is
+    /// valid until the latches change (ports, IF1 trap fetches), which no quantum does.</summary>
+    internal bool TryDirectPage(int page, out byte[] array, out int offset, out int mask, out bool writable)
+    {
+        var p = Pages[page];
+        var m = p.Mapping;
+        array = Store(m.Store); offset = m.Offset; mask = m.AddressMask; writable = m.Writable;
+        if (p.Subwindows.Count != 0) return false;
+        if (writable && m.Store == MemoryStore.Ram)
+            foreach (var c in pagedClaims)
+            {
+                var first = 0x10000 + c.Range.FirstPage * PagedRamPolicy.PageBytes;
+                var end = first + c.Range.PageCount * PagedRamPolicy.PageBytes;
+                if (offset < end && first <= offset + mask) return false;
+            }
+        return true;
+    }
+
     private byte[] Store(MemoryStore store) => store switch
     {
         MemoryStore.Ram => ram,

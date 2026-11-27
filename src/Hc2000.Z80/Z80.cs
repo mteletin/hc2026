@@ -6,11 +6,12 @@ namespace Hc2000.Z80;
 /// </summary>
 public sealed partial class Z80
 {
-    private readonly IBus bus;
-    private readonly IM1FetchBus? m1Bus;
-    private readonly byte[]? fastMemory;
+    // Not readonly: SwapBus points the core at another bus between instructions (Z80.Quantum.cs).
+    private IBus bus;
+    private IM1FetchBus? m1Bus;
+    private byte[]? fastMemory;
     private readonly FastTimer fastTimer;
-    private readonly bool fastNoContend;
+    private bool fastNoContend;
     private bool nmiPending;
     private readonly Opcodes opcodes = new();
 
@@ -26,7 +27,7 @@ public sealed partial class Z80
         m1Bus = bus as IM1FetchBus;
         var arrayBus = bus as IArrayBus;
         fastMemory = arrayBus?.Memory;
-        fastNoContend = arrayBus is { Contends: false };
+        fastNoContend = arrayBus is { Contends: false } || bus is IUncontendedBus;
         fastTimer = new FastTimer();
         Reset();
     }

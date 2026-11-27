@@ -165,16 +165,20 @@ internal sealed class ExpansionX2Surface
         return true;
     }
 
-    public bool DrawGlyph(int x, int y, uint rows, byte foreground, byte background)
+    /// <summary>A 4 x 8 glyph (row r in bits 4r..4r+3, the leftmost pixel bit 3) at x, y, each of its pixels drawn
+    /// <paramref name="scaleX"/> wide and <paramref name="scaleY"/> high.</summary>
+    public bool DrawGlyph(int x, int y, uint rows, byte foreground, byte background, int scaleX = 1, int scaleY = 1)
     {
-        if (!ValidRectangle(x, y, 4, 8)) return false;
+        if (scaleX is < 1 or > 4 || scaleY is < 1 or > 4 || !ValidRectangle(x, y, 4 * scaleX, 8 * scaleY)) return false;
         for (var row = 0; row < 8; row++)
         {
             var bits = (rows >> (row * 4)) & 0xf;
             for (var column = 0; column < 4; column++)
             {
                 var colour = (bits & (8u >> column)) != 0 ? foreground : background;
-                SetPixel(x + column, y + row, colour);
+                for (var dy = 0; dy < scaleY; dy++)
+                for (var dx = 0; dx < scaleX; dx++)
+                    SetPixel(x + column * scaleX + dx, y + row * scaleY + dy, colour);
             }
         }
         return true;

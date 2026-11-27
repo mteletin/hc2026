@@ -54,6 +54,20 @@ public sealed partial class ExpansionFrontierDriver
     public ExpansionMmu? Mmu { get; set; }
     public Action<ushort, Z80.Z80>? OnM1Fetch;
 
+    /// <summary>Compute units run bursts on the plain core, side by side on host threads, and a steadily halted main skips
+    /// its halt cycles (hc2000-fast-emulation, doc design). On by default: nothing a guest sees depends on it (the
+    /// equivalence test runs both ways); false runs the frontier model alone, the reference.</summary>
+    public bool Bursts { get; set; } = true;
+    /// <summary>The most instructions one burst runs.</summary>
+    public int BurstInstructions { get; set; } = 1 << 20;
+    // The exact time of the event being dispatched: a controller operation the main performs happens at it.
+    private LogicalTime dispatchTime;
+    // The tick the frame being run ends at (0 outside TryRunFrame): a burst ends before it, so the unit is where the
+    // frontier model has it whenever a frame is complete (a snapshot, a host look at the machine).
+    private long burstHorizon;
+    // Units CatchUp rolled back during the current dispatch (see Synchronize).
+    private readonly bool[] caughtUp = new bool[1 + ExpansionArena.ComputeCount + ExpansionArena.DriverCount];
+
     public ExpansionFrontierDriver(DeviceScheduler scheduler, FrameClock clock, CpuTimeMapper mapper,
         ExpansionController controller, HcMemory memory, PortDecoder ports, Z80.Z80 main)
     {
@@ -65,6 +79,8 @@ public sealed partial class ExpansionFrontierDriver
         this.scheduler = scheduler; this.clock = clock; this.mapper = mapper; this.controller = controller;
         this.memory = memory; this.ports = ports; this.main = main;
         mainPorts = ports.CreateView(controller.MainOrigin);
+        controller.BeforeUnitOperation = CatchUp;
+        controller.UnitTouched = id => burstCandidates |= 1u << id;
         for (ushort id = 0; id <= UnitCount; id++)
         {
             var captured = id;
@@ -110,6 +126,22 @@ public sealed partial class ExpansionFrontierDriver
             }
             if (tokens[id] != 0 && epochs[id] == epoch && due[id] == exact) continue;
             Cancel(id);
+            if (unit is not null && caughtUp[id] && exact <= scheduler.LogicalNow)
+            {
+                // A unit rolled back and replayed to just before the main's operation (CatchUp) may have its next effect
+                // at this very time, ordered after the main's (a higher device id). That effect is private (it lies in the
+                // rolled-back burst's window), so committing it now, right after the operation, is the frontier model's
+                // result; then the unit is scheduled as usual.
+                try
+                {
+                    while (unit.Runnable && unit.ExecutionEpoch == epoch && LogicalTime.Tick(unit.NextMasterTick) <= scheduler.LogicalNow)
+                        if (!DispatchUnitEffect(id, unit, unit.NextMasterTick)) break;
+                }
+                finally { caughtUp[id] = false; }
+                id--;
+                continue;
+            }
+            caughtUp[id] = false;
             if (exact <= scheduler.LogicalNow) throw new InvalidOperationException("A new CPU frontier must be strictly future.");
             due[id] = exact; epochs[id] = epoch;
             tokens[id] = scheduler.Schedule(new(tick, EventPhase.Cpu, FirstCpuDeviceId + id, 0,
@@ -152,6 +184,120 @@ public sealed partial class ExpansionFrontierDriver
         return true;
     }
 
+    /// <summary>A halted main with its INT line low repeats identical halt cycles (a read of PC, 4 T-states, one refresh)
+    /// until an event raises a line: the frame clock's INT, a row source (a unit, a DMA, a Present), an NMI. Nothing can
+    /// raise one before the next queued event, so every halt cycle that ends before it is committed at once
+    /// (hc2000-fast-emulation, the main CPU). The halt cycles' reads of PC have no effect. Run from the frame loop, not
+    /// inside an event: the scheduler then lands on the main's new time, so guest time, the CPU's clock and the
+    /// scheduler agree (a snapshot's save boundary, a speed switch's safe boundary). True when it skipped.</summary>
+    private bool SkipMainHalt()
+    {
+        if (tokens[0] == 0 || !main.SteadyHalt || main.IntLine || clock.IntAsserted || controller.RowInterrupt?.LineAsserted == true) return false;
+        if (Mmu is not null && Mmu.Faulted(ExpansionMmu.MainUnit)) return false;
+        Cancel(0);
+        if (!scheduler.TryPeekNextTime(out var next)) { Synchronize(); return false; }
+        var start = main.TStates;
+        // The largest n whose n-th halt cycle still ends strictly before the next event.
+        long low = 0, high = 1;
+        while (mapper.ExactTimeAt(checked(start + 4 * high)) < next) { low = high; high = checked(high * 2); }
+        while (high - low > 1)
+        {
+            var mid = low + (high - low) / 2;
+            if (mapper.ExactTimeAt(checked(start + 4 * mid)) < next) low = mid; else high = mid;
+        }
+        if (low < 2) { Synchronize(); return false; }
+        main.SkipHaltCycles(low);
+        LandMainAtItsTime();
+        return true;
+    }
+
+    /// <summary>After the main ran ahead of the scheduler on its own (a halt skip, a quantum), strictly before the next
+    /// event: the mapper takes its T-states and the scheduler lands on their exact time (no event lies in between, so
+    /// nothing is dispatched); then its next frontier is scheduled.</summary>
+    private void LandMainAtItsTime()
+    {
+        mapper.Map(main.TStates);
+        scheduler.AdvanceTo(mapper.ExactTime());
+        Synchronize();
+    }
+
+    private readonly List<ExpansionComputeUnit> ready = [];
+    // Units whose readiness may have changed since RunReadyBursts last looked (bit = unit id): an event of theirs was
+    // dispatched, or an operation touched them. Scanning only these keeps a busy main's loop cheap.
+    private uint burstCandidates = ~0u;
+
+    /// <summary>The compute units that can burst now: Running at an instruction boundary (their next effect, an
+    /// instruction start, is scheduled but not yet dispatched), isolated (no lent page, exchange or pending operation),
+    /// not map holders, and due before the frame's end. Starting a unit's burst here instead of at its last retire
+    /// gives the same result, since nothing of it happened in between. Units' bursts run side by side on host threads
+    /// (each touches only its own core and pages); the owner thread opens and closes them. True when any ran, so the
+    /// frame loop takes its next event again.</summary>
+    private bool RunReadyBursts()
+    {
+        if (burstCandidates == 0) return false;
+        ready.Clear();
+        var candidates = burstCandidates;
+        burstCandidates = 0;
+        for (ushort id = 1; id <= ExpansionArena.ComputeCount && id <= UnitCount; id++)
+        {
+            if ((candidates & (1u << id)) == 0 || tokens[id] == 0) continue;
+            var unit = controller.GetUnit(id);
+            if (!unit.CanBurst || due[id].WholeTicks >= burstHorizon || (Mmu is not null && Mmu.IsMapHolder(id)) || !controller.UnitIsolated(id))
+                continue;
+            if (unit.PrepareBurst()) ready.Add(unit);
+        }
+        if (ready.Count == 0) return false;
+        var horizon = burstHorizon; var max = BurstInstructions;
+        if (ready.Count == 1) ready[0].ExecuteBurst(horizon, max);
+        else Parallel.ForEach(ready, unit => unit.ExecuteBurst(horizon, max));
+        var ran = false;
+        foreach (var unit in ready) ran |= unit.FinishBurst() > 0;
+        if (ran) Synchronize();
+        return ran;
+    }
+
+    /// <summary>Brings every unit whose burst ran past the machine's present back to the frontier model's place there: it
+    /// is rolled back and replayed on the frontier path up to now, as before a main operation on it (CatchUp). A snapshot
+    /// taken between events then finds no unit ahead of the scheduler (a save in the middle of a frame met units already at
+    /// the frame's end and was refused). Returns whether a unit was settled. Owner thread, between events.</summary>
+    public bool SettleBursts()
+    {
+        VerifyOwner();
+        var now = scheduler.LogicalNow;
+        var saved = dispatchTime;
+        var settled = false;
+        dispatchTime = now;
+        try
+        {
+            for (ushort id = 1; id <= ExpansionArena.ComputeCount && id <= UnitCount; id++)
+            {
+                if (controller.GetUnit(id).BurstEndTick is not { } end || LogicalTime.Tick(end) <= now) continue;
+                CatchUp(id);
+                burstCandidates |= 1u << id;
+                settled = true;
+            }
+        }
+        finally { dispatchTime = saved; }
+        if (settled) Synchronize();
+        return settled;
+    }
+
+    /// <summary>Before the main's controller operation on unit <paramref name="id"/> (at <see cref="dispatchTime"/>):
+    /// a burst that ran up to or past that time is rolled back and the unit replayed on the frontier path up to just
+    /// before it, so the operation meets the unit exactly where the frontier model has it. Its effects in that window
+    /// are private (a burst runs only private instructions), so the replay commits them without the scheduler.</summary>
+    private void CatchUp(ushort id)
+    {
+        if (id == 0 || id > ExpansionArena.ComputeCount) return;
+        var unit = controller.GetUnit(id);
+        if (unit.BurstEndTick is not { } end) return;
+        if (LogicalTime.Tick(end) < dispatchTime) { unit.CloseBurst(); return; }
+        unit.RollbackBurst();
+        caughtUp[id] = true;
+        while (unit.Runnable && LogicalTime.Tick(unit.NextMasterTick) < dispatchTime)
+            if (!DispatchUnitEffect(id, unit, unit.NextMasterTick)) break;
+    }
+
     private void Cancel(ushort id)
     {
         if (tokens[id] == 0) return;
@@ -161,6 +307,9 @@ public sealed partial class ExpansionFrontierDriver
     /// <summary>Installs the mapper a runtime speed switch built and anchored at the committed boundary
     /// (see <c>Machine.SetMainCpuTarget</c>): the main frontier is re-queued at its new exact logical time,
     /// side units keep their own faithful integer ticks, and pending device events stay admitted.</summary>
+    /// <summary>The side Z80s on the machine's previous clock follow its new one (see ExpansionController.FollowMachineClock).</summary>
+    internal void FollowMachineClock(MainCpuSpeed from, MainCpuSpeed to) { VerifyOwner(); controller.FollowMachineClock(from, to); }
+
     internal void InstallMapper(CpuTimeMapper next)
     {
         VerifyOwner();
@@ -175,6 +324,9 @@ public sealed partial class ExpansionFrontierDriver
         if (tokens[id] != item.InsertionSequence || due[id] != itemTime || item.Phase != EventPhase.Cpu || item.Kind != 0)
             throw new InvalidOperationException("CPU queue identity differs from its admitted frontier.");
         tokens[id] = 0; due[id] = default;
+        dispatchTime = itemTime;
+        // A unit's own next event is after its burst: the machine's order has caught up with it.
+        if (id != 0) { controller.GetUnit(id).CloseBurst(); burstCandidates |= 1u << id; }
         if (id == 0)
         {
             var effect = main.PeekNextFrontier();
@@ -337,6 +489,9 @@ public sealed partial class ExpansionFrontierDriver
         VerifyOwner(); ArgumentNullException.ThrowIfNull(commonFrontier);
         var requested = checked(clock.CompletedFrames + 1);
         Synchronize();
+        burstHorizon = checked(requested * FrameTiming.FrameTicks);
+        try
+        {
         while (clock.CompletedFrames < requested)
         {
             if (!commonFrontier()) return false;
@@ -347,8 +502,11 @@ public sealed partial class ExpansionFrontierDriver
             if (!has && Mmu?.Faulted(ExpansionMmu.MainUnit) == true)
             { next = LogicalTime.Tick(checked(requested * FrameTiming.FrameTicks)); has = true; }
             if (!has || next <= scheduler.LogicalNow) throw new InvalidOperationException("The main CPU has no future frontier.");
+            if (Bursts && (RunReadyBursts() || SkipMainHalt() || RunMainQuantum())) continue;
             scheduler.AdvanceTo(next);
         }
+        }
+        finally { burstHorizon = 0; }
         return true;
     }
     private void VerifyOwner()

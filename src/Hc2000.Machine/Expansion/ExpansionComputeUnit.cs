@@ -9,7 +9,8 @@ public enum ExpansionLifecycle : byte { ResetStopped, Running, Paused, Halted, F
 /// In particular it has no owner/controller/scheduler, peer, card or Machine reference.</summary>
 public sealed partial class ExpansionComputeUnit
 {
-    private readonly Z80.Z80 core = new(new NoBus());
+    private readonly UnitBus bus = new();
+    private readonly Z80.Z80 core;
     private ExpansionMemoryLease memory;
     internal readonly ExpansionMailbox Mailbox = new();
     private ExpansionMailboxEffect requestedMailboxEffect;
@@ -52,7 +53,7 @@ public sealed partial class ExpansionComputeUnit
     internal bool MutableImage => Retired && Lifecycle is ExpansionLifecycle.ResetStopped or ExpansionLifecycle.ServiceIdle;
 
     internal ExpansionComputeUnit(ushort id, ExpansionMemoryLease memory, string kind = "compute")
-    { Id = id; this.memory = memory; Kind = kind; }
+    { Id = id; this.memory = memory; Kind = kind; core = new(bus); }
     public FrontierState CaptureFrontier() => core.CaptureFrontier();
     public FrontierEffect PeekNextFrontier()
     {
@@ -64,7 +65,7 @@ public sealed partial class ExpansionComputeUnit
     public FrontierCommit CommitFrontier(byte value, long masterTick)
     {
         if (masterTick != NextMasterTick) throw new InvalidOperationException("Compute clock/frontier mismatch.");
-        var delta = checked(PeekNextFrontier().AtCpuTState - cpuAnchor);
+        var delta = checked(PeekNextFrontier().AtCpuTState - core.TStates);
         var result = core.CommitFrontier(value);
         clockRemainder = checked((checked(core.TStates - cpuAnchor) * clockNumerator)) % clockDenominator;
         CommittedTStates = checked(CommittedTStates + delta);
@@ -93,6 +94,8 @@ public sealed partial class ExpansionComputeUnit
     internal void Rebase(long tick)
     {
         if (tick < LastMasterTick) throw new ArgumentOutOfRangeException(nameof(tick));
+        // A machine clock switch this unit could not take while it ran takes effect at its next fresh epoch.
+        if (pendingFollow is { } follow) { pendingFollow = null; if (clockTarget == follow.From) ApplyClockTarget((byte)follow.To); }
         // The remainder belongs to the previous anchors; each rebase starts a fresh clock epoch.
         cpuAnchor = core.TStates; masterAnchor = tick; LastMasterTick = tick; clockRemainder = 0;
     }
@@ -115,6 +118,7 @@ public sealed partial class ExpansionComputeUnit
     internal void Reset(long tick, ExpansionMemoryLease? replacement = null)
     {
         if (replacement is not null) memory = replacement;
+        openBurst = null;
         core.Reset(); Mailbox.Clear(); requestedMailboxEffect = ExpansionMailboxEffect.None;
         ExecutionEpoch = checked(ExecutionEpoch + 1);
         Lifecycle = savedLifecycle = ExpansionLifecycle.ResetStopped;
@@ -126,9 +130,31 @@ public sealed partial class ExpansionComputeUnit
     /// epoch's ratio until its next rebase. The remainder starts fresh for the new denominator.</summary>
     internal void SetClockTarget(byte value)
     {
+        pendingFollow = null; // the program's (or the composition's) own choice wins over a machine switch not yet taken
+        ApplyClockTarget(value);
+    }
+
+    private void ApplyClockTarget(byte value)
+    {
         var (numerator, denominator) = ((MainCpuSpeed)value).MasterTicksPerTState();
         clockTarget = (MainCpuSpeed)value; clockNumerator = numerator; clockDenominator = denominator;
         clockRemainder = 0;
+    }
+
+    // A machine clock switch (hc2000-speed-140-turbo-280) waiting for this unit's next fresh epoch. Host state: a
+    // snapshot does not carry it.
+    private (MainCpuSpeed From, MainCpuSpeed To)? pendingFollow;
+
+    /// <summary>The machine's clock moved from <paramref name="from"/> to <paramref name="to"/> (the side Z80s follow the
+    /// main by default): a unit on <paramref name="from"/> takes <paramref name="to"/> now when it is stable, else at its
+    /// next fresh epoch (start, resume, wake, pause), unless a program sets its own clock first. A unit on another clock
+    /// (one a program chose) keeps it.</summary>
+    internal void FollowClock(MainCpuSpeed from, MainCpuSpeed to)
+    {
+        pendingFollow = null;
+        if (clockTarget != from || from == to) return;
+        if (Stable) ApplyClockTarget((byte)to);
+        else pendingFollow = (from, to);
     }
 
     /// <summary>Managed-map denial (full-X5): the holder's access was refused; it stops at the
@@ -152,14 +178,4 @@ public sealed partial class ExpansionComputeUnit
     }
     internal bool HasWork => Mailbox.HasWork || requestedMailboxEffect != ExpansionMailboxEffect.None;
 
-    private sealed class NoBus : IBus
-    {
-        public byte Read(ushort addr) => throw Forbidden();
-        public void Write(ushort addr, byte value) => throw Forbidden();
-        public byte In(ushort port) => throw Forbidden();
-        public void Out(ushort port, byte value) => throw Forbidden();
-        public void Contend(ushort addr, int tstates) => throw Forbidden();
-        public byte IntVector() => throw Forbidden();
-        private static InvalidOperationException Forbidden() => new("Compute effects belong to the machine owner.");
-    }
 }

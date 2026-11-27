@@ -68,15 +68,17 @@ internal sealed class ReconfigurePanel : UserControl
         // new-machine choice, disabled below), a main-CPU clock switch applies live at the next
         // safe boundary without a reset; an unsafe boundary is refused and the previous selection
         // and state are kept. 280 MHz is a target: the status line shows achieved speed or overload.
-        mainCpu = new TextBox { Name = "ReconfigureMainCpu", Text = "faithful", IsVisible = false };
+        mainCpu = new TextBox { Name = "ReconfigureMainCpu", Text = Hc2000.Machine.MainCpuSpeedInfo.Auto, IsVisible = false };
         hardware.Children.Add(mainCpu);
         ChoiceSegments.Build(hardware, "Main CPU clock", mainCpu, new[]
         {
+            ("auto", "Auto", "The machine's own speed: 140 MHz on the CP/M workstations, the faithful 3.5 MHz on Classic and on the BASIC expansion machines, whose tape loading needs it."),
             ("faithful", "Faithful", "The original 3.5 MHz class (3,546,895 T/s); video and the frame interrupt stay at the faithful cadence."),
             ("7MHz", "7 MHz (target)", "A 7,000,000 T/s target; video and the frame interrupt stay at the faithful cadence. The status line shows the achieved speed."),
             ("14MHz", "14 MHz (target)", "A 14,000,000 T/s target; video and the frame interrupt stay at the faithful cadence. The status line shows the achieved speed."),
             ("28MHz", "28 MHz (target)", "A 28,000,000 T/s target; video and the frame interrupt stay at the faithful cadence. The status line shows the achieved speed."),
-            ("280MHz", "280 MHz (target)", "A 280,000,000 T/s target, not a promise: the status line shows the achieved speed or overload.")
+            ("140MHz", "140 MHz (target)", "A 140,000,000 T/s target, off spec: from 140 MHz up timing is relaxed for speed. The status line shows the achieved speed or overload."),
+            ("280MHz", "280 MHz (target)", "A 280,000,000 T/s target, not a promise, off spec like 140 MHz: the status line shows the achieved speed or overload.")
         });
         // The running machine's speed is what its beeper hears, so the silence is stated here, beside
         // the field, and its one control puts the field back to 100 and applies it to this machine.

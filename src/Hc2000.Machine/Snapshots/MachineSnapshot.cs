@@ -92,6 +92,7 @@ public sealed class MachineSnapshot(
     public byte[] Save(HcsWavPolicy? wavPolicy = null, HcsLimits? limits = null)
     {
         CheckExternalState();
+        expansion?.SettleBursts();
         return SaveCore(wavPolicy, limits ?? DefaultLimits(), null, false);
     }
 
@@ -100,6 +101,7 @@ public sealed class MachineSnapshot(
     {
         ArgumentNullException.ThrowIfNull(destination);
         CheckExternalState();
+        expansion?.SettleBursts();
         _ = SaveCore(wavPolicy, limits ?? DefaultLimits(), null, false, destination);
     }
 
@@ -109,6 +111,9 @@ public sealed class MachineSnapshot(
     public void ValidateSessionSnapshotSave(HcsWavPolicy? wavPolicy = null)
     {
         CheckExternalState();
+        // Side units' bursts may have run ahead of the present (hc2000-fast-emulation): they are brought back to it first,
+        // which changes no state the frontier model would not have at this time.
+        expansion?.SettleBursts();
         _ = CaptureAdmission(wavPolicy, DefaultLimits());
     }
 

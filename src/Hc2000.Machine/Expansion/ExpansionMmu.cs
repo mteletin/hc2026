@@ -175,22 +175,30 @@ public sealed class ExpansionMmu
     /// root reset, which clears the fault; a fault never widens rights.</summary>
     public bool TryResolve(ushort unitId, ushort address, ExpansionSlotCaps access, out ExpansionMmuResolution resolution)
     {
+        if (TryPeek(unitId, address, access, out resolution)) return true;
+        if (IsMapHolder(unitId))
+        {
+            var state = holders[Index(unitId)];
+            state.Fault ??= new(address, access, state.MapEpoch);
+        }
+        return false;
+    }
+
+    /// <summary><see cref="TryResolve"/> without recording a denial: the relaxed main quantum asks first and leaves the
+    /// refused access to the frontier path, which records it.</summary>
+    internal bool TryPeek(ushort unitId, ushort address, ExpansionSlotCaps access, out ExpansionMmuResolution resolution)
+    {
         VerifyOwner();
         resolution = default;
         if (!IsMapHolder(unitId)) return false;
-        var state = holders[Index(unitId)];
-        var slot = state.Slots[address >> 14];
+        var slot = holders[Index(unitId)].Slots[address >> 14];
         if (slot.Kind == ExpansionSlotKind.Legacy)
         {
             // The faithful projection: latches, mirrors and IF1 semantics live in the memory model.
             resolution = new(ExpansionSlotKind.Legacy, 0, (ushort)(address & (SlotBytes - 1)));
             return true;
         }
-        if (slot.Kind == ExpansionSlotKind.Absent || (slot.Caps & access) == 0)
-        {
-            state.Fault ??= new(address, access, state.MapEpoch);
-            return false;
-        }
+        if (slot.Kind == ExpansionSlotKind.Absent || (slot.Caps & access) == 0) return false;
         resolution = new(slot.Kind, slot.Target, (ushort)(address & (SlotBytes - 1)));
         return true;
     }

@@ -96,6 +96,8 @@ public sealed class Ula : IPortDevice
     public void Write(ushort port, byte value, long masterTick)
     {
         RequireTime(masterTick);
+        // The border is about to change: the raster first catches up to now (a no-op inside an event, which did it).
+        frameClock.RenderTo(scheduler.LogicalNow, EventPhase.Cpu);
         var changed = (FeLatch ^ value) & 0x18;
         FeLatch = (byte)(value & 0x1f);
         if (changed != 0)

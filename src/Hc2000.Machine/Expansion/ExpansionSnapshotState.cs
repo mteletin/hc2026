@@ -68,6 +68,7 @@ public sealed partial class ExpansionComputeUnit
 
     internal void AdoptState(ExpansionUnitState s, ExpansionMemoryLease lease)
     {
+        openBurst = null;
         core.RestoreFrontier(s.Cpu); memory = lease; ExecutionEpoch = s.ExecutionEpoch;
         Lifecycle = s.Lifecycle; savedLifecycle = s.SavedLifecycle; cpuAnchor = s.CpuAnchor;
         masterAnchor = s.MasterAnchor; LastMasterTick = s.LastMasterTick;

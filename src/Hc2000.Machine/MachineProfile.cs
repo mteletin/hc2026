@@ -85,6 +85,23 @@ public sealed record MachineProfile
     /// interrupt cadence stay on the unchanged master clock. Never composes with the legacy
     /// cpu.turbo multiplier: a non-faithful target requires it to be 1.</summary>
     public MainCpuSpeed MainCpuTarget { get; init; } = MainCpuSpeed.Faithful;
+
+    /// <summary>The profiles of the extended machine: those that compose the expansion (side Z80s, the X cards, CP/NET).
+    /// Their main CPU starts at 140 MHz when the user left the clock on <see cref="MainCpuSpeedInfo.Auto"/>
+    /// (hc2000-speed-140-turbo-280); the Classic profiles start at the faithful 3.5 MHz.</summary>
+    public static bool IsExtended(string profileName) => profileName is "hc2000-v2-paged-expansion-v1"
+        or "hc2000-v2-paged-expansion-x5-v1" or "hc2000-v2-paged-expansion-x5-hdd-guest-v1" or "hc2000-v2-cpnet-v1"
+        or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2" or "hc2000-v2-full-workstation-v1";
+
+    /// <summary>The extended profiles that start CP/M from their own drives: the workstations, CP/NET and the HDD guest
+    /// preset. The main CPU's auto setting runs these at 140 MHz; the two BASIC expansion machines start in the ROM's
+    /// BASIC, whose tape loader times the tape's edges by the real clock, so auto keeps them faithful.</summary>
+    public static bool StartsCpm(string profileName) => profileName is "hc2000-v2-paged-expansion-x5-hdd-guest-v1"
+        or "hc2000-v2-cpnet-v1" or "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2"
+        or "hc2000-v2-full-workstation-v1";
+
+    /// <summary>Whether this profile composes the expansion (see <see cref="IsExtended(string)"/>).</summary>
+    public bool Extended => CpNet || IsExtended(Name);
     /// <summary>Full-X5 driver units (0..8); machine identity. Zero enables no driver roster.</summary>
     public int ExpansionDriverCount { get; init; }
     /// <summary>The exact reduced master-ticks-per-T-state ratio of this profile's main CPU clock.

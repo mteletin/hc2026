@@ -549,6 +549,13 @@ internal sealed class ExpansionX2Port : IPortDevice
             case 6 when payload.Length == 10:
                 command = new(X2CommandKind.DrawGlyph, X: U16(payload, 0), Y: U16(payload, 2), Colour: payload[4],
                     Background: payload[5], GlyphRows: BinaryPrimitives.ReadUInt32LittleEndian(payload[6..])); return true;
+            // DrawGlyph scaled (hc2000-ssh-terminal-resize): the same 4 x 8 glyph with each of its pixels
+            // drawn sx wide and sy high (1-4 each), so a terminal fills the higher modes with 8 x 8 or 8 x 16 cells.
+            // Width and Height carry the drawn cell (0, a plain glyph, is 4 x 8), so a snapshot keeps it as it is.
+            case 6 when payload.Length == 12 && payload[10] is >= 1 and <= 4 && payload[11] is >= 1 and <= 4:
+                command = new(X2CommandKind.DrawGlyph, X: U16(payload, 0), Y: U16(payload, 2), Colour: payload[4],
+                    Background: payload[5], GlyphRows: BinaryPrimitives.ReadUInt32LittleEndian(payload[6..]),
+                    Width: 4 * payload[10], Height: 8 * payload[11]); return true;
             case 7 when payload.Length == 11:
                 command = new(X2CommandKind.ScrollUp, X: U16(payload, 0), Y: U16(payload, 2), Width: U16(payload, 4),
                     Height: U16(payload, 6), SourceY: U16(payload, 8), Background: payload[10]); return true;

@@ -35,12 +35,12 @@ public sealed class SettingsWindow : Window
         var mainCpu = new ComboBox
         {
             Name = "SettingsMainCpu",
-            ItemsSource = Hc2000.Machine.MainCpuSpeedInfo.All.Select(speed => Hc2000.Machine.MainCpuSpeedInfo.Setting(speed)).ToArray(),
+            ItemsSource = new[] { Hc2000.Machine.MainCpuSpeedInfo.Auto }.Concat(Hc2000.Machine.MainCpuSpeedInfo.All.Select(speed => Hc2000.Machine.MainCpuSpeedInfo.Setting(speed))).ToArray(),
             SelectedItem = draft.MainCpuTarget
         };
         form.Children.Add(new TextBlock
         {
-            Text = "Main CPU clock (faithful 3.5 MHz class, or 7/14/28/280 MHz target; 280 MHz is a target, not a promise)",
+            Text = "Main CPU clock (auto: 140 MHz on the CP/M workstations, faithful on Classic and the BASIC expansion machines; or faithful 3.5 MHz class, or a 7/14/28/140/280 MHz target; from 140 MHz up timing is relaxed for speed, and the target is not a promise)",
             TextWrapping = Avalonia.Media.TextWrapping.Wrap
         });
         form.Children.Add(mainCpu);

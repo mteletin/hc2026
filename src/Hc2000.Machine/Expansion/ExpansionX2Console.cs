@@ -104,6 +104,22 @@ internal sealed class ExpansionX2Console
 
     public void Write(byte value)
     {
+        // ESC A's row and column are taken whole (8 bits), so the 160-column mode is reachable: column c is sent as
+        // c + 32 up to 191 (hc2000-fm5). Everything else is masked to 7 bits, as the HC2000 console does.
+        if (escapeState == 3)
+        {
+            if (pendingRow < 0)
+            {
+                pendingRow = Math.Clamp(value - 0x20, 0, WindowBottom - WindowTop);
+                return;
+            }
+            var targetCol = Math.Clamp(value - 0x20, 0, WindowRight - WindowLeft);
+            CursorRow = WindowTop + pendingRow;
+            CursorCol = WindowLeft + targetCol;
+            pendingRow = -1;
+            escapeState = 0;
+            return;
+        }
         value &= 0x7f; // HC2000 console masks to 7 bits
 
         switch (escapeState)
@@ -115,18 +131,6 @@ internal sealed class ExpansionX2Console
             case 2:
                 escapeState = 0;
                 HandleEscapeArg(pendingEscCode, value);
-                return;
-            case 3:
-                if (pendingRow < 0)
-                {
-                    pendingRow = Math.Clamp(value - 0x20, 0, WindowBottom - WindowTop);
-                    return;
-                }
-                var targetCol = Math.Clamp(value - 0x20, 0, WindowRight - WindowLeft);
-                CursorRow = WindowTop + pendingRow;
-                CursorCol = WindowLeft + targetCol;
-                pendingRow = -1;
-                escapeState = 0;
                 return;
         }
 

@@ -67,7 +67,31 @@ public sealed class DeviceScheduler
         return next;
     }
 
+    /// <summary>Called with each event's exact time and phase before it is dispatched, and with the landing time when an
+    /// advance ends (as the last phase: everything at that time has happened). Lazy outputs (the video's raster) catch up
+    /// there with everything that comes before that point in the machine's order.</summary>
+    public Action<LogicalTime, EventPhase>? CatchUp { get; set; }
+
     public bool Cancel(long token) => pending.Remove(token);
+
+    /// <summary>The exact time of the earliest live queued event; false when nothing is queued. Cancelled and superseded
+    /// entries at the head are dropped first (AdvanceTo would skip them the same way), so a device that just cancelled
+    /// its own event does not see it as the next one.</summary>
+    public bool TryPeekNextTime(out LogicalTime time)
+    {
+        while (queue.TryPeek(out var item, out _))
+        {
+            if (pending.ContainsKey(item.InsertionSequence) && devices[item.DeviceId].Generation == item.Generation)
+            {
+                time = TimeOf(item);
+                return true;
+            }
+            queue.Dequeue();
+            pending.Remove(item.InsertionSequence);
+        }
+        time = default;
+        return false;
+    }
 
     public IReadOnlyList<DeviceEvent> PendingEvents => pending.Values
         .Where(e => e.Generation == Generation(e.DeviceId))
@@ -148,9 +172,11 @@ public sealed class DeviceScheduler
                 var device = devices[item.DeviceId];
                 if (device.Generation != item.Generation) continue;
                 logicalNow = TimeOf(item);
+                CatchUp?.Invoke(logicalNow, item.Phase);
                 device.Handler(item);
             }
             logicalNow = LogicalTime.Tick(target);
+            CatchUp?.Invoke(logicalNow, EventPhase.Cpu);
         }
         finally { advancing = false; }
     }
@@ -172,9 +198,11 @@ public sealed class DeviceScheduler
                 var device = devices[item.DeviceId];
                 if (device.Generation != item.Generation) continue;
                 logicalNow = TimeOf(item);
+                CatchUp?.Invoke(logicalNow, item.Phase);
                 device.Handler(item);
             }
             logicalNow = target;
+            CatchUp?.Invoke(logicalNow, EventPhase.Cpu);
         }
         finally { advancing = false; }
     }

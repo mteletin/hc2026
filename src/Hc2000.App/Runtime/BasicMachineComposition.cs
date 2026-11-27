@@ -105,7 +105,7 @@ public static class BasicMachineComposition
         // hc2000-accelerated-clock-domains: the user's main-Z80 clock choice; faithful (the default) keeps
         // the legacy mapping exactly. Combined with a legacy cpu.turbo it is refused by the profile's
         // own validation, never silently reinterpreted.
-        var mainCpu = MainCpuSpeedInfo.ParseSetting(mainCpuTarget);
+        var mainCpu = MainCpuSpeedInfo.Resolve(mainCpuTarget, profile.Name); // auto: 140 MHz extended, faithful Classic
         // Cold adoption: the derived record copy carries the adopted choice; the static profile is never mutated.
         var adopted = profile with { Video = profile.Video with { TextOverlay = textOverlay }, CpuTurboMultiplier = cpuTurbo,
             ExpansionDriverCount = expansionDriverCount, MainCpuTarget = mainCpu };
@@ -154,7 +154,7 @@ public static class BasicMachineComposition
         {
             Video = adopt.Video with { TextOverlay = textOverlay },
             CpuTurboMultiplier = cpuTurbo,
-            MainCpuTarget = MainCpuSpeedInfo.ParseSetting(mainCpuTarget)
+            MainCpuTarget = MainCpuSpeedInfo.Resolve(mainCpuTarget, adopt.Name) // auto: 140 MHz extended, faithful Classic
         };
         adopted.Validate();
         // The composite carries the GiB paged store and the sixteen-compute arena; it takes the same
@@ -294,6 +294,29 @@ public static class BasicMachineComposition
         // Owner-written, UI-read outcome of the last live main-CPU clock switch (array element so the
         // closure may use it volatile; a volatile local cannot be captured).
         string?[] mainCpuSwitchBox = [null];
+        // A live main-CPU clock switch that met an unsafe boundary waits for the next safe one (hc2000-speed-140-turbo-280:
+        // on the extended machine a boundary where a side Z80, not the main, was the last to act is not safe, and the
+        // Turbo button must not be refused for that). Owner thread only.
+        MainCpuSpeed? pendingMainCpu = null;
+        // Applies the pending switch when this boundary is safe; otherwise keeps it for the next boundary. The previous
+        // selection and the machine state stay as they were until it applies.
+        void TrySwitchMainCpu(LiveMachine machine)
+        {
+            if (pendingMainCpu is not { } target) return;
+            try
+            {
+                machine.SetMainCpuTarget(target);
+                pendingMainCpu = null;
+                rateMeter.SetRequested(target.TStatesPerSecond());
+                // Done: the rate line itself now names the new choice and what it achieves (no standing message over it).
+                Volatile.Write(ref mainCpuSwitchBox[0], null);
+            }
+            catch (InvalidOperationException)
+            {
+                Volatile.Write(ref mainCpuSwitchBox[0],
+                    $"Main CPU switch to {target.Setting()} waits for a safe point");
+            }
+        }
         RuntimeContext? runtimeContext = null;
         MediaSession? session = null;
         FloppyDrive? driveA = null;
@@ -362,6 +385,8 @@ public static class BasicMachineComposition
         var x3Edges = new List<X3PcmEdge>();
         bool monitoring = true;
         (LiveMachine Machine, CpuZ80 Cpu, HcMemory Memory, FloppyController Controller, Ula Ula, Action ActivateMonitor, CpNetRuntime? CpNet)? replacement = null;
+        // The main CPU rate of a loaded replacement: a snapshot keeps the speed it was saved at.
+        long replacementTStates = 0;
         // The ROM scans keys on interrupts; two frames span a scan and its debounce.
         // Use emulated ticks, not host sleeps or a single instruction-boundary deferral.
         var input = new InputController(inputQueue, (control, _) =>
@@ -390,19 +415,8 @@ public static class BasicMachineComposition
                 // owner at this instruction boundary. An unsafe boundary is refused explicitly and
                 // the previous selection and machine state are kept; only a switch that took effect
                 // rebases the meter's window, so two rates never mix in one window.
-                var target = (MainCpuSpeed)control.MainCpuSpeedIndex;
-                try
-                {
-                    runtimeContext.Machine.SetMainCpuTarget(target);
-                    rateMeter.SetRequested(target.TStatesPerSecond());
-                    Volatile.Write(ref mainCpuSwitchBox[0],
-                        $"Main CPU clock set to {target.Setting()}; the video and frame-interrupt cadence remain at the faithful rate.");
-                }
-                catch (InvalidOperationException ex)
-                {
-                    Volatile.Write(ref mainCpuSwitchBox[0],
-                        $"Main CPU clock switch refused; the previous selection and machine state were kept. {ex.Message}");
-                }
+                pendingMainCpu = (MainCpuSpeed)control.MainCpuSpeedIndex;
+                TrySwitchMainCpu(runtimeContext.Machine);
             }
             if (control.Kind == InputControlKind.Reset && runtimeContext is not null)
             {
@@ -456,7 +470,9 @@ public static class BasicMachineComposition
                         liveHdd?.ValidateLogicalSnapshot();
                         runtimeContext!.Machine.ValidateSessionSnapshotSave();
                     }
-                    catch (Exception ex) when (ex is InvalidOperationException or HcsException)
+                    // A state the save refuses is reported, never thrown into the worker (an ArgumentException from a
+                    // schema check once stopped the emulation instead of failing the save).
+                    catch (Exception ex) when (ex is InvalidOperationException or HcsException or ArgumentException)
                     {
                         snapshots.Publish(new(command.RequestId, Error: ex.Message));
                         return;
@@ -490,7 +506,15 @@ public static class BasicMachineComposition
             HcsReply loaded;
             try
             {
-                candidate = CreateMachine(prepared.Roms, candidateSlot, new(new()), new(new()),
+                // A snapshot keeps its speed (hc2000-speed-140-turbo-280): the candidate runs at the clock the file was saved
+                // at - Turbo's 280 MHz, or the faithful default of an older version - not at this session's start-up speed,
+                // which the load would refuse as another clock.
+                var loadRoms = prepared.Roms;
+                if (HcsCodec.PeekClockDivider(command.Bytes.AsSpan()) is { } divider &&
+                    MainCpuSpeedInfo.FromDivider(divider, out var savedSpeed, out var savedTurbo) &&
+                    (savedSpeed != loadRoms.Profile.MainCpuTarget || savedTurbo != loadRoms.Profile.CpuTurboMultiplier))
+                    loadRoms = loadRoms with { Profile = loadRoms.Profile with { MainCpuTarget = savedSpeed, CpuTurboMultiplier = savedTurbo } };
+                candidate = CreateMachine(loadRoms, candidateSlot, new(new()), new(new()),
                     earEdges.Add, out var candidateCpu, out var candidateMemory,
                     observeUla: value => candidateUla = value, canMonitor: () => adopted, snapshotPolicy: prepared.SnapshotPolicy,
                     observeHdd: value => candidateHdd = value,
@@ -506,6 +530,7 @@ public static class BasicMachineComposition
                     // A candidate never adopted is retired/disposed: its RAM goes back to the pool.
                     replacement?.Machine.Dispose();
                     replacement = (candidate, candidateCpu, candidateMemory, candidateSlot.Controller!, candidateUla!, () => adopted = true, candidateCpNet);
+                    replacementTStates = loadRoms.Profile.CpuTStatesPerSecond;
                     runtimeContext!.Reset();
                 }
                 else candidate.Dispose();
@@ -595,6 +620,9 @@ public static class BasicMachineComposition
                     }
                     var view = liveTape.Deck.Observe();
                     earEdges.Add(new(loaded.Machine.MasterTick, view.EarLevel, view.Mode == TapeDeckMode.Playing && !view.Paused && view.HoldReason == TapeHoldReason.None));
+                    // The rate line and Turbo show the loaded machine's speed; a switch asked before the load is dropped.
+                    rateMeter.SetRequested(replacementTStates);
+                    pendingMainCpu = null; Volatile.Write(ref mainCpuSwitchBox[0], null);
                     return loaded.Machine;
                 }
                 // All calls run on the same owner. Keep media (including dirty overlays and
@@ -644,6 +672,10 @@ public static class BasicMachineComposition
                     retainedTape = null;
                 }
                 session?.RebindTape(liveTape);
+                // A reset rebuilds the machine at its chosen speed: the rate line and Turbo say so (Turbo or an applied
+                // recommendation lasted only as long as the machine it switched), and a pending switch is dropped.
+                rateMeter.SetRequested(prepared.Roms.Profile.CpuTStatesPerSecond);
+                pendingMainCpu = null; Volatile.Write(ref mainCpuSwitchBox[0], null);
                 return machine;
                 }
                 catch
@@ -660,6 +692,7 @@ public static class BasicMachineComposition
                 // this boundary precedes its first instruction, even when immediately paused.
                 prepared.ColdAdmission?.AcknowledgeInstalled(prepared, context.Machine, hddAdapter);
                 input.ApplyPending(context.Machine.MasterTick, context.Machine.Keyboard);
+                if (pendingMainCpu is not null && !context.Resetting && !context.Stopping) TrySwitchMainCpu(context.Machine);
                 if (!context.Resetting && !context.Stopping)
                 {
                     hddAdapter?.PumpGuestSwitch();
@@ -863,10 +896,13 @@ public static class BasicMachineComposition
         if (experimentalX6 && !x5) throw new ArgumentException("X6 requires the full X5 profile.");
         // A card only a HANDOFF between two driver units can own is never composed dark (hc2000-x6-net-device-v1).
         if (experimentalX6 && profile.ExpansionDriverCount < 2) throw new ArgumentException(CapabilityCatalog.X6NeedsDrivers);
-        if (profile.Name == "hc2000-v2-paged-expansion-v1" || profile.CpNet || x5 || profile.Name is "hc2000-v2-combined-workstation-v1" or "hc2000-v2-combined-workstation-v2")
+        if (profile.Extended)
         {
             expansionArena = memory.EnableExpansionArena(profile);
             expansionRoot = new(expansionArena, x5 ? profile.ExpansionDriverCount : 0);
+            // The side Z80s start at the machine's clock (hc2000-speed-140-turbo-280); a program may still set a
+            // unit's own (SET UNIT CLOCK).
+            expansionRoot.SetUnitClocks(profile.MainCpuTarget);
             if (fullWorkstation && !memory.TryReserveWorkstationPages())
                 throw new ArgumentException("The full workstation's switch pages cannot be reserved.");
             // The row's single interrupt source (design contract 2): always composed on an expansion

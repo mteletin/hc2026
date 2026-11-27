@@ -107,7 +107,22 @@ public partial class App : Application
     {
         if (ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow(Program.CurrentLaunch);
+            var window = new MainWindow(Program.CurrentLaunch);
+            desktop.MainWindow = window;
+            // hc2000-speed-140-turbo-280: the boot check, once per app start, off the UI thread; the window shows its
+            // recommendation. Started here, at the real app's entry, so windows built by tests never run it.
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    var result = Runtime.HostSpeedCheck.Run();
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => window.ShowHostSpeed(result));
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or OutOfMemoryException)
+                {
+                    Console.Error.WriteLine("[HostSpeedCheck] " + ex.Message);
+                }
+            });
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -1108,6 +1123,8 @@ public partial class MainWindow : Window
         inputModeBox.DropDownClosed += (_, _) => this.FindControl<Runtime.VideoSurface>("Screen")!.Focus();
         WireX2Screen();
         WireX6Gateway();
+        WireTurbo();
+        WireSpeedAdvice();
         WireX2Benchmark();
         WireLendingFrame();
         var presentationModeBox = this.FindControl<ComboBox>("PresentationModeSelector");
@@ -1129,6 +1146,8 @@ public partial class MainWindow : Window
             RefreshInputEvidenceSession();
             var session = CurrentSession;
             RefreshRateLine(session);
+            RenderTurbo(session);
+            RenderSpeedAdvice(session);
             if (PresentTracePath is not null)
             {
                 var tick = Interlocked.Increment(ref presentTickCount);
@@ -1474,14 +1493,14 @@ public partial class MainWindow : Window
             session.KeyboardInput.ReleaseFocus(InputReleaseOrigin.Reset);
             session.KeyboardInput.Evidence.EndSession();
             session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.SetMainCpuSpeed,
-                MainCpuSpeedIndex: (int)Hc2000.Machine.MainCpuSpeedInfo.ParseSetting(draft.MainCpuTarget)));
+                MainCpuSpeedIndex: (int)Hc2000.Machine.MainCpuSpeedInfo.Resolve(draft.MainCpuTarget, draft.Profile)));
         }
         else
         {
             // Live speed switch only: no reset; the machine keeps running and the status line
             // reports the switch outcome once the owner's boundary has applied or refused it.
             session.InputQueue.Enqueue(new RuntimeControl(InputControlKind.SetMainCpuSpeed,
-                MainCpuSpeedIndex: (int)Hc2000.Machine.MainCpuSpeedInfo.ParseSetting(draft.MainCpuTarget)));
+                MainCpuSpeedIndex: (int)Hc2000.Machine.MainCpuSpeedInfo.Resolve(draft.MainCpuTarget, draft.Profile)));
         }
         if (ReferenceEquals(workspace.Selected, tab))
         {
@@ -1730,6 +1749,12 @@ public partial class MainWindow : Window
         {
             e.Handled = true;
             OpenKeyboardReference(null, null!);
+            return true;
+        }
+        // hc2000-speed-140-turbo-280: Turbo 280 MHz on or off for the selected running extended machine.
+        if (e.Key == Key.T && ToggleTurbo())
+        {
+            e.Handled = true;
             return true;
         }
         // hc2000-ssh-terminal: the selected machine's X6 network gateway, on or off.

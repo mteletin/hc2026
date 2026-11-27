@@ -129,6 +129,9 @@ internal sealed class ExpansionX2Engine
     public ExpansionX2SurfaceState CaptureBack() => surface.Capture();
     public ExpansionX2SurfaceState CaptureDisplay() => new((byte[])displayed.Pixels.Clone(), (uint[])displayed.Palette.Clone(), Mode);
 
+    // A DrawGlyph's scale from its drawn size (0: the plain glyph).
+    private static int GlyphScale(int size, int unit) => size == 0 ? 1 : size / unit;
+
     internal VideoFrame PublishFrame(long masterTick)
     {
         VideoBoundary();
@@ -404,7 +407,8 @@ internal sealed class ExpansionX2Engine
                     throw new InvalidOperationException("Validated X2 palette entry was refused.");
                 break;
             case X2CommandKind.DrawGlyph:
-                if (!surface.DrawGlyph(active.X, active.Y, active.GlyphRows, active.Colour, active.Background))
+                if (!surface.DrawGlyph(active.X, active.Y, active.GlyphRows, active.Colour, active.Background,
+                        GlyphScale(active.Width, 4), GlyphScale(active.Height, 8)))
                     throw new InvalidOperationException("Validated X2 glyph was refused.");
                 break;
             case X2CommandKind.ScrollUp:
@@ -434,8 +438,14 @@ internal sealed class ExpansionX2Engine
                 work = command.Width * command.Height; return true;
             case X2CommandKind.SetPalette: return (uint)command.PaletteIndex < ExpansionX2Surface.PaletteSize;
             case X2CommandKind.DrawGlyph:
-                if (!surface.ValidRectangle(command.X, command.Y, 4, 8)) return false;
-                work = 32; return true;
+            {
+                // 0 is the plain 4 x 8 glyph; a scaled one is 4 x 8 times 1-4 in each direction.
+                var width = command.Width == 0 ? 4 : command.Width;
+                var height = command.Height == 0 ? 8 : command.Height;
+                if (width % 4 != 0 || height % 8 != 0 || width / 4 is < 1 or > 4 || height / 8 is < 1 or > 4) return false;
+                if (!surface.ValidRectangle(command.X, command.Y, width, height)) return false;
+                work = width * height; return true;
+            }
             case X2CommandKind.ScrollUp:
                 if (!surface.ValidRectangle(command.X, command.Y, command.Width, command.Height) ||
                     command.SourceY <= 0 || command.SourceY > command.Height) return false;

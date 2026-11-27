@@ -51,6 +51,46 @@ public sealed partial class Z80
 
     public bool AtInstructionBoundary => !frontierActive;
 
+    /// <summary>True when the next instruction's first effect has been peeked (prepared) but nothing of it is committed:
+    /// an ordinary M1 fetch, no interrupt or NMI acceptance and no HALT cycle. Such a frontier can be discarded and
+    /// begun again later with the same result, because BeginFrontier reads the state and changes none of it.</summary>
+    public bool FrontierUnstarted => frontierActive && frontierPrepared && frontierStage == FrontierStage.Fetch &&
+        frontierFamily == PrefixFamily.Base && !frontierOpcodePresent && FT[22] == 0 && !Halted;
+
+    /// <summary>True when the CPU is halted in a steady state: its next effect is an ordinary halt cycle (no interrupt or
+    /// NMI being accepted, no EI delay, nothing of an instruction committed, Q and the LD A,I/R flag settled), so a run of
+    /// halt cycles changes nothing but the T-states and the refresh register.</summary>
+    public bool SteadyHalt => Halted && !nmiPending && eiDelay == 0 && R.Q == 0 && !lastLdAiOrR &&
+        (!frontierActive || (frontierPrepared && frontierStage == FrontierStage.Retire && FT[22] == 0 && FT[31] == 1));
+
+    /// <summary>Commits <paramref name="cycles"/> halt cycles at once (4 T-states and one refresh each) and leaves the
+    /// CPU at the boundary after the last; exactly what committing them one by one with the INT line low gives.</summary>
+    public void SkipHaltCycles(long cycles)
+    {
+        if (!SteadyHalt || IntLine) throw new InvalidOperationException("Only a steady halt with INT low can skip cycles.");
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(cycles);
+        frontierActive = frontierPrepared = false;
+        frontierImmediate = frontierRefresh = false;
+        frontierRetired = true;
+        frontierStage = FrontierStage.None;
+        frontierEffect = default;
+        Array.Clear(FT);
+        TStates = checked(TStates + 4 * cycles);
+        R.R = (byte)((R.R & 0x80) | ((R.R + (int)(cycles & 0x7f)) & 0x7f));
+    }
+
+    /// <summary>Back to the instruction boundary from an unstarted frontier (see <see cref="FrontierUnstarted"/>), so the
+    /// plain <see cref="Step"/> path may run the instruction instead (the expansion's compute-unit bursts).</summary>
+    public void DiscardUnstartedFrontier()
+    {
+        if (!FrontierUnstarted) throw new InvalidOperationException("Only an unstarted frontier can be discarded.");
+        frontierActive = frontierPrepared = false;
+        frontierImmediate = frontierRefresh = frontierRetired = false;
+        frontierStage = FrontierStage.None;
+        frontierEffect = default;
+        Array.Clear(FT);
+    }
+
     public FrontierEffect PeekNextFrontier()
     {
         if (!frontierPrepared) BeginFrontier();

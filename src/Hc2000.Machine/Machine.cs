@@ -32,6 +32,21 @@ public sealed class Machine : IDisposable
     private readonly Func<long> cpuTStates;
     private readonly ExpansionFrontierDriver? expansion;
     internal ExpansionX3Card? ExpansionX3 { get { VerifyOwner(); return expansion?.X3; } }
+    /// <summary>Compute units run bursts on the plain core, a halted main skips its halt cycles, and a main at 140 MHz and
+    /// up runs relaxed quanta between events (hc2000-fast-emulation); true by default, false runs the frontier model alone
+    /// (the reference). Nothing a guest program can read depends on it; at 140 MHz and up the picture may show a screen
+    /// write a little early (the owner's off-spec rule, 2026-11-26).</summary>
+    public bool ExpansionBursts
+    {
+        get { VerifyOwner(); return expansion?.Bursts ?? false; }
+        set { VerifyOwner(); if (expansion is not null) expansion.Bursts = value; }
+    }
+    /// <summary>A side Z80's clock target (design contract 4), or null without the expansion.</summary>
+    public MainCpuSpeed? ExpansionUnitClock(ushort id)
+    {
+        VerifyOwner();
+        return expansion?.UnitClock(id).Target;
+    }
     private readonly List<BeeperEdge> edges = [];
     private long startTick;
     private readonly Queue<(VideoFrame Video, VideoFrame? ExpansionVideo)> pending = new();
@@ -210,7 +225,9 @@ public sealed class Machine : IDisposable
     /// and pending device events stay admitted. A boundary where the guest time and the committed
     /// counter's exact time differ (a faulted main, a non-quiescent advance) is refused and the
     /// previous selection and state are preserved. The device epoch, video and interrupt cadence never
-    /// move: they stay on the unchanged 17,734,475 Hz master timeline.
+    /// move: they stay on the unchanged 17,734,475 Hz master timeline. The side Z80s still on the machine's
+    /// previous clock follow it (hc2000-speed-140-turbo-280), at once when stable, else at their next fresh
+    /// epoch; a unit a program gave its own clock keeps it.
     /// </summary>
     public void SetMainCpuTarget(MainCpuSpeed target)
     {
@@ -222,11 +239,15 @@ public sealed class Machine : IDisposable
         var committed = mapper.CpuTStates;
         var (numerator, denominator) = target.MasterTicksPerTState();
         if (numerator == mapper.Numerator && denominator == mapper.Denominator) return; // already at this rate
+        var previous = MainCpuSpeedInfo.All.Cast<MainCpuSpeed?>()
+            .FirstOrDefault(speed => speed!.Value.MasterTicksPerTState() == (mapper.Numerator, mapper.Denominator));
         var next = new CpuTimeMapper(numerator, denominator);
         next.Adopt(committed, anchor);
         adapter.InstallMapper(next);
         expansion?.InstallMapper(next);
         snapshotState?.InstallMapper(next);
+        // A legacy cpu.turbo rate is no admitted choice: units were never on it, so none follows from it.
+        if (previous is { } from) expansion?.FollowMachineClock(from, target);
     }
 
     /// <summary>

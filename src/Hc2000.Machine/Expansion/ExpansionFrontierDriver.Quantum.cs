@@ -50,16 +50,10 @@ public sealed partial class ExpansionFrontierDriver
             Cancel(0);
             var limit = LogicalTime.Tick(burstHorizon);
             if (scheduler.TryPeekNextTime(out var next) && next < limit) limit = next;
-            // The last T-state the quantum may reach: its exact time stays strictly before the limit.
+            // The last T-state the quantum may reach: its exact time stays strictly before the limit (solved from the
+            // rate; the same counter a search by ExactTimeAt finds).
             var start = main.TStates;
-            long low = 0, high = 64;
-            while (mapper.ExactTimeAt(checked(start + high)) < limit) { low = high; high = checked(high * 2); }
-            while (high - low > 1)
-            {
-                var mid = low + (high - low) / 2;
-                if (mapper.ExactTimeAt(checked(start + mid)) < limit) low = mid; else high = mid;
-            }
-            var stop = start + low;
+            var stop = Math.Max(start, mapper.LastBefore(limit));
             if (start + LongestMainInstruction < stop)
             {
                 if (main.FrontierUnstarted) main.DiscardUnstartedFrontier();

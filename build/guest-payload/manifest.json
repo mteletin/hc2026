@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "guestSourceCommit": "281cebe777bf0cd02b02001dc404456c11341e16",
-  "privateSourceSha256": "1df6a22478111508fd0c4bddd43677f44a2f6951e526711fa796e83bc7a2d598",
+  "guestSourceCommit": "7ea1c1980fd04183666ea6a0a5addf3a8ccfec6f",
+  "privateSourceSha256": "e7b6ffd8a5a95d232ae16740f6252e71cabe5eea0e1df5d852853ec25ba248bd",
   "groups": {
     "utilities": [
       {
@@ -12,12 +12,12 @@
       {
         "path": "HC2000-UTIL-8M.DSK",
         "bytes": 8388608,
-        "sha256": "5c4a8ae88294d59199e998d1072d426952160b97cd131f28dfe67ecbe69b5be5"
+        "sha256": "01688e2ca28214d6b7ad45263be253a6f3c44b8eb91d560443297faa68faefba"
       },
       {
         "path": "HC2000-UTIL.DSK",
         "bytes": 778496,
-        "sha256": "bc24ebe3ddbff2b37e4320ef1f45e4cec30feb974ce0e664b9966664976a62a2"
+        "sha256": "adc69c1c31a9b2e43aa49bfe141c7914177578486a01a60c39b0c2ef0b60cf02"
       },
       {
         "path": "m-v1-source-fit.txt",
@@ -111,8 +111,8 @@
       },
       {
         "path": "utilities-content/SSH.COM",
-        "bytes": 17549,
-        "sha256": "edec60cdd5cd32c594305187dfe2561ddb08e402a610f65261be06c8809c9d54"
+        "bytes": 17607,
+        "sha256": "79e299a14619b106f6dd79f36550cae6ce2e41983c1bcf2f479f156f848c0605"
       },
       {
         "path": "utilities-content/STAT.COM",
@@ -157,7 +157,7 @@
       {
         "path": "utilities-manifest.json",
         "bytes": 20489,
-        "sha256": "3d314bcc7b88f5701ae8dd42f29d0e4f06de9c021267426a69aa9f836b2ac059"
+        "sha256": "820fe594659577e07178f21307aed7d891fa66b41df923a8612111315576232b"
       }
     ],
     "cpnet": [
@@ -176,7 +176,7 @@
       {
         "path": "workstation-manifest.json",
         "bytes": 926,
-        "sha256": "0536faf2992398344ec888bc45d4f3959a20caa6c9a8cf5ada947a5bc4bc9a70"
+        "sha256": "488688621aebf1315250c4ef61334d2a85ab460a917f7b1f5b2277ff0c95bcf3"
       }
     ]
   }

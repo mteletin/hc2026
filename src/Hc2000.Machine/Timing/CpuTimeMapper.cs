@@ -78,6 +78,25 @@ public sealed class CpuTimeMapper
     }
 
     /// <summary>
+    /// The largest absolute CPU counter, from the last commit on, whose <see cref="ExactTimeAt"/> is strictly before
+    /// <paramref name="limit"/>; one less than the committed counter when even that one is not. Solved directly from the
+    /// rate (hc2000-fast-emulation, the main's quanta): a search by <see cref="ExactTimeAt"/> took some forty Int128
+    /// divisions a quantum, and a port-heavy guest at 140 MHz starts a quantum every few instructions.
+    /// </summary>
+    public long LastBefore(LogicalTime limit)
+    {
+        // The exact time of counter C + d is W + (R + d * N * k) / RD, with k = RD / D; the limit is Lw + Ln / Ld.
+        // Before it: (W * RD + R + d * N * k) * Ld < (Lw * Ld + Ln) * RD, so d * N * k * Ld < room.
+        var ld = (Int128)limit.FractionDenominator;
+        var room = ((Int128)limit.WholeTicks * ld + limit.FractionNumerator) * RemainderDenominator
+            - ((Int128)WholeTicks * RemainderDenominator + Remainder) * ld;
+        if (room <= 0) return CpuTStates - 1;
+        var perTState = (Int128)Numerator * (RemainderDenominator / Denominator) * ld;
+        var delta = (room - 1) / perTState;
+        return delta >= long.MaxValue - CpuTStates ? long.MaxValue : CpuTStates + (long)delta;
+    }
+
+    /// <summary>
     /// Adopts a runtime speed-switch anchor: the absolute CPU counter <paramref name="cpuTStates"/> sits at
     /// exactly <paramref name="anchor"/> on the guest timeline, and this (new-rate) mapper continues from it
     /// without reinterpreting the phase. The anchor fraction is stored exactly: the remainder denominator
